@@ -10,6 +10,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Conversation } from "@/hooks/useConversations";
 import type { ElectronUpdateBridge, UpdateConfig, UpdateStatus } from "@/lib/nativeBridge";
+import i18n, { initI18n } from "@/i18n/config";
+const t = i18n.t.bind(i18n);
+
+// `initI18n` is idempotent and synchronous in the test environment (no
+// language detector round-trip), so calling it from the top of the module
+// wires `useTranslation("settings")` hooks inside <SettingsPage/> to the
+// same resource map main.tsx uses — without this, hook callers fall back
+// to the `defaultValue` strings and bypass the locale, so the assertions
+// below would just be re-asserting the English literals.
+initI18n();
 
 const mocks = vi.hoisted(() => ({
   setTheme: vi.fn(),
@@ -971,10 +981,26 @@ describe("SettingsPage", () => {
       ];
       renderPage("/settings/archived");
 
-      expect(screen.getByText("Today")).toBeInTheDocument();
-      expect(screen.getByText("Yesterday")).toBeInTheDocument();
-      expect(screen.getByText("Previous 7 days")).toBeInTheDocument();
-      expect(screen.getByText("Previous 30 days")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t("archived.dateGroups.today", { defaultValue: "Today" }),
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t("archived.dateGroups.yesterday", { defaultValue: "Yesterday" }),
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t("archived.dateGroups.previous7Days", { defaultValue: "Previous 7 days" }),
+        ),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          t("archived.dateGroups.previous30Days", { defaultValue: "Previous 30 days" }),
+        ),
+      ).toBeInTheDocument();
       // Derive the expected label the same way the component does so the
       // assertion is locale-independent.
       const expectedOldLabel = oldDate.toLocaleDateString(undefined, {

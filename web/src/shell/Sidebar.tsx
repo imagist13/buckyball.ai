@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangleIcon,
   ArchiveIcon,
@@ -438,6 +439,8 @@ export function useMigrateLocalPinsToServer(
 }
 
 export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: SidebarProps) {
+  const { t: tSidebar } = useTranslation("sidebar");
+  const { t: tCommon } = useTranslation("common");
   const [selectionMode, setSelectionMode] = useState(false);
   // Which rows the current selection targets: the flat "Sessions" list, or the
   // sessions nested inside project folders. Set when selection mode is entered
@@ -722,7 +725,7 @@ export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: Si
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    aria-label="Search"
+                    aria-label={tCommon("search", { defaultValue: "Search" })}
                     onClick={() => onOpenSearch?.()}
                     className="size-6 text-muted-foreground hover:text-foreground"
                     data-testid="sidebar-search-button"
@@ -730,7 +733,9 @@ export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: Si
                     <SearchIcon className="ui-icon" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="bottom">Search</TooltipContent>
+                <TooltipContent side="bottom">
+                  {tCommon("search", { defaultValue: "Search" })}
+                </TooltipContent>
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -812,7 +817,7 @@ export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: Si
                       : "text-muted-foreground",
                   )}
                 />
-                New session
+                {tSidebar("newSession", { defaultValue: "New session" })}
               </Link>
             </Button>
             {/* Keep Scheduled in the primary nav group with the same row treatment as New session. */}
@@ -839,7 +844,7 @@ export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: Si
                       : "text-muted-foreground",
                   )}
                 />
-                Automations
+                {tSidebar("automations", { defaultValue: "Automations" })}
               </Link>
             </Button>
             <Button
@@ -862,13 +867,16 @@ export function Sidebar({ open, onClose, dragProgress = null, onOpenSearch }: Si
                       : "text-muted-foreground",
                   )}
                 />
-                Inbox
+                {tSidebar("inbox", { defaultValue: "Inbox" })}
                 {inboxCount > 0 && (
                   <span
                     aria-label={
                       inboxCount === 1
-                        ? "1 inbox item waiting"
-                        : `${inboxCount} inbox items waiting`
+                        ? tSidebar("inboxBadge.one", { defaultValue: "1 inbox item waiting" })
+                        : tSidebar("inboxBadge.many", {
+                            count: inboxCount,
+                            defaultValue: `${inboxCount} inbox items waiting`,
+                          })
                     }
                     className="ml-auto inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-warning/15 px-1 text-10 font-medium text-warning tabular-nums"
                   >
@@ -932,6 +940,7 @@ function InfiniteScrollSentinel({
   scrollRoot: RefObject<HTMLElement | null>;
   indent?: boolean;
 }) {
+  const { t: tSentinel } = useTranslation("common");
   const ref = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const sentinel = ref.current;
@@ -963,10 +972,10 @@ function InfiniteScrollSentinel({
       {isFetching ? (
         <>
           <Loader2Icon className="size-3 animate-spin" />
-          Loading…
+          {tSentinel("loading", { defaultValue: "Loading…" })}
         </>
       ) : (
-        "Load more"
+        tSentinel("loadMore", { defaultValue: "Load more" })
       )}
     </button>
   );
@@ -3749,6 +3758,7 @@ function ProjectFolderActions({
       pre-filed new-session page isn't left hidden behind the sidebar. */
   onNavigate: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
+  const { t: tProjectFolder } = useTranslation("sidebar");
   return (
     // gap-0.5 (2px) between the pencil and kebab mirrors the session row's
     // pin↔kebab spacing, so the two icon columns line up across row types.
@@ -3762,7 +3772,10 @@ function ProjectFolderActions({
             type="button"
             variant="ghost"
             size="icon-xs"
-            aria-label={`New session in ${projectName}`}
+            aria-label={tProjectFolder("newSessionIn", {
+              project: projectName,
+              defaultValue: `New session in ${projectName}`,
+            })}
             data-testid="project-new-session"
             className="text-muted-foreground max-md:hidden"
           >
@@ -3779,7 +3792,9 @@ function ProjectFolderActions({
             </Link>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="bottom">New session in project</TooltipContent>
+        <TooltipContent side="bottom">
+          {tProjectFolder("newSessionInProject", { defaultValue: "New session in project" })}
+        </TooltipContent>
       </Tooltip>
       <ProjectFolderMenu projectName={projectName} projectId={projectId} onNavigate={onNavigate} />
     </div>
@@ -3805,6 +3820,7 @@ function ProjectFolderMenu({
       hover-revealed pencil). Closes the sidebar overlay on mobile. */
   onNavigate: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
+  const { t: tProjectMenu } = useTranslation("sidebar");
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
@@ -3842,7 +3858,7 @@ function ProjectFolderMenu({
               }}
             >
               <SquarePenIcon className="size-3.5" />
-              New session
+              {tProjectMenu("newSession", { defaultValue: "New session" })}
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -3853,11 +3869,11 @@ function ProjectFolderMenu({
             }}
           >
             <PencilIcon className="size-3.5" />
-            Rename project
+            {tProjectMenu("renameProject", { defaultValue: "Rename project" })}
           </DropdownMenuItem>
           <DropdownMenuItem data-testid="project-settings" onSelect={() => setSettingsOpen(true)}>
             <Settings2Icon className="size-3.5" />
-            Project settings
+            {tProjectMenu("projectSettings", { defaultValue: "Project settings" })}
           </DropdownMenuItem>
           <DropdownMenuItem
             data-testid="delete-project"
@@ -3865,7 +3881,7 @@ function ProjectFolderMenu({
             onSelect={() => setDeleteOpen(true)}
           >
             <Trash2Icon className="size-3.5" />
-            Delete project
+            {tProjectMenu("deleteProject", { defaultValue: "Delete project" })}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -4008,6 +4024,7 @@ function ProjectPickerMenu({
   currentProject: string | null;
   onSelect: (project: string) => void;
 }) {
+  const { t: tProjectPicker } = useTranslation("sidebar");
   const { data: projects = [] } = useProjects();
   const [search, setSearch] = useState("");
 
@@ -4027,7 +4044,7 @@ function ProjectPickerMenu({
         <SearchIcon className="size-3.5 shrink-0 text-muted-foreground" />
         <input
           className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          placeholder="Search projects"
+          placeholder={tProjectPicker("searchProjects", { defaultValue: "Search projects" })}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={swallowKeys}

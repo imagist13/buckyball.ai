@@ -272,26 +272,55 @@ function Section({
   );
 }
 
-const themeCards: { mode: ThemeMode; label: string; icon: typeof SunIcon }[] = [
-  { mode: "system", label: "System", icon: LaptopMinimalIcon },
-  { mode: "light", label: "Light", icon: SunIcon },
-  { mode: "dark", label: "Dark", icon: MoonIcon },
-];
+// Card data for the Mode / Terminal theme / Workspace panel radiogroups. Each
+// factory takes the active i18n `t` so the labels participate in the user's
+// locale — these are module-scope (so the icon array literal is shared) but
+// the strings are resolved inside the component on every render. Keeping the
+// factory shape (instead of literal `{ mode, label }[]`) avoids holding
+// already-translated labels in module memory, which would freeze the locale
+// at first load.
+function themeCards(t: (key: string, opts?: Record<string, unknown>) => string) {
+  return [
+    { mode: "system" as ThemeMode, labelKey: "appearance.themeSystem", icon: LaptopMinimalIcon },
+    { mode: "light" as ThemeMode, labelKey: "appearance.themeLight", icon: SunIcon },
+    { mode: "dark" as ThemeMode, labelKey: "appearance.themeDark", icon: MoonIcon },
+  ].map((card) => ({
+    mode: card.mode,
+    label: t(card.labelKey, { defaultValue: card.labelKey.split(".").pop() }),
+    icon: card.icon,
+  }));
+}
 
-const terminalThemeCards: { mode: TerminalThemeMode; label: string; icon: typeof SunIcon }[] = [
-  { mode: "auto", label: "Match app", icon: MonitorIcon },
-  { mode: "light", label: "Light", icon: SunIcon },
-  { mode: "dark", label: "Dark", icon: MoonIcon },
-];
+function terminalThemeCards(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): { mode: TerminalThemeMode; label: string; icon: typeof SunIcon }[] {
+  return [
+    { mode: "auto" as TerminalThemeMode, labelKey: "appearance.terminalThemeAuto", icon: MonitorIcon },
+    { mode: "light" as TerminalThemeMode, labelKey: "appearance.themeLight", icon: SunIcon },
+    { mode: "dark" as TerminalThemeMode, labelKey: "appearance.themeDark", icon: MoonIcon },
+  ].map((card) => ({
+    mode: card.mode,
+    label: t(card.labelKey, { defaultValue: card.labelKey.split(".").pop() }),
+    icon: card.icon,
+  }));
+}
 
-const workspacePanelCards: {
+function workspacePanelCards(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): {
   value: WorkspacePanelDefault;
   label: string;
   icon: typeof PanelRightIcon;
-}[] = [
-  { value: "open", label: "Open", icon: PanelRightIcon },
-  { value: "collapsed", label: "Collapsed", icon: PanelRightCloseIcon },
-];
+}[] {
+  return [
+    { value: "open" as WorkspacePanelDefault, labelKey: "appearance.workspacePanel.open", icon: PanelRightIcon },
+    { value: "collapsed" as WorkspacePanelDefault, labelKey: "appearance.workspacePanel.collapsed", icon: PanelRightCloseIcon },
+  ].map((card) => ({
+    value: card.value,
+    label: t(card.labelKey, { defaultValue: card.labelKey.split(".").pop() }),
+    icon: card.icon,
+  }));
+}
 
 /**
  * Checkmark badge pinned to the top-right corner of a selected card. Shared by
@@ -487,13 +516,16 @@ function ThemeSubsection({
 /** Appearance mode: System / Light / Dark. */
 function ModeControl() {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation("settings");
   const mode = normalizeThemeMode(theme);
   const labelId = useId();
   return (
     <ThemeSubsection
       labelId={labelId}
-      title="Mode"
-      helper="Follow your system, or force light or dark."
+      title={t("appearance.theme", { defaultValue: "Mode" })}
+      helper={t("appearance.themeHelper", {
+        defaultValue: "Follow your system, or force light or dark.",
+      })}
     >
       <CardRadioGroup<ThemeMode>
         labelledBy={labelId}
@@ -501,7 +533,7 @@ function ModeControl() {
         onSelect={(next) => setTheme(next)}
         className="grid grid-cols-3 gap-3"
         cardClassName="gap-2 p-2"
-        items={themeCards.map((card) => ({
+        items={themeCards(t).map((card) => ({
           value: card.mode,
           testId: `theme-${card.mode}`,
           body: (
@@ -518,6 +550,7 @@ function ModeControl() {
 
 /** Terminal light/dark/match-app theme — its own section. */
 function TerminalThemeControl() {
+  const { t } = useTranslation("settings");
   const [mode, setMode] = useState(() => readTerminalThemeMode());
   const labelId = useId();
   const choose = useCallback((next: TerminalThemeMode) => {
@@ -527,8 +560,10 @@ function TerminalThemeControl() {
   return (
     <ThemeSubsection
       labelId={labelId}
-      title="Terminal theme"
-      helper="Use a light or dark terminal, or match the app."
+      title={t("appearance.terminalThemeTitle", { defaultValue: "Terminal theme" })}
+      helper={t("appearance.terminalThemeHelper", {
+        defaultValue: "Use a light or dark terminal, or match the app.",
+      })}
     >
       <CardRadioGroup<TerminalThemeMode>
         labelledBy={labelId}
@@ -536,7 +571,7 @@ function TerminalThemeControl() {
         onSelect={choose}
         className="grid grid-cols-3 gap-3"
         cardClassName="items-center gap-2 p-4"
-        items={terminalThemeCards.map((card) => ({
+        items={terminalThemeCards(t).map((card) => ({
           value: card.mode,
           testId: `terminal-theme-${card.mode}`,
           body: iconCardBody(card.icon, card.label),
@@ -552,6 +587,7 @@ function TerminalThemeControl() {
  * sessions keep restoring whatever the user last left them as.
  */
 function WorkspacePanelDefaultControl() {
+  const { t } = useTranslation("settings");
   const [value, setValue] = useState(() => readWorkspacePanelDefault());
   const labelId = useId();
   const choose = useCallback((next: WorkspacePanelDefault) => {
@@ -561,8 +597,11 @@ function WorkspacePanelDefaultControl() {
   return (
     <ThemeSubsection
       labelId={labelId}
-      title="Workspace panel"
-      helper="Whether new chats open with the Files / Agents / Shells panel visible. Existing chats keep their last layout."
+      title={t("appearance.workspacePanel.title", { defaultValue: "Workspace panel" })}
+      helper={t("appearance.workspacePanel.helper", {
+        defaultValue:
+          "Whether new chats open with the Files / Agents / Shells panel visible. Existing chats keep their last layout.",
+      })}
     >
       <CardRadioGroup<WorkspacePanelDefault>
         labelledBy={labelId}
@@ -570,7 +609,7 @@ function WorkspacePanelDefaultControl() {
         onSelect={choose}
         className="grid grid-cols-2 gap-3"
         cardClassName="items-center gap-2 p-4"
-        items={workspacePanelCards.map((card) => ({
+        items={workspacePanelCards(t).map((card) => ({
           value: card.value,
           testId: `workspace-panel-default-${card.value}`,
           body: iconCardBody(card.icon, card.label),
@@ -581,6 +620,7 @@ function WorkspacePanelDefaultControl() {
 }
 
 function ColorThemeControl() {
+  const { t } = useTranslation("settings");
   // Render each chip in the currently-resolved mode so it matches the app now.
   const { resolvedTheme } = useTheme();
   const isDark = normalizeResolvedTheme(resolvedTheme) === "dark";
@@ -629,7 +669,7 @@ function ColorThemeControl() {
   const selected =
     selection === "custom"
       ? {
-          label: "Custom",
+          label: t("appearance.colorThemeCustom", { defaultValue: "Custom" }),
           light: customSwatches.light,
           dark: customSwatches.dark,
         }
@@ -638,8 +678,10 @@ function ColorThemeControl() {
   return (
     <ThemeSubsection
       labelId={labelId}
-      title="Color theme"
-      helper="Choose a preset, then tune it across light and dark mode."
+      title={t("appearance.colorThemeTitle", { defaultValue: "Color theme" })}
+      helper={t("appearance.colorThemeHelper", {
+        defaultValue: "Choose a preset, then tune it across light and dark mode.",
+      })}
     >
       <div className="overflow-hidden rounded-xl border bg-card/55 shadow-xs">
         <div className="flex flex-col gap-3 border-b bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -648,10 +690,17 @@ function ColorThemeControl() {
               <PaletteSwatchPreview swatch={isDark ? selected.dark : selected.light} />
             </div>
             <div className="min-w-0">
-              <div className="text-ui font-medium">Theme palette</div>
+              <div className="text-ui font-medium">
+                {t("appearance.palette", { defaultValue: "Theme palette" })}
+              </div>
               <div className="truncate text-sm text-muted-foreground">
                 {selection === "custom"
-                  ? `Based on ${PALETTES.find((palette) => palette.id === customTheme.basePalette)?.label ?? "Omnigent"}`
+                  ? t("appearance.colorThemeBasedOn", {
+                      base:
+                        PALETTES.find(
+                          (palette) => palette.id === customTheme.basePalette,
+                        )?.label ?? "Omnigent",
+                    })
                   : selectedPalette?.blurb}
               </div>
             </div>
@@ -685,7 +734,7 @@ function ColorThemeControl() {
               ))}
               <SelectItem value="custom" data-testid="palette-custom">
                 <PaletteChip swatch={isDark ? customSwatches.dark : customSwatches.light} />
-                <span>Custom</span>
+                <span>{t("appearance.colorThemeCustom", { defaultValue: "Custom" })}</span>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -693,22 +742,26 @@ function ColorThemeControl() {
 
         <div className="px-4">
           <ThemeColorPicker
-            label="Accent"
+            label={t("appearance.colorThemeAccent", { defaultValue: "Accent" })}
             value={editableTheme.accent}
             testId="custom-theme-accent"
             onChange={(accent) => updateCustomTheme({ accent })}
           />
           <ThemeColorPicker
-            label="Background tint"
+            label={t("appearance.colorThemeBackgroundTint", { defaultValue: "Background tint" })}
             value={editableTheme.tint}
             testId="custom-theme-tint"
             onChange={(tint) => updateCustomTheme({ tint })}
           />
           <div className="flex items-center justify-between gap-4 border-b border-border/70 py-4">
             <div>
-              <div className="text-ui font-medium">Contrast</div>
+              <div className="text-ui font-medium">
+                {t("appearance.colorThemeContrast", { defaultValue: "Contrast" })}
+              </div>
               <div className="text-sm text-muted-foreground">
-                Separates text, borders, and surfaces.
+                {t("appearance.colorThemeContrastHelper", {
+                  defaultValue: "Separates text, borders, and surfaces.",
+                })}
               </div>
             </div>
             <div className="flex w-52 items-center gap-3">
@@ -718,7 +771,7 @@ function ColorThemeControl() {
                 min="0"
                 max="100"
                 value={editableTheme.contrast}
-                aria-label="Theme contrast"
+                aria-label={t("appearance.colorThemeContrast", { defaultValue: "Theme contrast" })}
                 data-testid="custom-theme-contrast"
                 onChange={(event) => updateCustomTheme({ contrast: Number(event.target.value) })}
                 className="h-1.5 min-w-0 flex-1 cursor-pointer accent-primary"
@@ -734,13 +787,21 @@ function ColorThemeControl() {
           </div>
           <div className="flex items-center justify-between gap-4 py-4">
             <div>
-              <div className="text-ui font-medium">Translucent sidebars</div>
+              <div className="text-ui font-medium">
+                {t("appearance.colorThemeTranslucent", {
+                  defaultValue: "Translucent sidebars",
+                })}
+              </div>
               <div className="text-sm text-muted-foreground">
-                Lets the canvas show through the conversation and workspace rails.
+                {t("appearance.colorThemeTranslucentHelper", {
+                  defaultValue: "Let some of the page tint show through behind the sidebar.",
+                })}
               </div>
             </div>
             <Switch
-              aria-label="Translucent sidebars"
+              aria-label={t("appearance.colorThemeTranslucent", {
+                defaultValue: "Translucent sidebars",
+              })}
               checked={editableTheme.translucentSidebar}
               onCheckedChange={(translucentSidebar) => updateCustomTheme({ translucentSidebar })}
               data-testid="custom-theme-translucent-sidebar"
@@ -803,6 +864,7 @@ function PaletteSwatchPreview({ swatch }: { swatch: PaletteSwatch }) {
  * Fails open — with no connected host or readiness info, nothing is hidden.
  */
 function HideUnconfiguredHarnessesControl() {
+  const { t } = useTranslation("settings");
   const [value, setValue] = useState(() => readHideUnconfiguredHarnesses());
   const labelId = useId();
   const toggle = useCallback((next: boolean) => {
@@ -813,11 +875,15 @@ function HideUnconfiguredHarnessesControl() {
     <div className="flex items-start justify-between gap-6">
       <div className="flex flex-col">
         <span id={labelId} className="text-ui font-medium">
-          Hide unconfigured harnesses
+          {t("appearance.hideUnconfiguredHarnesses", {
+            defaultValue: "Hide unconfigured harnesses",
+          })}
         </span>
         <span className="text-sm text-muted-foreground">
-          Only show harnesses that are set up on the selected host in the new-chat picker. Harnesses
-          needing a CLI install or sign-in are hidden instead of badged.
+          {t("appearance.hideUnconfiguredHarnessesHelper", {
+            defaultValue:
+              "Only show harnesses that are set up on the selected host in the new-chat picker. Harnesses needing a CLI install or sign-in are hidden instead of badged.",
+          })}
         </span>
       </div>
       <Switch
@@ -997,20 +1063,24 @@ function AppearanceSection() {
         <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" data-testid="reset-appearance-button">
-              Reset to defaults
+              {t("appearance.reset", { defaultValue: "Reset to defaults" })}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Reset appearance?</DialogTitle>
+              <DialogTitle>
+                {t("appearance.resetTitle", { defaultValue: "Reset appearance?" })}
+              </DialogTitle>
               <DialogDescription>
-                This will reset every appearance choice back to its default.
+                {t("appearance.resetDescription", {
+                  defaultValue: "This will reset every appearance choice back to its default.",
+                })}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="outline" size="sm">
-                  Cancel
+                  {t("common.cancel", { defaultValue: "Cancel" })}
                 </Button>
               </DialogClose>
               <Button
@@ -1019,7 +1089,7 @@ function AppearanceSection() {
                 onClick={confirmResetAppearance}
                 data-testid="reset-appearance-confirm"
               >
-                Reset
+                {t("appearance.resetConfirm", { defaultValue: "Reset" })}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1053,6 +1123,7 @@ function GitSection() {
  * the current branch).
  */
 function DefaultBaseBranchControl() {
+  const { t } = useTranslation("settings");
   const [branch, setBranch] = useState(() => readDefaultBaseBranch() ?? "");
 
   const update = useCallback((next: string) => {
@@ -1063,14 +1134,19 @@ function DefaultBaseBranchControl() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-ui font-medium">Default base branch</span>
+        <span className="text-ui font-medium">
+          {t("git.defaultBaseBranch", { defaultValue: "Default base branch" })}
+        </span>
         <span className="text-ui text-muted-foreground">
-          Auto-filled as the base when you name a new worktree branch. Leave blank to not auto-fill.
+          {t("git.defaultBaseBranchDescription", {
+            defaultValue:
+              "Auto-filled as the base when you name a new worktree branch. Leave blank to not auto-fill.",
+          })}
         </span>
       </div>
       <Input
         type="text"
-        aria-label="Default base branch"
+        aria-label={t("git.defaultBaseBranch", { defaultValue: "Default base branch" })}
         data-testid="settings-default-base-branch-input"
         placeholder="e.g. main"
         spellCheck={false}
@@ -1091,6 +1167,7 @@ function DefaultBaseBranchControl() {
  * independent responsive size.
  */
 function UiFontSizeControl() {
+  const { t } = useTranslation("settings");
   // `px` is the committed value: clamped, persisted, and applied to the UI.
   // `draft` is the raw text in the box, kept separate so mid-edit states the
   // committed value can't hold — a transient out-of-range number (e.g. "1" on
@@ -1135,23 +1212,29 @@ function UiFontSizeControl() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex flex-col">
-        <span className="text-ui font-medium">Interface font size</span>
+        <span className="text-ui font-medium">
+          {t("appearance.fontSizeStepper", { defaultValue: "Interface font size" })}
+        </span>
         <span className="text-sm text-muted-foreground">
-          Set text across the desktop interface. Icons and spacing stay fixed.
+          {t("appearance.fontSizeHelper", {
+            defaultValue: "Set text across the desktop interface. Icons and spacing stay fixed.",
+          })}
         </span>
       </div>
       {/* One cohesive pill: [ −  | value px |  + ]. Segments share the pill
           border via inner dividers rather than floating as separate boxes. */}
       <div
         role="group"
-        aria-label="Interface font size"
+        aria-label={t("appearance.fontSizeStepper", { defaultValue: "Interface font size" })}
         className={cn(
           "inline-flex h-9 items-stretch overflow-hidden rounded-lg border border-input bg-background transition-colors dark:bg-input/30",
           "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
         )}
       >
         <StepperButton
-          label="Decrease interface font size"
+          label={t("appearance.fontSizeDecrease", {
+            defaultValue: "Decrease interface font size",
+          })}
           testId="ui-font-size-dec"
           disabled={atMin}
           onClick={() => commit(px - UI_FONT_SIZE_STEP)}
@@ -1165,7 +1248,9 @@ function UiFontSizeControl() {
             min={UI_FONT_SIZE_MIN}
             max={UI_FONT_SIZE_MAX}
             step={UI_FONT_SIZE_STEP}
-            aria-label="Interface font size in pixels"
+            aria-label={t("appearance.fontSizePxAria", {
+              defaultValue: "Interface font size in pixels",
+            })}
             data-testid="ui-font-size-input"
             className="w-8 bg-transparent text-center text-ui font-medium tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             value={draft}
@@ -1177,7 +1262,9 @@ function UiFontSizeControl() {
           />
         </div>
         <StepperButton
-          label="Increase interface font size"
+          label={t("appearance.fontSizeIncrease", {
+            defaultValue: "Increase interface font size",
+          })}
           testId="ui-font-size-inc"
           disabled={atMax}
           onClick={() => commit(px + UI_FONT_SIZE_STEP)}
@@ -1198,6 +1285,7 @@ function UiFontSizeControl() {
  * doesn't conflict with host theming.
  */
 function UiFontFamilyControl() {
+  const { t } = useTranslation("settings");
   const [family, setFamily] = useState(() => readUiFontFamily());
 
   const update = useCallback((next: string) => {
@@ -1214,15 +1302,24 @@ function UiFontFamilyControl() {
           this column) so the input stays inline instead of dropping to its own
           row — matches the font-size row's alignment. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-ui font-medium">Font family</span>
+        <span className="text-ui font-medium">
+          {t("appearance.fontFamily", { defaultValue: "Font family" })}
+        </span>
         <span className="text-sm text-muted-foreground">
-          Use any font installed on this device. Leave blank for the system default.
+          {t("appearance.fontFamilyHelper", {
+            defaultValue:
+              "Use any font installed on this device. Leave blank for the system default.",
+          })}
         </span>
       </div>
       {/* Reset sits left of the input so the input is the rightmost element and
           its right edge lines up flush with the font-size stepper above.
           `invisible` (not removed) at the default keeps the row from shifting. */}
-      <div role="group" aria-label="Font family" className="flex shrink-0 items-center gap-2">
+      <div
+        role="group"
+        aria-label={t("appearance.fontFamilyAria", { defaultValue: "Font family" })}
+        className="flex shrink-0 items-center gap-2"
+      >
         <Button
           type="button"
           variant="ghost"
@@ -1232,13 +1329,15 @@ function UiFontFamilyControl() {
           className={cn("h-9", isDefault && "invisible")}
           onClick={() => update(UI_FONT_FAMILY_DEFAULT)}
         >
-          Reset
+          {t("appearance.reset", { defaultValue: "Reset" })}
         </Button>
         <Input
           type="text"
-          aria-label="UI font family"
+          aria-label={t("appearance.fontFamilyAria", { defaultValue: "UI font family" })}
           data-testid="ui-font-family-input"
-          placeholder="System default"
+          placeholder={t("appearance.fontFamilyPlaceholder", {
+            defaultValue: "System default",
+          })}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
@@ -1259,6 +1358,7 @@ function UiFontFamilyControl() {
  * behavior as UiFontSizeControl; only the bounds and storage differ.
  */
 function UiCodeFontSizeControl() {
+  const { t } = useTranslation("settings");
   // `px` is the committed value; `draft` is the raw text in the box, kept
   // separate so a transient out-of-range/empty mid-edit state isn't clamped or
   // persisted on every keystroke. We only commit while typing when the draft is
@@ -1299,23 +1399,29 @@ function UiCodeFontSizeControl() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex flex-col">
-        <span className="text-ui font-medium">Code font size</span>
+        <span className="text-ui font-medium">
+          {t("appearance.codeFontSize", { defaultValue: "Code font size" })}
+        </span>
         <span className="text-sm text-muted-foreground">
-          Size of code in the editor and terminal.
+          {t("appearance.codeFontSizeHelper", {
+            defaultValue: "Size of code in the editor and terminal.",
+          })}
         </span>
       </div>
       {/* One cohesive pill: [ −  | value px |  + ] — same shell as the UI
           font-size control. */}
       <div
         role="group"
-        aria-label="Code font size"
+        aria-label={t("appearance.codeFontSize", { defaultValue: "Code font size" })}
         className={cn(
           "inline-flex h-9 items-stretch overflow-hidden rounded-lg border border-input bg-background transition-colors dark:bg-input/30",
           "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
         )}
       >
         <StepperButton
-          label="Decrease code font size"
+          label={t("appearance.codeFontSizeDecrease", {
+            defaultValue: "Decrease code font size",
+          })}
           testId="code-font-size-dec"
           disabled={atMin}
           onClick={() => commit(px - CODE_FONT_SIZE_STEP)}
@@ -1329,7 +1435,9 @@ function UiCodeFontSizeControl() {
             min={CODE_FONT_SIZE_MIN}
             max={CODE_FONT_SIZE_MAX}
             step={CODE_FONT_SIZE_STEP}
-            aria-label="Code font size in pixels"
+            aria-label={t("appearance.codeFontSizePxAria", {
+              defaultValue: "Code font size in pixels",
+            })}
             data-testid="code-font-size-input"
             className="w-8 bg-transparent text-center text-ui font-medium tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             value={draft}
@@ -1341,7 +1449,9 @@ function UiCodeFontSizeControl() {
           />
         </div>
         <StepperButton
-          label="Increase code font size"
+          label={t("appearance.codeFontSizeIncrease", {
+            defaultValue: "Increase code font size",
+          })}
           testId="code-font-size-inc"
           disabled={atMax}
           onClick={() => commit(px + CODE_FONT_SIZE_STEP)}
@@ -1360,6 +1470,7 @@ function UiCodeFontSizeControl() {
  * pub/sub (see lib/codeFontPreferences.ts). Mirrors UiFontFamilyControl.
  */
 function UiCodeFontFamilyControl() {
+  const { t } = useTranslation("settings");
   const [family, setFamily] = useState(() => readCodeFontFamily());
 
   const update = useCallback((next: string) => {
@@ -1372,15 +1483,23 @@ function UiCodeFontFamilyControl() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
       <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-ui font-medium">Code font family</span>
+        <span className="text-ui font-medium">
+          {t("appearance.codeFontFamily", { defaultValue: "Code font family" })}
+        </span>
         <span className="text-sm text-muted-foreground">
-          Font for the code editor and terminal. Leave blank for the default.
+          {t("appearance.codeFontFamilyHelper", {
+            defaultValue: "Font for the code editor and terminal. Leave blank for the default.",
+          })}
         </span>
       </div>
       {/* Reset sits left of the input so the input's right edge lines up flush
           with the size stepper above. `invisible` (not removed) at the default
           keeps the row from shifting. */}
-      <div role="group" aria-label="Code font family" className="flex shrink-0 items-center gap-2">
+      <div
+        role="group"
+        aria-label={t("appearance.codeFontFamilyAria", { defaultValue: "Code font family" })}
+        className="flex shrink-0 items-center gap-2"
+      >
         <Button
           type="button"
           variant="ghost"
@@ -1390,13 +1509,15 @@ function UiCodeFontFamilyControl() {
           className={cn("h-9", isDefault && "invisible")}
           onClick={() => update(CODE_FONT_FAMILY_DEFAULT)}
         >
-          Reset
+          {t("appearance.fontFamilyReset", { defaultValue: "Reset" })}
         </Button>
         <Input
           type="text"
-          aria-label="Code font family"
+          aria-label={t("appearance.codeFontFamilyAria", { defaultValue: "Code font family" })}
           data-testid="code-font-family-input"
-          placeholder="Editor default"
+          placeholder={t("appearance.codeFontFamilyPlaceholder", {
+            defaultValue: "Editor default",
+          })}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
@@ -1481,7 +1602,9 @@ function LocalCliSection() {
   if (status === "loading") {
     return (
       <Section title={t("cli.title", { defaultValue: "Local CLI" })}>
-        <p className="text-ui text-muted-foreground">Checking…</p>
+        <p className="text-ui text-muted-foreground">
+          {t("cli.checking", { defaultValue: "Checking…" })}
+        </p>
       </Section>
     );
   }
@@ -1495,7 +1618,9 @@ function LocalCliSection() {
       })}
     >
       {status === null ? (
-        <p className="text-ui text-muted-foreground">CLI status is unavailable.</p>
+        <p className="text-ui text-muted-foreground">
+          {t("cli.unavailable", { defaultValue: "CLI status is unavailable." })}
+        </p>
       ) : (
         <div className="flex flex-col gap-4">
           <div className="flex items-center gap-2 text-ui">
@@ -1509,14 +1634,16 @@ function LocalCliSection() {
             <span>
               {status.installed
                 ? `Found${status.version ? ` · ${status.version}` : ""}`
-                : "Not found"}
+                : t("cli.notFound", { defaultValue: "Not found" })}
             </span>
           </div>
 
           {status.path ? (
             <div className="flex flex-col gap-1">
               <span className="text-sm text-muted-foreground">
-                {status.source === "configured" ? "Path (custom)" : "Path (auto-detected)"}
+                {status.source === "configured"
+                  ? t("cli.pathCustom", { defaultValue: "Path (custom)" })
+                  : t("cli.pathAuto", { defaultValue: "Path (auto-detected)" })}
               </span>
               <code className="block overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
                 {status.path}
@@ -1525,8 +1652,10 @@ function LocalCliSection() {
           ) : (
             <div className="flex flex-col gap-2">
               <p className="text-ui text-muted-foreground">
-                The Omnigent CLI wasn't found. Install it, then set its path from the connect
-                screen:
+                {t("cli.cliNotFoundHint", {
+                  defaultValue:
+                    "The Omnigent CLI wasn't found. Install it, then set its path from the connect screen:",
+                })}
               </p>
               {status.installCommand && (
                 <code className="block overflow-x-auto rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
@@ -1555,12 +1684,25 @@ function LocalCliSection() {
   );
 }
 
-const UPDATE_MODE_LABELS: Record<UpdateMode, string> = {
-  default: "Automatic (check periodically, ask before installing)",
-  start: "Check when Omnigent starts",
-  manual: "Manual only",
-  none: "Off",
-};
+/**
+ * Per-mode labels for the updates section. Resolved through the active i18n
+ * `t` so each option's English/Chinese form participates in the user's locale;
+ * identical pattern to the appearance card factories above. Kept as a function
+ * rather than a constant so re-renders pick up language changes without a
+ * remount.
+ */
+function updateModeLabels(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+): Record<UpdateMode, string> {
+  return {
+    default: t("updates.modeAuto", {
+      defaultValue: "Automatic (check periodically, ask before installing)",
+    }),
+    start: t("updates.modeStart", { defaultValue: "Check when Omnigent starts" }),
+    manual: t("updates.modeManual", { defaultValue: "Manual only" }),
+    none: t("updates.modeOff", { defaultValue: "Off" }),
+  };
+}
 
 function UpdatesSection() {
   const { t } = useTranslation("settings");
@@ -1587,7 +1729,9 @@ function UpdatesSection() {
       });
     const unsubscribe = bridge.onStatus((status) => {
       if (status.state === "error-security") {
-        setLastCheckError(status.lastError ?? "Security verification failed.");
+        setLastCheckError(
+          status.lastError ?? t("updates.securityVerifyFailed", { defaultValue: "Security verification failed." }),
+        );
       } else if (status.state === "idle" && status.lastError) {
         setLastCheckError(status.lastError);
       } else if (
@@ -1661,9 +1805,9 @@ function UpdatesSection() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(UPDATE_MODE_LABELS) as UpdateMode[]).map((mode) => (
+                {(Object.keys(updateModeLabels(t)) as UpdateMode[]).map((mode) => (
                   <SelectItem key={mode} value={mode}>
-                    {UPDATE_MODE_LABELS[mode]}
+                    {updateModeLabels(t)[mode]}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1672,16 +1816,24 @@ function UpdatesSection() {
 
           <div className="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
             <div className="flex flex-col gap-1">
-              <span className="text-ui font-medium">Install downloaded updates on next quit</span>
+              <span className="text-ui font-medium">
+                {t("updates.installOnQuit", {
+                  defaultValue: "Install downloaded updates on next quit",
+                })}
+              </span>
               <span className="text-sm text-muted-foreground">
-                Applies only after you choose to download an update.
+                {t("updates.installOnQuitHelper", {
+                  defaultValue: "Applies only after you choose to download an update.",
+                })}
               </span>
             </div>
             <Switch
               checked={config.autoInstall}
               onCheckedChange={(checked) => void persistConfig({ autoInstall: checked })}
               disabled={saving}
-              aria-label="Install downloaded updates on next quit"
+              aria-label={t("updates.installOnQuit", {
+                defaultValue: "Install downloaded updates on next quit",
+              })}
             />
           </div>
 
@@ -1759,7 +1911,7 @@ function AccountSection() {
 
   const onSubmitPassword = useCallback(async () => {
     if (newPw !== confirmPw) {
-      setPwError("New passwords don't match.");
+      setPwError(t("account.passwordMismatch", { defaultValue: "New passwords don't match." }));
       return;
     }
     setPwBusy(true);
@@ -1774,7 +1926,7 @@ function AccountSection() {
     } else {
       setPwError(result.error);
     }
-  }, [oldPw, newPw, confirmPw]);
+  }, [oldPw, newPw, confirmPw, t]);
 
   if (me === "unknown" || me === null) {
     return <Section title={t("account.title", { defaultValue: "Account" })}>{null}</Section>;
@@ -1814,7 +1966,7 @@ function AccountSection() {
                 setPwOpen(true);
               }}
             >
-              <KeyRoundIcon className="size-4" /> Change password
+              <KeyRoundIcon className="size-4" /> {t("account.changePassword", { defaultValue: "Change password" })}
             </Button>
           )}
           <Button
@@ -1822,7 +1974,7 @@ function AccountSection() {
             className="w-full justify-start gap-2"
             onClick={() => void onSignOut()}
           >
-            <LogOutIcon className="size-4" /> Sign out
+            <LogOutIcon className="size-4" /> {t("account.signOut", { defaultValue: "Sign out" })}
           </Button>
         </div>
       </div>
@@ -1836,11 +1988,11 @@ function AccountSection() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Change password</DialogTitle>
+            <DialogTitle>{t("account.changePassword", { defaultValue: "Change password" })}</DialogTitle>
             <DialogDescription>
               {pwDone
-                ? "Your password has been changed."
-                : "Enter your current password and choose a new one."}
+                ? t("account.changePasswordSuccess", { defaultValue: "Your password has been changed." })
+                : t("account.changePasswordHint", { defaultValue: "Enter your current password and choose a new one." })}
             </DialogDescription>
           </DialogHeader>
 
@@ -1855,7 +2007,7 @@ function AccountSection() {
               <Input
                 type="password"
                 autoComplete="current-password"
-                placeholder="Current password"
+                placeholder={t("account.changePasswordCurrent", { defaultValue: "Current password" })}
                 value={oldPw}
                 onChange={(e) => setOldPw(e.target.value)}
                 disabled={pwBusy}
@@ -1864,7 +2016,7 @@ function AccountSection() {
               <Input
                 type="password"
                 autoComplete="new-password"
-                placeholder="New password"
+                placeholder={t("account.changePasswordNew", { defaultValue: "New password" })}
                 value={newPw}
                 onChange={(e) => setNewPw(e.target.value)}
                 disabled={pwBusy}
@@ -1873,7 +2025,7 @@ function AccountSection() {
               <Input
                 type="password"
                 autoComplete="new-password"
-                placeholder="Confirm new password"
+                placeholder={t("account.changePasswordConfirm", { defaultValue: "Confirm new password" })}
                 value={confirmPw}
                 onChange={(e) => setConfirmPw(e.target.value)}
                 disabled={pwBusy}
@@ -1894,7 +2046,9 @@ function AccountSection() {
                     pwBusy || oldPw.length === 0 || newPw.length === 0 || confirmPw.length === 0
                   }
                 >
-                  {pwBusy ? "Changing…" : "Change password"}
+                  {pwBusy
+                    ? t("account.changePasswordBusy", { defaultValue: "Changing…" })
+                    : t("account.changePassword", { defaultValue: "Change password" })}
                 </Button>
               </DialogFooter>
             </form>
@@ -1902,7 +2056,7 @@ function AccountSection() {
 
           {pwDone && (
             <DialogFooter>
-              <Button onClick={() => setPwOpen(false)}>Done</Button>
+              <Button onClick={() => setPwOpen(false)}>{t("common.done", { defaultValue: "Done" })}</Button>
             </DialogFooter>
           )}
         </DialogContent>
@@ -1928,7 +2082,15 @@ function selectValueToProject(value: string): string | undefined {
   return value.slice(PROJECT_VALUE_PREFIX.length);
 }
 
-function dateGroupLabel(timestampSec: number, now: Date = new Date()): string {
+/**
+ * Bucketing label for an archived session timestamp. Returns a stable English
+ * key (e.g. `"today"`) rather than a user-facing string — the caller looks it
+ * up via `t("archived.dateGroups.<key>")` so the bucket titles participate in
+ * the locale the user picked. `toLocaleDateString` already produces a
+ * locale-aware "Month YYYY" fallback for older sessions, so the long-tail
+ * bucket stays correct without us specifying it.
+ */
+function dateGroupLabelKey(timestampSec: number, now: Date = new Date()): string {
   const date = new Date(timestampSec * 1000);
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -1941,11 +2103,11 @@ function dateGroupLabel(timestampSec: number, now: Date = new Date()): string {
   const thirtyDaysAgo = new Date(startOfToday);
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  if (date >= startOfToday) return "Today";
-  if (date >= yesterday) return "Yesterday";
-  if (date >= sevenDaysAgo) return "Previous 7 days";
-  if (date >= thirtyDaysAgo) return "Previous 30 days";
-  return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  if (date >= startOfToday) return "today";
+  if (date >= yesterday) return "yesterday";
+  if (date >= sevenDaysAgo) return "previous7Days";
+  if (date >= thirtyDaysAgo) return "previous30Days";
+  return "longAgo";
 }
 
 function ArchivedSection() {
@@ -1985,13 +2147,21 @@ function ArchivedSection() {
 
   const groupedArchived = useMemo(() => {
     const now = new Date();
-    const groups: { label: string; conversations: typeof archived }[] = [];
-    let currentLabel = "";
+    // Each entry carries the bucket key (for translated labels) plus, for the
+    // "longAgo" bucket, the pre-formatted locale date of the *first* row in
+    // the bucket. The first row's date is enough because everything in a
+    // bucket shares the same Month/Year — see dateGroupLabelKey.
+    const groups: { labelKey: string; longAgoLabel: string; conversations: typeof archived }[] = [];
+    let currentKey = "";
     for (const conv of archived) {
-      const label = dateGroupLabel(conv.updated_at, now);
-      if (label !== currentLabel) {
-        currentLabel = label;
-        groups.push({ label, conversations: [] });
+      const key = dateGroupLabelKey(conv.updated_at, now);
+      if (key !== currentKey) {
+        currentKey = key;
+        const longAgoLabel = new Date(conv.updated_at * 1000).toLocaleDateString(undefined, {
+          month: "long",
+          year: "numeric",
+        });
+        groups.push({ labelKey: key, longAgoLabel, conversations: [] });
       }
       groups[groups.length - 1].conversations.push(conv);
     }
@@ -2014,7 +2184,7 @@ function ArchivedSection() {
       {items.length > 0 && (
         <div className="mb-4 flex items-center gap-2">
           <label htmlFor="archived-project-filter" className="text-ui text-muted-foreground">
-            Project
+            {t("archived.project", { defaultValue: "Project" })}
           </label>
           <Select
             value={projectToSelectValue(project)}
@@ -2022,14 +2192,18 @@ function ArchivedSection() {
           >
             <SelectTrigger
               id="archived-project-filter"
-              aria-label="Filter archived sessions by project"
+              aria-label={t("archived.filterAria", {
+                defaultValue: "Filter archived sessions by project",
+              })}
               data-testid="archived-project-filter"
               className="w-56"
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent position="popper" align="start">
-              <SelectItem value={ALL_PROJECTS_VALUE}>All projects</SelectItem>
+              <SelectItem value={ALL_PROJECTS_VALUE}>
+                {t("archived.allProjects", { defaultValue: "All projects" })}
+              </SelectItem>
               {items.map((name) => (
                 <SelectItem
                   key={name}
@@ -2045,29 +2219,48 @@ function ArchivedSection() {
       )}
 
       {listQuery.isLoading ? (
-        <p className="text-ui text-muted-foreground">Loading…</p>
+        <p className="text-ui text-muted-foreground">
+          {t("archived.loading", { defaultValue: "Loading…" })}
+        </p>
       ) : archived.length === 0 && !listQuery.hasNextPage ? (
         // Definitive empty only when there are no archived rows AND no further
         // pages to fetch.
         <p className="text-ui text-muted-foreground">
-          {project ? "No archived sessions in this project." : "No archived sessions."}
+          {project
+            ? t("archived.emptyProject", { defaultValue: "No archived sessions in this project." })
+            : t("archived.empty", { defaultValue: "No archived sessions." })}
         </p>
       ) : (
         <>
           {archived.length > 0 && (
             <div className="flex flex-col gap-4">
-              {groupedArchived.map((group) => (
-                <div key={group.label}>
-                  <h3 className="mb-1 px-3 text-sm font-medium text-muted-foreground">
-                    {group.label}
-                  </h3>
-                  <ul className="flex flex-col gap-0.5">
-                    {group.conversations.map((conv) => (
-                      <ArchivedRow key={conv.id} conversation={conv} />
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              {groupedArchived.map((group) => {
+                // The "long ago" bucket shows the locale-formatted Month/Year
+                // (e.g. "August 2026") so it stays in lockstep with the
+                // browser's calendar — only the four named buckets need
+                // translation. The longAgoLabel was computed alongside the
+                // bucket (see groupedArchived useMemo) using the bucket's
+                // first row's date so every conversation in the bucket
+                // shares the same Month/Year header.
+                const label =
+                  group.labelKey === "longAgo"
+                    ? group.longAgoLabel
+                    : t(`archived.dateGroups.${group.labelKey}` as const, {
+                        defaultValue: group.labelKey,
+                      });
+                return (
+                  <div key={group.labelKey}>
+                    <h3 className="mb-1 px-3 text-sm font-medium text-muted-foreground">
+                      {label}
+                    </h3>
+                    <ul className="flex flex-col gap-0.5">
+                      {group.conversations.map((conv) => (
+                        <ArchivedRow key={conv.id} conversation={conv} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
           )}
           {archived.length === 0 && (
@@ -2077,8 +2270,12 @@ function ArchivedSection() {
             // forward instead of dead-ending on the definitive empty state.
             <p className="text-ui text-muted-foreground">
               {project
-                ? "No archived sessions in this project on this page."
-                : "No archived sessions on this page."}
+                ? t("archived.emptyProjectPage", {
+                    defaultValue: "No archived sessions in this project on this page.",
+                  })
+                : t("archived.emptyPage", {
+                    defaultValue: "No archived sessions on this page.",
+                  })}
             </p>
           )}
           {/* Keep the pager visible whenever more pages exist, independent of the
@@ -2094,7 +2291,9 @@ function ArchivedSection() {
                 disabled={listQuery.isFetchingNextPage}
                 onClick={() => void listQuery.fetchNextPage()}
               >
-                {listQuery.isFetchingNextPage ? "Loading…" : "Load more"}
+                {listQuery.isFetchingNextPage
+                  ? t("archived.loading", { defaultValue: "Loading…" })
+                  : t("archived.loadMore", { defaultValue: "Load more" })}
               </Button>
             </div>
           )}
@@ -2112,6 +2311,7 @@ function ArchivedSection() {
  */
 function ArchivedRow({ conversation }: { conversation: Conversation }) {
   const navigate = useNavigate();
+  const { t } = useTranslation("settings");
   const archive = useArchiveConversation();
   const del = useStopAndDeleteConversation();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -2137,7 +2337,7 @@ function ArchivedRow({ conversation }: { conversation: Conversation }) {
           type="button"
           variant="ghost"
           size="icon-sm"
-          aria-label="Delete session"
+          aria-label={t("archived.deleteAria", { defaultValue: "Delete session" })}
           data-testid="delete-archived"
           disabled={busy}
           onClick={() => setDeleteOpen(true)}

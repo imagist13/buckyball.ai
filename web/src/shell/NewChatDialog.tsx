@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "@/lib/routing";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -939,6 +940,7 @@ export function AgentHarnessPicker({
 }) {
   // Controlled so picking a row can close the menu.
   const [open, setOpen] = useState(false);
+  const { t: tAgentPicker } = useTranslation("chat");
   const queryClient = useQueryClient();
   const info = useServerInfo();
   // Feature ON → single "needs setup" badge; OFF → per-reason original text.
@@ -1058,7 +1060,9 @@ export function AgentHarnessPicker({
       className="gap-2 rounded-sm px-2 py-1.5 text-ui text-muted-foreground"
     >
       <PlusIcon className="size-3.5" />
-      Create custom agent
+      {tAgentPicker("newSession.summary.createCustomAgent", {
+        defaultValue: "Create custom agent",
+      })}
     </DropdownMenuItem>
   ) : null;
   const hasCustomGroup = hasCustomAgents;
@@ -1137,7 +1141,7 @@ export function AgentHarnessPicker({
           <span
             className={cn("max-w-[12rem] truncate text-ui text-foreground", triggerLabelClassName)}
           >
-            {hasAgents ? agentLabel : "No agents"}
+            {hasAgents ? agentLabel : tAgentPicker("newSession.noAgents", { defaultValue: "No agents" })}
           </span>
           <ChevronDownIcon className="size-3.5 opacity-60" />
         </Button>
@@ -1169,7 +1173,9 @@ export function AgentHarnessPicker({
               className="items-center gap-1.5 rounded-sm px-2 py-1.5 text-ui font-medium"
             >
               <ChevronLeftIcon className="size-4 shrink-0 opacity-70" />
-              <span className="truncate">More</span>
+              <span className="truncate">
+                {tAgentPicker("newSession.summary.moreLabel", { defaultValue: "More" })}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {moreHarnessEntries.map(renderEntry)}
@@ -1186,7 +1192,11 @@ export function AgentHarnessPicker({
               className="items-center gap-1.5 rounded-sm px-2 py-1.5 text-ui font-medium"
             >
               <ChevronLeftIcon className="size-4 shrink-0 opacity-70" />
-              <span className="truncate">Custom agents</span>
+              <span className="truncate">
+                {tAgentPicker("newSession.summary.customAgentsLabel", {
+                  defaultValue: "Custom agents",
+                })}
+              </span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {customAgentsBody}
@@ -1229,7 +1239,9 @@ export function AgentHarnessPicker({
                       }}
                       className="items-center gap-2 rounded-sm px-2 py-1.5 text-ui"
                     >
-                      <span className="flex-1">More</span>
+                      <span className="flex-1">
+                        {tAgentPicker("newSession.summary.moreLabel", { defaultValue: "More" })}
+                      </span>
                       <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/70" />
                     </DropdownMenuItem>
                   ) : (
@@ -1239,7 +1251,9 @@ export function AgentHarnessPicker({
                         data-testid="new-chat-landing-harness-more"
                         className="items-center gap-2 rounded-sm px-2 py-1.5 text-ui"
                       >
-                        <span className="flex-1">More</span>
+                        <span className="flex-1">
+                          {tAgentPicker("newSession.summary.moreLabel", { defaultValue: "More" })}
+                        </span>
                       </DropdownMenuSubTrigger>
                       <DropdownMenuSubContent className="max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-56 max-w-[calc(100vw-2rem)] overflow-y-auto p-1">
                         {moreHarnessEntries.map(renderEntry)}
@@ -1250,7 +1264,9 @@ export function AgentHarnessPicker({
               </>
             )}
             {/* Agents group — built-in bundle agents (Polly / Debby) inline. */}
-            <PickerSectionHeader>Agents</PickerSectionHeader>
+            <PickerSectionHeader>
+              {tAgentPicker("newSession.summary.agentLabel", { defaultValue: "Agents" })}
+            </PickerSectionHeader>
             {bundleEntries.map(renderEntry)}
             {/* Existing custom agents fold into a "Custom agents" submenu (with
             the pending upload and the create action). With no custom agents the
@@ -1268,7 +1284,11 @@ export function AgentHarnessPicker({
                   }}
                   className="items-center gap-2 rounded-sm px-2 py-1.5 text-ui"
                 >
-                  <span className="flex-1">Custom agents</span>
+                  <span className="flex-1">
+                    {tAgentPicker("newSession.summary.customAgentsLabel", {
+                      defaultValue: "Custom agents",
+                    })}
+                  </span>
                   <ChevronRightIcon className="size-4 shrink-0 text-muted-foreground/70" />
                 </DropdownMenuItem>
               ) : (
@@ -1278,7 +1298,11 @@ export function AgentHarnessPicker({
                     data-testid="new-chat-landing-custom-agents"
                     className="items-center gap-2 rounded-sm px-2 py-1.5 text-ui"
                   >
-                    <span className="flex-1">Custom agents</span>
+                    <span className="flex-1">
+                      {tAgentPicker("newSession.summary.customAgentsLabel", {
+                        defaultValue: "Custom agents",
+                      })}
+                    </span>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-56 max-w-[calc(100vw-2rem)] overflow-y-auto p-1">
                     {customAgentsBody}
@@ -1381,6 +1405,7 @@ function HarnessConfigModal({
 
   // Local draft — seeded from the live state each time the modal opens so
   // Cancel can discard and re-opening always reflects the committed state.
+  const { t: tConfig } = useTranslation("chat");
   const [draftModel, setDraftModel] = useState(pickedModel);
   const [draftEffort, setDraftEffort] = useState(pickedEffort);
   const [draftPermission, setDraftPermission] = useState(permissionMode);
@@ -1524,16 +1549,32 @@ function HarnessConfigModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" data-testid="new-chat-landing-config-modal">
         <DialogHeader>
-          <DialogTitle>Configure {configTitleName}</DialogTitle>
+          <DialogTitle>
+            {tConfig("newSession.summary.configureAgent", {
+              agent: configTitleName,
+              defaultValue: `Configure ${configTitleName}`,
+            })}
+          </DialogTitle>
           <DialogDescription className="sr-only">
-            Configure how {configTitleName} runs for this session.
+            {tConfig("newSession.summary.configureAgent", {
+              agent: configTitleName,
+              defaultValue: `Configure ${configTitleName}`,
+            })}{" "}
+            — {tConfig("newSession.summary.sessionRunHint", {
+              defaultValue: "How this agent runs for this session.",
+            })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-5 py-1">
           {!autoRouting && hasPermission && (
             <>
-              <ConfigRow label="Model" description="Underlying LLM">
+              <ConfigRow
+                label={tConfig("newSession.config.model", { defaultValue: "Model" })}
+                description={tConfig("newSession.config.modelDesc", {
+                  defaultValue: "Underlying LLM",
+                })}
+              >
                 <RoutingModelSelect
                   value={modelValue}
                   onValueChange={onModelChange}
@@ -1543,17 +1584,24 @@ function HarnessConfigModal({
                   contentClassName="[&_[data-slot=select-item]]:pl-2.5"
                 >
                   {claudeModelsLoading && (
-                    <div className="px-2.5 py-1 text-sm text-muted-foreground">Loading models…</div>
+                    <div className="px-2.5 py-1 text-sm text-muted-foreground">
+                      {tConfig("common.loadingModels", { defaultValue: "Loading models…" })}
+                    </div>
                   )}
                   {!claudeModelsLoading && claudeModelOptions.length === 0 && (
                     <div className="px-2.5 py-1 text-sm text-muted-foreground">
-                      Models unavailable
+                      {tConfig("common.modelsUnavailable", { defaultValue: "Models unavailable" })}
                     </div>
                   )}
                 </RoutingModelSelect>
               </ConfigRow>
 
-              <ConfigRow label="Effort" description="Reasoning depth vs. speed">
+              <ConfigRow
+                label={tConfig("newSession.config.effort", { defaultValue: "Effort" })}
+                description={tConfig("newSession.config.effortDesc", {
+                  defaultValue: "Reasoning depth vs. speed",
+                })}
+              >
                 <Select
                   // Smart Routing picks the model (and its effort) per
                   // turn, so an explicit effort is meaningless: the row is
@@ -1566,7 +1614,9 @@ function HarnessConfigModal({
                   <SelectTrigger
                     className="w-full"
                     data-testid="new-chat-landing-config-effort"
-                    aria-label="Reasoning effort"
+                    aria-label={tConfig("newSession.config.effortAria", {
+                      defaultValue: "Reasoning effort",
+                    })}
                   >
                     <SelectValue placeholder={EFFORT_UNAVAILABLE_PLACEHOLDER} />
                   </SelectTrigger>
@@ -1585,13 +1635,22 @@ function HarnessConfigModal({
                 </Select>
               </ConfigRow>
 
-              <ConfigRow label="Permissions" description="What the agent can do without asking">
+              <ConfigRow
+                label={tConfig("newSession.config.permissions", {
+                  defaultValue: "Permissions",
+                })}
+                description={tConfig("newSession.config.permissionsDesc", {
+                  defaultValue: "What the agent can do without asking",
+                })}
+              >
                 <DescribedSelect
                   value={draftPermission}
                   onValueChange={setDraftPermission}
                   options={CLAUDE_NATIVE_PERMISSION_MODES}
                   testId="new-chat-landing-config-permission"
-                  ariaLabel="Permissions"
+                  ariaLabel={tConfig("newSession.permissionsAria", {
+                    defaultValue: "Permissions",
+                  })}
                 />
               </ConfigRow>
             </>
@@ -1603,7 +1662,12 @@ function HarnessConfigModal({
               models alongside the two choices the create call can express on its
               own: the harness's default, or the router picking per turn (only
               when routing is offered). */}
-              <ConfigRow label="Model" description="Underlying LLM">
+              <ConfigRow
+                label={tConfig("newSession.config.model", { defaultValue: "Model" })}
+                description={tConfig("newSession.config.modelDesc", {
+                  defaultValue: "Underlying LLM",
+                })}
+              >
                 <RoutingModelSelect
                   value={modelValue}
                   onValueChange={onModelChange}
@@ -1614,16 +1678,23 @@ function HarnessConfigModal({
                   contentClassName="[&_[data-slot=select-item]]:pl-2.5"
                 >
                   {modelsLoading && (
-                    <div className="px-2.5 py-1 text-sm text-muted-foreground">Loading models…</div>
+                    <div className="px-2.5 py-1 text-sm text-muted-foreground">
+                      {tConfig("common.loadingModels", { defaultValue: "Loading models…" })}
+                    </div>
                   )}
                   {!modelsLoading && modelOptions.length === 0 && (
                     <div className="px-2.5 py-1 text-sm text-muted-foreground">
-                      Models unavailable
+                      {tConfig("common.modelsUnavailable", { defaultValue: "Models unavailable" })}
                     </div>
                   )}
                 </RoutingModelSelect>
               </ConfigRow>
-              <ConfigRow label="Approval" description="What the agent can do without asking">
+              <ConfigRow
+                label={tConfig("newSession.config.approval", { defaultValue: "Approval" })}
+                description={tConfig("newSession.config.approvalDesc", {
+                  defaultValue: "What the agent can do without asking",
+                })}
+              >
                 <DescribedSelect
                   // Codex adds the DANGEROUS full-bypass as a 4th option; when
                   // armed the select shows it (draftBypass wins over the preset).
@@ -1644,7 +1715,7 @@ function HarnessConfigModal({
                       : CODEX_NATIVE_APPROVAL_MODES
                   }
                   testId="new-chat-landing-config-approval"
-                  ariaLabel="Approval"
+                  ariaLabel={tConfig("newSession.config.approval", { defaultValue: "Approval" })}
                 />
               </ConfigRow>
               {/* Persistent danger banner while full-bypass is selected. */}
@@ -1665,13 +1736,18 @@ function HarnessConfigModal({
           )}
 
           {!autoRouting && hasCursor && (
-            <ConfigRow label="Mode" description="How Cursor runs commands">
+            <ConfigRow
+              label={tConfig("newSession.config.mode", { defaultValue: "Mode" })}
+              description={tConfig("newSession.config.modeDesc", {
+                defaultValue: "How Cursor runs commands",
+              })}
+            >
               <DescribedSelect
                 value={draftCursor}
                 onValueChange={setDraftCursor}
                 options={CURSOR_NATIVE_EXEC_MODES}
                 testId="new-chat-landing-config-cursor-mode"
-                ariaLabel="Mode"
+                ariaLabel={tConfig("newSession.config.mode", { defaultValue: "Mode" })}
               />
             </ConfigRow>
           )}
@@ -1680,12 +1756,21 @@ function HarnessConfigModal({
           that selected it, so hiding it would strand the choice with no way to
           read it back or switch away without cancelling. */}
           {!hasPermission && !hasApproval && !hasCursor && brainDefault && (
-            <ConfigRow label="Agent Harness" description="Underlying coding harness">
+            <ConfigRow
+              label={tConfig("newSession.config.agentHarness", {
+                defaultValue: "Agent Harness",
+              })}
+              description={tConfig("newSession.config.agentHarnessDesc", {
+                defaultValue: "Underlying coding harness",
+              })}
+            >
               <Select value={draftHarness ?? brainDefault} onValueChange={setDraftHarness}>
                 <SelectTrigger
                   className="w-full"
                   data-testid="new-chat-landing-config-harness"
-                  aria-label="Agent Harness"
+                  aria-label={tConfig("newSession.config.agentHarnessAria", {
+                    defaultValue: "Agent Harness",
+                  })}
                 >
                   <SelectValue />
                 </SelectTrigger>
@@ -1734,13 +1819,22 @@ function HarnessConfigModal({
           create call (claude-sdk) never carries a permission field, so the row
           would only be decoration on top of the Agent Harness pick. */}
           {autoNative && (
-            <ConfigRow label="Permissions" description="What the agent can do without asking">
+            <ConfigRow
+              label={tConfig("newSession.config.permissions", {
+                defaultValue: "Permissions",
+              })}
+              description={tConfig("newSession.config.permissionsDesc", {
+                defaultValue: "What the agent can do without asking",
+              })}
+            >
               <DescribedSelect
                 value={CLAUDE_NATIVE_DEFAULT_PERMISSION_MODE}
                 onValueChange={() => {}}
                 options={AUTO_PERMISSION_MODE_OPTIONS}
                 testId="new-chat-landing-config-permission"
-                ariaLabel="Permissions"
+                ariaLabel={tConfig("newSession.permissionsAria", {
+                  defaultValue: "Permissions",
+                })}
                 disabled
               />
             </ConfigRow>
@@ -1801,6 +1895,7 @@ export function resetLandingDraft(): void {
 
 export function NewChatLandingScreen() {
   const navigate = useNavigate();
+  const { t: tNewSession } = useTranslation("chat");
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const serverUrl = getCliServerUrl();
@@ -3122,25 +3217,36 @@ export function NewChatLandingScreen() {
   const submitDisabledReason = canSubmit
     ? null
     : sandboxSelected && !sandboxRepoValid
-      ? "Please enter a valid repository URL"
+      ? tNewSession("newSession.validationRepoUrl", {
+          defaultValue: "Please enter a valid repository URL",
+        })
       : !sandboxSelected && (!selectedHostId || !workspaceValid)
-        ? "Please choose a host and working directory"
+        ? tNewSession("newSession.validationHostAndDir", {
+            defaultValue: "Please choose a host and working directory",
+          })
         : message.trim().length === 0
-          ? "Enter a message to get started"
+          ? tNewSession("newSession.validationMessage", {
+              defaultValue: "Enter a message to get started",
+            })
           : null;
 
   // Chip display labels.
   const workspaceLabel = workspaceTrimmed
     ? (workspaceTrimmed.split("/").filter(Boolean).pop() ?? workspaceTrimmed)
-    : "Working directory";
+    : tNewSession("newSession.workingDirectory", { defaultValue: "Working directory" });
   const hostLabel = connectingThisMachine
-    ? "Connecting…"
+    ? tNewSession("newSession.connecting", { defaultValue: "Connecting…" })
     : sandboxSelected
       ? sandboxLabel
-      : (selectedHost?.name ?? (onlineHosts.length === 0 ? "No hosts" : "Select host"));
+      : (selectedHost?.name ??
+        (onlineHosts.length === 0
+          ? tNewSession("newSession.noHosts", { defaultValue: "No hosts" })
+          : tNewSession("newSession.selectHost", { defaultValue: "Select host" })));
   // The chip shows just the branch (the "(existing)" distinction lives in the
   // popover's warning; appending it here only gets clipped by the chip's cap).
-  const worktreeLabel = branchName.trim() || "No worktree";
+  const worktreeLabel =
+    branchName.trim() ||
+    tNewSession("newSession.noWorktree", { defaultValue: "No worktree" });
   // Sandbox repository chip label: repo name (server's clone-dir rule)
   // plus the pinned branch, e.g. "repo#main"; placeholder when unset.
   const sandboxRepoName = deriveRepoName(sandboxRepoUrl);
@@ -3148,7 +3254,7 @@ export function NewChatLandingScreen() {
     ? sandboxRepoBranch.trim()
       ? `${sandboxRepoName}#${sandboxRepoBranch.trim()}`
       : sandboxRepoName
-    : "Repository";
+    : tNewSession("newSession.repository", { defaultValue: "Repository" });
   // The trigger label is just the agent name; the run-config knobs live in
   // the picker's per-entry submenu, so duplicating their values here would be
   // redundant. Top-level Smart Routing is the exception: it has no agent of its
@@ -3160,7 +3266,7 @@ export function NewChatLandingScreen() {
     ? SMART_ROUTING_LABEL
     : selectedAgent
       ? selectedAgent.display_name
-      : "Select agent";
+      : tNewSession("newSession.selectAgent", { defaultValue: "Select agent" });
 
   // Wrap the harness setter so every explicit pick is persisted to
   // localStorage. The caller can pass an explicit `agentId` for the
@@ -3575,15 +3681,24 @@ export function NewChatLandingScreen() {
       landingDraft = null;
       navigate(`/c/${data.id}`);
     } catch {
-      setCreateError("Couldn't reach the server. Check your connection and try again.");
+      setCreateError(
+        tNewSession("newSession.createError", {
+          defaultValue: "Couldn't reach the server. Check your connection and try again.",
+        }),
+      );
     } finally {
       setCreating(false);
     }
   }
 
   const placeholderText = selectedProject
-    ? `Start a new session in ${selectedProject}`
-    : "Describe a task to start a new session…";
+    ? tNewSession("newSession.placeholderWithProject", {
+        project: selectedProject,
+        defaultValue: `Start a new session in ${selectedProject}`,
+      })
+    : tNewSession("newSession.placeholder", {
+        defaultValue: "Describe a task to start a new session…",
+      });
 
   // The working-directory chip — a single Popover trigger button that opens
   // the file browser. The directory-conflict warning lives inside the browser
@@ -3635,7 +3750,8 @@ export function NewChatLandingScreen() {
             <OttoEyes className="h-18 w-auto shrink-0" />
           )}
           <h1 className="min-w-0 break-words text-center text-[1.75em] font-normal tracking-[-0.03em] text-foreground line-clamp-2 sm:text-left">
-            {selectedProject || "What should we build?"}
+            {selectedProject ||
+              tNewSession("newSession.headingDefault", { defaultValue: "What should we build?" })}
           </h1>
         </div>
         <div className="relative flex w-full flex-col gap-3">
@@ -3798,7 +3914,9 @@ export function NewChatLandingScreen() {
             {pillSkills.length > 0 && message.length === 0 && (
               <div className="pointer-events-none absolute inset-x-4 top-4 flex flex-wrap items-center gap-2">
                 <span className="font-['SF_Pro_Text',-apple-system,BlinkMacSystemFont,system-ui,sans-serif] text-ui leading-5 text-muted-foreground">
-                  Describe a task, or try a skill
+                  {tNewSession("newSession.headingSkillHint", {
+                    defaultValue: "Describe a task, or try a skill",
+                  })}
                 </span>
                 <SkillPills skills={pillSkills} onPick={applySkillPill} />
               </div>
@@ -3889,7 +4007,9 @@ export function NewChatLandingScreen() {
                   className="size-9 md:size-8"
                   disabled={creating}
                   onClick={() => fileInputRef.current?.click()}
-                  title="Attach files"
+                  title={tNewSession("newSession.attachFilesTitle", {
+                    defaultValue: "Attach files",
+                  })}
                   data-testid="new-chat-landing-attach"
                 >
                   <PaperclipIcon className="size-4" data-icon-size="16" />
@@ -3961,7 +4081,10 @@ export function NewChatLandingScreen() {
                             >
                               <SettingsIcon className="size-4" data-icon-size="16" />
                               <span className="sr-only">
-                                Configure {selectedAgent.display_name}
+                                {tNewSession("newSession.summary.configureAgent", {
+                                  agent: selectedAgent.display_name,
+                                  defaultValue: `Configure ${selectedAgent.display_name}`,
+                                })}
                               </span>
                             </Button>
                           </TooltipTrigger>
@@ -4030,7 +4153,15 @@ export function NewChatLandingScreen() {
                           type="submit"
                           size="icon"
                           disabled={!canSubmit}
-                          aria-label={creating ? "Starting session" : "Start session"}
+                          aria-label={
+                            creating
+                              ? tNewSession("newSession.startingSession", {
+                                  defaultValue: "Starting session",
+                                })
+                              : tNewSession("newSession.startSession", {
+                                  defaultValue: "Start session",
+                                })
+                          }
                           aria-busy={creating}
                           data-testid="new-chat-landing-submit"
                           className="size-8 rounded-lg bg-foreground disabled:bg-muted disabled:text-muted-foreground transition-opacity hover:opacity-80 disabled:opacity-100 "
@@ -4126,7 +4257,9 @@ export function NewChatLandingScreen() {
                               <button
                                 type="button"
                                 className="inline-flex size-4 items-center justify-center rounded-sm text-muted-foreground/80 hover:text-foreground"
-                                aria-label="Why New Sandbox is unavailable"
+                                aria-label={tNewSession("newSession.sandboxUnavailableAria", {
+                                  defaultValue: "Why New Sandbox is unavailable",
+                                })}
                                 onClick={(e) => e.stopPropagation()}
                                 onKeyDown={(e) => {
                                   if (e.key === "Enter" || e.key === " ") e.stopPropagation();
@@ -4146,7 +4279,9 @@ export function NewChatLandingScreen() {
                   )}
                   {allHosts.length === 0 && !showConnectThisMachine && (
                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                      No hosts connected yet.
+                      {tNewSession("newSession.noHostsConnected", {
+                        defaultValue: "No hosts connected yet.",
+                      })}
                     </div>
                   )}
                   {onlineHosts.map((host) => (
@@ -4211,7 +4346,13 @@ export function NewChatLandingScreen() {
                     >
                       <MonitorIcon className="size-4 shrink-0 text-muted-foreground" />
                       <span className="text-sm">
-                        {connectingThisMachine ? "Connecting this machine…" : "Run on this machine"}
+                        {connectingThisMachine
+                          ? tNewSession("newSession.connectingThisMachine", {
+                              defaultValue: "Connecting this machine…",
+                            })
+                          : tNewSession("newSession.runOnThisMachine", {
+                              defaultValue: "Run on this machine",
+                            })}
                       </span>
                     </DropdownMenuItem>
                   )}
@@ -4267,7 +4408,9 @@ export function NewChatLandingScreen() {
                               <button
                                 type="button"
                                 className="inline-flex size-4 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
-                                aria-label="How to set up Databricks git credentials"
+                                aria-label={tNewSession("newSession.databricksCredsAria", {
+                                  defaultValue: "How to set up Databricks git credentials",
+                                })}
                               >
                                 <CircleHelpIcon className="size-3.5" />
                               </button>
@@ -4291,8 +4434,12 @@ export function NewChatLandingScreen() {
                         type="text"
                         value={sandboxRepoBranch}
                         onChange={(e) => setSandboxRepoBranch(e.target.value)}
-                        placeholder="Branch (defaults to the repo's default)"
-                        aria-label="Repository branch"
+                        placeholder={tNewSession("newSession.branchPlaceholder", {
+                          defaultValue: "Branch (defaults to the repo's default)",
+                        })}
+                        aria-label={tNewSession("newSession.branchAria", {
+                          defaultValue: "Repository branch",
+                        })}
                         className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring"
                         data-testid="new-chat-landing-repo-branch-input"
                       />
@@ -4426,8 +4573,12 @@ export function NewChatLandingScreen() {
                             e.preventDefault();
                             generateBranchName();
                           }}
-                          title="Generate a unique branch name"
-                          aria-label="Generate a unique branch name"
+                          title={tNewSession("newSession.generateBranchTitle", {
+                            defaultValue: "Generate a unique branch name",
+                          })}
+                          aria-label={tNewSession("newSession.generateBranchAria", {
+                            defaultValue: "Generate a unique branch name",
+                          })}
                           className="absolute top-0 right-0 flex h-9 w-9 items-center justify-center text-muted-foreground transition-colors hover:text-foreground"
                           data-testid="new-chat-landing-branch-generate"
                         >
@@ -4495,8 +4646,12 @@ export function NewChatLandingScreen() {
                           type="text"
                           value={baseBranch}
                           onChange={(e) => setBaseBranch(e.target.value)}
-                          placeholder="Base branch (defaults to current)"
-                          aria-label="Base branch"
+                          placeholder={tNewSession("newSession.baseBranchPlaceholder", {
+                            defaultValue: "Base branch (defaults to current)",
+                          })}
+                          aria-label={tNewSession("newSession.baseBranchAria", {
+                            defaultValue: "Base branch",
+                          })}
                           className="rounded-md border border-input bg-background px-3 py-2 text-sm outline-none transition-colors focus-visible:border-ring"
                           data-testid="new-chat-landing-base-branch-input"
                         />
@@ -4602,7 +4757,10 @@ export function NewChatLandingScreen() {
           </DialogHeader>
           <ConnectHostInstructions
             serverUrl={serverUrl}
-            label="Run this on the machine you want to use, then pick it from the host menu:"
+            label={tNewSession("newSession.setupHostHint", {
+              defaultValue:
+                "Run this on the machine you want to use, then pick it from the host menu:",
+            })}
           />
         </DialogContent>
       </Dialog>
