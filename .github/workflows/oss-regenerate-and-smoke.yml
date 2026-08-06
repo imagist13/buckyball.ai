@@ -1,0 +1,158 @@
+# Keep the repo's public lockfiles consistent with the manifests, validated via
+# a Docker build + CLI smoke. Runs on GitHub-hosted ubuntu-latest so resolution
+# sees public registries directly (lockfiles must record public sources, never
+# a proxy). Exists because sync PRs land manifest changes without lockfile
+# updates and the Dockerfile COPYs pnpm-lock.yaml, so the tree is not
+# Docker-buildable until lockfiles are (re)generated here.
+#
+# Check-first: a consistency check (`uv lock --check` / pnpm `--frozen-lockfile`)
+# gates the work. When the lockfiles already satisfy the manifests the job exits
+# clean and opens no PR — even if newer in-range versions exist upstream — so
+# routine transitive drift never becomes a churn PR. Only a real manifest/lock
+# desync triggers regeneration and a PR. Runs every 12h (and on manual dispatch).
+name: OSS regenerate lockfiles + smoke
+
+on:
+  schedule:
+    - cron: "0 */12 * * *"  # every 12 hours (00:00 / 12:00 UTC)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# cancel-in-progress false: a queued run starts after the prior finishes, picks
+# up updated main, regenerates identical lockfiles, exits clean rather than
+# cancelling a run that may be mid-push.
+concurrency:
+  group: oss-regenerate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  regenerate-and-smoke:
+    permissions:
+      contents: write # push the regen branch
+      pull-requests: write # open / update the regen PR
+    # Gated to this repository; inert in forks and mirrors.
+    if: github.repository == 'omnigent-ai/omnigent'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+
+      - name: Set up uv (clean public resolution, no proxy cache)
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+        with:
+          enable-cache: false
+
+      - name: Set up pnpm
+        uses: ./.github/actions/setup-pnpm
+
+      # Check-first: does each lockfile already satisfy its manifests? These
+      # checks pass on a consistent-but-not-latest lock, so routine in-range
+      # transitive drift does NOT trigger a regen; only a real manifest/lock
+      # desync (the case this job exists to catch) flips a flag.
+      #
+      # Per-ecosystem flags: gating each regen on its own flag keeps a desync in
+      # one ecosystem from forcing a from-scratch re-resolve of the other, which
+      # would reintroduce the in-range transitive churn this job avoids. `any`
+      # drives the shared token/PR steps below.
+      - name: Check lockfile consistency
+        id: check
+        run: |
+          drifted_uv=false
+          drifted_pnpm=false
+          uv lock --check || drifted_uv=true
+          # --lockfile-only: verify the lock satisfies the manifests without a
+          # full node_modules install; --frozen-lockfile fails on any desync.
+          pnpm install --frozen-lockfile --lockfile-only || drifted_pnpm=true
+          any=false
+          if [ "$drifted_uv" = "true" ] || [ "$drifted_pnpm" = "true" ]; then
+            any=true
+          fi
+          echo "drifted_uv=$drifted_uv" >> "$GITHUB_OUTPUT"
+          echo "drifted_pnpm=$drifted_pnpm" >> "$GITHUB_OUTPUT"
+          echo "drifted=$any" >> "$GITHUB_OUTPUT"
+          echo "uv.lock drifted=$drifted_uv, pnpm-lock.yaml drifted=$drifted_pnpm"
+
+      # 7-day cooldown comes from uv.toml (`exclude-newer = "P7D"`) and from
+      # pnpm-workspace.yaml (`minimumReleaseAge: 10080`), recorded as a relative
+      # span; an env-var cutoff would stamp an absolute date and break later
+      # `uv sync --locked` / `pnpm install --frozen-lockfile`.
+      - name: Regenerate uv.lock
+        if: steps.check.outputs.drifted_uv == 'true'
+        run: uv lock
+
+      # pnpm's cooldown is configured in pnpm-workspace.yaml and respected by
+      # the workspace root. Delete the lockfile so pnpm RESOLVES from scratch:
+      # --lockfile-only keeps an existing in-range pin without re-applying the
+      # cooldown, so we drop it first.
+      - name: Regenerate pnpm-lock.yaml
+        if: steps.check.outputs.drifted_pnpm == 'true'
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          rm -f pnpm-lock.yaml
+          pnpm install --lockfile-only
+
+      # Always run, on both paths: when drifted, this validates the freshly
+      # regenerated locks BEFORE they're committed; when not drifted, it's the
+      # ongoing 12h proof that the committed locks + public registries still
+      # build a working image (catches buildability regressions independent of
+      # manifest state — e.g. a yanked package that still satisfies the lock's
+      # specifiers, or a Dockerfile change).
+      - name: Docker build (FE + Python, public registries)
+        run: docker build -f deploy/docker/Dockerfile -t omnigent-smoke .
+
+      - name: CLI smoke
+        run: docker run --rm omnigent-smoke omnigent --help
+
+      # App token = distinct actor (not GITHUB_TOKEN) so the regen PR runs its
+      # own CI. Skipped when the App isn't configured (falls back to GITHUB_TOKEN).
+      - name: Mint App token
+        id: app-token
+        if: steps.check.outputs.drifted == 'true' && vars.OMNIGENT_BOT_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1  # v3.2.0
+        with:
+          app-id: ${{ vars.OMNIGENT_BOT_APP_ID }}
+          private-key: ${{ secrets.OMNIGENT_BOT_APP_KEY }}
+
+      # Persist the validated lockfiles via a PR (not a direct push to main, so
+      # it works under branch protection). App token so `gh pr create` isn't
+      # blocked by the org PR-creation restriction and the PR runs its own CI;
+      # falls back to GITHUB_TOKEN if the App isn't configured.
+      - name: Open lockfile-regen PR
+        if: steps.check.outputs.drifted == 'true' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          git config user.name "omnigent-ci[bot]"
+          git config user.email "294685417+omnigent-ci[bot]@users.noreply.github.com"
+          # --porcelain (not git diff) so first-regen UNTRACKED lockfiles count too.
+          if [ -z "$(git status --porcelain -- uv.lock pnpm-lock.yaml)" ]; then
+            echo "Lockfiles already current — nothing to PR."
+            exit 0
+          fi
+          # One rolling branch, force-pushed each run, so regens update a single PR.
+          BRANCH="automation/oss-lockfile-regen"
+          git checkout -b "$BRANCH"
+          git add uv.lock pnpm-lock.yaml
+          git commit -m "chore(oss): regenerate public lockfiles against public PyPI/npmjs.org"
+          git push --force "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "$BRANCH"
+          # An already-open PR just picks up the force-pushed update.
+          if [ -n "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')" ]; then
+            echo "PR already open for $BRANCH — refreshed it with the latest lockfiles."
+            exit 0
+          fi
+          # Best-effort: branch is already pushed, so if PR creation is blocked
+          # don't fail red — print the manual one-liner and exit clean. (The `if`
+          # exempts gh from `set -e`, so a non-zero exit hits the else branch.)
+          if gh pr create --base main --head "$BRANCH" \
+              --title "chore(oss): regenerate public lockfiles against public PyPI/npm" \
+              --body "Automated: the lockfiles were out of sync with the manifests, so uv.lock + pnpm-lock.yaml were regenerated against public PyPI/npm and validated by a Docker build + omnigent --help smoke (run ${{ github.run_id }}). Merge to keep the public lockfiles consistent and buildable."; then
+            echo "Opened the regen PR."
+          else
+            echo "::warning::Could not open the regen PR automatically (the GITHUB_TOKEN may be disallowed from creating PRs). The branch '$BRANCH' is pushed with the regenerated lockfiles — open the PR by hand:"
+            echo "  gh pr create --repo ${{ github.repository }} --base main --head $BRANCH --title 'chore(oss): regenerate public lockfiles' --body 'Regenerated lockfiles against public PyPI/npm.'"
+          fi

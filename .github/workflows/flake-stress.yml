@@ -1,0 +1,293 @@
+name: Flake stress
+
+# Manually-dispatched flake-reproducer (workflow_dispatch only, so it
+# doesn't burn runner minutes per PR). Runs a pytest target N times in
+# parallel on ci.yml's hardened-runner pool, then renders a pass/fail
+# summary on the run page. Each attempt is one matrix leg, so failures/N
+# is the observed flake probability for the target + config. Use it to
+# quantify a flake rate (point at main) or verify a fix (point at the fix
+# branch, expect 0/N). Defaults (-n 4 --dist=worksteal) mirror ci.yml's
+# server-responses group; every knob is overridable.
+#
+# Examples:
+#   gh workflow run flake-stress.yml --ref main \
+#     -f test_target=tests/server/integration/test_routes_responses.py
+#   gh workflow run flake-stress.yml --ref main \
+#     -f test_target='tests/foo.py::test_x[case1]' \
+#     -f workers=1 -f extra_pytest_args=-x
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_target:
+        description: "Pytest target: path or node-id; space-separated list ok (e.g. tests/server/integration/test_routes_responses.py)"
+        required: true
+      target_branch:
+        description: "Branch or SHA to check out for the test (default: main)"
+        required: false
+        default: "main"
+      attempts:
+        description: "Number of parallel attempts (1-50, default: 20)"
+        required: false
+        default: "20"
+      workers:
+        description: "pytest-xdist -n value (default: 4)"
+        required: false
+        default: "4"
+      dist:
+        description: "pytest-xdist --dist mode (loadfile|worksteal|loadscope|load|each|no, default: worksteal)"
+        required: false
+        default: "worksteal"
+      extra_pytest_args:
+        description: "Extra pytest args appended to the command, e.g. '-x' (default: empty)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  # No web SPA build during `uv sync`: this job never serves the bundle
+  # and the hardened runner has no npm mirror (build would time out).
+  OMNIGENT_SKIP_WEB_UI: "true"
+  # Pin the PyPI index for uv/pip resolution (same as ci.yml).
+  UV_INDEX_URL: https://pypi.org/simple
+  PIP_INDEX_URL: https://pypi.org/simple
+
+jobs:
+  prep:
+    # Validate inputs and turn ``attempts`` into a JSON array the matrix
+    # fans out across (arrays must exist at job-graph construction time;
+    # the downstream job picks it up via ``fromJSON``).
+    name: Validate inputs
+    runs-on: ubuntu-latest
+    outputs:
+      attempts_json: ${{ steps.gen.outputs.attempts_json }}
+    steps:
+      - name: Generate attempts array
+        id: gen
+        env:
+          ATTEMPTS: ${{ github.event.inputs.attempts }}
+          WORKERS: ${{ github.event.inputs.workers }}
+          DIST: ${{ github.event.inputs.dist }}
+          TEST_TARGET: ${{ github.event.inputs.test_target }}
+          EXTRA_ARGS: ${{ github.event.inputs.extra_pytest_args }}
+        run: |
+          set -euo pipefail
+          # attempts ∈ [1, 50]; 50 soft-caps runner-pool consumption.
+          if ! [[ "$ATTEMPTS" =~ ^[1-9][0-9]?$ ]] || (( ATTEMPTS > 50 )); then
+            echo "::error::attempts must be an integer in [1, 50], got '$ATTEMPTS'"
+            exit 1
+          fi
+          # workers ∈ [1, 32]; above that xdist setup outweighs parallelism.
+          if ! [[ "$WORKERS" =~ ^([1-9]|[12][0-9]|3[0-2])$ ]]; then
+            echo "::error::workers must be 1-32, got '$WORKERS'"
+            exit 1
+          fi
+          # dist is an enum; reject anything else.
+          case "$DIST" in
+            loadfile|worksteal|loadscope|load|each|no) ;;
+            *)
+              echo "::error::dist must be one of loadfile|worksteal|loadscope|load|each|no, got '$DIST'"
+              exit 1
+              ;;
+          esac
+          # test_target / extra_pytest_args reach a shell; restrict to
+          # legitimate pytest node-id chars so hostile input can't smuggle
+          # command substitution (belt-and-suspenders atop authz dispatch).
+          # Quoted so bash doesn't strip backslashes / glob-expand brackets.
+          # POSIX char-class rules: ``]`` first (literal), ``-`` last (not a
+          # range).
+          allowed_chars='^[]a-zA-Z0-9./_:[ =-]+$'
+          if ! [[ "$TEST_TARGET" =~ $allowed_chars ]]; then
+            echo "::error::test_target contains disallowed characters; allowed: a-zA-Z0-9 . / _ : [ ] - = space"
+            exit 1
+          fi
+          if [[ -n "$EXTRA_ARGS" ]] && ! [[ "$EXTRA_ARGS" =~ $allowed_chars ]]; then
+            echo "::error::extra_pytest_args contains disallowed characters; allowed: a-zA-Z0-9 . / _ : [ ] - = space"
+            exit 1
+          fi
+          # Build JSON array [1,2,...,N] for the matrix.
+          ARR=$(python3 -c "import json,os; print(json.dumps(list(range(1, int(os.environ['ATTEMPTS'])+1))))")
+          echo "attempts_json=$ARR" >> "$GITHUB_OUTPUT"
+          echo "Will run $ATTEMPTS attempts of: $TEST_TARGET"
+          echo "Config: -n $WORKERS --dist=$DIST  extra='$EXTRA_ARGS'"
+
+  repro:
+    name: Attempt ${{ matrix.attempt }}
+    needs: prep
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      # Keep going after a failure to observe the full distribution.
+      fail-fast: false
+      matrix:
+        attempt: ${{ fromJSON(needs.prep.outputs.attempts_json) }}
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          ref: ${{ github.event.inputs.target_branch }}
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version-file: ".python-version"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@38f3f104447c67c051c4a08e39b64a148898af3a  # v3
+        with:
+          enable-cache: true
+
+      - name: Install ripgrep + bubblewrap
+        # Inner tests need these (Grep fallback, linux_bwrap sandbox);
+        # always install so inner-test flakes work. Apparmor sysctl mirrors ci.yml.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Cache virtualenv
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('.python-version') }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install dependencies
+        # Matches ci.yml; ``--extra all`` pulls the harness SDKs so
+        # executor adapters import at collection time.
+        run: uv sync --extra all --extra dev
+
+      - name: Run pytest target
+        # Inputs validated by prep. Word-splitting on $TEST_TARGET /
+        # $EXTRA_ARGS is intentional (multi-token); bound via env (not
+        # ``${{ }}``) to avoid expression injection at the shell.
+        shell: bash
+        env:
+          TEST_TARGET: ${{ github.event.inputs.test_target }}
+          WORKERS: ${{ github.event.inputs.workers }}
+          DIST: ${{ github.event.inputs.dist }}
+          EXTRA_ARGS: ${{ github.event.inputs.extra_pytest_args }}
+        run: |
+          mkdir -p artifacts
+          # shellcheck disable=SC2086
+          env -u OPENAI_API_KEY -u ANTHROPIC_API_KEY -u DATABRICKS_TOKEN \
+            uv run pytest $TEST_TARGET \
+              -n "$WORKERS" --dist="$DIST" \
+              --junitxml=artifacts/pytest-attempt-${{ matrix.attempt }}.xml \
+              -v --tb=long --showlocals --log-level=INFO -r a \
+              $EXTRA_ARGS
+
+      - name: Upload pytest artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: pytest-attempt-${{ matrix.attempt }}-${{ github.run_id }}
+          path: artifacts/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  summarize:
+    # Render a pass/fail summary table on the run page for an at-a-glance
+    # flake rate. ``if: always()`` so failed attempts still summarize.
+    name: Summarize results
+    needs: repro
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all attempt artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          pattern: pytest-attempt-*-${{ github.run_id }}
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Render summary
+        # Parse each junit XML per attempt to surface which tests failed
+        # and how often (the matrix conclusion already drives visible status).
+        run: |
+          python3 - <<'PY'
+          import glob
+          import os
+          import xml.etree.ElementTree as ET
+
+          summary_path = os.environ["GITHUB_STEP_SUMMARY"]
+          rows = []
+          test_failure_counts: dict[str, int] = {}
+          for path in sorted(glob.glob("artifacts/pytest-attempt-*.xml")):
+              attempt = path.rsplit("-", 1)[-1].removesuffix(".xml")
+              root = ET.parse(path).getroot()
+              tests = passed = failed = errored = skipped = 0
+              failures: list[str] = []
+              for case in root.iter("testcase"):
+                  tests += 1
+                  fail = case.find("failure")
+                  err = case.find("error")
+                  skip = case.find("skipped")
+                  if fail is not None:
+                      failed += 1
+                      tid = f"{case.attrib.get('classname','')}::{case.attrib.get('name','')}"
+                      failures.append(tid)
+                      test_failure_counts[tid] = test_failure_counts.get(tid, 0) + 1
+                  elif err is not None:
+                      errored += 1
+                      tid = f"{case.attrib.get('classname','')}::{case.attrib.get('name','')}"
+                      failures.append(tid)
+                      test_failure_counts[tid] = test_failure_counts.get(tid, 0) + 1
+                  elif skip is not None:
+                      skipped += 1
+                  else:
+                      passed += 1
+              status = ":white_check_mark:" if (failed + errored) == 0 else ":x:"
+              rows.append(
+                  {
+                      "attempt": int(attempt),
+                      "status": status,
+                      "tests": tests,
+                      "passed": passed,
+                      "failed": failed,
+                      "errored": errored,
+                      "skipped": skipped,
+                      "failures": failures,
+                  }
+              )
+
+          rows.sort(key=lambda r: r["attempt"])
+          n = len(rows)
+          n_red = sum(1 for r in rows if r["failed"] + r["errored"] > 0)
+          rate = (n_red / n * 100.0) if n else 0.0
+
+          lines = [
+              "## Flake stress results",
+              "",
+              f"**Failure rate: {n_red}/{n} ({rate:.0f}%)**",
+              "",
+              "| Attempt | Status | Tests | Pass | Fail | Error | Skip | Failing test(s) |",
+              "|---:|:---:|---:|---:|---:|---:|---:|---|",
+          ]
+          for r in rows:
+              fails = ", ".join(f"`{t}`" for t in r["failures"]) or "—"
+              lines.append(
+                  f"| {r['attempt']} | {r['status']} | {r['tests']} | "
+                  f"{r['passed']} | {r['failed']} | {r['errored']} | "
+                  f"{r['skipped']} | {fails} |"
+              )
+
+          if test_failure_counts:
+              lines += [
+                  "",
+                  "### Per-test failure counts",
+                  "",
+                  "| Test | Failed in N attempts |",
+                  "|---|---:|",
+              ]
+              for tid, c in sorted(
+                  test_failure_counts.items(),
+                  key=lambda kv: (-kv[1], kv[0]),
+              ):
+                  lines.append(f"| `{tid}` | {c} |")
+
+          with open(summary_path, "a") as f:
+              f.write("\n".join(lines) + "\n")
+          PY

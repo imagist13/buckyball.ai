@@ -1,0 +1,135 @@
+name: E2E Tests
+
+# Runs the `tests/e2e/` suite against the in-process mock LLM server.
+# All tests use mock LLM by default; real-credential tests skip cleanly
+# when no DATABRICKS_TOKEN is present.
+#
+# Triggers:
+#   schedule            09:00 UTC daily (alongside nightly.yml).
+#   workflow_dispatch   manual run. Inputs: `branch` (non-main ref) and
+#                       `parallelism` (pytest `-n` worker count).
+#   pull_request        PR gate for ALL PRs -- same-repo AND fork. This suite
+#                       runs entirely against the in-process mock LLM (no
+#                       secrets), so fork PRs run it directly here just like
+#                       ci.yml, with no fork-e2e/** mirror (#802 removed the
+#                       credential setup). The four shard checks are required by
+#                       merge-ready.yml.
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  pull_request:
+    # labeled/unlabeled: kept for the skip-security-scan recovery path
+    # (rerun-security-gate-run.yml falls back to this trigger). The concurrency
+    # group key isolates label events so they never cancel a code-push run.
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+    paths-ignore: ['web/**', 'tests/e2e_ui/**', 'CHANGELOG.md']
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Branch to run e2e tests against"
+        required: false
+        default: "main"
+      parallelism:
+        description: "Number of pytest workers per shard (-n flag). Default 2 keeps per-shard concurrency low so the 4 shards * 2 workers = 8 concurrent gateway calls stays below the nightly's pain point (20 concurrent triggered 429s)."
+        required: false
+        default: "2"
+
+concurrency:
+  # PRs key by number, dispatch by branch (so re-runs cancel); schedule keys
+  # by SHA so each merge to `main` gets its own run. Label events append the
+  # label name so they get an isolated slot and never cancel a code-push run.
+  group: e2e-${{ github.workflow }}-${{ github.event.pull_request.number || github.event.inputs.branch || github.sha }}-${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name || 'run' }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # No web SPA build during `uv sync`: this job never serves the
+  # bundle and the build hits public npm with no registry mirror.
+  OMNIGENT_SKIP_WEB_UI: "true"
+  # Never let the test server pick up the runner's own credentials.
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
+  CODEX: ""
+  CLAUDE_CODE: ""
+
+jobs:
+  # Security gate: untrusted PRs wait on the deterministic scan
+  # (security-gate.yml); trusted authors and non-PR events pass instantly.
+  # Short-circuit for label events that aren't skip-security-scan (e.g.
+  # automerge): those run in their own isolated concurrency slot (above) and
+  # don't need the full suite — just exit fast.
+  gate:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'skip-security-scan'
+    uses: ./.github/workflows/security-gate.yml
+
+  # Shard matrix (e2e-shard-matrix.sh, shared with e2e-ui.yml). Fork PRs run by
+  # default; draft PRs resolve to an empty matrix.
+  setup:
+    name: setup
+    needs: gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Check out CI scripts
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          # Triggering ref (not main): the script must exist on it, and it
+          # only shards tests -- no secrets exposure, so the PR's copy is fine.
+          sparse-checkout: .github/scripts/ci
+          persist-credentials: false
+      - name: Compute shard matrix
+        id: matrix
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          IS_DRAFT: ${{ github.event.pull_request.draft }}
+          NUM_SHARDS: "4"
+        run: bash .github/scripts/ci/e2e-shard-matrix.sh
+
+  e2e:
+    # Sharded matrix: each shard runs ~1/N of the set, under the wallclock
+    # budget where CrowdStrike kills long jobs (#426). max-parallel:4 runs
+    # all shards concurrently so one wedged shard can't block the others.
+    # -n 2 per shard => 4 x 2 = 8 concurrent gateway calls, below the
+    # nightly's 429 pain point; drop -n before max-parallel if rate-limited.
+    name: E2E Tests (shard ${{ matrix.shard_id }}/${{ matrix.num_shards }})
+    # Draft PRs resolve to an EMPTY matrix in `setup`, so no shard runs for
+    # them. Fork PRs DO run (mock LLM, no secrets) -- same as ci.yml.
+    needs: setup
+    runs-on: ubuntu-latest
+    # Job-level cap (composite-action run steps can't set timeout-minutes):
+    # ~30 min of tests + setup, replacing the old per-step 30-min backstop.
+    timeout-minutes: 35
+    strategy:
+      # One red shard shouldn't cancel siblings -- we want every shard's signal.
+      fail-fast: false
+      max-parallel: 4
+      # Shards from `setup` (deterministic node-ID split); [] when skipped.
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          # PRs (same-repo and fork) test the merge result (refs/pull/N/merge --
+          # absent when the PR conflicts, so a conflicted PR fails checkout by
+          # design). Schedule / dispatch fall back to the branch / ref.
+          ref: ${{ github.event.pull_request.number && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.event.inputs.branch || github.ref }}
+
+      # Steps below are shared verbatim with server-compat.yml's backcompat-e2e
+      # job via the composite action, so the two never drift. server_version
+      # is omitted here -> normal gate (tests the checked-out server, mock LLM).
+      - name: Run e2e suite
+        uses: ./.github/actions/e2e-run
+        with:
+          shard_id: ${{ matrix.shard_id }}
+          num_shards: ${{ matrix.num_shards }}
+          parallelism: ${{ github.event.inputs.parallelism || '2' }}
+          nightly_full: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}

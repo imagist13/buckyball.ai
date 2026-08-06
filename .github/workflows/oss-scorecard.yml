@@ -1,0 +1,69 @@
+name: OSS Scorecard
+
+# OpenSSF Scorecard supply-chain posture scan. Gated to this repository, so it
+# stays inert in forks and mirrors. Results upload as SARIF to the repo's
+# code-scanning / Security tab. The Branch-Protection check needs a PAT (`repo`
+# + read:org) as repo_token to score fully; without one only that check is
+# inconclusive. publish_results is off while the repo is private — once public,
+# flip it to true, add `id-token: write` to the job, and add the README badge.
+
+on:
+  # Re-score on branch-protection changes, weekly, and on push to main.
+  branch_protection_rule:
+  schedule:
+    - cron: '37 4 * * 1'  # Mondays 04:37 UTC
+  push:
+    branches: [main]
+
+permissions: read-all
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    if: ${{ github.repository == 'omnigent-ai/omnigent' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      security-events: write  # upload the SARIF result to code scanning
+      contents: read
+      actions: read
+    steps:
+      # Scorecard's GraphQL queries aren't accessible to the default GITHUB_TOKEN
+      # on a PRIVATE repo, so a PAT (repo + read:org) in SCORECARD_TOKEN is
+      # required until the repo is public. Skip cleanly (green) until it's set so
+      # this never paints a red check.
+      - name: Check for Scorecard token
+        id: gate
+        env:
+          SCORECARD_TOKEN: ${{ secrets.SCORECARD_TOKEN }}
+        run: |
+          if [[ -n "$SCORECARD_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SCORECARD_TOKEN not set; skipping Scorecard (a PAT is required while the repo is private)."
+          fi
+
+      - name: Checkout
+        if: steps.gate.outputs.ready == 'true'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        if: steps.gate.outputs.ready == 'true'
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a  # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # PAT (repo + read:org); required for GraphQL queries on a private repo.
+          repo_token: ${{ secrets.SCORECARD_TOKEN }}
+          # Private repo: don't publish to the public OpenSSF API. Flip to true
+          # (and add id-token: write above) once the repo is public.
+          publish_results: false
+
+      - name: Upload SARIF to code scanning
+        if: steps.gate.outputs.ready == 'true'
+        uses: github/codeql-action/upload-sarif@c35d1b164463ee62a100735382aaaa525c5d3496  # codeql-bundle-v2.25.6
+        with:
+          sarif_file: results.sarif

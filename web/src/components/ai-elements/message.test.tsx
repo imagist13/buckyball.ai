@@ -1,0 +1,98 @@
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { MessageContent, MessageResponse } from "./message";
+
+const clipboardDescriptor = Object.getOwnPropertyDescriptor(Navigator.prototype, "clipboard");
+const execCommandDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "execCommand");
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  if (clipboardDescriptor) {
+    Object.defineProperty(Navigator.prototype, "clipboard", clipboardDescriptor);
+  } else {
+    delete (Navigator.prototype as { clipboard?: unknown }).clipboard;
+  }
+
+  if (execCommandDescriptor) {
+    Object.defineProperty(Document.prototype, "execCommand", execCommandDescriptor);
+  } else {
+    delete (Document.prototype as { execCommand?: unknown }).execCommand;
+  }
+});
+
+describe("MessageContent", () => {
+  it("uses the settings-driven interface text token", () => {
+    render(<MessageContent>Message text</MessageContent>);
+
+    const content = screen.getByText("Message text");
+    expect(content).toHaveClass("text-ui", "group-[.is-user]:px-3", "group-[.is-user]:py-2");
+    expect(content).not.toHaveClass("text-[0.8125rem]", "leading-[1.125rem]");
+    expect(content).not.toHaveClass("group-[.is-user]:px-4", "group-[.is-user]:py-3");
+  });
+});
+
+describe("MessageResponse", () => {
+  it("blocks external image markdown and renders a placeholder", async () => {
+    render(<MessageResponse>{"![leak](https://attacker.example/pixel.png)"}</MessageResponse>);
+
+    expect(document.querySelector('img[src^="https://attacker.example"]')).toBeNull();
+    expect(await screen.findByText("[Image blocked: leak]")).toBeTruthy();
+  });
+
+  it("re-renders when rendering props change even if the text is unchanged", async () => {
+    const { container, rerender } = render(
+      <MessageResponse className="math-config-a">same text</MessageResponse>,
+    );
+
+    expect(container.firstElementChild).toHaveClass("math-config-a");
+
+    rerender(<MessageResponse className="math-config-b">same text</MessageResponse>);
+
+    await waitFor(() => {
+      expect(container.firstElementChild).toHaveClass("math-config-b");
+    });
+  });
+});
+
+describe("MessageResponse code-block copy", () => {
+  it("copies the exact fenced code text through the fallback path", async () => {
+    const copiedText: string[] = [];
+    Object.defineProperty(Navigator.prototype, "clipboard", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(Document.prototype, "execCommand", {
+      configurable: true,
+      value: vi.fn((command: string) => {
+        expect(command).toBe("copy");
+        const event = new Event("copy", {
+          bubbles: true,
+          cancelable: true,
+        }) as ClipboardEvent;
+        Object.defineProperty(event, "clipboardData", {
+          configurable: true,
+          value: {
+            setData: (type: string, value: string) => {
+              expect(type).toBe("text/plain");
+              copiedText.push(value);
+            },
+          },
+        });
+        document.dispatchEvent(event);
+        return true;
+      }),
+    });
+
+    render(
+      <MessageResponse>{"```ts\nconst value = 1;\nconsole.log(value);\n```"}</MessageResponse>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Copy Code" }));
+
+    await waitFor(() => {
+      expect(copiedText).toEqual(["const value = 1;\nconsole.log(value);\n"]);
+    });
+    expect(screen.getByRole("button", { name: "Download file" })).toBeInTheDocument();
+  });
+});

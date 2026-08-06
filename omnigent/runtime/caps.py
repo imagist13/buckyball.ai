@@ -1,0 +1,113 @@
+"""Runtime caps — operator-configured hard ceilings."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from omnigent.server.routing_backend import RoutingBackends
+    from omnigent.server.smart_routing import RoutingClient, RoutingSettings
+    from omnigent.spec.types import LLMConfig, PolicySpec
+
+
+def _default_routing_settings() -> RoutingSettings:
+    """Build the default :class:`RoutingSettings` (imported lazily)."""
+    from omnigent.server.smart_routing import RoutingSettings
+
+    return RoutingSettings()
+
+
+@dataclass
+class RuntimeCaps:
+    """
+    Operator-configured runtime policies for agent execution.
+
+    These are deployment/security decisions that agents cannot
+    override. Agent specs are clamped to these limits.
+
+    :param execution_timeout: Max wall-clock time for the entire
+        agent loop in seconds, e.g. ``7200``.
+    :param sandbox_enabled: Whether to use ``srt`` sandboxing for
+        local tool execution when available on PATH. ``True`` by
+        default. This is a runtime security policy — agents cannot
+        opt out. The agent spec controls ``container_image``
+        (what container to use) and ``container_runtime`` (docker
+        or podman).  The runtime can also be set globally via the
+        ``OMNIGENT_CONTAINER_RUNTIME`` environment variable; the
+        per-agent ``container_runtime`` key takes precedence.
+        Note: ``container_runtime`` determines which binary is
+        invoked via subprocess — it is validated to a fixed
+        allowlist (``"docker"`` | ``"podman"``) at both the
+        dataclass and parser layers.
+    :param default_policies: Server-wide policies appended after
+        per-agent policies on every session. Loaded from the
+        ``policies:`` key in the server ``--config`` YAML
+        at startup. ``[]`` means no server-wide policies (the
+        default — no behaviour change when the key is absent).
+    :param llm: Server-level LLM configuration for policy
+        functions. Parsed from the ``llm:`` key in the server
+        ``--config`` YAML at startup. When present, a
+        :class:`~omnigent.policies.types.PolicyLLMClient`
+        is built from this config and injected into every
+        function policy's ``event["llm_client"]``.
+        ``None`` when the key is absent — function policies
+        see ``None`` in ``event["llm_client"]``.
+    :param policy_llm_connection_factory: Optional callable invoked
+        at engine-build time (i.e. per request) to supply the
+        ``{"base_url", "api_key"}`` connection dict for the
+        :class:`~omnigent.policies.types.PolicyLLMClient`. When
+        provided its result takes precedence over any connection
+        resolved from ``llm.connection`` / ``llm.profile``, so the
+        LLM call is billed to the request caller rather than a
+        static service-level credential. ``None`` falls back to the
+        ``llm``-config-resolved connection.
+    :param routing_client: This deployment's primary/default routing
+        client — the same object as ``routing_backends.any()`` when both
+        are set. Every legacy consumer reads it, so it stays the single
+        answer to "is routing configured at all".
+    :param routing_backends: The external and built-in routing clients
+        as a pair, so a call whose harness is not AI-Gateway-backed can
+        still be served by the built-in judge
+        (:func:`~omnigent.server.routing_backend.select_router`).
+        Managed deployments that supply their own client should set this
+        explicitly: absent it the pair is derived from
+        :attr:`routing_client` by ``isinstance``, which classifies an
+        unrecognized client as the OSS judge. That default is safe — it
+        costs only a badge on the decision chip, whereas claiming a
+        custom client is gateway-backed would promise reachability
+        nobody verified.
+    """
+
+    execution_timeout: int = 7200
+    sandbox_enabled: bool = True
+    # Populated from ``policies:`` in the server --config YAML.
+    # Stored as a list so the builder can append it without importing
+    # the full GuardrailsSpec type at caps construction time.
+    default_policies: list[PolicySpec] = field(default_factory=list)
+    # Populated from ``llm:`` in the server --config YAML.
+    # Used by the policy engine builder to construct a shared
+    # PolicyLLMClient for function policy callables.
+    llm: LLMConfig | None = None
+    # Per-request connection resolver for the PolicyLLMClient.
+    # Registered by the host application (e.g. omnigents_app.py) to
+    # propagate the caller's auth token instead of using static
+    # server-level credentials.
+    policy_llm_connection_factory: Callable[[], dict[str, str] | None] | None = None
+    # Pluggable model routing client.  The default LLMRoutingClient
+    # uses the server-level ``llm:`` config to call a lightweight judge.
+    # Managed deployments can supply a different implementation (e.g.
+    # a rules engine or remote service).  ``None`` disables routing.
+    routing_client: RoutingClient | None = None
+    # Both routing backends, so each call can pick the one that can serve it:
+    # the external client's picks are AI-Gateway catalog ids, so it only serves
+    # gateway-backed harnesses, while the built-in judge serves any. ``None``
+    # derives the pair from ``routing_client`` by type.
+    routing_backends: RoutingBackends | None = None
+    # Routing knobs parsed from the ``routing:`` block of the server --config
+    # YAML (router name, extraction model, scenario menus, subagent fail mode).
+    # Always present so consumers read one value object instead of re-parsing
+    # config; the defaults describe an unconfigured deployment.
+    routing_settings: RoutingSettings = field(default_factory=_default_routing_settings)

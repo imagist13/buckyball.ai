@@ -1,0 +1,75 @@
+name: PR Autoformat
+
+# Manual PR hygiene helper: a human comments `/autoformat` to assign the PR
+# author and add missing PR-template sections without deleting the author's text.
+# This issue_comment workflow never checks out or executes PR code — it checks
+# out only the default-branch script and updates PR metadata via the API.
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: pr-autoformat-${{ github.event.issue.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  autoformat:
+    name: PR Autoformat
+    if: >-
+      !endsWith(github.actor, '[bot]') &&
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/autoformat')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout default-branch helper
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/scripts/pr-template
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Autoformat PR body and assign author
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+
+          pr_json=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json author,body)
+          author=$(jq -r '.author.login' <<<"$pr_json")
+          body_file=$(mktemp)
+          new_body_file=$(mktemp)
+          jq -r '.body // ""' <<<"$pr_json" > "$body_file"
+
+          gh api \
+            --method POST \
+            "/repos/${REPO}/issues/${PR_NUMBER}/assignees" \
+            -f "assignees[]=${author}"
+
+          .github/scripts/pr-template/format_body.py "$body_file" "$new_body_file"
+
+          changed=false
+          if ! cmp -s "$body_file" "$new_body_file"; then
+            gh pr edit "$PR_NUMBER" --repo "$REPO" --body-file "$new_body_file"
+            changed=true
+          fi
+
+          if [ "$changed" = true ]; then
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "Autoformatted PR body and assigned @${author}."
+          else
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "Assigned @${author}. PR body already had the expected template sections."
+          fi
