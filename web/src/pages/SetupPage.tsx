@@ -23,6 +23,7 @@
  */
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setup as setupRequest } from "@/lib/accountsApi";
@@ -30,6 +31,7 @@ import { setup as setupRequest } from "@/lib/accountsApi";
 const MIN_PASSWORD_LENGTH = 8;
 
 export function SetupPage() {
+  const { t } = useTranslation("auth");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -75,10 +77,14 @@ export function SetupPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Create the admin account</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("setup.title", { defaultValue: "Create the admin account" })}
+          </h1>
           <p className="text-ui text-muted-foreground">
-            First run — pick the username and password for this server's admin. You can invite
-            others once you're in.
+            {t("setup.description", {
+              defaultValue:
+                "First run — pick the username and password for this server's admin. You can invite others once you're in.",
+            })}
           </p>
         </div>
 
@@ -149,7 +155,9 @@ export function SetupPage() {
             className="w-full"
             disabled={submitting || password.length < MIN_PASSWORD_LENGTH || username.length === 0}
           >
-            {submitting ? "Creating…" : "Create admin"}
+            {submitting
+              ? t("register.submitLoading", { defaultValue: "Creating…" })
+              : t("setup.submit", { defaultValue: "Create admin" })}
           </Button>
         </form>
       </div>

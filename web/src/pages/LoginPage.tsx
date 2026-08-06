@@ -26,6 +26,7 @@
  */
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "@/lib/routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,7 @@ function rememberUsername(value: string): void {
 }
 
 export function LoginPage() {
+  const { t } = useTranslation("auth");
   const [params] = useSearchParams();
   // `return_to` is set by both identity.ts (on 401 redirect) and the
   // server-side magic-redeem 302 fallback. Trust only same-origin
@@ -142,8 +144,12 @@ export function LoginPage() {
     >
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-          <p className="text-ui text-muted-foreground">Welcome to Omnigent.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("login.title", { defaultValue: "Sign in" })}
+          </h1>
+          <p className="text-ui text-muted-foreground">
+            {t("login.description", { defaultValue: "Welcome to Omnigent." })}
+          </p>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -191,7 +197,9 @@ export function LoginPage() {
           )}
 
           <Button type="submit" className="w-full" disabled={submitting || password.length === 0}>
-            {submitting ? "Signing in…" : "Sign in"}
+            {submitting
+              ? t("login.submitLoading", { defaultValue: "Signing in…" })
+              : t("login.submit", { defaultValue: "Sign in" })}
           </Button>
         </form>
 

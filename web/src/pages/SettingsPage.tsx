@@ -162,6 +162,14 @@ import {
   type CustomTheme,
   writeCustomTheme,
 } from "@/lib/customTheme";
+import {
+  applyLanguage,
+  LANGUAGES,
+  readLanguage,
+  type UiLanguage,
+  writeLanguage,
+} from "@/lib/languagePreferences";
+import { useTranslation } from "react-i18next";
 import { useIsEmbedded } from "@/lib/embedded";
 import {
   type CliStatus,
@@ -823,7 +831,60 @@ function HideUnconfiguredHarnessesControl() {
   );
 }
 
+/**
+ * UI language picker. Mirrors the read/apply/write pattern of the other
+ * appearance controls: read on mount, mutate on change, persist to localStorage,
+ * apply to i18next + <html lang> immediately so a swap is reflected without a
+ * reload.
+ *
+ * The list is sourced from `LANGUAGES` (lib/languagePreferences.ts) so adding a
+ * new locale is one constant + two translation files away.
+ */
+function LanguageControl() {
+  const { t } = useTranslation("settings");
+  const { i18n } = useTranslation();
+  const [value, setValue] = useState<UiLanguage>(() => readLanguage());
+  const labelId = useId();
+  const choose = useCallback(
+    (next: UiLanguage) => {
+      setValue(next);
+      writeLanguage(next);
+      applyLanguage(next);
+      void i18n.changeLanguage(next);
+    },
+    [i18n],
+  );
+  return (
+    <ThemeSubsection
+      labelId={labelId}
+      title={t("appearance.language")}
+      helper={t("appearance.languageDescription")}
+    >
+      <CardRadioGroup<UiLanguage>
+        labelledBy={labelId}
+        value={value}
+        onSelect={choose}
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+        cardClassName="items-center gap-2 p-4"
+        items={LANGUAGES.map((lang) => ({
+          value: lang.id,
+          testId: `language-${lang.id}`,
+          body: (
+            <div className="flex min-w-0 flex-col items-start gap-0.5">
+              <span className="text-ui font-medium leading-tight">{lang.label}</span>
+              <span className="text-xs text-muted-foreground leading-tight">
+                {lang.englishLabel}
+              </span>
+            </div>
+          ),
+        }))}
+      />
+    </ThemeSubsection>
+  );
+}
+
 function AppearanceSection() {
+  const { t } = useTranslation("settings");
   // Embedded: the host owns light/dark, so the Mode and Color theme pickers
   // would be no-ops — hide them and say so (matching ThemeModeMenu). Terminal
   // theme and the font controls are per-device prefs that don't conflict with
@@ -870,6 +931,7 @@ function AppearanceSection() {
           "omnigent:custom-theme",
           "omnigent:default-workspace-panel",
           "omnigent:hide-unconfigured-harnesses",
+          "omnigent:ui-language",
         ]) {
           window.localStorage.removeItem(key);
         }
@@ -890,8 +952,10 @@ function AppearanceSection() {
 
   return (
     <Section
-      title="Appearance"
-      description="Choose how Omnigent looks on this device."
+      title={t("appearance.title", { defaultValue: "Appearance" })}
+      description={t("appearance.description", {
+        defaultValue: "Choose how Omnigent looks on this device.",
+      })}
       descriptionClassName="text-sm"
     >
       <div key={resetKey} className="flex flex-col gap-8">
@@ -911,6 +975,8 @@ function AppearanceSection() {
         {!isEmbedded && <ColorThemeControl />}
 
         <WorkspacePanelDefaultControl />
+
+        <LanguageControl />
 
         <HideUnconfiguredHarnessesControl />
 
@@ -965,8 +1031,14 @@ function AppearanceSection() {
 
 /** Git behavior settings. */
 function GitSection() {
+  const { t } = useTranslation("settings");
   return (
-    <Section title="Git" description="Configure how Omnigent works with Git.">
+    <Section
+      title={t("git.title", { defaultValue: "Git" })}
+      description={t("git.description", {
+        defaultValue: "Configure how Omnigent works with Git.",
+      })}
+    >
       <div className="flex flex-col gap-8">
         <DefaultBaseBranchControl />
       </div>
@@ -1370,8 +1442,14 @@ function StepperButton({
 }
 
 function ShortcutsSection() {
+  const { t } = useTranslation("settings");
   return (
-    <Section title="Keyboard shortcuts" description="Speed up common actions with the keyboard.">
+    <Section
+      title={t("shortcuts.title", { defaultValue: "Keyboard shortcuts" })}
+      description={t("shortcuts.description", {
+        defaultValue: "Speed up common actions with the keyboard.",
+      })}
+    >
       <KeyboardShortcutsList />
     </Section>
   );
@@ -1385,6 +1463,7 @@ function ShortcutsSection() {
  * here since it chooses no path.
  */
 function LocalCliSection() {
+  const { t } = useTranslation("settings");
   const [status, setStatus] = useState<CliStatus | null | "loading">("loading");
   const [busy, setBusy] = useState(false);
 
@@ -1401,7 +1480,7 @@ function LocalCliSection() {
 
   if (status === "loading") {
     return (
-      <Section title="Local CLI">
+      <Section title={t("cli.title", { defaultValue: "Local CLI" })}>
         <p className="text-ui text-muted-foreground">Checking…</p>
       </Section>
     );
@@ -1409,8 +1488,11 @@ function LocalCliSection() {
 
   return (
     <Section
-      title="Local CLI"
-      description="The Omnigent command-line tool this app uses to run a local server and connect this machine as a runner."
+      title={t("cli.title", { defaultValue: "Local CLI" })}
+      description={t("cli.description", {
+        defaultValue:
+          "The Omnigent command-line tool this app uses to run a local server and connect this machine as a runner.",
+      })}
     >
       {status === null ? (
         <p className="text-ui text-muted-foreground">CLI status is unavailable.</p>
@@ -1481,6 +1563,7 @@ const UPDATE_MODE_LABELS: Record<UpdateMode, string> = {
 };
 
 function UpdatesSection() {
+  const { t } = useTranslation("settings");
   const bridge = updateBridge();
   const [config, setConfig] = useState<UpdateConfig | null | "loading">("loading");
   const [saving, setSaving] = useState(false);
@@ -1550,7 +1633,7 @@ function UpdatesSection() {
 
   if (config === "loading") {
     return (
-      <Section title="Updates">
+      <Section title={t("updates.title", { defaultValue: "Updates" })}>
         <p className="text-ui text-muted-foreground">Checking…</p>
       </Section>
     );
@@ -1558,8 +1641,10 @@ function UpdatesSection() {
 
   return (
     <Section
-      title="Updates"
-      description="Desktop app update preferences for this installed Omnigent shell."
+      title={t("updates.title", { defaultValue: "Updates" })}
+      description={t("updates.description", {
+        defaultValue: "Desktop app update preferences for this installed Omnigent shell.",
+      })}
     >
       {config === null ? (
         <p className="text-ui text-muted-foreground">Update settings are unavailable.</p>
@@ -1623,6 +1708,7 @@ function UpdatesSection() {
 }
 
 function AccountSection() {
+  const { t } = useTranslation("settings");
   const info = useServerInfo();
   const accountsEnabled = info !== "loading" && info.accounts_enabled;
   // Identity for display. Sourced from the mode-agnostic `/v1/me` probe so it
@@ -1691,11 +1777,11 @@ function AccountSection() {
   }, [oldPw, newPw, confirmPw]);
 
   if (me === "unknown" || me === null) {
-    return <Section title="Account">{null}</Section>;
+    return <Section title={t("account.title", { defaultValue: "Account" })}>{null}</Section>;
   }
 
   return (
-    <Section title="Account">
+    <Section title={t("account.title", { defaultValue: "Account" })}>
       <div className="flex flex-col gap-6">
         <div className="flex items-center gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border">
@@ -1863,6 +1949,7 @@ function dateGroupLabel(timestampSec: number, now: Date = new Date()): string {
 }
 
 function ArchivedSection() {
+  const { t } = useTranslation("settings");
   // `undefined` = all projects; a name scopes the list to that project.
   const [project, setProject] = useState<string | undefined>(undefined);
 
@@ -1919,8 +2006,10 @@ function ArchivedSection() {
 
   return (
     <Section
-      title="Archived sessions"
-      description="Sessions you've archived. Restore one to the sidebar, or delete it for good."
+      title={t("archived.title", { defaultValue: "Archived sessions" })}
+      description={t("archived.description", {
+        defaultValue: "Sessions you've archived. Restore one to the sidebar, or delete it for good.",
+      })}
     >
       {items.length > 0 && (
         <div className="mb-4 flex items-center gap-2">

@@ -24,9 +24,16 @@ import {
 import { applyThemePalette, readThemePalette } from "./lib/themePalette";
 import { applyCustomTheme, readCustomTheme } from "./lib/customTheme";
 import { initChatStore } from "./store/chatStore";
+import { initI18n } from "./i18n/config";
 import "katex/dist/katex.min.css";
 import "streamdown/styles.css";
 import "./index.css";
+
+// Initialize i18n synchronously before first paint so the language detector
+// and resource registration both complete before any component renders.
+// `initI18n` is idempotent and also applies `<html lang>` early — see
+// `i18n/config.ts` for the boot order.
+initI18n();
 
 // Start tracing before any request fires so fetch/XHR are patched in time
 // and a trace begins in the browser. No-op unless a collector endpoint is

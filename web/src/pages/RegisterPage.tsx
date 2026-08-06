@@ -18,6 +18,7 @@
  */
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "@/lib/routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ import { register as registerRequest } from "@/lib/accountsApi";
 const MIN_PASSWORD_LENGTH = 8;
 
 export function RegisterPage() {
+  const { t } = useTranslation("auth");
   const [params] = useSearchParams();
   const invite = params.get("invite") ?? "";
 
@@ -81,9 +83,13 @@ export function RegisterPage() {
     >
       <div className="w-full max-w-sm space-y-6">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Create your account</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("register.title", { defaultValue: "Create your account" })}
+          </h1>
           <p className="text-ui text-muted-foreground">
-            You were invited to join this Omnigent server.
+            {t("register.description", {
+              defaultValue: "You were invited to join this Omnigent server.",
+            })}
           </p>
         </div>
 
@@ -165,7 +171,9 @@ export function RegisterPage() {
                 submitting || password.length < MIN_PASSWORD_LENGTH || username.length === 0
               }
             >
-              {submitting ? "Creating…" : "Create account"}
+              {submitting
+                ? t("register.submitLoading", { defaultValue: "Creating…" })
+                : t("register.submit", { defaultValue: "Create account" })}
             </Button>
           </form>
         )}

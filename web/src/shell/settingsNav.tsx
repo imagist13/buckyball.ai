@@ -27,6 +27,7 @@ import { isSingleUserMode } from "@/lib/capabilities";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { isElectronShell } from "@/lib/nativeBridge";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 import { SIDEBAR_ROW } from "./sidebarStyles";
 
 export type SettingsSectionId =
@@ -75,6 +76,12 @@ interface SettingsNavGroup {
  * appears for admins in ANY multi-user mode since both accounts and OIDC share
  * the `users.is_admin` flag and the server enforces admin on every route; the
  * Desktop group (Local CLI) appears only in the Electron shell.
+ *
+ * Returns the groups with English labels — the caller (SettingsSidebarBody)
+ * localizes the visible titles via `t('settings.sections.<id>')`. Keeping this
+ * function pure-English means `label` stays a stable identifier for tests and
+ * analytics; translation happens in the JSX layer where it can plug into
+ * `useTranslation`.
  */
 export function settingsNavGroups(
   hasAuthSession: boolean,
@@ -194,6 +201,7 @@ export function SettingsSidebarBody({
 }: {
   onNavClick: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
+  const { t } = useTranslation("settings");
   const info = useServerInfo();
   // Account section shows whenever there's a login session (accounts OR OIDC).
   const hasAuthSession = info !== "loading" && info.login_url !== null;
@@ -208,6 +216,25 @@ export function SettingsSidebarBody({
     isAdmin,
     isSingleUserMode(info),
   );
+
+  // Group titles and item labels are sourced from settingsNavGroups (always
+  // English). Translation happens here so the nav stays locale-aware without
+  // threading a t() through every call site of the pure function above.
+  const groupTitleKey = (title: string): string => {
+    switch (title) {
+      case "Desktop":
+        return "groups.desktop";
+      case "General":
+        return "groups.general";
+      case "Admin":
+        return "groups.admin";
+      case "Archived":
+        return "groups.archived";
+      default:
+        return title;
+    }
+  };
+  const itemLabelKey = (id: SettingsSectionId): string => `sections.${id}`;
 
   return (
     <>
@@ -229,14 +256,16 @@ export function SettingsSidebarBody({
           (persistent card), so dropping it changes nothing there. */}
           <Link to={settingsReturnPath} componentId="settings.back_to_omnigent">
             <ArrowLeftIcon className="ui-icon" />
-            Back
+            {t("back", { defaultValue: "Back" })}
           </Link>
         </Button>
       </div>
       <nav className="flex flex-1 flex-col gap-4 overflow-y-auto px-3 py-3">
         {groups.map((group) => (
           <div key={group.title} className="flex flex-col gap-0">
-            <h2 className="px-2 py-1 text-sm font-normal text-muted-foreground">{group.title}</h2>
+            <h2 className="px-2 py-1 text-sm font-normal text-muted-foreground">
+              {t(groupTitleKey(group.title), { defaultValue: group.title })}
+            </h2>
             {group.items.map((item) => {
               const Icon = item.icon;
               const selected = section === item.id;
@@ -267,7 +296,7 @@ export function SettingsSidebarBody({
                           : "text-muted-foreground",
                       )}
                     />
-                    {item.label}
+                    {t(itemLabelKey(item.id), { defaultValue: item.label })}
                   </Link>
                 </Button>
               );

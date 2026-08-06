@@ -16,6 +16,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useParams } from "@/lib/routing";
 import { CheckIcon, MessageCircleQuestionMark, XIcon } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -40,6 +41,7 @@ type PageState =
   | { kind: "error"; message: string };
 
 export function ApprovePage() {
+  const { t } = useTranslation("auth");
   const { sessionId, elicitationId } = useParams<{
     sessionId: string;
     elicitationId: string;
@@ -150,7 +152,7 @@ export function ApprovePage() {
         <Alert className="flex flex-col gap-3 py-4 px-5">
           <AlertTitle className="flex items-center gap-2 text-ui">
             <MessageCircleQuestionMark className="size-4 text-yellow-600 dark:text-yellow-400" />
-            Approval required
+            {t("approve.title", { defaultValue: "Approval required" })}
             {state.data.policy_name && (
               <span className="text-muted-foreground text-sm">· {state.data.policy_name}</span>
             )}
@@ -177,11 +179,11 @@ export function ApprovePage() {
                 disabled={state.data.can_approve === false}
               >
                 <CheckIcon className="mr-1 size-3.5" />
-                Approve
+                {t("approve.approve", { defaultValue: "Approve" })}
               </Button>
               <Button size="sm" variant="outline" onClick={() => void submit("decline")}>
                 <XIcon className="mr-1 size-3.5" />
-                Reject
+                {t("approve.deny", { defaultValue: "Reject" })}
               </Button>
             </div>
           </AlertDescription>
