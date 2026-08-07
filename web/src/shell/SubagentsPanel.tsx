@@ -44,7 +44,6 @@ import { KimiIcon } from "@/components/icons/KimiIcon";
 import { KiroIcon } from "@/components/icons/KiroIcon";
 import { NessieIcon } from "@/components/icons/NessieIcon";
 import { OpenCodeIcon } from "@/components/icons/OpenCodeIcon";
-import { OttoIcon } from "@/components/icons/OttoIcon";
 import { PiIcon } from "@/components/icons/PiIcon";
 import { Button } from "@/components/ui/button";
 import { RunningDot } from "@/components/RunningDot";

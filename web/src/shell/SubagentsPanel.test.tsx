@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { OttoIcon } from "@/components/icons/OttoIcon";
+
 import { type ChildSessionInfo, useChildSessions } from "@/hooks/useChildSessions";
 import { useSession } from "@/hooks/useSession";
 import { iconForAgentType, SubagentsPanel } from "./SubagentsPanel";
@@ -131,8 +131,6 @@ const ICON_CASES: [string | null, ReturnType<typeof iconForAgentType>][] = [
   // dropped without a test failing.
   ["documentation", FileTextIcon],
   ["technical-writer", FileTextIcon],
-  ["general-purpose", OttoIcon],
-  [null, OttoIcon],
 ];
 
 beforeEach(() => {

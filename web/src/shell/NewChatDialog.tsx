@@ -187,7 +187,6 @@ import {
   parseMentionToken,
   rankMentionEntries,
 } from "@/lib/composerMentions";
-import { OttoEyes } from "@/components/OttoEyes";
 import { SkillPills } from "@/components/SkillPills";
 import { ComposerMicButton } from "@/components/ComposerMicButton";
 import type { CostControlMode } from "@/components/CostRoutingControl";
@@ -1141,7 +1140,9 @@ export function AgentHarnessPicker({
           <span
             className={cn("max-w-[12rem] truncate text-ui text-foreground", triggerLabelClassName)}
           >
-            {hasAgents ? agentLabel : tAgentPicker("newSession.noAgents", { defaultValue: "No agents" })}
+            {hasAgents
+              ? agentLabel
+              : tAgentPicker("newSession.noAgents", { defaultValue: "No agents" })}
           </span>
           <ChevronDownIcon className="size-3.5 opacity-60" />
         </Button>
@@ -1560,7 +1561,8 @@ function HarnessConfigModal({
               agent: configTitleName,
               defaultValue: `Configure ${configTitleName}`,
             })}{" "}
-            — {tConfig("newSession.summary.sessionRunHint", {
+            —{" "}
+            {tConfig("newSession.summary.sessionRunHint", {
               defaultValue: "How this agent runs for this session.",
             })}
           </DialogDescription>
@@ -3245,8 +3247,7 @@ export function NewChatLandingScreen() {
   // The chip shows just the branch (the "(existing)" distinction lives in the
   // popover's warning; appending it here only gets clipped by the chip's cap).
   const worktreeLabel =
-    branchName.trim() ||
-    tNewSession("newSession.noWorktree", { defaultValue: "No worktree" });
+    branchName.trim() || tNewSession("newSession.noWorktree", { defaultValue: "No worktree" });
   // Sandbox repository chip label: repo name (server's clone-dir rule)
   // plus the pinned branch, e.g. "repo#main"; placeholder when unset.
   const sandboxRepoName = deriveRepoName(sandboxRepoUrl);
@@ -3747,7 +3748,13 @@ export function NewChatLandingScreen() {
               </div>
             </span>
           ) : (
-            <OttoEyes className="h-18 w-auto shrink-0" />
+            <img
+              src="/favicon.png"
+              alt="Omnigent"
+              width={72}
+              height={72}
+              className="h-18 w-18 shrink-0 rounded-xl"
+            />
           )}
           <h1 className="min-w-0 break-words text-center text-[1.75em] font-normal tracking-[-0.03em] text-foreground line-clamp-2 sm:text-left">
             {selectedProject ||
