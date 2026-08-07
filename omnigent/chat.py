@@ -70,7 +70,11 @@ from omnigent.process_logging import (
 from omnigent.spec import load as load_spec
 from omnigent.spec._omnigent_compat import OMNIGENT_EXECUTOR_TYPE
 from omnigent.spec.parser import discover_host_skills
-from omnigent.spec.types import AgentSpec, SkillSpec
+from omnigent.spec.types import AgentSpec, MCPServerConfig, SkillSpec
+from omnigent.skills.buckyball import (
+    attach_buckyball_to_spec,
+    find_buckyball_roots,
+)
 
 if TYPE_CHECKING:
     from omnigent._runner_startup import RunnerStartupProgress
@@ -3125,6 +3129,10 @@ def _merge_host_skills(
     up from the agent root, deduplicates by name (bundled wins),
     and returns the combined list.
 
+    Side effect: also attaches buckyball project skills + MCP servers
+    to ``agent_spec.skills`` and ``agent_spec.mcp_servers`` when the
+    spec lives inside (or near) a buckyball project root.
+
     :param agent_spec: Parsed AgentSpec with ``.skills`` and
         ``.skills_filter``.
     :param spec_path: Path to the agent YAML or directory.
@@ -3139,7 +3147,46 @@ def _merge_host_skills(
     for hs in host:
         if hs.name not in bundled_names:
             merged.append(hs)
+    agent_spec.skills = merged  # type: ignore[assignment]
+
+    # Buckyball attachment: scan upward for `.claude/skills/` + `.mcp.json`
+    # markers. Always run — if no buckyball root is found, this is a no-op.
+    _attach_buckyball(agent_spec, agent_root)
+
     return merged
+
+
+def _attach_buckyball(agent_spec: AgentSpec, agent_root: Path) -> None:
+    """
+    Attach buckyball project skills + MCP servers to ``agent_spec``.
+
+    Scans upward from ``agent_root`` for buckyball project roots (those
+    containing both ``.claude/skills/`` and ``.mcp.json``) and adds their
+    skills + MCP server configs to the agent spec. No-op when no buckyball
+    root is found (the common case for non-buckyball projects).
+
+    :param agent_spec: The agent spec to mutate in place.
+    :param agent_root: The starting directory for the upward walk.
+    """
+    try:
+        roots = find_buckyball_roots(agent_root)
+    except Exception as exc:  # noqa: BLE001 - defensive: discovery must not break REPL
+        logger.debug("buckyball discovery failed: %s", exc)
+        return
+    if not roots:
+        return
+    try:
+        result = attach_buckyball_to_spec(agent_spec, roots)
+    except Exception as exc:  # noqa: BLE001 - same defensive rationale
+        logger.warning("buckyball attach failed (continuing without): %s", exc)
+        return
+    if result.skills or result.mcp_servers:
+        logger.info(
+            "buckyball: attached %d skill(s) + %d MCP server(s) from %d root(s)",
+            len(result.skills),
+            len(result.mcp_servers),
+            len(result.roots),
+        )
 
 
 def _fallback_label(agent_path: Path) -> str:

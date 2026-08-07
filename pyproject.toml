@@ -372,7 +372,10 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["."]
 # Discovers the `omnigent` package (including `omnigent.inner.*` and
-# all omnigent subpackages absorbed during unification).
+# all omnigent subpackages absorbed during unification). The
+# `omnigent.skills.buckyball` subpackage — registered skill/MCP
+# integration for buckyball project roots — is also picked up by
+# this pattern (added 2026-08).
 include = ["omnigent*"]
 
 [tool.setuptools.package-data]
