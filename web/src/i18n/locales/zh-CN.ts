@@ -268,7 +268,7 @@ export const chat = {
   newSession: {
     placeholder: "描述任务以开启新会话…",
     placeholderWithProject: "在 {{project}} 中开启新会话",
-    headingDefault: "我们一起做什么？",
+    headingDefault: "今天想琢磨哪个 Ball？",
     headingSkillHint: "描述一个任务，或尝试一项技能",
     createError: "无法连接到服务器，请检查网络后重试。",
     validationRepoUrl: "请输入有效的仓库地址",

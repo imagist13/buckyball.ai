@@ -275,7 +275,7 @@ export const chat = {
   newSession: {
     placeholder: "Describe a task to start a new session…",
     placeholderWithProject: "Start a new session in {{project}}",
-    headingDefault: "What should we build?",
+    headingDefault: "Which Ball shall we dig into today?",
     headingSkillHint: "Describe a task, or try a skill",
     createError: "Couldn't reach the server. Check your connection and try again.",
     validationRepoUrl: "Please enter a valid repository URL",

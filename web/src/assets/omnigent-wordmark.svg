@@ -1,5 +1,4 @@
-<svg width="2880" height="600" viewBox="0 0 2880 600" xmlns="http://www.w3.org/2000/svg">
-  <!-- 4.8:1 宽高比 2880/600=4.8 -->
-  <!-- 纯黑色填充，无透明度，适配 dark:invert；使用系统粗无衬线，不转path -->
-  <text x="30" y="470" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="440" fill="#000000">buckyball</text>
+<svg width="3815" height="960" viewBox="0 0 3815 960" xmlns="http://www.w3.org/2000/svg">
+  <!-- buckyball 粗体无衬线文字logo -->
+  <text x="0" y="740" font-family="sans-serif" font-weight="900" font-size="780" fill="#000000">buckyball</text>
 </svg>
