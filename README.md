@@ -1,147 +1,153 @@
 # buckyball.ai
 
-> 今天想琢磨哪个 Ball？
+> 今天想琢磨哪个 Ball？ — _"Which Ball do you want to tinker with today?"_
 
 ![bb.ai Web](docs/images/bb-ai.png)
 
-## 它是什么
+[🇨🇳 Chinese version](./README.zh.md)
 
-**buckyball.ai**（下称 **bb.ai**）是面向 [Buckyball](https://github.com/DangoSys/buckyball) 项目的 **外部 AI Meta Harness**。
+## What is this?
 
-Buckyball 是一个面向 **DSA（Domain-Specific Architecture）** 的开源硬件加速器框架，包含 bebop 仿真器、bbdev 编译/验证工具链、MLIR 编译器、Verilator / BEMU / P2E / FireSim 多种仿真后端，以及覆盖 compiler / workload / kernel / yosys / firesim 的完整工作流。bb.ai 自身不重新实现任何硬件工具链，它做的事情是：
+**buckyball.ai** (short: **bb.ai**) is an **external AI meta-harness for the [Buckyball](https://github.com/DangoSys/buckyball) project**.
 
-- **发现**本地或远程的 Buckyball 项目根（同时包含 `.claude/skills/` 与 `.mcp.json`）；
-- **加载**该项目里所有 `SKILL.md`（如 `/ball`、`/bbdev`、`/verify`、`/waveform`）作为 Agent 可调用的 Skill；
-- **挂载**该项目 `.mcp.json` 中声明的 MCP Server（默认 33 个 `bbdev_*` 工具 + waveform-mcp）；
-- **在 Web UI** 里把这个 Agent 暴露给用户，让用户用自然语言驱动整个 DSA 流程 —— 写 Ball、编 MLIR、综合、跑波形、上 FPGA，全部由对话完成。
+Buckyball is an open-source framework for building **Domain-Specific Architectures (DSAs)**. It ships the **bebop** agile simulator, the **bbdev** compile / verify toolchain, an MLIR-based compiler, multiple simulation backends (Verilator, BEMU, P2E, FireSim) and a full set of workflows (compiler, workload, kernel, yosys, firesim, …). bb.ai does **not** re-implement any of that — it sits one layer above and does exactly four things:
 
-简而言之：
+- **Discover** any Buckyball project root on the local machine (any directory that contains both `.claude/skills/` and `.mcp.json`).
+- **Load** every `SKILL.md` it finds (e.g. `/ball`, `/bbdev`, `/verify`, `/waveform`) as Agent-callable skills.
+- **Mount** the MCP servers declared in that project's `.mcp.json` (by default: 33 `bbdev_*` tools + `waveform-mcp`).
+- **Expose** this "Buckyball-aware" Agent through a web UI so a user can drive the entire DSA flow — write a Ball, compile MLIR, run synthesis, dump waveforms, deploy to FPGA — using natural language.
 
-> **Buckyball = 工具链 + 仿真器 + 编译器**
-> **bb.ai = 让 AI Agent 读懂工具链、把工具链交给人聊的那一层**
+In one line:
 
-bb.ai 的运行时基于 [Omnigent](https://github.com/databricks/omnigent) 框架；其核心注册逻辑见 [omnigent/skills/buckyball/](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/skills/buckyball)，它把 buckyball 项目的 filesystem marker（`.claude/skills/` + `.mcp.json`）转换成 `AgentSpec` 上的 `SkillSpec` + `MCPServerConfig`。
+> **Buckyball = toolchain + simulator + compiler**
+> **bb.ai    = the layer that teaches an AI Agent to talk to the toolchain**
+
+bb.ai is built on top of the [Omnigent](https://github.com/databricks/omnigent) Agent runtime. The core registration logic lives in [`omnigent/skills/buckyball/`](omnigent/skills/buckyball/), which turns buckyball's filesystem markers (`.claude/skills/` + `.mcp.json`) into `SkillSpec` and `MCPServerConfig` objects on an `AgentSpec`.
+
+[🇨🇳 中文版文档](./README.zh.md)
 
 ---
 
-## 仓库组成
+## Repository layout
 
 ```
 buckyball.ai/
-├── omnigent/                    # 底层 Agent 运行时（fork 自 omnigent）
+├── omnigent/                    # Agent runtime (forked from omnigent)
 │   ├── skills/
-│   │   └── buckyball/           # ★ bb.ai 的核心
-│   │       ├── discovery.py     #   扫描 .claude/skills/ + .mcp.json
+│   │   └── buckyball/           # ★ the heart of bb.ai
+│   │       ├── discovery.py     #   scan .claude/skills/ + .mcp.json
 │   │       ├── loader.py        #   SKILL.md → SkillSpec
 │   │       │                    #   .mcp.json  → MCPServerConfig
-│   │       └── tests/           #   全 UTF-8 鲁棒 + env-var 展开
-│   ├── server/                  # FastAPI 服务 /v1/agents, /v1/sessions
-│   ├── runtime/                 # 推理循环、工具调度
-│   ├── repl/                    # 终端 REPL
-│   └── tools/                   # 本地 / MCP 工具
+│   │       └── tests/           #   UTF-8-safe parsing + env-var expansion
+│   ├── server/                  # FastAPI: /v1/agents, /v1/sessions
+│   ├── runtime/                 # reasoning loop + tool dispatch
+│   ├── repl/                    # terminal REPL
+│   └── tools/                   # local / MCP tools
 ├── web/                         # React + Vite + Tailwind v4 + shadcn/ui
-│                               # （即上方截图的 Web 端）
-├── deploy/                      # 多种部署目标（Docker / Fly / K8s / Cloudflare / Databricks…）
+│                               # (the screenshot above is this UI)
+├── deploy/                      # deployment targets
+│                               # (Docker / Fly / K8s / Cloudflare / Databricks / …)
 ├── docs/
-│   └── images/bb-ai.png         # README 顶图
-├── examples/                    # 预置 Agent 示例
-└── sdks/                        # Python Client & UI SDK
+│   └── images/bb-ai.png         # README hero image
+├── examples/                    # pre-baked Agent examples
+└── sdks/                        # Python Client + UI SDK
 ```
 
-它要消费的对象在另一个仓库：[DangoSys/buckyball](https://github.com/DangoSys/buckyball)，结构上至少需要这两份标记文件：
+The thing bb.ai *consumes* lives in a separate repository: [DangoSys/buckyball](https://github.com/DangoSys/buckyball). A valid buckyball project must contain at least these two marker files:
 
 ```
 <your-buckyball-project>/
-├── .mcp.json                    # 注册 buckyball-dev 等 MCP server
+├── .mcp.json                    # declares MCP servers (e.g. buckyball-dev)
 └── .claude/
-    └── skills/<name>/SKILL.md   # 注册可被 Agent 调用的 Skill
+    └── skills/<name>/SKILL.md   # one or more Agent-callable skills
 ```
 
-bb.ai 启动时会沿 cwd 向上 8 层自动发现这样的根。
+When bb.ai starts, it walks **up to 8 levels** from the Agent's cwd to find such a root.
 
 ---
 
-## 快速部署 & 使用
+## Quick deploy & usage
 
-下面给出最常见的两种使用方式：本地开发模式（推荐起步）以及远程部署模式。
+Below are the two most common ways to run bb.ai: a local dev setup (recommended to start) and a multi-user remote deployment.
 
-### 0. 前置依赖
+### 0. Prerequisites
 
 - Python ≥ 3.12
-- Node.js ≥ 20，pnpm
-- 一个 **buckyball 项目根**（带 `.mcp.json` 与 `.claude/skills/`），或自己 clone [DangoSys/buckyball](https://github.com/DangoSys/buckyball) 之后 `nix develop` 起来
-- 可选：`uv`、`just`、`pre-commit`
+- Node.js ≥ 20 and `pnpm`
+- A **buckyball project root** (with `.mcp.json` and `.claude/skills/`), or a fresh clone of [DangoSys/buckyball](https://github.com/DangoSys/buckyball) brought up with `nix develop`
+- Optional: `uv`, `just`, `pre-commit`
 
-### 1. 本地开发模式（推荐）
+### 1. Local dev (recommended)
 
 ```bash
-# 1. 克隆 bb.ai
+# 1. Clone bb.ai
 git clone https://github.com/your-org/buckyball.ai.git
 cd buckyball.ai
 
-# 2. 安装 Python 依赖
+# 2. Install Python dependencies
 uv sync --extra all --extra dev
 
-# 3. 安装 Web 依赖
+# 3. Install the web dependencies
 cd web && pnpm install && cd ..
 
-# 4. 准备一份 buckyball 项目（如果还没有）
-#    bb.ai 会在 Agent 的 cwd 中向上 8 层搜索 .claude/skills/ + .mcp.json
+# 4. Prepare a buckyball project (if you don't already have one)
+#    bb.ai will search up to 8 levels above the Agent's cwd for
+#    .claude/skills/ + .mcp.json
 git clone https://github.com/DangoSys/buckyball.git ~/bb-work/buckyball
 cd ~/bb-work/buckyball
-nix develop            # 让 buckyball-dev MCP server 在 stdio 后端跑起来
+nix develop            # brings the buckyball-dev MCP server (stdio) online
 ```
 
-启动后端 + 前端（两个终端）：
+Now start the backend and the web UI in two terminals:
 
 ```bash
-# 终端 A：omnigent server（默认 6767）
+# Terminal A: omnigent server (default port 6767)
 .venv/bin/omnigent server
 
-# 终端 B：Vite dev server（默认 5173）
+# Terminal B: Vite dev server (default port 5173)
 cd buckyball.ai/web
 pnpm run dev
 ```
 
-打开 [http://localhost:5173](http://localhost:5173) —— 你会看到上方那张图。
+Open <http://localhost:5173> — you should see the screenshot above.
 
-**试着说一句**："用 toy 芯片跑一下 vecunit matmul 仿真"，Agent 会自动调用 `bbdev_bebop_verilator_run` 等 MCP 工具，把整个 build → sim 跑完再回你。
+**Try this prompt:** _"Run a vecunit matmul simulation on the toy chip."_ The Agent will call `bbdev_bebop_verilator_run` (and friends) under the hood, drive the full `build → sim` flow, and reply with the results.
 
-### 2. 远程 / 多人部署模式
+### 2. Remote / multi-user deployment
 
-bb.ai 内置了多种部署配置（`deploy/`），推荐生产场景使用 Docker：
+`bb.ai` ships with pre-baked configs for several platforms under `deploy/`. Docker is the recommended production path:
 
 ```bash
 cd deploy/docker
 cp .env.example .env
-# 编辑 .env：填 BUCKYBALL_ROOT 指向你真实的 buckyball 项目根
+# Edit .env — point BUCKYBALL_ROOT at your real buckyball project root
 
-# 启服务（omnigent server + 反代 + 健康检查）
+# Start the stack (omnigent server + reverse proxy + health checks)
 docker compose up -d
 ```
 
-其他已就绪的目标：
+Other ready-to-go targets:
 
-| 平台        | 路径                       |
-|-------------|----------------------------|
-| Docker      | `deploy/docker/`           |
-| Kubernetes  | `deploy/kubernetes/`       |
-| Fly.io      | `deploy/fly/`              |
-| Railway     | `deploy/railway/`          |
-| Render      | `deploy/render/`           |
-| Cloudflare  | `deploy/cloudflare/`       |
-| HF Spaces   | `deploy/hf-spaces/`        |
-| Databricks  | `deploy/databricks/`       |
+| Platform    | Path                    |
+|-------------|-------------------------|
+| Docker      | `deploy/docker/`        |
+| Kubernetes  | `deploy/kubernetes/`    |
+| Fly.io      | `deploy/fly/`           |
+| Railway     | `deploy/railway/`       |
+| Render      | `deploy/render/`        |
+| Cloudflare  | `deploy/cloudflare/`    |
+| HF Spaces   | `deploy/hf-spaces/`     |
+| Databricks  | `deploy/databricks/`    |
 
-每个子目录都有自己的 `README.md` 与平台 manifest，遵循同一份契约：
+Each subdirectory has its own `README.md` and platform manifest, all sharing a single contract:
 
-> **环境变量 `BUCKYBALL_ROOT` 指向一个或多个已就绪的 buckyball 项目根，bb.ai 启动时自动加载。**
+> **Set the env var `BUCKYBALL_ROOT` to one or more ready-to-use buckyball project roots. bb.ai will load them on startup.**
 
-### 3. 给自己的 buckyball 项目加 bb.ai 接入
+### 3. Wire bb.ai into your own buckyball project
 
-仅需两步：
+Just two files:
 
-1. 在项目根写一份 `.mcp.json`（参考 bb.ai 注册的 buckyball 模板）：
+1. Drop a `.mcp.json` at the project root (template mirrored from the buckyball reference project):
 
    ```json
    {
@@ -150,30 +156,35 @@ docker compose up -d
          "command": "bash",
          "args": ["${BUCKYBALL_ROOT}/scripts/claude/run_mcp_server.sh"],
          "env": { "NIX_QUIET": "1" },
-         "description": "Buckyball 编译/验证工具链（33 个 bbdev_* MCP 工具）",
+         "description": "Buckyball compile/verify toolchain (33 bbdev_* MCP tools)",
          "cwd": "${BUCKYBALL_ROOT}"
        }
      }
    }
    ```
 
-2. 把 skill 写到 `.claude/skills/<name>/SKILL.md`，frontmatter 形如：
+2. Add skills under `.claude/skills/<name>/SKILL.md`. Frontmatter looks like:
 
    ```yaml
    ---
    name: my-skill
-   description: 简短描述，Agent 用来决定何时调用
+   description: short description — the Agent uses this to decide when to invoke
    user-invocable: true
    ---
 
-   # Markdown 正文
+   # Markdown body
    ```
 
-启动 bb.ai 后，它会沿 cwd 向上扫描到你的项目根，把所有 `SKILL.md` 注入 `AgentSpec.skills`、把 `.mcp.json` 里的 server 注入 `AgentSpec.mcp_servers`（同名去重，bb.ai 自带 skill 优先）。整个流程无需重启 —— `find_buckyball_roots` 在每次 spec 构建时执行。
+On startup, bb.ai walks up from the cwd to find your project root, then:
+- appends every parsed `SkillSpec` to `AgentSpec.skills`
+- appends every parsed `MCPServerConfig` to `AgentSpec.mcp_servers`
+- dedupes by name, with bb.ai's bundled skills winning ties
 
-### 4. 编程式接入
+No restart needed — `find_buckyball_roots` runs every time an `AgentSpec` is built.
 
-bb.ai 同时提供 Python SDK 与 UI SDK：
+### 4. Programmatic access
+
+bb.ai also ships Python and UI SDKs:
 
 ```bash
 pip install omnigent-client==0.9.0.dev0
@@ -184,46 +195,47 @@ from omnigent_client import Omnigent
 
 client = Omnigent(server_url="http://localhost:6767")
 
-# 列出已注册的 Agent
+# List registered agents
 agents = client.agents.list()
 
-# 开一个会话，Agent 会自动挂上 cwd 上方最近一个 buckyball 根的 skills + MCP
+# Open a session — the Agent will automatically pick up the skills
+# and MCP servers from the nearest buckyball project root above cwd
 session = client.sessions.create(agent=agents[0].name)
-session.send("帮我用 toy 跑一次 matmul 仿真并出波形")
+session.send("Run a matmul sim on toy and dump the waveform")
 for chunk in session.stream():
     print(chunk.text, end="")
 ```
 
 ---
 
-## 工作原理（一句话版）
+## How it works (one-paragraph version)
 
-`omnigent/skills/buckyball/discovery.py` 沿 cwd 向上 8 层查找同时拥有 `.claude/skills/<x>/SKILL.md` 与 `.mcp.json` 的目录；`loader.py` 把它们解析成 `SkillSpec` + `MCPServerConfig`，对 `.mcp.json` 做 `${VAR}` 展开（自动注入 `BUCKYBALL_ROOT`），最后由 `attach_buckyball_to_spec` 合并进 `AgentSpec`。Omnigent runtime 启动时按 spec 拉起 MCP 子进程，UI 端就拿到了一份"懂 buckyball 工具链"的 Agent。
+[`omnigent/skills/buckyball/discovery.py`](omnigent/skills/buckyball/discovery.py) walks up to 8 directory levels from the Agent's cwd, looking for any directory that contains both `.claude/skills/<x>/SKILL.md` and `.mcp.json`. [`omnigent/skills/buckyball/loader.py`](omnigent/skills/buckyball/loader.py) then parses those files into `SkillSpec` and `MCPServerConfig` objects, expanding `${VAR}` references inside `.mcp.json` (auto-injecting `BUCKYBALL_ROOT`). Finally, [`attach_buckyball_to_spec`](omnigent/skills/buckyball/loader.py) merges the results into an `AgentSpec`. When the Omnigent runtime starts, it spawns the declared MCP servers as stdio subprocesses — and the web UI gets a Buckyball-aware Agent to talk to.
 
-详细说明见：
+Dive deeper:
 
-- [omnigent/skills/buckyball/__init__.py](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/skills/buckyball/__init__.py) — 模块导出
-- [omnigent/skills/buckyball/discovery.py](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/skills/buckyball/discovery.py) — 根目录识别规则
-- [omnigent/skills/buckyball/loader.py](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/skills/buckyball/loader.py) — SKILL.md / .mcp.json 解析
+- [`omnigent/skills/buckyball/__init__.py`](omnigent/skills/buckyball/__init__.py) — module exports
+- [`omnigent/skills/buckyball/discovery.py`](omnigent/skills/buckyball/discovery.py) — root-detection rules
+- [`omnigent/skills/buckyball/loader.py`](omnigent/skills/buckyball/loader.py) — SKILL.md / .mcp.json parsing
 
 ---
 
-## 文档
+## Documentation
 
-- 运行时：[omnigent/runtime/README.md](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/runtime/README.md)
-- 服务端 API：[omnigent/server/API.md](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/server/API.md)
-- 数据库模型：[omnigent/server/DBSPEC.md](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/server/DBSPEC.md)
-- Agent 规范：[omnigent/spec/AGENTSPEC.md](file:///d:/桌面/buckyball.ai/buckyball.ai/omnigent/spec/AGENTSPEC.md)
-- 策略层：[docs/POLICIES.md](file:///d:/桌面/buckyball.ai/buckyball.ai/docs/POLICIES.md)
+- Runtime: [omnigent/runtime/README.md](omnigent/runtime/README.md)
+- Server API: [omnigent/server/API.md](omnigent/server/API.md)
+- Database schema: [omnigent/server/DBSPEC.md](omnigent/server/DBSPEC.md)
+- Agent spec: [omnigent/spec/AGENTSPEC.md](omnigent/spec/AGENTSPEC.md)
+- Policy layer: [docs/POLICIES.md](docs/POLICIES.md)
 
-## 贡献
+## Contributing
 
-请阅读 [CONTRIBUTING.md](./CONTRIBUTING.md) 与 [AGENTS.md](./AGENTS.md)；提交前跑一遍 `pre-commit run --all-files`。
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and [AGENTS.md](./AGENTS.md). Before committing, run `pre-commit run --all-files`.
 
-## 安全
+## Security
 
-详见 [SECURITY.md](./SECURITY.md)。
+See [SECURITY.md](./SECURITY.md).
 
-## 许可证
+## License
 
 [Apache License 2.0](./LICENSE)
