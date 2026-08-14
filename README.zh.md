@@ -128,12 +128,10 @@ docker compose up -d
 |-------------|----------------------------|
 | Docker      | `deploy/docker/`           |
 | Kubernetes  | `deploy/kubernetes/`       |
-| Fly.io      | `deploy/fly/`              |
 | Railway     | `deploy/railway/`          |
 | Render      | `deploy/render/`           |
-| Cloudflare  | `deploy/cloudflare/`       |
-| HF Spaces   | `deploy/hf-spaces/`        |
 | Databricks  | `deploy/databricks/`       |
+| Tailscale   | `deploy/tailscale/`        |
 
 每个子目录都有自己的 `README.md` 与平台 manifest，遵循同一份契约：
 

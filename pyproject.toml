@@ -3,16 +3,20 @@ requires = ["setuptools>=68.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "omnigent"
-# Keep in sync with omnigent/version.py's VERSION constant.
+name = "buckyball-ai"
+# The runtime package on PyPI is still published as `omnigent` (the OSS agent
+# engine). buckyball-ai wraps it: the `omnigent.skills.buckyball` subpackage
+# registers buckyball project roots (.claude/skills/, .mcp.json) onto an
+# AgentSpec at session start. Keep the runtime version in sync with
+# omnigent/version.py's VERSION constant.
 version = "0.9.0.dev0"
-description = "Omnigent: declarative agent authoring and runtime framework"
+description = "buckyball.ai: Buckyball-aware agent harness built on top of Omnigent"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [
-    { name = "Databricks, Inc." },
+    { name = "buckyball.ai contributors" },
 ]
-keywords = ["agents", "llm", "ai", "databricks", "cli"]
+keywords = ["agents", "llm", "ai", "buckyball", "dsa", "toolchain", "cli"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -226,21 +230,6 @@ memory = ["hindsight-client>=0.4.0"]
 # nimble-python client lazily, so only users who enable nimble_research need
 # this extra. nimble_extract talks raw httpx and needs no extra.
 nimble = ["nimble-python>=1.2.0,<2"]
-# Slack integration (`omni integration slack`). The @omnigent socket-mode bot
-# lives in the separate `omnigent-slack` package (heavy deps — slack_bolt /
-# aiohttp — kept out of the baseline install). The CLI launches it as a
-# subprocess (`python -m omnigent_slack`), so it must be importable in the same
-# environment; installing `omnigent[slack]` puts it there. Local/editable
-# installs resolve it from `integrations/slack` via [tool.uv.sources] below;
-# publishing `omnigent[slack]` to an index additionally requires publishing
-# `omnigent-slack` there (not yet wired into the release pipeline).
-# Version-locked (==) with the lockstep cycle — `scripts/update_versions.py`
-# keeps this pin in sync with the other sibling `==` pins
-# (`omnigent-client`, `omnigent-ui-sdk`) and the sub-package's own
-# `[project].version` in `integrations/slack/pyproject.toml`.
-slack = [
-    "omnigent-slack==0.9.0.dev0",
-]
 databricks = [
     # Floor matches what core code was tested against when the SDK was a
     # default dependency (it moved here from `dependencies` above).
@@ -362,9 +351,6 @@ members = [".github/triage_v2"]
 [tool.uv.sources]
 omnigent-client = { path = "sdks/python-client", editable = true }
 omnigent-ui-sdk = { path = "sdks/ui", editable = true }
-# Local resolution for the `slack` extra. Only pulled in when `omnigent[slack]`
-# is requested (the extra is opt-in), so a default install never builds it.
-omnigent-slack = { path = "integrations/slack", editable = true }
 
 [tool.setuptools]
 include-package-data = true
@@ -474,11 +460,9 @@ line-length = 99
 # migration that belongs in its own cleanup PR.
 target-version = "py310"
 # Vendored upstream code — not ours to restyle.
-#  - ``omnigent/inner/databricks_mcps/google``: Google MCP server source.
 #  - ``assistant-ui/``: assistant-ui.com React/Python suite imported as a
 #    vendored snapshot; tracked upstream, no in-tree edits.
 extend-exclude = [
-    "omnigent/inner/databricks_mcps/google",
     "assistant-ui",
     # Protobuf-generated code (DO NOT EDIT); not ours to restyle.
     "omnigent/api/**/*_pb2.py",
@@ -590,14 +574,6 @@ known-first-party = ["omnigent"]
 "sdks/**/*.py" = [
     "ARG001", "ARG002", "BLE001", "B008", "RUF012",
 ]
-# slack_bolt dispatches to handlers by parameter NAME (``body``, ``event``,
-# ``client``, ``ack``, ``view``), so unused handler args can't be renamed to
-# ``_`` without breaking injection. The bot also has deliberate boundary
-# catches (best-effort acks, background login tasks) that must never abort a
-# turn, hence BLE001.
-"integrations/slack/**/*.py" = [
-    "ARG001", "ARG002", "BLE001", "B008", "RUF012",
-]
 # The sessions route is a facade over an implementation package. Its explicit
 # imports intentionally re-export implementation names and load route modules
 # for registration, so F401 remains expected in this package.
@@ -616,7 +592,7 @@ disallow_any_explicit = true
 # setup.py — build-time scaffolding that imports the (untyped) setuptools
 # build_py and subclasses it; not application code, so excluded from mypy
 # rather than pulling in types-setuptools just for one shim file.
-exclude = ["^omnigent/inner/databricks_mcps/google/", "^setup\\.py$", "_pb2\\.pyi?$"]
+exclude = ["^setup\\.py$", "_pb2\\.pyi?$"]
 # Incremental rollout: load imported modules for type info but don't
 # report their errors. Remove once every omnigent/ module is clean.
 follow_imports = "silent"
@@ -821,17 +797,6 @@ module = "omnigent_client.*"
 ignore_missing_imports = true
 disallow_any_explicit = false
 
-# Slack integration (omnigent-slack). slack_bolt / slack_sdk ship no type
-# stubs, and Slack event/view payloads are opaque JSON dicts the handlers
-# read positionally — so the code leans on ``Any`` at that boundary. Mirror
-# the client SDK: resolve the untyped imports and lift the Any ban here.
-[[tool.mypy.overrides]]
-module = "omnigent_slack.*"
-ignore_missing_imports = true
-disallow_any_explicit = false
-
-# Tests in the mypy allowlist predate the stricter omnigent
-# Any rule.
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_any_explicit = false

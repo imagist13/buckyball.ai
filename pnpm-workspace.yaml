@@ -2,8 +2,6 @@ packages:
   - 'web'
   - 'web/electron'
   - '.github/ci-deps'
-  - 'editors/vscode'
-  - 'deploy/cloudflare'
 
 settings:
   # 7-day dependency cooldown, mirroring the Python-side exclude-newer = "P7D" in uv.toml.
