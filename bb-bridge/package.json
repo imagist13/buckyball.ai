@@ -1,0 +1,36 @@
+{
+  "name": "bb-bridge",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Paseo daemon supervisor + omnigent_client-shaped gateway. Pure pass-through with zero bb.ai business logic; bb-companion owns composition.",
+  "bin": {
+    "bb-bridge": "./bin/bb-bridge.mjs"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./paseo": "./src/paseo.ts",
+    "./paseo-types": "./src/paseo-types.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "build": "tsc --noEmit",
+    "type-check": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives .",
+    "lint:fix": "oxlint --fix .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.2",
+    "oxlint": "^1.62.0",
+    "prettier": "^3.8.3",
+    "tsx": "^4.20.0",
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.5"
+  }
+}

@@ -1,1 +1,0 @@
-"""Codex parity test package."""

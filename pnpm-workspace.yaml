@@ -1,6 +1,7 @@
 packages:
   - 'web'
   - 'web/electron'
+  - 'bb-bridge'
   - '.github/ci-deps'
 
 settings:
