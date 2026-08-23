@@ -1,1 +1,0 @@
-"""Marker module so pytest collects the colocated tests via testpaths."""
