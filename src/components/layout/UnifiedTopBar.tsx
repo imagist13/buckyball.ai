@@ -1,0 +1,441 @@
+"use client";
+
+import { useState, useCallback, useSyncExternalStore } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  DotOutline,
+  DotsThree,
+  Columns,
+  ArrowLeft,
+} from "@/components/ui/icon";
+import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { PromptDialog } from "@/components/ui/prompt-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { usePanel } from "@/hooks/usePanel";
+import { useWorkspaceSidebarOptional } from "@/hooks/useWorkspaceSidebar";
+import { useSplit } from "@/hooks/useSplit";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useClientPlatform } from '@/hooks/useClientPlatform';
+import { copyWithToast } from "@/lib/clipboard";
+import { renameSession } from "@/lib/session-title-events";
+import type { TranslationKey } from "@/i18n";
+
+export function UnifiedTopBar() {
+  const {
+    sessionId,
+    sessionTitle,
+    setSessionTitle,
+    workingDirectory,
+    chatListOpen,
+    setChatListOpen,
+    fileTreeOpen,
+    setFileTreeOpen,
+    isAssistantWorkspace,
+    currentBranch,
+    gitDirtyCount,
+  } = usePanel();
+  // The new Workspace Sidebar replaces the old Git / Widget toggles.
+  // FileTree keeps its independent toggle (lightweight entry); the
+  // sidebar is for the unified Tab shell only.
+  const ws = useWorkspaceSidebarOptional();
+  const { addToSplit, isInSplit } = useSplit();
+  const router = useRouter();
+  const { t } = useTranslation();
+  const { isWindows } = useClientPlatform();
+  const pathname = usePathname();
+
+  // Only show Git/terminal/panel controls on chat detail routes (/chat/[id]),
+  // not on the empty /chat page where panels aren't mounted.
+  const isChatRoute = pathname.startsWith("/chat/") && pathname !== "/chat";
+
+  // Session actions menu (mirrors the chat list's row "..." menu so users
+  // get the same set of actions on the active chat from inside the chat
+  // page itself).
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+
+  const handleRename = useCallback(async (newTitle: string) => {
+    const trimmed = newTitle.trim();
+    if (!trimmed || !sessionId || trimmed === sessionTitle) return;
+    // Displays what the SERVER stored, not what we sent: PATCH canonicalizes
+    // (50-grapheme clamp, single-lined), so echoing `trimmed` would leave this
+    // bar disagreeing with the sidebar's copy of the same session.
+    const canonical = await renameSession(sessionId, trimmed);
+    if (canonical) setSessionTitle(canonical);
+  }, [sessionId, sessionTitle, setSessionTitle]);
+
+  const handleDelete = useCallback(async () => {
+    if (!sessionId) return;
+    if (!confirm("Delete this conversation?")) return;
+    try {
+      const res = await fetch(`/api/chat/sessions/${sessionId}`, { method: 'DELETE' });
+      if (res.ok) {
+        window.dispatchEvent(new CustomEvent('session-updated'));
+        router.push('/chat');
+      }
+    } catch {
+      // Silent â?same as sidebar.
+    }
+  }, [sessionId, router]);
+
+  const handleAddToSplit = useCallback(() => {
+    if (!sessionId) return;
+    const projectName = workingDirectory ? workingDirectory.split(/[\\/]/).filter(Boolean).pop() || '' : '';
+    addToSplit({
+      sessionId,
+      title: sessionTitle || t('chat.newConversation'),
+      workingDirectory: workingDirectory || '',
+      projectName,
+    });
+  }, [sessionId, sessionTitle, workingDirectory, addToSplit, t]);
+
+  const handleCopyId = useCallback(() => {
+    if (!sessionId) return;
+    // v11 fix â?was fire-and-forget `navigator.clipboard.writeText(...)`,
+    // which rejects with NotAllowedError in Electron renderers when the
+    // page isn't the focused document (very common after a dropdown
+    // click). The unhandled rejection became a console error / Sentry
+    // report and the user got no feedback either way.
+    void copyWithToast({ text: sessionId, t });
+  }, [sessionId, t]);
+
+  // Extract project name from working directory.
+  const projectName = workingDirectory ? workingDirectory.split(/[\\/]/).filter(Boolean).pop() || '' : '';
+
+  // The reopen button is shown only when the sidebar has been
+  // collapsed by the user. It pairs with the collapse toggle inside
+  // ChatListPanel â?so the user can always get the sidebar back from
+  // the page they're on, regardless of route.
+  //
+  // `mounted` gates the conditional render so SSR and the first
+  // client paint produce the same tree. AppShell's matchMedia effect
+  // flips chatListOpen on mount, so without this gate the button
+  // would briefly appear (server: chatListOpen=false â?button shown)
+  // and then disappear (client effect â?chatListOpen=true), tripping
+  // a hydration mismatch warning.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  // Round 20 â?single sidebar toggle button (open AND close). Used
+  // to be a "reopen only" button that lived in the topbar; the
+  // matching collapse button lived inside ChatListPanel. Round 20
+  // moves all topbar chrome â?traffic-light safe area, sidebar
+  // toggle â?into the UnifiedTopBar so the four floating cards
+  // (sidebar, main, workspace, file tree) all share the same
+  // y-origin underneath the topbar.
+  const sidebarToggleButton = mounted ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => setChatListOpen(!chatListOpen)}
+          aria-label={t((chatListOpen ? 'chatList.collapseSidebar' : 'chatList.expandSidebar') as TranslationKey)}
+          // ml + translateY route through platform tokens: 0/0 on
+          // web/win32/linux (no shift), 78px/2px on macOS so the button
+          // (a) clears the traffic-light cluster horizontally and
+          // (b) lines up vertically with the traffic-light center.
+          className="text-muted-foreground hover:text-foreground ml-[var(--platform-traffic-light-safe-area)] translate-y-[var(--platform-traffic-light-offset-y)]"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          <BuckyballIcon
+            name={chatListOpen ? 'panel_left_close' : 'panel_left_open'}
+            size="md"
+            className="text-inherit"
+            aria-hidden
+          />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom">
+        {t((chatListOpen ? 'chatList.collapseSidebar' : 'chatList.expandSidebar') as TranslationKey)}
+      </TooltipContent>
+    </Tooltip>
+  ) : null;
+
+  // Round 33 â?settings routes get an inline Back button in the
+  // topbar (Codex feedback: "æ¢ç¶é¡¶ä¸æ?Tab æ¡äº, è¿åå¯ä»¥æ¾ä¸é?).
+  // Mirrors the logic that used to live in `SettingsSidebar`: prefer
+  // the recorded last-non-settings path, fall back to /chat. Wrapped
+  // in `WebkitAppRegion: 'no-drag'` so it stays clickable inside the
+  // draggable topbar.
+  const isSettingsRoute = pathname.startsWith('/settings');
+  const handleSettingsBack = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const last = sessionStorage.getItem("codepilot:last-non-settings-path");
+      if (last && !last.startsWith("/settings")) {
+        router.push(last);
+        return;
+      }
+    }
+    router.push("/chat");
+  }, [router]);
+
+  // On non-chat routes the bar is otherwise just a thin drag region.
+  // We still need the reopen button visible there so the user has a
+  // way back to the sidebar from /skills, /mcp, /settings, etc.
+  if (!isChatRoute) {
+    return (
+      <div
+        className="flex h-10 shrink-0 items-center gap-2 pl-3 bg-[var(--platform-surface-bar)]"
+        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      >
+        {sidebarToggleButton}
+        {isSettingsRoute && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleSettingsBack}
+            className="h-7 px-2 gap-1 text-xs font-normal text-muted-foreground hover:text-foreground"
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          >
+            <ArrowLeft size={14} />
+            {t("common.back" as TranslationKey)}
+          </Button>
+        )}
+      </div>
+    );
+  }
+
+  const canSplit = !!sessionId && !isInSplit(sessionId);
+
+  return (
+    <>
+      <div
+        // bg routed through the platform token (Phase 7b / Phase 2).
+        // Default = `var(--background)` so non-macOS visuals are
+        // identical to the prior `bg-background`. macOS profile drops
+        // alpha so Electron's window vibrancy shows through the bar.
+        className="flex h-10 shrink-0 items-center gap-3 bg-[var(--platform-surface-bar)] px-4"
+        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      >
+        {/* Reopen-sidebar toggle, only present when the user collapsed
+            the left nav. Pairs with the collapse button inside
+            ChatListPanel; null otherwise so it doesn't take up space. */}
+        {sidebarToggleButton}
+        {/* Left: chat title â?workspace name (muted) â?per-session "..."
+            menu. The "..." mirrors the chat list's row menu so users can
+            rename / split / copy id / delete the active conversation
+            from inside the chat page (the inline pencil edit affordance
+            was retired in favour of the unified menu). */}
+        <div
+          className="flex items-center gap-2 min-w-0 shrink"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {sessionTitle && (
+            <h2 className="text-sm font-medium text-foreground truncate max-w-[280px]">
+              {sessionTitle}
+            </h2>
+          )}
+
+          {projectName && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 max-w-[200px] px-2 text-xs font-normal text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    if (workingDirectory && sessionId) {
+                      if (window.electronAPI?.shell?.revealPath) {
+                        void window.electronAPI.shell.revealPath({
+                          path: workingDirectory,
+                          sessionId,
+                        });
+                      } else {
+                        fetch('/api/files/open', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ path: workingDirectory, sessionId }),
+                        }).catch(() => {});
+                      }
+                    }
+                  }}
+                >
+                  <span className="truncate">{projectName}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs break-all">{workingDirectory}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {sessionId && (
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={t('chatList.moreActions' as TranslationKey)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <DotsThree size={18} weight="bold" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[160px]">
+                <DropdownMenuItem
+                  disabled={!canSplit}
+                  onClick={handleAddToSplit}
+                >
+                  <Columns size={14} />
+                  <span>{t('chatList.splitScreen' as TranslationKey)}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    setRenameOpen(true);
+                  }}
+                >
+                  <BuckyballIcon name="edit" size="sm" aria-hidden />
+                  <span>{t('chatList.renameConversation' as TranslationKey)}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleCopyId}>
+                  <BuckyballIcon name="copy" size="sm" aria-hidden />
+                  <span>{t('chatList.copySessionId' as TranslationKey)}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onClick={handleDelete}>
+                  <BuckyballIcon name="delete" size="sm" aria-hidden />
+                  <span>{t('chatList.deleteConversation' as TranslationKey)}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Right: panel toggles */}
+        <div
+          className="flex items-center gap-1"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          {/* Branch label â?informational only (no longer a toggle since
+              Git lives inside the Workspace Sidebar). Click jumps to the
+              Git Tab; the assistant-buddy avatar is gone with the same
+              consolidation since Widget is now a Sidebar Tab too. */}
+          {currentBranch && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (ws) {
+                      ws.setActiveTab('git');
+                    }
+                  }}
+                  className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <BuckyballIcon name="git" size="md" className="text-inherit" aria-hidden />
+                  <span className="max-w-[100px] truncate">{currentBranch}</span>
+                  {gitDirtyCount > 0 && (
+                    <span className="flex items-center gap-0.5 text-[11px] text-amber-500">
+                      <DotOutline size={10} weight="fill" />
+                      {gitDirtyCount}
+                    </span>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">{t('topBar.git')}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {/* File tree toggle â?independent topbar entry per the
+              revised Phase 2 boundary (2026-04-30):
+                1. File tree is a high-frequency deterministic tool, so
+                   it gets its own button.
+                2. Workspace Sidebar handles work surfaces (Git / Widget
+                   / preview); the file tree is NOT folded into it by
+                   default. Files Tab only appears when the user
+                   explicitly pins.
+                3. v13: File Tree ä¸?Workspace Sidebar å¯åæ¶æå¼ï¼?                   åèªç¬ç« toggle ââ?ä¸¤ä¸ªæé®ä¸åèªå¨å³é­å¯¹æ¹ï¼ç¨æ?                   å¯ä»¥ä¸è¾¹æµè§?file tree ä¸è¾¹å¨ Workspace Sidebar ä¸?                   éä¸ä¸?markdown / artifact preview Tabï¼èå¤©åºéä¹
+                   æ¶çªãå®æ?rationale è§?Phase 3 archive ç?v13 æ¡ç®ã?*/}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={fileTreeOpen ? 'secondary' : 'ghost'}
+                size="icon-sm"
+                className={
+                  fileTreeOpen ? '' : 'text-muted-foreground hover:text-foreground'
+                }
+                onClick={() => {
+                  // v13: file-tree and Workspace Sidebar are additive,
+                  // not mutex. Each toggle flips its own panel only;
+                  // user can have both open simultaneously and chat
+                  // area shrinks to fit.
+                  setFileTreeOpen(!fileTreeOpen);
+                }}
+              >
+                <BuckyballIcon name="file_tree" size="md" className="text-inherit" aria-hidden />
+                <span className="sr-only">{t('topBar.fileTree')}</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('topBar.fileTree')}</TooltipContent>
+          </Tooltip>
+
+          {/* Single Workspace Sidebar toggle â?replaces the previous
+              Git + Widget + Dashboard cluster. The new sidebar hosts
+              fixed Git / Widget Tabs plus dynamic Markdown / Artifact /
+              File preview Tabs (April 2026 Phase 1). */}
+          {ws && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={ws.state.open ? "secondary" : "ghost"}
+                  size="icon-sm"
+                  className={ws.state.open ? "" : "text-muted-foreground hover:text-foreground"}
+                  onClick={() => {
+                    // v13: see file-tree button above â?additive, not
+                    // mutex. Each toggle is independent.
+                    ws.setOpen(!ws.state.open);
+                  }}
+                  aria-label={t('workspaceSidebar.toggle' as TranslationKey)}
+                >
+                  <BuckyballIcon name="panel_right" size="md" strokeWidth={ws.state.open ? 2 : undefined} className="text-inherit" aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {t('workspaceSidebar.toggle' as TranslationKey)}
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {isWindows && <div style={{ width: 138 }} className="shrink-0" />}
+        </div>
+      </div>
+
+      <PromptDialog
+        open={renameOpen}
+        onOpenChange={setRenameOpen}
+        title={t('prompt.rename.title' as TranslationKey)}
+        defaultValue={sessionTitle || ''}
+        placeholder={t('prompt.rename.placeholder' as TranslationKey)}
+        confirmLabel={t('common.confirm' as TranslationKey)}
+        cancelLabel={t('common.cancel' as TranslationKey)}
+        onConfirm={(value) => {
+          if (value !== sessionTitle) {
+            handleRename(value);
+          }
+        }}
+      />
+    </>
+  );
+}

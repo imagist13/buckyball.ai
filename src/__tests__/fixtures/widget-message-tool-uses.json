@@ -1,0 +1,80 @@
+{
+  "_meta": {
+    "source": "DB row 487c190a72ce51e030e706ca7ab3cea8, session 2bbe8d0ff545097345fe4cf27666051f, created_at 2026-05-20 12:03:17 local",
+    "user_prompt": "你好帮我创建一个当前目录内容的可视化解释组件，然后随便写点啥调用 humanizer-zh 优化",
+    "session_working_directory": "/Users/op7418/Documents/test-workspace2",
+    "model": "glm-5-turbo",
+    "tool_use_count": 5,
+    "tool_result_count": 5,
+    "tool_use_ids_with_matching_tool_result": true,
+    "fixture_purpose": "Phase 7.1 golden fixture — verify collectAutoInvokeSnapshot produces non-empty entries.skills (Skill humanizer-zh) + entries.mcp (codepilot-widget + codepilot-memory) + entries.tools (Bash×2) from this same input. Reproduces the v6 user-reported bug: auto-invoke path producer was silent."
+  },
+  "tool_uses": [
+    {
+      "id": "call_a16053ea789846d8bc60963b",
+      "name": "Bash",
+      "input": {
+        "command": "ls -la /Users/op7418/Documents/test-workspace2",
+        "description": "List current directory contents"
+      }
+    },
+    {
+      "id": "call_40eba388609c4dd3b4105a9d",
+      "name": "mcp__codepilot-widget__codepilot_load_widget_guidelines",
+      "input": {
+        "modules": [
+          "diagram",
+          "interactive"
+        ]
+      }
+    },
+    {
+      "id": "call_da4c26c3b726498dbc684411",
+      "name": "mcp__codepilot-memory__codepilot_memory_recent",
+      "input": {}
+    },
+    {
+      "id": "call_6491dffab6f841b2a184d755",
+      "name": "Bash",
+      "input": {
+        "command": "find /Users/op7418/Documents/test-workspace2 -maxdepth 2 -not -path '*/.DS_Store' -not -path '*/.git/*' -not -path '*/node_modules/*' | sort",
+        "description": "List directory tree up to 2 levels deep"
+      }
+    },
+    {
+      "id": "call_5c62b1630bd9408f8f5f5904",
+      "name": "Skill",
+      "input": {
+        "skill": "humanizer-zh",
+        "args": "本工作空间不仅是文件与代码的集合，更是一个精心构建的数字生态系统。通过多维度的模块化设计——从身份配置到记忆系统，从 React 组件到文档资产——它为我们提供了一个强大的、可扩展的协作基础设施。这种架构不仅体现了深思熟虑的技术决策，更彰显了对人机协作未来的深刻洞察。在日益复杂的 AI 开发环境中，这样的组织方式无疑是迈向高效、可持续工作流的关键一步。"
+      }
+    }
+  ],
+  "tool_results": [
+    {
+      "tool_use_id": "call_a16053ea789846d8bc60963b",
+      "content": "total 72\ndrwxr-xr-x  19 op7418  staff   608 May 12 13:41 .\ndrwx------+  8 op7418  staff   256 May 11 18:46 ..\n-rw-r--r--@  1 op7418  staff  6148 May 12 11:24 .DS_Store\ndrwxr-xr-x@  6 op7418  staff   192 May 19 20:44 .assistant\ndrwxr-xr-x@  3 op7418  staff    96 May 19 20:46 .claude\ndrwxr-xr-x@  4 op... [truncated 794 chars, original_len=1094]",
+      "_original_content_length": 1094
+    },
+    {
+      "tool_use_id": "call_40eba388609c4dd3b4105a9d",
+      "content": "## FINAL OUTPUT FORMAT — non-negotiable\n\nThe ONLY way to render a widget is a code fence labelled `show-widget` whose body is a JSON object with a `widget_code` string:\n\n```show-widget\n{\"title\":\"<human-readable title>\",\"widget_code\":\"<escaped HTML/SVG string>\"}\n```\n\n- `widget_code` is a **JSON-encod... [truncated 7020 chars, original_len=7320]",
+      "_original_content_length": 7320
+    },
+    {
+      "tool_use_id": "call_da4c26c3b726498dbc684411",
+      "content": "## Long-term Memory\n# Memory\n\n## From Onboarding\n- name: Toki\n- role: 设计师（UI/UX）+ AI 全栈开发 + AI 自媒体\n- style: 严谨 + 有创意 + 活泼，不需要太客气\n- tools: Obsidian 整理，文件夹分类 + 双向链接/标签\n- schedule: 时间比较自由\n- help_scenarios: 写代码/技术决策、设计评审和创意头脑风暴、内容创作、日常工作和整理\n\n## 2026-04-12\n## Auto-extracted (11:45 AM)\n- Memory 1: User re... [truncated 938 chars, original_len=1238]",
+      "_original_content_length": 1238
+    },
+    {
+      "tool_use_id": "call_6491dffab6f841b2a184d755",
+      "content": "/Users/op7418/Documents/test-workspace2\n/Users/op7418/Documents/test-workspace2/.assistant\n/Users/op7418/Documents/test-workspace2/.assistant/config.json\n/Users/op7418/Documents/test-workspace2/.assistant/index\n/Users/op7418/Documents/test-workspace2/.assistant/state.json\n/Users/op7418/Documents/tes... [truncated 2675 chars, original_len=2975]",
+      "_original_content_length": 2975
+    },
+    {
+      "tool_use_id": "call_5c62b1630bd9408f8f5f5904",
+      "content": "Launching skill: humanizer-zh",
+      "_original_content_length": 29
+    }
+  ]
+}

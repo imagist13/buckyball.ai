@@ -1,0 +1,77 @@
+/**
+ * Phase 0.5 Slice C â€?Runtime session store abstraction.
+ *
+ * Asserts:
+ *   1. The abstraction file exists and exports the three lifecycle
+ *      helpers (`getRuntimeSessionRef` / `setRuntimeSessionRef` /
+ *      `clearRuntimeSessionRef`).
+ *   2. The helpers cover every `RuntimeId` exhaustively at the type
+ *      level (the switch's `default: never` block guards drift when
+ *      a new runtime is added â€?TS will fail compilation if the
+ *      implementer forgets to extend the switch).
+ *   3. The /api/chat/sessions/[id] PATCH handler â€?the canonical
+ *      consumer of the clearing path â€?calls `clearRuntimeSessionRef`
+ *      instead of poking `updateSdkSessionId(id, '')` directly.
+ *      Future Codex Runtime adds its clearing branch inside the store
+ *      helper without splaying through the API route.
+ *
+ * Slice E will extend this test with a sibling assertion on the
+ * read-side (api/chat/route.ts using `getRuntimeSessionRef` for
+ * resume) once the unified event channel migration lands.
+ */
+
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const storeSrc = fs.readFileSync(
+  path.resolve(__dirname, '../../lib/runtime/session-store.ts'),
+  'utf8',
+);
+
+const sessionsRouteSrc = fs.readFileSync(
+  path.resolve(__dirname, '../../app/api/chat/sessions/[id]/route.ts'),
+  'utf8',
+);
+
+describe('Runtime session store abstraction', () => {
+  it('session-store.ts exports the three lifecycle helpers', () => {
+    assert.match(storeSrc, /export\s+function\s+getRuntimeSessionRef\b/);
+    assert.match(storeSrc, /export\s+function\s+setRuntimeSessionRef\b/);
+    assert.match(storeSrc, /export\s+function\s+clearRuntimeSessionRef\b/);
+  });
+
+  it('every helper has an exhaustiveness guard on RuntimeId', () => {
+    // The `default: { const _: never = ...; }` pattern is what
+    // surfaces when a new RuntimeId is added but the switch case is
+    // missing. Each of the 3 helpers must have one.
+    const exhaustiveMatches = storeSrc.match(/const\s+_\s*:\s*never\s*=\s*(runtimeId|ref\.runtimeId)/g) ?? [];
+    assert.ok(
+      exhaustiveMatches.length >= 3,
+      `Expected at least 3 exhaustiveness guards (one per lifecycle helper), found ${exhaustiveMatches.length}`,
+    );
+  });
+
+  it('claude_code branch delegates to the legacy sdk_session_id column', () => {
+    // Preserves v0.x history rows. Future Codex slice does NOT change
+    // this branch; it adds a new case for `codex_runtime`.
+    assert.match(storeSrc, /case\s+'claude_code'[\s\S]{0,300}sdk_session_id/);
+    assert.match(storeSrc, /updateSdkSessionId/);
+  });
+
+  it('codepilot_runtime branch is an explicit no-op (no external state)', () => {
+    // Native runtime keeps state in-memory; no persistent ref.
+    // Codifying this branch â€?instead of letting it fall through â€?    // forces the implementer to think about persistence intentionally.
+    assert.match(storeSrc, /case\s+'bbagent'/);
+  });
+
+  it('/api/chat/sessions/[id] clears via the abstraction, not the raw column setter', () => {
+    // The PATCH handler must call clearRuntimeSessionRef('claude_code')
+    // when provider / model / runtime_pin changes invalidate the
+    // resume context. Direct updateSdkSessionId(id, '') in the
+    // clearing branch is the regression we want to block.
+    assert.match(sessionsRouteSrc, /clearRuntimeSessionRef\(id,\s*'claude_code'\)/);
+    assert.match(sessionsRouteSrc, /import\s+\{[^}]*clearRuntimeSessionRef[^}]*\}\s+from\s+['"]@\/lib\/runtime\/session-store['"]/);
+  });
+});

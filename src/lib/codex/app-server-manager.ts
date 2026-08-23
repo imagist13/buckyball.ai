@@ -1,0 +1,1099 @@
+/**
+ * Codex app-server process manager.
+ *
+ * Phase 5 Phase 1 (2026-05-13). Handles:
+ *   - binary discovery (`codex` on PATH; future custom-path setting)
+ *   - spawn lifecycle (`codex app-server`, default stdio transport)
+ *   - JSON-RPC client wiring over the child's stdio
+ *   - graceful close (avoid orphan processes per plan Â§ç¡¬çº¦æ?
+ *
+ * Singleton-per-process. Renderer / dev-server / Electron main all
+ * import the same module and share the cached app-server instance â? * concurrent `getAppServer()` calls deduplicate via an in-flight
+ * promise so we don't double-spawn.
+ *
+ * IMPORTANT: this module is node-only (child_process / fs). Don't
+ * import from client components; the `/api/codex/*` routes are the
+ * client's access path.
+ */
+
+import { spawn, spawnSync, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { basename, dirname, join, posix as posixPath, win32 as win32Path } from 'node:path';
+import { CodexAppServerClient, type CodexTransport } from './app-server-client';
+import type { CodexAvailability } from './types';
+import { shouldDropCodexTraceLine, resolveCodexRustLog } from './codex-trace-filter';
+import { prepareCodePilotCodexHome } from './home-isolation';
+import {
+  observeCodexSandboxNotification,
+  resetCodexSandboxReadiness,
+} from './sandbox-readiness';
+import {
+  buildProxySafeEnvironment,
+  type ProxyProcessEnvironment,
+} from '../process-proxy-env';
+import {
+  BoundedNdjsonReader,
+  CodexProtocolFrameTooLargeError,
+  DEFAULT_CODEX_FRAME_LIMIT_BYTES,
+} from './bounded-ndjson-reader';
+import {
+  SERVER_LIFECYCLE_CHANNEL,
+  SERVER_LIFECYCLE_VERSION,
+  type ServerDescendantLifecycleMessage,
+} from '../server-lifecycle-contract';
+import { isServerRecoverySafeMode } from '../server-recovery-safe-mode';
+import { codexReleaseAtLeast } from './release-version';
+
+interface SpawnedTransport extends CodexTransport {
+  readonly proc: ChildProcessWithoutNullStreams;
+}
+
+type ElectronUtilityParentPort = {
+  postMessage: (message: unknown) => void;
+};
+
+function postCodexAppServerLifecycle(
+  action: ServerDescendantLifecycleMessage['action'],
+  pid: number,
+  startIdentity: string,
+  executableBasename: string,
+): void {
+  const generation = Number.parseInt(process.env.CODEPILOT_SERVER_GENERATION ?? '', 10);
+  const parentPort = (process as NodeJS.Process & { parentPort?: ElectronUtilityParentPort }).parentPort;
+  if (!Number.isSafeInteger(generation) || generation <= 0 || !parentPort) return;
+  const message: ServerDescendantLifecycleMessage = {
+    channel: SERVER_LIFECYCLE_CHANNEL,
+    version: SERVER_LIFECYCLE_VERSION,
+    generation,
+    action,
+    role: 'codex-app-server',
+    pid,
+    startIdentity,
+    executableBasename,
+    // Codex may create children inside its Rust runtime. CodePilot cannot
+    // enumerate those reliably on every platform, so Main must fail closed
+    // after an abrupt utility-process exit instead of assuming single owner.
+    descendantsVerifiable: false,
+  };
+  try { parentPort.postMessage(message); } catch { /* not an Electron utility process */ }
+}
+
+const CODEX_HEALTH_SIGNAL_WINDOW_MS = 10 * 60_000;
+const CODEX_HEALTH_SIGNAL_THRESHOLD = 3;
+
+export function appendCodexHealthSignal(
+  signalTimes: readonly number[],
+  now: number,
+): { signalTimes: number[]; unhealthy: boolean } {
+  const next = signalTimes.filter((at) => now - at <= CODEX_HEALTH_SIGNAL_WINDOW_MS);
+  next.push(now);
+  return { signalTimes: next, unhealthy: next.length >= CODEX_HEALTH_SIGNAL_THRESHOLD };
+}
+
+interface AppServerHealthState {
+  generation: number;
+  activeTurnIds: Set<string>;
+  signalTimes: number[];
+  unhealthyReason: string | null;
+}
+
+/**
+ * Detect a FATAL config-parse error in Codex stderr.
+ *
+ * P0.2 (2026-06-01): some codex builds print a fatal config error to
+ * stderr and then linger ~30s before the process actually exits â?observed
+ * with old `/opt/homebrew/bin/codex` 0.45.0 rejecting `model_reasoning_effort
+ * = "xhigh"` from the user's `~/.codex/config.toml`:
+ *   `Failed to deserialize overridden config: unknown variant `xhigh``
+ * Waiting for the `exit` event would hang the model-list fetch (and the
+ * chat composer + Settings that depend on it) for that whole window, so we
+ * fail the moment this signature appears on stderr.
+ */
+export function isFatalCodexConfigStderr(chunk: string): boolean {
+  // Two explicit, already config-scoped fatal signatures â?a config load /
+  // deserialize failure is terminal regardless of the specific cause.
+  if (/Failed to deserialize overridden config|error loading config/i.test(chunk)) return true;
+  // `unknown variant` ALONE is too broad â?a future non-fatal Codex warning /
+  // log line could contain it and we'd SIGKILL a healthy process. Only treat it
+  // as fatal when it co-occurs with config-load / deserialization context in
+  // the SAME chunk (Codex review 2026-06-01 P2). The real fatal lines read
+  // `... config: unknown variant \`xhigh\` ...`, so the context is always present.
+  return /unknown variant/i.test(chunk) && /config|deserializ/i.test(chunk);
+}
+
+export function isCodexModelRefreshTimeoutStderr(chunk: string): boolean {
+  return /codex_models_manager::manager/i.test(chunk)
+    && /failed to refresh available models/i.test(chunk)
+    && /timeout waiting for child process to exit/i.test(chunk);
+}
+
+/**
+ * Wrap a spawned child process in the CodexTransport interface.
+ * Buffers partial stdout lines until newline.
+ */
+function makeStdioTransport(
+  proc: ChildProcessWithoutNullStreams,
+  onHealthSignal?: (reason: string) => void,
+): SpawnedTransport {
+  const stdoutReader = new BoundedNdjsonReader(DEFAULT_CODEX_FRAME_LIMIT_BYTES);
+  let reportedFrameHighWater = 0;
+  let messageHandler: ((line: string) => void) | null = null;
+  const closeHandlers = new Set<(reason?: Error) => void>();
+  let closed = false;
+  let closeReason: Error | undefined;
+
+  // P0 (2026-06-01): surface process death to the JSON-RPC client so it
+  // rejects pending requests immediately instead of waiting out the 30s
+  // RPC timeout. Fires on both a non-zero exit (e.g. an old codex binary
+  // fatally rejecting ~/.codex/config.toml) and a spawn/runtime 'error'.
+  // `fireClose` is idempotent so exit + error can't double-notify.
+  function fireClose(reason?: Error) {
+    if (closed) return;
+    closed = true;
+    closeReason = reason;
+    for (const handler of closeHandlers) {
+      try { handler(reason); } catch { /* a bad subscriber must not block others */ }
+    }
+  }
+  proc.once('exit', (code, signal) => {
+    fireClose(new Error(`Codex app-server exited (code=${code} signal=${signal})`));
+  });
+  proc.on('error', (err) => {
+    fireClose(err instanceof Error ? err : new Error(String(err)));
+  });
+
+  proc.stdout.on('data', (chunk: Buffer) => {
+    if (closed) return;
+    try {
+      for (const frame of stdoutReader.push(chunk)) {
+        const trimmed = frame.text.trim();
+        if (trimmed && messageHandler) messageHandler(trimmed);
+      }
+      const highWater = Math.max(
+        stdoutReader.currentFrameBytes,
+        stdoutReader.completedFrameHighWaterBytes,
+      );
+      // Low-frequency, content-free frame telemetry. Report only when crossing
+      // the next MiB power-of-two boundary; ordinary small RPCs stay silent.
+      if (highWater >= 1024 * 1024 && highWater >= Math.max(1024 * 1024, reportedFrameHighWater * 2)) {
+        reportedFrameHighWater = highWater;
+        console.warn('[codex.app-server] stdout frame high-water', { bytes: highWater });
+      }
+    } catch (error) {
+      const reason = error instanceof CodexProtocolFrameTooLargeError
+        ? error
+        : new Error('Codex protocol stdout frame decode failed');
+      console.warn('[codex.app-server] closing oversized/invalid stdout frame', {
+        code: error instanceof CodexProtocolFrameTooLargeError ? error.code : 'CODEX_PROTOCOL_FRAME_INVALID',
+        bytes: error instanceof CodexProtocolFrameTooLargeError ? error.frameBytes : stdoutReader.currentFrameBytes,
+        maxBytes: DEFAULT_CODEX_FRAME_LIMIT_BYTES,
+      });
+      fireClose(reason);
+      try { proc.kill('SIGKILL'); } catch { /* already gone */ }
+    }
+  });
+
+  // Stderr is for diagnostics; tee to console at debug level so
+  // tracing logs from `RUST_LOG` flow through to the operator.
+  proc.stderr.setEncoding('utf8');
+  proc.stderr.on('data', (chunk: string) => {
+    for (const line of chunk.split(/\r?\n/)) {
+      // B-025: drop the high-frequency INFO span flood (codex_core::tasks /
+      // session::handlers enter/exit) from the tee by default â?it otherwise
+      // streams into the persistent main log via the server's stdout. Warn /
+      // error / fatal lines are never dropped (see shouldDropCodexTraceLine),
+      // and the fatal-config fail-fast below runs on the full chunk regardless.
+      if (line.trim() && !shouldDropCodexTraceLine(line)) {
+        console.debug('[codex.app-server]', line);
+      }
+    }
+    // P0.2 â?fatal config error on stderr: fail NOW + kill the child so a
+    // lingering old binary can't hold the RPC open for its ~30s timeout.
+    // fireClose() rejects every pending request via the onClose subscriber.
+    if (isFatalCodexConfigStderr(chunk)) {
+      const fatalLine = chunk.split(/\r?\n/).find((l) => isFatalCodexConfigStderr(l)) ?? chunk.trim().slice(0, 200);
+      console.warn('[codex.app-server] fatal config error on stderr â?failing fast + killing child:', fatalLine);
+      fireClose(new Error(`Codex app-server fatal config error: ${fatalLine.trim()}`));
+      try { proc.kill('SIGKILL'); } catch { /* already gone */ }
+    }
+    if (isCodexModelRefreshTimeoutStderr(chunk)) {
+      onHealthSignal?.('models_refresh_timeout');
+    }
+  });
+
+  return {
+    proc,
+    async send(message: string): Promise<void> {
+      if (!proc.stdin.writable) {
+        throw new Error('Codex app-server stdin closed');
+      }
+      const ok = proc.stdin.write(message + '\n', 'utf8');
+      if (!ok) {
+        await new Promise<void>((resolve) => proc.stdin.once('drain', resolve));
+      }
+    },
+    onMessage(handler) {
+      messageHandler = handler;
+      return () => {
+        if (messageHandler === handler) messageHandler = null;
+      };
+    },
+    onClose(handler) {
+      // Already dead â?notify synchronously so a client that attaches
+      // after a fast exit still fast-fails (closes the exit-before-attach
+      // race). Otherwise queue for the eventual exit/error.
+      if (closed) {
+        handler(closeReason);
+        return () => { /* nothing to unsubscribe */ };
+      }
+      closeHandlers.add(handler);
+      return () => closeHandlers.delete(handler);
+    },
+    async close() {
+      messageHandler = null;
+      stdoutReader.reset();
+      // Already exited (self-exit / crash) â?nothing to wait for. Without
+      // this guard we'd block on a `proc.once('exit')` that has already
+      // fired and only resolve after the 2s SIGTERM fallback, adding 2s to
+      // every failure path. (`proc.killed` is only set when WE kill it, so
+      // it stays false for a process that exited on its own.)
+      if (proc.exitCode !== null || proc.signalCode !== null) return;
+      if (!proc.killed) {
+        // Gentle shutdown first â?close stdin so app-server exits its
+        // request loop. Force-kill after 2s if it hasn't exited.
+        try { proc.stdin.end(); } catch { /* ignore */ }
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            try { proc.kill('SIGTERM'); } catch { /* ignore */ }
+            resolve();
+          }, 2000);
+          proc.once('exit', () => {
+            clearTimeout(timer);
+            resolve();
+          });
+        });
+      }
+    },
+  };
+}
+
+/** Parse a `codex --version` line (`codex-cli 0.135.0-alpha.1` or bare
+ *  `0.45.0`) into `[major, minor, patch]`. Returns null if unparseable. */
+export function parseCodexVersion(versionOutput: string | null | undefined): [number, number, number] | null {
+  if (!versionOutput) return null;
+  const m = versionOutput.match(/(\d+)\.(\d+)\.(\d+)/);
+  if (!m) return null;
+  return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+function compareCodexVersion(a: [number, number, number], b: [number, number, number]): number {
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+  return 0;
+}
+
+/** First Codex build whose generated schema has been verified for auto review. */
+export const CODEX_AUTO_REVIEW_MIN_VERSION = '0.145.0-alpha.18';
+
+/** Conservative version gate: unknown and older builds never advertise support. */
+export function codexVersionSupportsAutoReview(versionOutput: string | null | undefined): boolean {
+  return codexReleaseAtLeast(versionOutput, CODEX_AUTO_REVIEW_MIN_VERSION);
+}
+
+export type CodexAutoReviewCapability =
+  | { readonly supported: true; readonly installedVersion: string; readonly minVersion: string }
+  | {
+      readonly supported: false;
+      readonly installedVersion: string | null;
+      readonly minVersion: string;
+      readonly reason: 'not_installed' | 'version_unknown' | 'version_too_old';
+    };
+
+export interface CodexBinaryCandidate {
+  path: string;
+  /** Raw `codex --version` output, or null if the probe failed. */
+  version: string | null;
+}
+
+/**
+ * Pick the best codex binary among candidates by VERSION (highest wins).
+ *
+ * P0.1 (2026-06-01): the macOS packaged-app P0 was an old Homebrew
+ * `/opt/homebrew/bin/codex` 0.45.0 on PATH shadowing the newer
+ * `/Applications/Codex.app/.../codex` 0.135.0 â?the old build rejected the
+ * user's `xhigh` effort config fatally. PATH-first discovery picked the
+ * stale binary every time. So when more than one codex is installed we pick
+ * the highest version instead of blindly trusting PATH order.
+ *
+ * Tiebreak rules: a parseable version always beats an unparseable one; among
+ * equal versions (or all-unparseable) the FIRST candidate wins â?and since
+ * callers pass PATH candidates before the Codex.app fallback, an equal-version
+ * custom build on PATH still wins (preserves the original round-6 intent).
+ */
+export function selectBestCodexCandidate(candidates: readonly CodexBinaryCandidate[]): string | null {
+  let best: { path: string; v: [number, number, number] | null } | null = null;
+  for (const c of candidates) {
+    const v = parseCodexVersion(c.version);
+    if (best === null) { best = { path: c.path, v }; continue; }
+    if (v && !best.v) { best = { path: c.path, v }; continue; }
+    if (v && best.v && compareCodexVersion(v, best.v) > 0) { best = { path: c.path, v }; }
+    // equal version / lower / both-unparseable â?keep current (input-order tiebreak)
+  }
+  return best?.path ?? null;
+}
+
+/**
+ * Windows `.cmd` / `.bat` shims (e.g. the npm-global `codex.cmd` under
+ * `%AppData%\npm`) are NOT directly executable: Node hands the path straight
+ * to CreateProcess, which rejects a batch file with `EINVAL`. That is the
+ * packaged-Windows "Codex app-server spawn failed: spawn EINVAL" report â?the
+ * resolved binary was a `.cmd`. Such shims must run through the command
+ * interpreter.
+ *
+ * We wrap them as `cmd.exe /d /s /c "<quoted-command-line>"` â?the same shape
+ * cross-spawn / Node's own `{ shell: true }` produce â?and set
+ * windowsVerbatimArguments so Node forwards our already-quoted command line
+ * unchanged. The whole command line gets an OUTER pair of quotes because
+ * `cmd /s /c` strips exactly the first and last quote, which lets a shim path
+ * containing spaces (`Program Files`, `AppData\Roaming`) survive.
+ *
+ * Real `.exe` binaries and ALL macOS / Linux paths are returned for a direct
+ * spawn, unchanged â?preserving the `app-server` stdio contract (never
+ * `--listen`) that older Codex.app builds depend on.
+ *
+ * `platform` / `comspec` are injectable so both branches are unit-testable
+ * without actually running on Windows.
+ */
+export interface CodexLaunchSpec {
+  readonly command: string;
+  readonly args: string[];
+  readonly windowsVerbatimArguments?: boolean;
+}
+
+function quoteWinArg(arg: string): string {
+  return `"${arg.replace(/"/g, '\\"')}"`;
+}
+
+export function buildCodexLaunch(
+  binaryPath: string,
+  codexArgs: readonly string[],
+  platform: NodeJS.Platform = process.platform,
+  comspec: string = process.env.ComSpec || 'cmd.exe',
+): CodexLaunchSpec {
+  const lower = binaryPath.toLowerCase();
+  const isWindowsShim = platform === 'win32' && (lower.endsWith('.cmd') || lower.endsWith('.bat'));
+  if (!isWindowsShim) {
+    return { command: binaryPath, args: [...codexArgs] };
+  }
+  const commandLine = [binaryPath, ...codexArgs].map(quoteWinArg).join(' ');
+  return {
+    command: comspec,
+    args: ['/d', '/s', '/c', `"${commandLine}"`],
+    windowsVerbatimArguments: true,
+  };
+}
+
+/** Best-effort `codex --version` probe. Returns null on any failure
+ *  (not executable / hung / non-zero) so the candidate ranks lowest.
+ *  Routes through buildCodexLaunch so a Windows `.cmd` shim is probed via
+ *  cmd.exe too â?otherwise version detection fails and ranking goes unstable. */
+function probeCodexVersion(binaryPath: string): string | null {
+  try {
+    const launch = buildCodexLaunch(binaryPath, ['--version']);
+    // spawnSync (not execFileSync) so we can pass windowsVerbatimArguments for
+    // the cmd.exe shim wrapper; it also won't throw on a non-zero exit.
+    const res = spawnSync(launch.command, launch.args, {
+      timeout: 2500,
+      encoding: 'utf8',
+      windowsHide: true,
+      windowsVerbatimArguments: launch.windowsVerbatimArguments,
+    });
+    if (res.error || res.status !== 0) return null;
+    return (res.stdout ?? '').trim() || null;
+  } catch {
+    return null;
+  }
+}
+
+export interface CodexCandidateDiscoveryOptions {
+  readonly platform?: NodeJS.Platform;
+  readonly pathValue?: string;
+  readonly homeDir?: string;
+  readonly localAppData?: string;
+  readonly appData?: string;
+  readonly exists?: (candidatePath: string) => boolean;
+}
+
+/**
+ * Known macOS desktop-client bundle locations, in tiebreak priority order.
+ *
+ * OpenAI's desktop bundle now ships as `ChatGPT.app` while older installs used
+ * `Codex.app`. Check both the system-wide and per-user Applications folders so
+ * a bundled CLI remains discoverable even when no shell shim exists on PATH.
+ */
+export function getMacOSCodexBundleCandidates(homeDir: string = homedir()): string[] {
+  return [
+    '/Applications/ChatGPT.app/Contents/Resources/codex',
+    '/Applications/Codex.app/Contents/Resources/codex',
+    posixPath.join(homeDir, 'Applications/ChatGPT.app/Contents/Resources/codex'),
+    posixPath.join(homeDir, 'Applications/Codex.app/Contents/Resources/codex'),
+  ];
+}
+
+/** Known standalone/user-shim locations that Electron's inherited PATH can miss. */
+export function getWindowsCodexCandidates(
+  homeDir: string = homedir(),
+  localAppData: string = process.env.LOCALAPPDATA || win32Path.join(homeDir, 'AppData', 'Local'),
+  appData: string = process.env.APPDATA || win32Path.join(homeDir, 'AppData', 'Roaming'),
+): string[] {
+  const directories = [
+    // Official standalone installer default.
+    win32Path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin'),
+    win32Path.join(homeDir, '.local', 'bin'),
+    win32Path.join(homeDir, '.codex', 'bin'),
+    win32Path.join(appData, 'npm'),
+    win32Path.join(localAppData, 'npm'),
+    // App execution aliases are checked last and must pass --version before use.
+    win32Path.join(localAppData, 'Microsoft', 'WindowsApps'),
+  ];
+  return directories.flatMap((directory) => [
+    win32Path.join(directory, 'codex.exe'),
+    win32Path.join(directory, 'codex.cmd'),
+    win32Path.join(directory, 'codex'),
+  ]);
+}
+
+/** Paths managed by the Windows app installer are not assumed executable. */
+export function isWindowsDesktopCodexPath(candidatePath: string): boolean {
+  const normalized = candidatePath.replace(/\//g, '\\').toLowerCase();
+  return normalized.includes('\\program files\\windowsapps\\')
+    || normalized.includes('\\microsoft\\windowsapps\\codex');
+}
+
+/** Cheap existence-only candidate scan. No subprocesses are spawned here. */
+export function collectCodexCandidatePaths(options: CodexCandidateDiscoveryOptions = {}): string[] {
+  const platform = options.platform ?? process.platform;
+  const pathValue = options.pathValue ?? process.env.PATH ?? '';
+  const homeDir = options.homeDir ?? homedir();
+  const localAppData = options.localAppData
+    ?? process.env.LOCALAPPDATA
+    ?? win32Path.join(homeDir, 'AppData', 'Local');
+  const appData = options.appData
+    ?? process.env.APPDATA
+    ?? win32Path.join(homeDir, 'AppData', 'Roaming');
+  const exists = options.exists ?? existsSync;
+  const pathJoin = platform === 'win32' ? win32Path.join : posixPath.join;
+  const sep = platform === 'win32' ? ';' : ':';
+  const exts = platform === 'win32' ? ['.exe', '.cmd', ''] : [''];
+  const candidatePaths: string[] = [];
+  const seen = new Set<string>();
+  const addCandidate = (candidate: string) => {
+    const key = platform === 'win32' ? candidate.toLowerCase() : candidate;
+    if (exists(candidate) && !seen.has(key)) {
+      seen.add(key);
+      candidatePaths.push(candidate);
+    }
+  };
+
+  for (const dir of pathValue.split(sep).filter(Boolean)) {
+    for (const ext of exts) {
+      const candidate = pathJoin(dir, `codex${ext}`);
+      addCandidate(candidate);
+    }
+  }
+
+  // Bundle paths are appended AFTER PATH so equal-version custom builds keep
+  // winning the input-order tiebreak in selectBestCodexCandidate().
+  if (platform === 'darwin') {
+    for (const candidate of getMacOSCodexBundleCandidates(homeDir)) {
+      addCandidate(candidate);
+    }
+  }
+
+  if (platform === 'win32') {
+    for (const candidate of getWindowsCodexCandidates(homeDir, localAppData, appData)) {
+      addCandidate(candidate);
+    }
+  }
+
+  return candidatePaths;
+}
+
+/** Stable, cheap fingerprint used to notice install/uninstall/PATH changes. */
+export function fingerprintCodexCandidates(candidatePaths: readonly string[]): string {
+  return JSON.stringify(candidatePaths);
+}
+
+// `findCodexBinary()` is a hot path, so successful version probes stay cached.
+// Unlike the old process-lifetime cache, the selected result is only reused
+// while a fresh existence scan produces the same candidate fingerprint.
+let resolvedBinaryCache: { fingerprint: string; value: string | null } | null = null;
+let versionProbeCache: { binary: string; value: string | null } | null = null;
+let lastUnusableDesktopCandidate: string | null = null;
+
+/** Test-only: clear the memoized binary resolution between cases. */
+export function resetCodexBinaryCacheForTests(): void {
+  resolvedBinaryCache = null;
+  versionProbeCache = null;
+  lastUnusableDesktopCandidate = null;
+  if (!cached) lastAvailability = { kind: 'unknown' };
+}
+
+/**
+ * Read the selected binary's version once and turn it into the UI capability
+ * fact for `approvalsReviewer:auto_review`.
+ *
+ * The runtime still verifies the thread/start or thread/resume response echo.
+ * This preflight only controls whether the composer may offer the option.
+ */
+export function getCodexAutoReviewCapability(): CodexAutoReviewCapability {
+  const binary = findCodexBinary();
+  if (!binary) {
+    return {
+      supported: false,
+      installedVersion: null,
+      minVersion: CODEX_AUTO_REVIEW_MIN_VERSION,
+      reason: 'not_installed',
+    };
+  }
+
+  const rawVersion = lastAvailability.kind === 'ready'
+    ? lastAvailability.version
+    : versionProbeCache?.binary === binary
+      ? versionProbeCache.value
+      : probeCodexVersion(binary);
+  if (lastAvailability.kind !== 'ready' && versionProbeCache?.binary !== binary) {
+    versionProbeCache = { binary, value: rawVersion };
+  }
+
+  if (!rawVersion) {
+    return {
+      supported: false,
+      installedVersion: null,
+      minVersion: CODEX_AUTO_REVIEW_MIN_VERSION,
+      reason: 'version_unknown',
+    };
+  }
+  if (!codexVersionSupportsAutoReview(rawVersion)) {
+    return {
+      supported: false,
+      installedVersion: rawVersion,
+      minVersion: CODEX_AUTO_REVIEW_MIN_VERSION,
+      reason: 'version_too_old',
+    };
+  }
+  return {
+    supported: true,
+    installedVersion: rawVersion,
+    minVersion: CODEX_AUTO_REVIEW_MIN_VERSION,
+  };
+}
+
+/**
+ * Locate the `codex` binary. Returns null when not found.
+ *
+ * Strategy:
+ *   1. CODEX_DISABLED=1 hard-disables Codex (set in test harness so
+ *      unit tests never spawn the subprocess or hit network).
+ *   2. CODEX_BIN env var (test / CI override of the resolved path) â? *      highest explicit priority.
+ *   3. Collect candidates: PATH walk first, then known desktop/standalone
+ *      install locations on macOS and Windows.
+ *   4. If more than one candidate exists, probe `--version` and pick the
+ *      NEWEST (P0.1, 2026-06-01) so a stale Homebrew codex on PATH can't
+ *      shadow a newer Codex.app build. Single candidate â?use it as-is
+ *      except Windows desktop-managed paths, which must prove executable.
+ *
+ * The cheap candidate-existence scan runs on every idle availability query.
+ * Version probes are reused while its fingerprint is unchanged; install,
+ * uninstall, PATH and bundle-name changes invalidate resolution + version +
+ * stale failure availability together. A healthy running app-server remains
+ * pinned until it exits or is disposed â?discovery never hot-kills it.
+ */
+export function findCodexBinary(): string | null {
+  // Phase 5b (2026-05-15) â?hard disable for tests. The wider Codex
+  // surface (account, models, runtime) all funnel through this lookup,
+  // so a single guard here keeps unit tests off the subprocess and off
+  // the ChatGPT plugin-sync network call. CI sets it implicitly via
+  // `npm run test:unit`; an interactive developer running tests
+  // through their IDE picks it up the same way.
+  if (process.env.CODEX_DISABLED === '1') return null;
+
+  // Do not switch a healthy in-use app-server underneath active chats. Any
+  // candidate changes are picked up after the process exits/is disposed.
+  if (cached && lastAvailability.kind === 'ready') return lastAvailability.binary;
+
+  const fromEnv = process.env.CODEX_BIN;
+  const explicitCandidate = fromEnv && existsSync(fromEnv) ? fromEnv : null;
+  const candidatePaths = explicitCandidate
+    ? [explicitCandidate]
+    : collectCodexCandidatePaths();
+  const fingerprint = fingerprintCodexCandidates(candidatePaths)
+    + (explicitCandidate ? ':CODEX_BIN' : ':AUTO');
+
+  if (resolvedBinaryCache?.fingerprint === fingerprint) return resolvedBinaryCache.value;
+
+  // Candidate existence changed (or an explicit refresh cleared the cache):
+  // drop both the selected-version probe and any idle failure derived from the
+  // previous binary. Never disturb an active/pending app-server promise.
+  const hadResolution = resolvedBinaryCache !== null;
+  versionProbeCache = null;
+  lastUnusableDesktopCandidate = null;
+  if (hadResolution && !cached) lastAvailability = { kind: 'unknown' };
+
+  let selected: string | null;
+  if (candidatePaths.length <= 1) {
+    const soleCandidate = candidatePaths[0] ?? null;
+    if (soleCandidate && isWindowsDesktopCodexPath(soleCandidate)) {
+      const version = probeCodexVersion(soleCandidate);
+      versionProbeCache = { binary: soleCandidate, value: version };
+      selected = version ? soleCandidate : null;
+      if (!selected) lastUnusableDesktopCandidate = soleCandidate;
+    } else {
+      selected = soleCandidate;
+    }
+    if (selected) console.info('[codex] selected binary', {
+      binary: selected,
+      reason: isWindowsDesktopCodexPath(selected) ? 'desktop candidate passed version probe' : 'sole candidate',
+    });
+  } else {
+    // Multiple codex installs (e.g. old /opt/homebrew/bin/codex alongside a
+    // newer /Applications/Codex.app build) â?probe versions and pick newest
+    // so a stale PATH binary can't shadow Codex.app (packaged P0 2026-06-01).
+    const probed: CodexBinaryCandidate[] = candidatePaths.map((p) => ({ path: p, version: probeCodexVersion(p) }));
+    const usableCandidates = probed.filter((candidate) => (
+      candidate.version !== null || !isWindowsDesktopCodexPath(candidate.path)
+    ));
+    selected = selectBestCodexCandidate(usableCandidates);
+    if (!selected) {
+      lastUnusableDesktopCandidate = probed.find((candidate) => (
+        candidate.version === null && isWindowsDesktopCodexPath(candidate.path)
+      ))?.path ?? null;
+    }
+    const selectedProbe = selected ? probed.find((candidate) => candidate.path === selected) : null;
+    if (selected && selectedProbe) {
+      versionProbeCache = { binary: selected, value: selectedProbe.version };
+    }
+    console.info('[codex] selected binary', {
+      binary: selected,
+      reason: 'highest version among multiple candidates',
+      candidates: probed.map((c) => ({ path: c.path, version: c.version })),
+    });
+  }
+
+  resolvedBinaryCache = { fingerprint, value: selected };
+  return selected;
+}
+
+interface ManagedAppServer {
+  readonly client: CodexAppServerClient;
+  readonly transport: SpawnedTransport;
+  readonly availability: CodexAvailability;
+  readonly generation: number;
+}
+
+let cached: Promise<ManagedAppServer> | null = null;
+let lastAvailability: CodexAvailability = { kind: 'unknown' };
+let nextAppServerGeneration = 0;
+let currentHealthState: AppServerHealthState | null = null;
+let recyclePromise: Promise<boolean> | null = null;
+
+function extractTurnId(params: unknown): string | null {
+  if (!params || typeof params !== 'object') return null;
+  const record = params as Record<string, unknown>;
+  if (typeof record.turnId === 'string') return record.turnId;
+  if (record.turn && typeof record.turn === 'object') {
+    const id = (record.turn as Record<string, unknown>).id;
+    if (typeof id === 'string') return id;
+  }
+  return null;
+}
+
+function observeAppServerActivity(
+  health: AppServerHealthState,
+  method: string,
+  params: unknown,
+): void {
+  const turnId = extractTurnId(params);
+  if (method === 'turn/started' && turnId) {
+    health.activeTurnIds.add(turnId);
+    return;
+  }
+  if ((method === 'turn/completed' || method === 'turn/cancelled') && turnId) {
+    health.activeTurnIds.delete(turnId);
+    if (health.unhealthyReason) void recycleUnhealthyCodexAppServerIfIdle();
+  }
+}
+
+function recordAppServerHealthSignal(generation: number, reason: string): void {
+  const health = currentHealthState;
+  if (!health || health.generation !== generation) return;
+  const now = Date.now();
+  const recorded = appendCodexHealthSignal(health.signalTimes, now);
+  health.signalTimes = recorded.signalTimes;
+  console.warn('[codex.app-server] health signal', {
+    generation,
+    reason,
+    count: health.signalTimes.length,
+    windowMs: CODEX_HEALTH_SIGNAL_WINDOW_MS,
+  });
+  if (recorded.unhealthy) {
+    markCodexAppServerUnhealthy(reason);
+  }
+}
+
+/** Mark the shared app-server unhealthy. It is recycled only when no active
+ * turn is observed; ambiguous activity fails closed and leaves it degraded. */
+export function markCodexAppServerUnhealthy(reason: string): void {
+  const health = currentHealthState;
+  if (!health) return;
+  health.unhealthyReason = reason;
+  console.warn('[codex.app-server] marked unhealthy', {
+    generation: health.generation,
+    reason,
+    activeTurns: health.activeTurnIds.size,
+  });
+  void recycleUnhealthyCodexAppServerIfIdle();
+}
+
+export function recycleUnhealthyCodexAppServerIfIdle(): Promise<boolean> {
+  if (recyclePromise) return recyclePromise;
+  const health = currentHealthState;
+  const current = cached;
+  if (!health || !health.unhealthyReason || health.activeTurnIds.size > 0 || !current) {
+    return Promise.resolve(false);
+  }
+
+  recyclePromise = (async () => {
+    let managed: ManagedAppServer;
+    try {
+      managed = await current;
+    } catch {
+      if (cached === current) cached = null;
+      return false;
+    }
+    if (
+      currentHealthState !== health
+      || managed.generation !== health.generation
+      || health.activeTurnIds.size > 0
+    ) {
+      return false;
+    }
+    if (cached === current) cached = null;
+    console.warn('[codex.app-server] recycling unhealthy idle instance', {
+      generation: health.generation,
+      reason: health.unhealthyReason,
+    });
+    await managed.client.dispose().catch(() => undefined);
+    if (currentHealthState === health) currentHealthState = null;
+    lastAvailability = {
+      kind: 'spawn_failed',
+      reason: `unhealthy instance recycled: ${health.unhealthyReason}`,
+      binary: managed.availability.kind === 'ready' ? managed.availability.binary : undefined,
+    };
+    return true;
+  })().finally(() => {
+    recyclePromise = null;
+  });
+  return recyclePromise;
+}
+
+/**
+ * Build the Codex child environment at the final process boundary.
+ *
+ * Electron already protects the packaged Next server, but dev servers and
+ * alternate launchers do not cross that boundary. Re-applying the idempotent
+ * bypass here guarantees Codex's local Responses request remains direct.
+ */
+export function buildCodexAppServerEnv(
+  source: ProxyProcessEnvironment = process.env,
+  platform: NodeJS.Platform = process.platform,
+  codexHome?: string,
+): NodeJS.ProcessEnv {
+  return buildProxySafeEnvironment({
+    baseEnv: source,
+    overrides: {
+      // B-025: default to 'warn' to avoid the Codex INFO tracing flood
+      // (codex_core::tasks enter/exit spans) bloating the persistent main
+      // log + main-process memory. Explicit RUST_LOG wins; opt into full
+      // 'info' tracing with CODEPILOT_CODEX_TRACE=1.
+      RUST_LOG: resolveCodexRustLog(source),
+      // Codex rollouts and its SQLite thread index must have one owner. The
+      // official client uses ~/.codex; CodePilot prepares a dedicated home
+      // and mirrors only user-owned Harness inputs into it.
+      ...(codexHome ? { CODEX_HOME: codexHome, CODEX_SQLITE_HOME: codexHome } : {}),
+    },
+    platform,
+  }) as NodeJS.ProcessEnv;
+}
+
+/** Keep the SQLite index isolated even when the mirrored user config.toml has
+ * an explicit `sqlite_home` (config values otherwise outrank the env var). */
+export function buildCodexAppServerArgs(codexHome: string): string[] {
+  return [
+    'app-server',
+    '-c',
+    `sqlite_home=${JSON.stringify(codexHome)}`,
+  ];
+}
+
+/**
+ * Resolve (or create) the shared app-server connection.
+ *
+ * Returns the managed instance OR throws when the binary isn't
+ * available. Callers should check `getCodexAvailability()` first when
+ * they want a non-throwing path.
+ */
+export async function getCodexAppServer(): Promise<ManagedAppServer> {
+  if (isServerRecoverySafeMode()) {
+    throw new Error('Codex app-server is disabled while CodePilot is in recovery safe mode');
+  }
+  if (recyclePromise) await recyclePromise;
+  if (cached) return cached;
+
+  const binary = findCodexBinary();
+  if (!binary) {
+    lastAvailability = lastUnusableDesktopCandidate
+      ? { kind: 'desktop_only', binary: lastUnusableDesktopCandidate, reason: 'desktop_bundle_not_executable' }
+      : { kind: 'not_installed' };
+    throw new Error('Codex binary not found on PATH (set CODEX_BIN to override)');
+  }
+
+  cached = (async (): Promise<ManagedAppServer> => {
+    const generation = ++nextAppServerGeneration;
+    const health: AppServerHealthState = {
+      generation,
+      activeTurnIds: new Set(),
+      signalTimes: [],
+      unhealthyReason: null,
+    };
+    currentHealthState = health;
+    let proc: ChildProcessWithoutNullStreams;
+    let registeredPid: number | null = null;
+    const lifecycleStartIdentity = randomUUID();
+    const executableBasename = basename(binary);
+    try {
+      const preparedHome = prepareCodePilotCodexHome();
+      // Windows `.cmd`/`.bat` shims can't be spawned directly (EINVAL) â?run
+      // them through cmd.exe. Real .exe / macOS / Linux paths spawn directly.
+      const launch = buildCodexLaunch(binary, buildCodexAppServerArgs(preparedHome.codexHome));
+      console.info('[codex.app-server] spawning', {
+        binary,
+        command: launch.command,
+        args: launch.args,
+        codexHome: preparedHome.codexHome,
+        migratedRollouts: preparedHome.migratedRollouts,
+        credentialMirrors: preparedHome.credentialMirrors,
+      });
+      const independentCredentials = Object.entries(preparedHome.credentialMirrors)
+        .filter(([, mode]) => ['copy', 'target_only', 'broken_link'].includes(mode))
+        .map(([name]) => name);
+      if (independentCredentials.length > 0) {
+        console.warn('[codex.app-server] credential mirror is independent on this platform; CodePilot may require a separate login', {
+          entries: independentCredentials,
+          modes: preparedHome.credentialMirrors,
+        });
+      }
+      if (preparedHome.harnessSnapshotEntries.length > 0) {
+        console.warn('[codex.app-server] live Harness mirror unavailable; using a snapshot that may require manual refresh', {
+          entries: preparedHome.harnessSnapshotEntries,
+        });
+      }
+      if (preparedHome.skippedUnreadableRollouts > 0) {
+        console.warn('[codex.app-server] skipped legacy rollouts with unreadable session metadata', {
+          count: preparedHome.skippedUnreadableRollouts,
+        });
+      }
+      proc = spawn(launch.command, launch.args, {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        windowsHide: true,
+        windowsVerbatimArguments: launch.windowsVerbatimArguments,
+        env: buildCodexAppServerEnv(process.env, process.platform, preparedHome.codexHome),
+      });
+      proc.once('spawn', () => {
+        registeredPid = proc.pid ?? null;
+        if (registeredPid) {
+          postCodexAppServerLifecycle(
+            'register',
+            registeredPid,
+            lifecycleStartIdentity,
+            executableBasename,
+          );
+        }
+      });
+    } catch (err) {
+      cached = null;
+      if (currentHealthState === health) currentHealthState = null;
+      const reason = err instanceof Error ? err.message : String(err);
+      lastAvailability = { kind: 'spawn_failed', reason, binary };
+      throw new Error(`Codex app-server spawn failed: ${reason}`);
+    }
+
+    const transport = makeStdioTransport(proc, (reason) => {
+      recordAppServerHealthSignal(generation, reason);
+    });
+    const version = await readCodePilotVersion();
+    const client = new CodexAppServerClient(transport, {
+      version,
+      title: 'buckyball.ai',
+      // Native dynamic tools (used by Codex Account exact-route managed
+      // Sub-agents) are rejected at thread/start unless the client opted into
+      // the experimental app-server surface during initialize. Attestation is
+      // intentionally disabled: buckyball.ai has no handler for that request.
+      capabilities: {
+        experimentalApi: true,
+        requestAttestation: false,
+      },
+    });
+    client.onAnyNotification((method, params) => {
+      observeCodexSandboxNotification(method, params);
+      observeAppServerActivity(health, method, params);
+    });
+
+    // Listen for unexpected exit so the cache stays accurate.
+    proc.once('exit', (code, signal) => {
+      if (registeredPid) {
+        postCodexAppServerLifecycle(
+          'unregister',
+          registeredPid,
+          lifecycleStartIdentity,
+          executableBasename,
+        );
+      }
+      console.warn('[codex.app-server] exited', { code, signal });
+      if (currentHealthState === health) {
+        // Invalidate the cache so the next caller respawns.
+        cached = null;
+        currentHealthState = null;
+      }
+      lastAvailability = {
+        kind: 'spawn_failed',
+        reason: `exited with code=${code} signal=${signal}`,
+        binary,
+      };
+    });
+
+    try {
+      const init = await client.initialize();
+      lastAvailability = {
+        kind: 'ready',
+        version: init.userAgent,
+        codexHome: init.codexHome,
+        binary,
+      };
+      return { client, transport, availability: lastAvailability, generation };
+    } catch (err) {
+      cached = null;
+      if (currentHealthState === health) currentHealthState = null;
+      await transport.close().catch(() => undefined);
+      const reason = err instanceof Error ? err.message : String(err);
+      lastAvailability = { kind: 'spawn_failed', reason, binary };
+      throw new Error(`Codex app-server initialize failed: ${reason}`);
+    }
+  })();
+
+  return cached;
+}
+
+/**
+ * Non-throwing availability query for Settings status card.
+ * Doesn't spawn â?just inspects the binary and the cached state.
+ */
+export async function getCodexAvailability(): Promise<CodexAvailability> {
+  if (lastAvailability.kind === 'ready') return lastAvailability;
+  const binary = findCodexBinary();
+  if (!binary) {
+    lastAvailability = lastUnusableDesktopCandidate
+      ? { kind: 'desktop_only', binary: lastUnusableDesktopCandidate, reason: 'desktop_bundle_not_executable' }
+      : { kind: 'not_installed' };
+    return lastAvailability;
+  }
+  if (lastAvailability.kind === 'unknown' || lastAvailability.kind === 'not_installed') {
+    lastAvailability = { kind: 'installed_idle', binary };
+    return lastAvailability;
+  }
+  return lastAvailability;
+}
+
+/**
+ * Explicit user-requested rescan. This also catches an in-place CLI upgrade
+ * whose path/existence fingerprint did not change. A healthy or initializing
+ * app-server is deliberately left untouched and remains the source of truth.
+ */
+export async function refreshCodexAvailability(): Promise<CodexAvailability> {
+  // Refresh starts a new diagnostic observation window even when the healthy
+  // app-server stays alive. Without this, one historical sandbox warning is
+  // pinned in Settings for the rest of the process lifetime.
+  resetCodexSandboxReadiness();
+  if (cached) return getCodexAvailability();
+  resolvedBinaryCache = null;
+  versionProbeCache = null;
+  lastUnusableDesktopCandidate = null;
+  lastAvailability = { kind: 'unknown' };
+  return getCodexAvailability();
+}
+
+/**
+ * Tear down the cached app-server. Used on app exit (Electron main
+ * 'before-quit' / dev-server SIGTERM) so we don't leave orphan
+ * processes per plan Â§ç¡¬çº¦æ?
+ */
+export async function disposeCodexAppServer(): Promise<void> {
+  const current = cached;
+  if (!current) {
+    lastAvailability = { kind: 'unknown' };
+    return;
+  }
+  cached = null;
+  currentHealthState = null;
+  resetCodexSandboxReadiness();
+  try {
+    const { client } = await current;
+    await client.dispose();
+  } catch {
+    // If init failed and cached resolved with an error, the dispose
+    // path may itself throw â?ignore, the goal is just to free.
+  }
+  lastAvailability = { kind: 'unknown' };
+}
+
+/**
+ * Read buckyball.ai's package.json version. Async wrapper around the
+ * filesystem read so it's testable / can be mocked.
+ */
+async function readCodePilotVersion(): Promise<string> {
+  // Walk up from this module until we find a package.json with name
+  // "codepilot". Falls back to '0.0.0' if the lookup fails.
+  let dir = __dirname;
+  for (let depth = 0; depth < 10; depth++) {
+    const candidate = join(dir, 'package.json');
+    if (existsSync(candidate)) {
+      try {
+        const fs = await import('node:fs/promises');
+        const pkg = JSON.parse(await fs.readFile(candidate, 'utf8'));
+        if (pkg?.name === 'codepilot' && typeof pkg.version === 'string') {
+          return pkg.version;
+        }
+      } catch {
+        // ignore, keep walking
+      }
+    }
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return '0.0.0';
+}
+
+// Test-only: reset module state. Not exported via the package index.
+export function __resetForTest(): void {
+  cached = null;
+  lastAvailability = { kind: 'unknown' };
+  nextAppServerGeneration = 0;
+  currentHealthState = null;
+  recyclePromise = null;
+  resolvedBinaryCache = null;
+  versionProbeCache = null;
+}

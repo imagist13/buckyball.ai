@@ -1,0 +1,136 @@
+[
+  {
+    "type": "status",
+    "data": {
+      "session_id": "<SID>",
+      "model": "claude-sonnet-4-6",
+      "requested_model": "claude-sonnet-4-6",
+      "tools": [
+        "Read",
+        "Write",
+        "Edit",
+        "Bash",
+        "Glob",
+        "Grep",
+        "Skill",
+        "Agent",
+        "codepilot_notify",
+        "codepilot_schedule_task",
+        "codepilot_list_tasks",
+        "codepilot_hatch_buddy",
+        "codepilot_cancel_task",
+        "codepilot_load_widget_guidelines",
+        "codepilot_dashboard_pin",
+        "codepilot_dashboard_list",
+        "codepilot_dashboard_refresh",
+        "codepilot_dashboard_update",
+        "codepilot_dashboard_remove",
+        "codepilot_import_media",
+        "codepilot_generate_image",
+        "codepilot_memory_search",
+        "codepilot_memory_get",
+        "codepilot_memory_recent",
+        "codepilot_session_search",
+        "AskUserQuestion",
+        "codepilot_cli_tools_list",
+        "codepilot_cli_tools_install",
+        "codepilot_cli_tools_add",
+        "codepilot_cli_tools_remove",
+        "codepilot_cli_tools_check_updates",
+        "codepilot_cli_tools_update"
+      ],
+      "output_style": "native"
+    }
+  },
+  {
+    "type": "rewind_point",
+    "data": {
+      "userMessageId": "<MID>"
+    }
+  },
+  {
+    "type": "text",
+    "data": "Let me check. "
+  },
+  {
+    "type": "tool_use",
+    "data": {
+      "id": "toolu_parity_1",
+      "name": "Read",
+      "input": {
+        "file_path": "<WD>/note.txt"
+      }
+    }
+  },
+  {
+    "type": "tool_result",
+    "data": {
+      "tool_use_id": "toolu_parity_1",
+      "content": "1\tparity note line 1\n2\tparity note line 2\n3\t",
+      "is_error": false
+    }
+  },
+  {
+    "type": "status",
+    "data": {
+      "subtype": "step_complete",
+      "step": 1,
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 20
+      },
+      "finishReason": "tool-calls",
+      "toolsUsed": [
+        "Read"
+      ]
+    }
+  },
+  {
+    "type": "text",
+    "data": "The note has two lines."
+  },
+  {
+    "type": "status",
+    "data": {
+      "subtype": "step_complete",
+      "step": 2,
+      "usage": {
+        "input_tokens": 20,
+        "output_tokens": 25
+      },
+      "finishReason": "stop",
+      "toolsUsed": []
+    }
+  },
+  {
+    "type": "result",
+    "data": {
+      "usage": {
+        "input_tokens": 20,
+        "output_tokens": 25,
+        "context_accounting": {
+          "entries": {
+            "tools": {
+              "tokens": "<PLATFORM_PATH_DEPENDENT>",
+              "source": "tool_use/tool/Read",
+              "detail": "Read × 1"
+            }
+          },
+          "unsupported": [
+            "system_prompt",
+            "memory",
+            "files_attachments"
+          ],
+          "producedBy": "bbagent"
+        }
+      },
+      "session_id": "<SID>",
+      "num_turns": 2,
+      "model_id": "claude-sonnet-4-6"
+    }
+  },
+  {
+    "type": "done",
+    "data": ""
+  }
+]

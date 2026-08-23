@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "package": "@ai-sdk/openai",
+    "version": "4.0.5",
+    "mirrors": "src/lib/ai-provider.ts useResponsesApi branch + src/lib/agent-loop.ts providerOptions.openai (Codex Responses)",
+    "ai": "7.0.11"
+  },
+  "request": {
+    "url": "https://api.openai.com/v1/responses",
+    "method": "POST",
+    "headers": {
+      "authorization": "[REDACTED]",
+      "content-type": "application/json",
+      "user-agent": "ai/7.0.11 ai-sdk/provider-utils/5.0.3 runtime/node.js/22"
+    },
+    "body": {
+      "model": "gpt-5.1-codex",
+      "input": [
+        {
+          "role": "developer",
+          "content": "You are a synthetic capability probe. Reply with the word ok."
+        },
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "input_text",
+              "text": "capability probe ping"
+            }
+          ]
+        }
+      ],
+      "text": {
+        "verbosity": "medium"
+      },
+      "store": false,
+      "instructions": "You are a synthetic capability probe. Reply with the word ok.",
+      "include": [
+        "reasoning.encrypted_content"
+      ],
+      "reasoning": {
+        "effort": "medium",
+        "summary": "detailed"
+      },
+      "tools": [
+        {
+          "type": "function",
+          "name": "read_file",
+          "description": "Read a UTF-8 file from the workspace",
+          "parameters": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "workspace-relative path"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ],
+      "tool_choice": "auto"
+    }
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "package": "@ai-sdk/anthropic",
+    "version": "4.0.5",
+    "mirrors": "src/lib/ai-provider.ts createLanguageModel case anthropic + src/lib/agent-loop.ts providerOptions.anthropic",
+    "ai": "7.0.11"
+  },
+  "request": {
+    "url": "https://api.anthropic.com/v1/messages",
+    "method": "POST",
+    "headers": {
+      "anthropic-beta": "structured-outputs-2025-11-13,interleaved-thinking-2025-05-14",
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+      "user-agent": "ai/7.0.11 ai-sdk/provider-utils/5.0.3 runtime/node.js/22",
+      "x-api-key": "[REDACTED]"
+    },
+    "body": {
+      "model": "claude-sonnet-4-6",
+      "max_tokens": 16384,
+      "system": [
+        {
+          "type": "text",
+          "text": "You are a synthetic capability probe. Reply with the word ok."
+        }
+      ],
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "capability probe ping"
+            }
+          ]
+        }
+      ],
+      "tools": [
+        {
+          "name": "read_file",
+          "description": "Read a UTF-8 file from the workspace",
+          "input_schema": {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "workspace-relative path"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ],
+      "tool_choice": {
+        "type": "tool",
+        "name": "read_file"
+      }
+    }
+  }
+}

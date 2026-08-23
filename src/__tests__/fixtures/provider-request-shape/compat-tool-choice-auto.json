@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "package": "@ai-sdk/openai-compatible",
+    "version": "3.0.3",
+    "mirrors": "NOT an app path — Phase 2 candidate adapter comparison for OpenRouter-class gateways",
+    "ai": "7.0.11"
+  },
+  "request": {
+    "url": "https://openrouter.example/api/v1/chat/completions",
+    "method": "POST",
+    "headers": {
+      "authorization": "[REDACTED]",
+      "content-type": "application/json",
+      "user-agent": "ai/7.0.11 ai-sdk/provider-utils/5.0.3 runtime/node.js/22"
+    },
+    "body": {
+      "model": "anthropic/claude-sonnet-4.6",
+      "max_tokens": 16384,
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a synthetic capability probe. Reply with the word ok."
+        },
+        {
+          "role": "user",
+          "content": "capability probe ping"
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "description": "Read a UTF-8 file from the workspace",
+            "parameters": {
+              "$schema": "http://json-schema.org/draft-07/schema#",
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "workspace-relative path"
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "additionalProperties": false
+            }
+          }
+        }
+      ],
+      "tool_choice": "auto"
+    }
+  }
+}
