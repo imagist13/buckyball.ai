@@ -1,12 +1,12 @@
 /**
- * Phase 2C contract â€?pinned default protection.
+ * Phase 2C contract â€” pinned default protection.
  *
  * Locks in the silent-substitution fix from `7e74200`. Before that
  * commit, `setDefaultProviderId(id)` rewrote both the legacy
  * `default_provider_id` AND the user's pin keys
  * (`global_default_model_provider`, clearing `global_default_model`).
  * The auto-heal in `/api/providers/models` calls `setDefaultProviderId`
- * on every fetch when the default provider is missing â€?so a Pinned
+ * on every fetch when the default provider is missing â€” so a Pinned
  * user with a broken pin would silently lose their commitment on each
  * chat-page mount.
  *
@@ -16,7 +16,7 @@
  * recovery instead of replacing the user's choice silently.**
  *
  * If a future refactor reintroduces the silent rewrite, these tests
- * fail loudly â€?keeping the contract honest.
+ * fail loudly â€” keeping the contract honest.
  */
 
 import { describe, it, before, after } from "node:test";
@@ -55,7 +55,7 @@ describe("Pinned default protection (Phase 2C contract)", () => {
     setSetting("global_default_model_provider", "user-pinned-pid");
     setSetting("global_default_model", "user-pinned-model");
 
-    // Backend / auto-heal calls setDefaultProviderId â€?historically this
+    // Backend / auto-heal calls setDefaultProviderId â€” historically this
     // also clobbered the user's pin. The contract now: legacy key only.
     setDefaultProviderId("auto-healed-pid");
 

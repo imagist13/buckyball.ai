@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Skill marketplace â?two-view inline navigation (2026-05-02 update).
+ * Skill marketplace — two-view inline navigation (2026-05-02 update).
  *
  * The browser owns a single state slot (`openSkill`): when null, render
  * the search + grid list; when set, render `<MarketplaceSkillDetail>`
  * inline (back button + name + readme + install). The previous version
  * opened the detail as a nested Dialog inside the marketplace Dialog,
- * which stacked overlays ("å¼¹çªå å¼¹çª?) â?replaced with same-dialog
+ * which stacked overlays ("弹窗叠弹窗") — replaced with same-dialog
  * navigation here.
  *
  * Wrapper Dialog (in `src/app/plugins/page.tsx`) holds a fixed
@@ -18,7 +18,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { CheckCircle, SpinnerGap } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import { MarketplaceSkillDetail } from "./MarketplaceSkillDetail";
 import { cn } from "@/lib/utils";
@@ -59,7 +59,7 @@ export function MarketplaceBrowser({ onInstalled }: MarketplaceBrowserProps) {
     }
   }, []);
 
-  // Initial load â?fetch popular skills
+  // Initial load — fetch popular skills
   useEffect(() => {
     doSearch("");
   }, [doSearch]);
@@ -96,11 +96,11 @@ export function MarketplaceBrowser({ onInstalled }: MarketplaceBrowserProps) {
 
   return (
     <div className="flex h-full flex-col">
-      {/* Search â?pinned at top so the input stays put when results
+      {/* Search — pinned at top so the input stays put when results
           load / change. Body below it is the only scroll region. */}
       <div className="shrink-0 px-6 pt-4 pb-3">
         <div className="relative max-w-md">
-          <BuckyballIcon
+          <CodePilotIcon
             name="search"
             size="sm"
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
@@ -130,7 +130,7 @@ export function MarketplaceBrowser({ onInstalled }: MarketplaceBrowserProps) {
           </div>
         ) : results.length === 0 ? (
           <div className="rounded-lg border border-border/50 bg-card p-10 flex flex-col items-center text-center gap-3">
-            <BuckyballIcon name="marketplace" size="xl" className="opacity-40 text-muted-foreground" aria-hidden />
+            <CodePilotIcon name="marketplace" size="xl" className="opacity-40 text-muted-foreground" aria-hidden />
             <p className="text-sm font-medium">{t("skills.searchNoResults")}</p>
           </div>
         ) : (
@@ -168,8 +168,8 @@ function MarketplaceCard({
           onOpen();
         }
       }}
-      aria-label={`${skill.name} â?${skill.source}`}
-      // Clickable marketplace card â?same hover wash as other clickable
+      aria-label={`${skill.name} — ${skill.source}`}
+      // Clickable marketplace card — same hover wash as other clickable
       // cards. Non-clickable cards (external MCP servers) stay flat.
       className="rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
@@ -193,7 +193,7 @@ function MarketplaceCard({
         <span className="font-mono truncate min-w-0">{skill.source}</span>
         {skill.installs > 0 && (
           <span className="flex items-center gap-0.5 shrink-0">
-            <BuckyballIcon name="download" size={12} aria-hidden />
+            <CodePilotIcon name="download" size={12} aria-hidden />
             {skill.installs.toLocaleString()}
           </span>
         )}

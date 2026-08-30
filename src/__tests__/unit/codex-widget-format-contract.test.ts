@@ -1,17 +1,17 @@
 /**
- * Phase 5c slice 6 (2026-05-16, post-smoke) �?widget format
+ * Phase 5c slice 6 (2026-05-16, post-smoke) — widget format
  * contract.
  *
  * Smoke evidence (S4 + S4b sessions):
  *   - Natural-prompt S4: GLM called codepilot_load_widget_guidelines,
  *     then called codepilot_generate_image, then emitted a raw HTML
- *     `show-widget` fence �?UI saw no widget.
+ *     `show-widget` fence — UI saw no widget.
  *   - Explicit-JSON-wrapper S4b: same prompt with "must be JSON
- *     wrapper" �?rendered fine.
+ *     wrapper" → rendered fine.
  *
  * Diagnosis: the original guidelines didn't make the wire format
  * loud enough, and never forbade the image-gen tool during widget
- * tasks. Slice 6 hardens four things �?this test pins each:
+ * tasks. Slice 6 hardens four things — this test pins each:
  *
  *   1. WIDGET_WIRE_FORMAT_SPEC is the single source of truth for the
  *      `show-widget {…JSON…}` wire format. Both the always-injected
@@ -47,9 +47,9 @@ import { parseAllShowWidgets } from '@/components/chat/MessageItem';
 // (1) Single source of truth for the wire format
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Widget wire format �?single source of truth', () => {
+describe('Widget wire format — single source of truth', () => {
   it('WIDGET_WIRE_FORMAT_SPEC declares the show-widget JSON wrapper as non-negotiable', () => {
-    assert.match(WIDGET_WIRE_FORMAT_SPEC, /FINAL OUTPUT FORMAT �?non-negotiable/);
+    assert.match(WIDGET_WIRE_FORMAT_SPEC, /FINAL OUTPUT FORMAT — non-negotiable/);
     assert.match(WIDGET_WIRE_FORMAT_SPEC, /```show-widget/);
     assert.match(WIDGET_WIRE_FORMAT_SPEC, /widget_code/);
     // Explicit anti-pattern callouts the model needs to read.
@@ -61,7 +61,7 @@ describe('Widget wire format �?single source of truth', () => {
   });
 
   it('WIDGET_SYSTEM_PROMPT references the wire-format spec WITHOUT embedding its literal text (slice 2c)', () => {
-    // Phase 5d Phase 2 slice 2c (2026-05-17) �?the artifactContract
+    // Phase 5d Phase 2 slice 2c (2026-05-17) — the artifactContract
     // in capability-contract.ts is now the sole holder of the wire
     // spec + canonical JSON. The system prompt no longer embeds the
     // SPEC literal; it references that the format is documented in
@@ -72,7 +72,7 @@ describe('Widget wire format �?single source of truth', () => {
     assert.equal(
       WIDGET_SYSTEM_PROMPT.includes(WIDGET_WIRE_FORMAT_SPEC),
       false,
-      'WIDGET_SYSTEM_PROMPT must NOT embed WIDGET_WIRE_FORMAT_SPEC after slice 2c �?that would duplicate the spec in compiled prompts',
+      'WIDGET_SYSTEM_PROMPT must NOT embed WIDGET_WIRE_FORMAT_SPEC after slice 2c — that would duplicate the spec in compiled prompts',
     );
     // It DOES still reference the format by name + tells the model
     // the spec lives elsewhere in the compiled prompt.
@@ -83,7 +83,7 @@ describe('Widget wire format �?single source of truth', () => {
     );
   });
 
-  it('getGuidelines() output prepends the same wire-format spec �?model re-reads it alongside design examples', () => {
+  it('getGuidelines() output prepends the same wire-format spec — model re-reads it alongside design examples', () => {
     const text = getGuidelines(['chart']);
     assert.ok(
       text.includes(WIDGET_WIRE_FORMAT_SPEC),
@@ -99,10 +99,10 @@ describe('Widget wire format �?single source of truth', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (2) Internal-example framing �?HTML below is INSIDE widget_code
+// (2) Internal-example framing — HTML below is INSIDE widget_code
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Widget on-demand guidelines �?internal-example framing', () => {
+describe('Widget on-demand guidelines — internal-example framing', () => {
   it('getGuidelines() output explicitly tells the model the snippets below go INSIDE widget_code', () => {
     const text = getGuidelines(['interactive', 'chart']);
     assert.match(
@@ -120,20 +120,20 @@ describe('Widget on-demand guidelines �?internal-example framing', () => {
 
 describe('Widget guidance forbids the image-gen tool while building a widget', () => {
   it('WIDGET_SYSTEM_PROMPT explicitly tells the model NOT to call codepilot_generate_image during widget work', () => {
-    // Negative phrasing is intentional �?"do NOT call X" reads as
+    // Negative phrasing is intentional — "do NOT call X" reads as
     // a hard rule rather than a suggestion. Pre-fix the prompt
     // didn't mention image-gen at all; S4 model chained them
     // anyway because the design examples implied "rich visuals".
     // Note: the prompt may format `NOT` with markdown bold (`**NOT**`),
     // so allow either rendered or raw markdown forms.
     assert.match(WIDGET_SYSTEM_PROMPT, /codepilot_generate_image/);
-    // Bold wraps "do NOT" together as `**do NOT**` �?optional `**`
+    // Bold wraps "do NOT" together as `**do NOT**` — optional `**`
     // anchors allow plain or bold form on either side.
     assert.match(WIDGET_SYSTEM_PROMPT, /(?:\*\*)?do\s+NOT(?:\*\*)?\s+call/i);
   });
 
   it('Codex bridge no longer holds local Widget prompt; compiler imports canonical (slice 2e)', () => {
-    // Phase 5d Phase 2 slice 2e (2026-05-17) �?bridge no longer
+    // Phase 5d Phase 2 slice 2e (2026-05-17) — bridge no longer
     // declares WIDGET_PROMPT, MEDIA_PROMPT, MEMORY_PROMPT, or
     // NOTIFY_PROMPT scalars. The Context Compiler is the sole
     // producer of capability prompts.
@@ -144,7 +144,7 @@ describe('Widget guidance forbids the image-gen tool while building a widget', (
     assert.equal(
       /^const\s+(WIDGET_PROMPT|MEDIA_PROMPT|MEMORY_PROMPT|NOTIFY_PROMPT)\s*=/m.test(bridgeSrc),
       false,
-      'bridge must not declare any of WIDGET_PROMPT / MEDIA_PROMPT / MEMORY_PROMPT / NOTIFY_PROMPT �?those scalars belong in the compiler-consumed canonical files',
+      'bridge must not declare any of WIDGET_PROMPT / MEDIA_PROMPT / MEMORY_PROMPT / NOTIFY_PROMPT — those scalars belong in the compiler-consumed canonical files',
     );
 
     // The compiler imports the canonical widget prompt.
@@ -174,8 +174,8 @@ describe('Widget guidance forbids the image-gen tool while building a widget', (
 // (4) Renderer surfaces malformed fences instead of dropping silently
 // ─────────────────────────────────────────────────────────────────────
 
-describe('parseAllShowWidgets �?three malformed-fence failure modes surface as visible error segments', () => {
-  it('raw HTML body (the S4 failure mode) �?malformed_widget segment with "raw HTML" reason', () => {
+describe('parseAllShowWidgets — three malformed-fence failure modes surface as visible error segments', () => {
+  it('raw HTML body (the S4 failure mode) → malformed_widget segment with "raw HTML" reason', () => {
     const text = [
       'Here is the widget:',
       '```show-widget',
@@ -191,7 +191,7 @@ describe('parseAllShowWidgets �?three malformed-fence failure modes surface as 
     assert.match(malformed.raw, /<div>hello<\/div>/, 'raw fence body must be preserved so the user can read what the model produced');
   });
 
-  it('JSON parses but missing widget_code �?malformed_widget with "missing widget_code" reason', () => {
+  it('JSON parses but missing widget_code → malformed_widget with "missing widget_code" reason', () => {
     const text = [
       '```show-widget',
       '{"title":"oops","other_field":"value"}',
@@ -204,7 +204,7 @@ describe('parseAllShowWidgets �?three malformed-fence failure modes surface as 
     assert.match(malformed.reason, /widget_code/);
   });
 
-  it('malformed JSON (balanced braces but invalid syntax) �?malformed_widget with parse-error reason', () => {
+  it('malformed JSON (balanced braces but invalid syntax) → malformed_widget with parse-error reason', () => {
     // Need balanced braces so findJsonEnd succeeds AND JSON.parse
     // throws. A double-comma satisfies both: braces stay balanced,
     // but `,,` is not valid JSON. The "unclosed string" form trips
@@ -229,13 +229,13 @@ describe('parseAllShowWidgets �?three malformed-fence failure modes surface as 
     ].join('\n');
     const segs = parseAllShowWidgets(text);
     const widget = segs.find((s) => s.type === 'widget');
-    assert.ok(widget, 'happy-path widget must still parse �?the malformed path additions cannot regress the success path');
+    assert.ok(widget, 'happy-path widget must still parse — the malformed path additions cannot regress the success path');
     if (widget?.type !== 'widget') return;
     assert.equal(widget.data.title, 'ok');
     assert.equal(widget.data.widget_code, '<div>hi</div>');
   });
 
-  it('mixed valid + malformed widgets in one message �?each lands as its own segment', () => {
+  it('mixed valid + malformed widgets in one message — each lands as its own segment', () => {
     const text = [
       'First widget:',
       '```show-widget',

@@ -3,7 +3,7 @@
  *
  * After collapsing DB-provider settingSources to ['user'] (to prevent
  * project/local settings env from overriding the explicit provider's auth),
- * the SDK's auto-loading of `<cwd>/.mcp.json` ALSO got cut off �?even
+ * the SDK's auto-loading of `<cwd>/.mcp.json` ALSO got cut off — even
  * though `.mcp.json` is auth-neutral and is the standard place to share
  * project-level MCP servers across a team.
  *
@@ -13,7 +13,7 @@
  *
  * These tests pin the loader behavior. End-to-end wiring (the actual
  * injection in claude-client.ts streamClaudeSdk) is verified by reading
- * the code �?testing it would require spawning the SDK subprocess.
+ * the code — testing it would require spawning the SDK subprocess.
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
@@ -33,7 +33,7 @@ beforeEach(() => {
   tempDataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codepilot-projmcp-db-'));
   process.env.CLAUDE_GUI_DATA_DIR = tempDataDir;
   // HOME isolation matters because loadProjectMcpServers reads
-  // ~/.claude/settings.json for mcpServerOverrides �?without override here,
+  // ~/.claude/settings.json for mcpServerOverrides — without override here,
   // the test would touch the developer's real settings.json.
   tempHome = fs.mkdtempSync(path.join(os.tmpdir(), 'codepilot-projmcp-home-'));
   process.env.HOME = tempHome;
@@ -61,7 +61,7 @@ function writeUserSettings(content: object) {
   fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify(content, null, 2));
 }
 
-describe('loadProjectMcpServers �?explicit project .mcp.json injection', () => {
+describe('loadProjectMcpServers — explicit project .mcp.json injection', () => {
   it('returns project MCP servers from the given cwd (NOT process.cwd())', async () => {
     writeProjectMcpJson({
       mcpServers: {
@@ -108,7 +108,7 @@ describe('loadProjectMcpServers �?explicit project .mcp.json injection', () => 
   });
 
   // FIXME(ci): Same CI-specific issue as the DB-provider-ownership test in
-  // claude-settings-credentials.test.ts �?setSetting via dynamic `@/lib/db`
+  // claude-settings-credentials.test.ts — setSetting via dynamic `@/lib/db`
   // import doesn't surface in the prod caller's `getSetting` on ubuntu/node 20.
   // Tests pass locally. The actual resolver code is straightforward and the
   // other 4 tests in this suite exercise the surrounding file loading /
@@ -149,7 +149,7 @@ describe('loadProjectMcpServers �?explicit project .mcp.json injection', () => 
     const { loadProjectMcpServers } = await import('../../lib/mcp-loader');
     const servers = loadProjectMcpServers(tempProjectCwd);
     assert.equal(servers!['srv'].env?.MISSING, '',
-      'unset DB key �?empty string (not undefined, not the literal placeholder)');
+      'unset DB key → empty string (not undefined, not the literal placeholder)');
   });
 
   it('returns undefined for malformed .mcp.json (best-effort, no throw)', async () => {
@@ -170,25 +170,25 @@ describe('loadProjectMcpServers �?explicit project .mcp.json injection', () => 
     writeProjectMcpJson({ mcpServers: {} });
     const { loadProjectMcpServers } = await import('../../lib/mcp-loader');
     const servers = loadProjectMcpServers(tempProjectCwd);
-    assert.equal(servers, undefined, 'empty object should be treated as "no servers" �?no point passing {} to SDK');
+    assert.equal(servers, undefined, 'empty object should be treated as "no servers" — no point passing {} to SDK');
   });
 });
 
 // ────────────────────────────────────────────────────────────────
-// mcpServerOverrides �?UI-persisted enable/disable state must apply
+// mcpServerOverrides — UI-persisted enable/disable state must apply
 // ────────────────────────────────────────────────────────────────
 //
 // CodePilot's MCP Manager UI stores per-server enable/disable as
 // `mcpServerOverrides` in ~/.claude/settings.json. The original cached
 // loader (loadAndMerge) already applies these. The new per-cwd loader must
-// match �?otherwise DB-provider sessions would silently re-enable a server
+// match — otherwise DB-provider sessions would silently re-enable a server
 // the user toggled off (or fail to enable one they overrode on), creating
 // a state mismatch between UI and what SDK actually loads.
-describe('loadProjectMcpServers �?mcpServerOverrides parity with loadAndMerge', () => {
+describe('loadProjectMcpServers — mcpServerOverrides parity with loadAndMerge', () => {
   it('UI override "enabled: false" disables a project server even when .mcp.json says nothing', async () => {
     writeProjectMcpJson({
       mcpServers: {
-        'team-mcp': { command: 'team-mcp' }, // no `enabled` field �?defaults on
+        'team-mcp': { command: 'team-mcp' }, // no `enabled` field — defaults on
       },
     });
     writeUserSettings({
@@ -200,7 +200,7 @@ describe('loadProjectMcpServers �?mcpServerOverrides parity with loadAndMerge',
     const { loadProjectMcpServers } = await import('../../lib/mcp-loader');
     const servers = loadProjectMcpServers(tempProjectCwd);
     assert.equal(servers, undefined,
-      'user toggled team-mcp off via UI �?loader must respect that for DB-provider sessions too');
+      'user toggled team-mcp off via UI → loader must respect that for DB-provider sessions too');
   });
 
   it('UI override "enabled: true" re-enables a project server that .mcp.json marks disabled', async () => {
@@ -232,7 +232,7 @@ describe('loadProjectMcpServers �?mcpServerOverrides parity with loadAndMerge',
     writeUserSettings({
       mcpServerOverrides: {
         'b-mcp': { enabled: false },
-        // a-mcp and c-mcp not overridden �?use file default (enabled)
+        // a-mcp and c-mcp not overridden → use file default (enabled)
       },
     });
 
@@ -244,7 +244,7 @@ describe('loadProjectMcpServers �?mcpServerOverrides parity with loadAndMerge',
     assert.ok('c-mcp' in servers!);
   });
 
-  it('no settings.json �?no overrides �?file defaults apply (regression: no crash)', async () => {
+  it('no settings.json → no overrides → file defaults apply (regression: no crash)', async () => {
     writeProjectMcpJson({
       mcpServers: { 'foo': { command: 'foo' } },
     });

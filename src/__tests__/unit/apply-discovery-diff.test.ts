@@ -1,10 +1,10 @@
 /**
- * Tests for applyDiscoveryDiff â€?the DB-side commit step of the model
+ * Tests for applyDiscoveryDiff â€” the DB-side commit step of the model
  * discovery flow. Critical invariants:
  *
  *   - Pristine rows (recommended/discovered/catalog) MAY flip enabled state
  *     based on the new isRecommended verdict (catalog can change between
- *     refreshes â€?e.g. blacklist tightening).
+ *     refreshes â€” e.g. blacklist tightening).
  *   - Rows where the user has explicitly chosen (manual_enabled or
  *     manual_hidden, OR legacy user_edited=1) MUST NEVER have their
  *     enabled / enable_source touched. Only upstream_model_id +
@@ -87,7 +87,7 @@ describe('applyDiscoveryDiff', () => {
     assert.equal(rows[0].enable_source, 'discovered');
   });
 
-  it('NEVER touches manual_enabled rows on refresh â€?even if isRecommended now says false', () => {
+  it('NEVER touches manual_enabled rows on refresh â€” even if isRecommended now says false', () => {
     const providerId = createScratchProvider();
     // Seed: row exists, user toggled it on explicitly
     upsertProviderModel({
@@ -109,7 +109,7 @@ describe('applyDiscoveryDiff', () => {
     const stats = applyDiscoveryDiff(
       providerId,
       [{ modelId: 'opus', upstreamModelId: 'claude-opus-v2' }],
-      () => false, // says NO â€?but we should ignore this
+      () => false, // says NO â€” but we should ignore this
     );
 
     assert.equal(stats.inserted, 0);
@@ -142,7 +142,7 @@ describe('applyDiscoveryDiff', () => {
       enable_source: 'manual_hidden',
     });
 
-    // Refresh says "recommended" â€?must still leave the row hidden
+    // Refresh says "recommended" â€” must still leave the row hidden
     const stats = applyDiscoveryDiff(
       providerId,
       [{ modelId: 'sonnet', upstreamModelId: 'claude-sonnet' }],
@@ -185,7 +185,7 @@ describe('applyDiscoveryDiff', () => {
     assert.equal(stats.refreshedPristine, 1);
     assert.equal(stats.refreshedPreserved, 0);
     assert.equal(stats.discoveredHidden, 0,
-      'discoveredHidden counts INSERTS only â€?refreshes do not contribute');
+      'discoveredHidden counts INSERTS only â€” refreshes do not contribute');
 
     const rows = getAllModelsForProvider(providerId);
     assert.equal(rows[0].enabled, 0, 'recommended row flipped off after re-evaluation');
@@ -223,7 +223,7 @@ describe('applyDiscoveryDiff', () => {
       'user_edited=1 must be honored as a hands-off signal even when enable_source predates the migration');
   });
 
-  it('mixed batch â€?counts inserts, pristine flips, and preserved rows independently', () => {
+  it('mixed batch â€” counts inserts, pristine flips, and preserved rows independently', () => {
     const providerId = createScratchProvider();
     // Seed: one user-touched (must preserve), one pristine (must flip)
     upsertProviderModel({
@@ -300,7 +300,7 @@ describe('manual-add via upsertProviderModel', () => {
     assert.equal(seeded.enable_source, 'manual_enabled',
       'manual-add must land as manual_enabled (not the default "recommended")');
 
-    // Refresh that says "this is not recommended" â€?must still leave
+    // Refresh that says "this is not recommended" â€” must still leave
     // the row enabled because the user added it on purpose.
     applyDiscoveryDiff(
       providerId,

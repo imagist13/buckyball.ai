@@ -1,5 +1,5 @@
 /**
- * Phase 5d Phase 4 (2026-05-17) �?Artifact Contract drift tests.
+ * Phase 5d Phase 4 (2026-05-17) — Artifact Contract drift tests.
  *
  * The artifact contract (`src/lib/harness/artifact-contract.ts`) names
  * every artifact the chat surface can produce + its parser + its
@@ -62,7 +62,7 @@ function fileExists(rel: string): boolean {
 // (1) Catalog hygiene
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?catalog hygiene', () => {
+describe('Artifact contract — catalog hygiene', () => {
   it('every contract id is unique', () => {
     const ids = new Set<string>();
     for (const a of ARTIFACT_CONTRACTS) {
@@ -86,7 +86,7 @@ describe('Artifact contract �?catalog hygiene', () => {
         const cap = getCapability(capId);
         assert.ok(
           cap !== undefined,
-          `artifact "${a.id}" �?relatedCapabilities entry "${capId}" does not exist in HARNESS_CAPABILITIES`,
+          `artifact "${a.id}" → relatedCapabilities entry "${capId}" does not exist in HARNESS_CAPABILITIES`,
         );
       }
     }
@@ -138,7 +138,7 @@ describe('Artifact contract �?catalog hygiene', () => {
 // (2) Fence-source descriptors must appear in their parser file
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?fence source descriptors', () => {
+describe('Artifact contract — fence source descriptors', () => {
   it('every fence-source artifact has its fenceLanguage referenced in the parser module', () => {
     const fenceArtifacts = artifactsBySource('fence');
     for (const a of fenceArtifacts) {
@@ -156,7 +156,7 @@ describe('Artifact contract �?fence source descriptors', () => {
 // (3) SSE event descriptors trace to handler arms in useSSEStream.ts
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?SSE event descriptors', () => {
+describe('Artifact contract — SSE event descriptors', () => {
   it('every SSE-source artifact has its event type referenced in a useSSEStream / event source file', () => {
     const sseArtifacts = artifactsBySource('sse_event');
     for (const a of sseArtifacts) {
@@ -166,7 +166,7 @@ describe('Artifact contract �?SSE event descriptors', () => {
       //   - The exact dotted path is mentioned in the parser module,
       //     OR
       //   - The base event (`tool_result` / `file_changed`) is a case
-      //     arm inside the parser module �?that's how useSSEStream
+      //     arm inside the parser module — that's how useSSEStream
       //     dispatches.
       const src = readSource(a.parser.module);
       const eventType = a.sourceDescriptor.eventType;
@@ -185,7 +185,7 @@ describe('Artifact contract �?SSE event descriptors', () => {
 // (4) PreviewSource descriptors are valid kinds in the union type
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?PreviewSource descriptors', () => {
+describe('Artifact contract — PreviewSource descriptors', () => {
   it('every preview_source-source artifact uses a kind declared in usePanel.ts PreviewSource union', () => {
     const previewArtifacts = artifactsBySource('preview_source');
     const usePanelSrc = readSource('src/hooks/usePanel.ts');
@@ -194,7 +194,7 @@ describe('Artifact contract �?PreviewSource descriptors', () => {
       const kind = a.sourceDescriptor.previewKind;
       // `<component>` is an opt-out for component-driven artifacts
       // (e.g. ErrorBanner) that don't go through PreviewSource at
-      // all �?they are listed for completeness.
+      // all — they are listed for completeness.
       if (kind === '<component>') continue;
       // Confirm the kind appears as a `kind: "<kind>"` literal in
       // the PreviewSource union.
@@ -219,7 +219,7 @@ describe('Artifact contract �?PreviewSource descriptors', () => {
     const inlineKinds = new Set(matches.map((m) => m[1]));
     assert.ok(
       inlineKinds.size > 0,
-      'PreviewSource union should contain at least one inline-* kind �?if this fails the regex needs updating',
+      'PreviewSource union should contain at least one inline-* kind — if this fails the regex needs updating',
     );
     const registeredPreviewKinds = new Set(
       ARTIFACT_CONTRACTS.filter(
@@ -233,7 +233,7 @@ describe('Artifact contract �?PreviewSource descriptors', () => {
     for (const kind of inlineKinds) {
       assert.ok(
         registeredPreviewKinds.has(kind),
-        `PreviewSource declares "${kind}" but ARTIFACT_CONTRACTS has no entry �?every inline-* kind must be registered (see Phase 5d Phase 4 contract)`,
+        `PreviewSource declares "${kind}" but ARTIFACT_CONTRACTS has no entry — every inline-* kind must be registered (see Phase 5d Phase 4 contract)`,
       );
     }
   });
@@ -243,8 +243,8 @@ describe('Artifact contract �?PreviewSource descriptors', () => {
 // (5) Canonical examples round-trip through their parsers
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?canonical examples round-trip', () => {
-  it('widget canonicalExample �?parseAllShowWidgets �?returns a `widget` segment', () => {
+describe('Artifact contract — canonical examples round-trip', () => {
+  it('widget canonicalExample → parseAllShowWidgets → returns a `widget` segment', () => {
     const widget = getArtifact('widget')!;
     assert.ok(widget.canonicalExample, 'widget canonicalExample missing');
     const segs = parseAllShowWidgets(widget.canonicalExample!);
@@ -252,7 +252,7 @@ describe('Artifact contract �?canonical examples round-trip', () => {
     assert.ok(widgetSeg, `widget canonicalExample did not parse: ${JSON.stringify(segs)}`);
   });
 
-  it('malformed_widget canonicalExample �?parseAllShowWidgets �?returns a `malformed_widget` segment', () => {
+  it('malformed_widget canonicalExample → parseAllShowWidgets → returns a `malformed_widget` segment', () => {
     const mw = getArtifact('malformed_widget')!;
     assert.ok(mw.canonicalExample, 'malformed_widget canonicalExample missing');
     const segs = parseAllShowWidgets(mw.canonicalExample!);
@@ -304,7 +304,7 @@ describe('Artifact contract �?canonical examples round-trip', () => {
 //     wrapper-stripping).
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?widget canonical identity', () => {
+describe('Artifact contract — widget canonical identity', () => {
   it('artifact contract widget example wraps the EXACT capability CANONICAL_SHOW_WIDGET_JSON between fence markers', () => {
     const widget = getArtifact('widget')!;
     assert.ok(widget.canonicalExample);
@@ -314,7 +314,7 @@ describe('Artifact contract �?widget canonical identity', () => {
     assert.equal(
       stripped,
       CANONICAL_SHOW_WIDGET_JSON,
-      'artifact-contract widget example must wrap the same CANONICAL_SHOW_WIDGET_JSON the capability contract exports �?drift here means a future change to widget-guidelines.ts will silently break the artifact contract test',
+      'artifact-contract widget example must wrap the same CANONICAL_SHOW_WIDGET_JSON the capability contract exports — drift here means a future change to widget-guidelines.ts will silently break the artifact contract test',
     );
   });
 
@@ -326,7 +326,7 @@ describe('Artifact contract �?widget canonical identity', () => {
   });
 
   it('artifactsForCapability("image_generation") AND artifactsForCapability("media_import") both resolve `media` (multi-capability artifact)', () => {
-    // Phase 5d Phase 3 review fix (P2, 2026-05-17) �?`media` is
+    // Phase 5d Phase 3 review fix (P2, 2026-05-17) — `media` is
     // produced by EITHER image_generation or media_import. The
     // multi-valued `relatedCapabilities` ensures both lookups
     // surface the shared artifact, instead of forcing the contract
@@ -350,7 +350,7 @@ describe('Artifact contract �?widget canonical identity', () => {
 //     matching ARTIFACT_CONTRACTS entry with the same fenceLanguage.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?capability �?artifact cross-table consistency', () => {
+describe('Artifact contract — capability ↔ artifact cross-table consistency', () => {
   it('every capability with an artifactContract has a matching ARTIFACT_CONTRACTS entry with the same fenceLanguage', () => {
     for (const cap of HARNESS_CAPABILITIES) {
       if (!cap.artifactContract) continue;
@@ -382,11 +382,11 @@ describe('Artifact contract �?capability �?artifact cross-table consistency', 
 //     points at a working symbol, not just a name that exists).
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Artifact contract �?parser real-runtime invocation', () => {
+describe('Artifact contract — parser real-runtime invocation', () => {
   // `diff` artifact's SSE arm is inline in useSSEStream.ts, so we can't
   // import it directly. We instead pin the secondary `file-changed-event`
   // dispatch helper that surfaces the payload to PreviewPanel after the
-  // SSE arm fires �?proving the secondary handler matches the shape
+  // SSE arm fires — proving the secondary handler matches the shape
   // useSSEStream actually emits.
   it('file-changed-event: isFileChangedDetail accepts a well-formed payload', () => {
     const ok = isFileChangedDetail({

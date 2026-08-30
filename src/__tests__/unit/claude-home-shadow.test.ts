@@ -3,12 +3,12 @@
  * auth from cc-switch's settings.json env block.
  *
  * Acceptance scenarios (mirrored from the user-stated rules):
- *   1. env group + settings.json credentials â†?pass-through (real HOME)
- *   2. DB provider + settings.json credentials coexist â†?shadow built,
+ *   1. env group + settings.json credentials â†’ pass-through (real HOME)
+ *   2. DB provider + settings.json credentials coexist â†’ shadow built,
  *      stripped settings.json has no ANTHROPIC_*, but mcpServers /
  *      enabledPlugins / hooks / sub-directories survive
- *   3. DB provider but settings.json has NO auth keys â†?pass-through
- *   4. No settings.json on disk â†?pass-through
+ *   3. DB provider but settings.json has NO auth keys â†’ pass-through
+ *   4. No settings.json on disk â†’ pass-through
  *   5. Cleanup actually removes the temp dir
  */
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -68,8 +68,8 @@ async function loadModule() {
   return await import('../../lib/claude-home-shadow');
 }
 
-describe('createShadowClaudeHome â€?provider-group ownership of credentials', () => {
-  it('Scenario 1: env group â†?pass-through real HOME (cc-switch path stays intact)', async () => {
+describe('createShadowClaudeHome â€” provider-group ownership of credentials', () => {
+  it('Scenario 1: env group â†’ pass-through real HOME (cc-switch path stays intact)', async () => {
     writeRealClaudeDir({
       settings: { env: { ANTHROPIC_AUTH_TOKEN: 'sk-cc-switch', ANTHROPIC_BASE_URL: 'https://relay.example.com' } },
     });
@@ -81,7 +81,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     } finally { shadow.cleanup(); }
   });
 
-  it('Scenario 2: DB provider + settings.json with auth â†?builds shadow, strips ANTHROPIC_*, preserves rest', async () => {
+  it('Scenario 2: DB provider + settings.json with auth â†’ builds shadow, strips ANTHROPIC_*, preserves rest', async () => {
     writeRealClaudeDir({
       settings: {
         env: {
@@ -121,11 +121,11 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
 
       // Auth keys must be GONE from env block
       assert.equal(shadowSettings.env?.ANTHROPIC_AUTH_TOKEN, undefined,
-        'ANTHROPIC_AUTH_TOKEN must be stripped â€?DB provider auth would otherwise be overridden');
+        'ANTHROPIC_AUTH_TOKEN must be stripped â€” DB provider auth would otherwise be overridden');
       assert.equal(shadowSettings.env?.ANTHROPIC_BASE_URL, undefined,
         'ANTHROPIC_BASE_URL must be stripped');
       assert.equal(shadowSettings.env?.ANTHROPIC_MODEL, undefined,
-        'ANTHROPIC_MODEL must be stripped â€?provider catalog must win');
+        'ANTHROPIC_MODEL must be stripped â€” provider catalog must win');
 
       // Non-auth env entries must survive
       assert.equal(shadowSettings.env?.DEBUG, '1', 'non-auth env (DEBUG) must survive');
@@ -133,7 +133,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
 
       // Top-level user-scoped features must survive
       assert.deepEqual(shadowSettings.mcpServers, { 'user-mcp-foo': { command: 'foo', args: ['--bar'] } },
-        'mcpServers must survive â€?user-installed MCP servers are critical');
+        'mcpServers must survive â€” user-installed MCP servers are critical');
       assert.deepEqual(shadowSettings.enabledPlugins, { 'plugin-x': true },
         'enabledPlugins must survive');
       assert.ok(shadowSettings.hooks, 'hooks must survive');
@@ -176,7 +176,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     } finally { shadow.cleanup(); }
   });
 
-  it('Scenario 3: DB provider but settings.json has no auth keys â†?pass-through (no shadow needed)', async () => {
+  it('Scenario 3: DB provider but settings.json has no auth keys â†’ pass-through (no shadow needed)', async () => {
     writeRealClaudeDir({
       settings: {
         env: { DEBUG: '1' }, // no ANTHROPIC_*
@@ -187,13 +187,13 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     const shadow = createShadowClaudeHome({ stripAuth: true });
     try {
       assert.equal(shadow.isShadow, false,
-        'no auth keys in settings.json env â†?no shadow needed (avoids unnecessary IO)');
+        'no auth keys in settings.json env â†’ no shadow needed (avoids unnecessary IO)');
       assert.equal(shadow.home, tempHome);
     } finally { shadow.cleanup(); }
   });
 
-  it('Scenario 4: settings.json absent â†?pass-through', async () => {
-    // Don't write any settings â€?just create empty .claude dir
+  it('Scenario 4: settings.json absent â†’ pass-through', async () => {
+    // Don't write any settings â€” just create empty .claude dir
     fs.mkdirSync(path.join(tempHome, '.claude'), { recursive: true });
     const { createShadowClaudeHome } = await loadModule();
     const shadow = createShadowClaudeHome({ stripAuth: true });
@@ -239,7 +239,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
       assert.equal(shadow.isShadow, true);
       const shadowRootClaudeJson = path.join(shadow.home, '.claude.json');
       assert.ok(fs.existsSync(shadowRootClaudeJson),
-        'shadow HOME must contain a mirrored ~/.claude.json â€?without it, SDK reading from $HOME/.claude.json would silently lose user MCP servers');
+        'shadow HOME must contain a mirrored ~/.claude.json â€” without it, SDK reading from $HOME/.claude.json would silently lose user MCP servers');
 
       const mirrored = JSON.parse(fs.readFileSync(shadowRootClaudeJson, 'utf-8')) as {
         mcpServers?: Record<string, unknown>;
@@ -272,7 +272,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     const { createShadowClaudeHome } = await loadModule();
     const shadow = createShadowClaudeHome({ stripAuth: true });
     try {
-      // Even though settings.json has no auth, .claude.json does â†?shadow must build
+      // Even though settings.json has no auth, .claude.json does â†’ shadow must build
       assert.equal(shadow.isShadow, true,
         'shadow must build when EITHER settings.json OR .claude.json has auth env');
 
@@ -287,7 +287,7 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     } finally { shadow.cleanup(); }
   });
 
-  it('Scenario 6c: ~/.claude.json absent â†?shadow does NOT create one (matches real-HOME semantics)', async () => {
+  it('Scenario 6c: ~/.claude.json absent â†’ shadow does NOT create one (matches real-HOME semantics)', async () => {
     writeRealClaudeDir({
       settings: { env: { ANTHROPIC_AUTH_TOKEN: 'sk-leak' } },
       // no rootClaudeJson
@@ -297,12 +297,12 @@ describe('createShadowClaudeHome â€?provider-group ownership of credentials', ()
     try {
       assert.equal(shadow.isShadow, true);
       assert.ok(!fs.existsSync(path.join(shadow.home, '.claude.json')),
-        'when ~/.claude.json absent, shadow must NOT fabricate one â€?SDK should see the same "no file" state as real HOME');
+        'when ~/.claude.json absent, shadow must NOT fabricate one â€” SDK should see the same "no file" state as real HOME');
     } finally { shadow.cleanup(); }
   });
 });
 
-describe('settingsJsonHasAuthOverride â€?quick predicate', () => {
+describe('settingsJsonHasAuthOverride â€” quick predicate', () => {
   it('returns true when settings.json env has any ANTHROPIC_* key', async () => {
     writeRealClaudeDir({ settings: { env: { ANTHROPIC_AUTH_TOKEN: 'x' } } });
     const { settingsJsonHasAuthOverride } = await loadModule();
@@ -334,6 +334,6 @@ describe('settingsJsonHasAuthOverride â€?quick predicate', () => {
     });
     const { settingsJsonHasAuthOverride } = await loadModule();
     assert.equal(settingsJsonHasAuthOverride(), true,
-      'detector must inspect ~/.claude.json env block too â€?that file is also a documented user-scoped config source (mcp-loader.ts:46)');
+      'detector must inspect ~/.claude.json env block too â€” that file is also a documented user-scoped config source (mcp-loader.ts:46)');
   });
 });

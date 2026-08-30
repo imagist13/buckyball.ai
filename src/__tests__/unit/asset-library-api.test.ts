@@ -497,14 +497,14 @@ describe('Asset Library API', () => {
       request('/api/assets/legacy-failed-id-only/tags', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tags: ['待整�?, '待整�?] }),
+        body: JSON.stringify({ tags: ['待整理', '待整理'] }),
       }),
       { params: Promise.resolve({ id: 'legacy-failed-id-only' }) },
     );
     assert.equal(tagged.status, 200);
-    assert.deepEqual((await tagged.json()).tags, ['待整�?]);
+    assert.deepEqual((await tagged.json()).tags, ['待整理']);
     const searched = await getGallery(request(
-      `/api/media/gallery?tags=${encodeURIComponent('待整�?)}`,
+      `/api/media/gallery?tags=${encodeURIComponent('待整理')}`,
     ));
     assert.equal(
       (await searched.json()).items.some(

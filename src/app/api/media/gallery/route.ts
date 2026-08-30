@@ -128,7 +128,7 @@ function inspectLegacyPreview(row: LegacyGalleryRow): {
   }
   let resolved: string;
   try {
-    // One syscall closes the former existsSync â†?realpathSync deletion race.
+    // One syscall closes the former existsSync â†’ realpathSync deletion race.
     resolved = fs.realpathSync.native(row.local_path);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;

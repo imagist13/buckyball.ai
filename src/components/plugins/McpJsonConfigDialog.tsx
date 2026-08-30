@@ -3,7 +3,8 @@
 /**
  * MCP JSON-config dialog (Phase 2D.4 P2, 2026-05-01).
  *
- * Replaces the old "List / JSON" Tabs that lived inside McpManager â€? * the JSON view is a low-frequency advanced surface, so it now sits
+ * Replaces the old "List / JSON" Tabs that lived inside McpManager â€”
+ * the JSON view is a low-frequency advanced surface, so it now sits
  * behind the ExtensionsPage More menu instead of competing with the
  * page-level filter pills.
  *

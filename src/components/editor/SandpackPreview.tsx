@@ -8,7 +8,7 @@ import { SpinnerGap } from "@/components/ui/icon";
 import { useTranslation } from "@/hooks/useTranslation";
 
 /*
- * SandpackPreview â€?Phase 2.1 of the Markdown/Artifact overhaul.
+ * SandpackPreview â€” Phase 2.1 of the Markdown/Artifact overhaul.
  *
  * Hosts a Sandpack-in-iframe preview for .jsx / .tsx source. Isolated from
  * first-paint via next/dynamic(ssr:false); only loaded when PreviewPanel
@@ -39,7 +39,7 @@ const SandpackPreviewInner = dynamic(
  * Dependency allowlist for Phase 2.1. Sandpack's bundler will 404 on imports
  * that aren't in customSetup.dependencies, so we pre-register the packages
  * AI-generated snippets most commonly reach for. Extend as user feedback
- * comes in â€?new entries here also need to be safe-to-load from Sandpack's
+ * comes in â€” new entries here also need to be safe-to-load from Sandpack's
  * CDN resolver.
  */
 const ALLOWED_DEPS: Record<string, string> = {
@@ -60,7 +60,7 @@ const EXTERNAL_RESOURCES = [
 
 export interface SandpackPreviewProps {
   /**
-   * Source file path. Only the basename matters â€?it becomes the mount
+   * Source file path. Only the basename matters â€” it becomes the mount
    * point (e.g. "App.tsx"). Non-.jsx/.tsx names fall back to "/App.tsx"
    * since Sandpack's react-ts template entry expects that path.
    */
@@ -77,7 +77,7 @@ export interface SandpackPreviewProps {
 }
 
 /**
- * Small string hash for provider-key disambiguation. djb2 variant â€?fast,
+ * Small string hash for provider-key disambiguation. djb2 variant â€” fast,
  * good enough for "are these two payloads the same" in a React key, not
  * intended for any security purpose.
  */
@@ -90,7 +90,7 @@ function hashString(str: string): string {
   return Math.abs(hash).toString(36);
 }
 
-/** Sandpack's react-ts template hard-codes /index.tsx â†?`import App from './App'`. */
+/** Sandpack's react-ts template hard-codes /index.tsx â†’ `import App from './App'`. */
 const MOUNT_PATH = "/App.tsx";
 
 export function SandpackPreview({ filePath, content, bundlerURL }: SandpackPreviewProps) {
@@ -99,7 +99,7 @@ export function SandpackPreview({ filePath, content, bundlerURL }: SandpackPrevi
   // every file switch, which means useState(() => ...) runs once per
   // switch and produces a brand-new token. Including it in providerKey
   // defeats any internal Sandpack / bundler / service-worker cache keyed
-  // on "previously seen this provider" â€?the Provider looks unique on
+  // on "previously seen this provider" â€” the Provider looks unique on
   // every file swap, so cached compilation results can't cross over.
   const [mountToken] = useState(() => Math.random().toString(36).slice(2));
 
@@ -108,7 +108,8 @@ export function SandpackPreview({ filePath, content, bundlerURL }: SandpackPrevi
     // basename-derived path. Sandpack's react-ts template is wired so
     // /index.tsx (template default) imports from './App', which resolves
     // to /App.tsx. If we write user code to /Counter.tsx and set
-    // activeFile=/Counter.tsx, activeFile only moves the editor cursor â€?    // the runtime still renders whatever lives at /App.tsx, which for
+    // activeFile=/Counter.tsx, activeFile only moves the editor cursor â€”
+    // the runtime still renders whatever lives at /App.tsx, which for
     // non-first-file cases was the template's default stub.
     //
     // File switch identity lives in providerKey now: (realFilePath +
@@ -180,7 +181,7 @@ function PreviewSkeleton() {
 
 function PreviewError() {
   // Human-readable explanation of the MVP scope boundary. Phase 5.8
-  // product decision â€?when Sandpack fails, the most common cause in
+  // product decision â€” when Sandpack fails, the most common cause in
   // this product is "user's snippet uses a feature outside our first-
   // version support envelope" (multi-file, @ alias, CSS import). The
   // ErrorBoundary trip itself is rare; most failures show up inside
@@ -190,7 +191,7 @@ function PreviewError() {
     <div className="flex h-full min-h-[480px] flex-col items-center justify-center gap-2 p-8 text-center text-sm text-muted-foreground">
       <p className="font-medium">Preview unavailable</p>
       <p className="text-xs max-w-sm">
-        Single-file React preview only â€?multi-file imports, <code>@/</code>{" "}
+        Single-file React preview only â€” multi-file imports, <code>@/</code>{" "}
         path aliases, CSS imports, and custom tsconfig arenâ€™t supported in
         this version.
       </p>

@@ -115,7 +115,7 @@ export function ImportSessionDialog({
       const data = await res.json();
 
       if (res.status === 409 && data.existingSessionId) {
-        // Already imported â€?navigate to the existing session
+        // Already imported â€” navigate to the existing session
         onOpenChange(false);
         router.push(`/chat/${data.existingSessionId}`);
         return;

@@ -1,22 +1,22 @@
 /**
- * Shared Settings nav config â?single source of truth for both the
+ * Shared Settings nav config — single source of truth for both the
  * desktop sidebar (`src/components/layout/SettingsSidebar.tsx`) and the
  * mobile horizontal tab strip (`src/app/settings/layout.tsx`). Keeping
  * them as two separate literals diverged once (Tasks added to one but
  * the other rendered Bridge in the same slot) and produced a hydration
- * mismatch â?server painted one order, client painted another.
+ * mismatch — server painted one order, client painted another.
  *
  * If you need to add or reorder a Settings section, edit this file
  * and only this file.
  *
- * Phase 7 (2026-05-21): `icon` is now a `BuckyballIconName` semantic
+ * Phase 7 (2026-05-21): `icon` is now a `CodePilotIconName` semantic
  * alias string, not a Phosphor Icon constructor. Consumers render via
- * `<BuckyballIcon name={item.icon} />`. The previous Brain/Lightning
- * overloading is resolved at the alias layer (model â?CubeIcon /
- * runtime â?ChipIcon); the nav config itself stays vendor-free.
+ * `<CodePilotIcon name={item.icon} />`. The previous Brain/Lightning
+ * overloading is resolved at the alias layer (model → CubeIcon /
+ * runtime → ChipIcon); the nav config itself stays vendor-free.
  */
 
-import type { BuckyballIconName } from "@/components/ui/semantic-icon";
+import type { CodePilotIconName } from "@/components/ui/semantic-icon";
 import type { TranslationKey } from "@/i18n";
 
 export type SettingsSection =
@@ -37,18 +37,18 @@ export interface SettingsNavItem {
   id: SettingsSection;
   /** Stable English key; the i18n table maps this to a localized label. */
   label: string;
-  /** Semantic icon alias â?resolved to a HugeIcons glyph by BuckyballIcon. */
-  icon: BuckyballIconName;
+  /** Semantic icon alias — resolved to a HugeIcons glyph by CodePilotIcon. */
+  icon: CodePilotIconName;
   href: string;
   i18nKey: TranslationKey;
 }
 
 /**
- * Order matters â?this is the visual order in both the desktop
+ * Order matters — this is the visual order in both the desktop
  * sidebar and the mobile horizontal nav. Mirror the route tree under
  * src/app/settings/. Overview (dashboard) at top, About (metadata) at
- * bottom; middle is the three-layer mental model: Providers â?Models
- * â?Runtime, then Health / Usage / Assistant / Tasks / Bridge.
+ * bottom; middle is the three-layer mental model: Providers → Models
+ * → Runtime, then Health / Usage / Assistant / Tasks / Bridge.
  */
 export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
   { id: "overview", label: "Overview", icon: "overview", href: "/settings/overview", i18nKey: "settings.overview" as TranslationKey },
@@ -60,7 +60,7 @@ export const SETTINGS_NAV_ITEMS: SettingsNavItem[] = [
   { id: "health", label: "Health", icon: "health", href: "/settings/health", i18nKey: "settings.health" as TranslationKey },
   { id: "usage", label: "Usage", icon: "usage", href: "/settings/usage", i18nKey: "settings.usage" as TranslationKey },
   { id: "assistant", label: "Assistant", icon: "assistant", href: "/settings/assistant", i18nKey: "settings.assistant" as TranslationKey },
-  // Phase 3 Step 3 â?global tasks center (independent of Assistant).
+  // Phase 3 Step 3 — global tasks center (independent of Assistant).
   { id: "tasks", label: "Tasks", icon: "task", href: "/settings/tasks", i18nKey: "settings.tasks" as TranslationKey },
   // Bridge moved from top-level rail entry into Settings (2026-05-02).
   { id: "bridge", label: "Bridge", icon: "bridge", href: "/settings/bridge", i18nKey: "settings.bridge" as TranslationKey },

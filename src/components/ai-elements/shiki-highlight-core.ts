@@ -1,5 +1,5 @@
 /**
- * Phase 5B â€?isomorphic Shiki tokenization core.
+ * Phase 5B â€” isomorphic Shiki tokenization core.
  *
  * This is the single implementation of "turn source into themed tokens"
  * shared by BOTH sides of the Phase 5B seam:
@@ -12,7 +12,7 @@
  * The engine faithfully reproduces the pre-5B main-thread behavior:
  *   - per-`lang:light:dark` highlighter cache (bounded LRU),
  *   - lazy bundledLanguages check to normalize unknown langs to "text",
- *   - createHighlighter failure â†?fall back to text + (if the *theme* may be
+ *   - createHighlighter failure â†’ fall back to text + (if the *theme* may be
  *     the problem) default themes, never infinite-retrying the same theme,
  *   - getLoadedLanguages() guard before codeToTokens so an unloaded grammar
  *     degrades to plain "text" instead of throwing.
@@ -52,7 +52,7 @@ export interface HighlightEngineDeps {
     langs: BundledLanguage[];
     themes: BundledTheme[];
   }) => Promise<ShikiHighlighter>;
-  /** Resolves shiki's `bundledLanguages` map (lang â†?dynamic import thunk).
+  /** Resolves shiki's `bundledLanguages` map (lang â†’ dynamic import thunk).
    *  Used only to normalize unknown langs to "text" before hitting shiki. */
   loadBundledLanguages: () => Promise<Record<string, unknown>>;
   defaultLight: BundledTheme;
@@ -117,7 +117,7 @@ export function createHighlightEngine(deps: HighlightEngineDeps): HighlightEngin
       langs: [safeLang],
       themes: [lightTheme, darkTheme],
     }).catch(() => {
-      // Language or theme not supported â€?fall back to plain text + default
+      // Language or theme not supported â€” fall back to plain text + default
       // themes. Using default themes avoids infinite retry if the *theme* was
       // the problem.
       highlighterCache.delete(cacheKey);

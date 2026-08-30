@@ -1,5 +1,5 @@
 /**
- * permission-checker.ts â€?Permission system for the Native Runtime.
+ * permission-checker.ts â€” Permission system for the Native Runtime.
  *
  * Three-level mode system:
  * - explore: Read-only. Blocks all writes and dangerous commands.
@@ -82,7 +82,7 @@ const TRUST_RULES: PermissionRule[] = [
   { permission: '*', pattern: '*', action: 'allow' },
 ];
 
-// Dangerous bash patterns â€?always ask regardless of mode
+// Dangerous bash patterns â€” always ask regardless of mode
 const DANGEROUS_PATTERNS = [
   /\brm\s+(-[a-zA-Z]*r|-[a-zA-Z]*f|--recursive|--force)/,
   /\brm\s+-rf\b/,
@@ -116,8 +116,8 @@ const DANGEROUS_PATTERNS = [
  * Even in trust mode (which auto-allows everything), these tools must
  * show their UI because the tool's purpose IS the user interaction.
  *
- * - AskUserQuestion: model asks structured questions â†?user picks options
- * - ExitPlanMode: plan approval UI â†?user approves/rejects
+ * - AskUserQuestion: model asks structured questions â†’ user picks options
+ * - ExitPlanMode: plan approval UI â†’ user approves/rejects
  *
  * Without this, trust mode would auto-allow these tools and they'd
  * return empty/default answers, defeating their purpose.
@@ -130,7 +130,7 @@ export function checkPermission(
   mode: PermissionMode = 'normal',
   userRules: PermissionRule[] = [],
 ): PermissionCheckResult {
-  // Interactive tools â€?always ask regardless of mode
+  // Interactive tools â€” always ask regardless of mode
   if (ALWAYS_ASK_TOOLS.has(toolName)) {
     return {
       action: 'ask',
@@ -138,7 +138,7 @@ export function checkPermission(
     };
   }
 
-  // Bash danger check â€?always ask for dangerous commands regardless of mode
+  // Bash danger check â€” always ask for dangerous commands regardless of mode
   if (toolName === 'Bash' && input && typeof input === 'object' && 'command' in input) {
     const command = (input as { command: string }).command;
     if (isDangerousCommand(command)) {
@@ -156,7 +156,7 @@ export function checkPermission(
   // Extract the pattern to match against (tool-specific)
   const matchPattern = extractMatchPattern(toolName, input);
 
-  // findLast semantics â€?last matching rule wins
+  // findLast semantics â€” last matching rule wins
   const match = findLastMatchingRule(allRules, toolName, matchPattern);
 
   if (match) {
@@ -240,7 +240,7 @@ function wildcardMatch(str: string, pattern: string): boolean {
   // Convert glob pattern to regex
   const escaped = pattern
     .replace(/[.+^${}()|[\]\\]/g, '\\$&') // escape regex special chars except *
-    .replace(/\*/g, '.*');                  // * â†?.*
+    .replace(/\*/g, '.*');                  // * â†’ .*
 
   return new RegExp(`^${escaped}$`, 'i').test(str);
 }

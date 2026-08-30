@@ -1,5 +1,5 @@
 /**
- * Phase 5e review fix P1/P2 #4 (2026-05-18) �?User CodePilot Harness
+ * Phase 5e review fix P1/P2 #4 (2026-05-18) — User CodePilot Harness
  * scanner skills + slash command coverage.
  *
  * Pre-fix `scanUserCodePilotExtensions` only surfaced MCP servers
@@ -7,9 +7,9 @@
  * documentation promised skills and slash commands. These tests pin
  * the now-complete coverage:
  *
- *   - project `.claude/skills/<name>/` directories �?kind: 'skill'
- *   - project `.claude/commands/*.md` files �?kind: 'slash_command'
- *   - project `.claude/CLAUDE.md` (override layer) �?kind: 'workspace_rule'
+ *   - project `.claude/skills/<name>/` directories → kind: 'skill'
+ *   - project `.claude/commands/*.md` files → kind: 'slash_command'
+ *   - project `.claude/CLAUDE.md` (override layer) → kind: 'workspace_rule'
  *
  * Tests build a tmpdir workspace, call the scanner with workspacePath
  * set, then assert the right entries come back.
@@ -22,11 +22,11 @@ import path from 'node:path';
 import os from 'node:os';
 import { scanUserCodePilotExtensions } from '@/lib/harness/user-codepilot-extensions';
 
-describe('User CodePilot scanner �?empty workspace', () => {
+describe('User CodePilot scanner — empty workspace', () => {
   it('returns no project entries when workspace path is undefined', () => {
     const out = scanUserCodePilotExtensions({});
     // Note: settings-level MCP entries may exist depending on the
-    // running config DB �?we don't assert against them here. The
+    // running config DB — we don't assert against them here. The
     // project_file entries are what's scoped to workspacePath, and
     // those should be empty without a path.
     const projectEntries = out.filter((e) => e.origin === 'project_file');
@@ -45,7 +45,7 @@ describe('User CodePilot scanner �?empty workspace', () => {
   });
 });
 
-describe('User CodePilot scanner �?project workspace_rule (CLAUDE.md)', () => {
+describe('User CodePilot scanner — project workspace_rule (CLAUDE.md)', () => {
   it('surfaces workspace-root CLAUDE.md', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-claudemd-'));
     try {
@@ -79,7 +79,7 @@ describe('User CodePilot scanner �?project workspace_rule (CLAUDE.md)', () => {
   });
 });
 
-describe('User CodePilot scanner �?.claude/skills/', () => {
+describe('User CodePilot scanner — .claude/skills/', () => {
   it('surfaces each subdirectory in .claude/skills/ as a skill extension', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-skills-'));
     try {
@@ -124,7 +124,7 @@ describe('User CodePilot scanner �?.claude/skills/', () => {
   });
 });
 
-describe('User CodePilot scanner �?.claude/commands/', () => {
+describe('User CodePilot scanner — .claude/commands/', () => {
   it('surfaces each .md file in .claude/commands/ as a slash_command', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-slash-'));
     try {
@@ -165,10 +165,10 @@ describe('User CodePilot scanner �?.claude/commands/', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e review round 3 fix P2 #C �?runtime-aware executable
+// Phase 5e review round 3 fix P2 #C — runtime-aware executable
 // ─────────────────────────────────────────────────────────────────────
 
-describe('User CodePilot scanner �?runtime-aware executable classification', () => {
+describe('User CodePilot scanner — runtime-aware executable classification', () => {
   function buildWorkspace(tmp: string) {
     fs.mkdirSync(path.join(tmp, '.claude', 'skills', 'review'), { recursive: true });
     fs.mkdirSync(path.join(tmp, '.claude', 'commands'), { recursive: true });
@@ -200,18 +200,18 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-rt-native-'));
     try {
       buildWorkspace(tmp);
-      const out = scanUserCodePilotExtensions({ workspacePath: tmp, runtimeId: 'bbagent' });
+      const out = scanUserCodePilotExtensions({ workspacePath: tmp, runtimeId: 'codepilot_runtime' });
       const skill = out.find((e) => e.kind === 'skill');
       const slash = out.find((e) => e.kind === 'slash_command');
       const workspaceRule = out.find((e) => e.kind === 'workspace_rule');
       const mcp = out.find((e) => e.kind === 'mcp_server');
 
       assert.ok(skill);
-      assert.equal(skill!.executable, false, 'skill is ClaudeCode-only �?must be perception_only on Native');
+      assert.equal(skill!.executable, false, 'skill is ClaudeCode-only — must be perception_only on Native');
       assert.match(skill!.perceptionHint ?? '', /ClaudeCode/);
 
       assert.ok(slash);
-      assert.equal(slash!.executable, false, 'slash command is ClaudeCode-only �?must be perception_only on Native');
+      assert.equal(slash!.executable, false, 'slash command is ClaudeCode-only — must be perception_only on Native');
       assert.match(slash!.perceptionHint ?? '', /ClaudeCode/);
 
       // workspace_rule and mcp_server remain cross-Runtime executable.
@@ -238,7 +238,7 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
     }
   });
 
-  // Phase 5e review round 4 fix P1 (2026-05-18) �?Codex Runtime
+  // Phase 5e review round 4 fix P1 (2026-05-18) — Codex Runtime
   // does NOT mount user MCP servers. The pre-fix scanner marked
   // mcp_server as executable=true across every Runtime, which would
   // let the model see "weather (user mcp_server)" in the Callable
@@ -259,7 +259,7 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
       assert.equal(
         mcp!.executable,
         false,
-        'Codex Runtime proxy does not mount user MCP servers �?entry must be perception_only',
+        'Codex Runtime proxy does not mount user MCP servers — entry must be perception_only',
       );
       assert.match(
         mcp!.perceptionHint ?? '',
@@ -276,7 +276,7 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
     try {
       buildWorkspace(tmp);
       const claudeOut = scanUserCodePilotExtensions({ workspacePath: tmp, runtimeId: 'claude_code' });
-      const nativeOut = scanUserCodePilotExtensions({ workspacePath: tmp, runtimeId: 'bbagent' });
+      const nativeOut = scanUserCodePilotExtensions({ workspacePath: tmp, runtimeId: 'codepilot_runtime' });
       const claudeMcp = claudeOut.find((e) => e.kind === 'mcp_server');
       const nativeMcp = nativeOut.find((e) => e.kind === 'mcp_server');
       assert.equal(claudeMcp!.executable, true, 'ClaudeCode SDK mounts user MCPs via mcp-loader');
@@ -290,7 +290,7 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-rt-default-'));
     try {
       buildWorkspace(tmp);
-      // Conservative default �?unmigrated callers must not leak skill /
+      // Conservative default — unmigrated callers must not leak skill /
       // slash as "Callable" by accident.
       const out = scanUserCodePilotExtensions({ workspacePath: tmp });
       const skill = out.find((e) => e.kind === 'skill');
@@ -303,7 +303,7 @@ describe('User CodePilot scanner �?runtime-aware executable classification', ()
   });
 });
 
-describe('User CodePilot scanner �?all layers combined', () => {
+describe('User CodePilot scanner — all layers combined', () => {
   it('returns MCP + CLAUDE.md + skills + slash commands together for a fully-configured workspace', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'user-scanner-all-'));
     try {

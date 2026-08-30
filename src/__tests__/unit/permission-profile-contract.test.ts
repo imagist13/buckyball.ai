@@ -1,5 +1,5 @@
 /**
- * `runtime-permission-modes.md` Phase 0 + Phase 1 â€?the three-profile
+ * `runtime-permission-modes.md` Phase 0 + Phase 1 â€” the three-profile
  * semantic contract.
  *
  * The failure this file exists to prevent is not a crash. It's the day
@@ -58,7 +58,7 @@ describe('permission profile union (a01)', () => {
 });
 
 describe('human-only categories (a04)', () => {
-  it('AskUserQuestion is human-only â€?the answer is meaning, not consent', () => {
+  it('AskUserQuestion is human-only â€” the answer is meaning, not consent', () => {
     assert.equal(getHumanOnlyCategory('AskUserQuestion'), 'interactive_question');
   });
 
@@ -83,7 +83,7 @@ describe('human-only categories (a04)', () => {
   });
 
   it('every mutating_external tool is human-only, even ones added later', () => {
-    // Derivation, not enumeration â€?a new shell-exec tool is covered the day
+    // Derivation, not enumeration â€” a new shell-exec tool is covered the day
     // it declares its mutationLevel, without touching this file.
     assert.equal(getHumanOnlyCategory('codepilot_cli_tools_install'), 'high_impact');
   });
@@ -102,7 +102,7 @@ describe('human-only categories (a04)', () => {
 });
 
 describe('host auto-approval (a05)', () => {
-  it('never auto-approves a human-only tool â€?human-only outranks the host list', () => {
+  it('never auto-approves a human-only tool â€” human-only outranks the host list', () => {
     for (const name of [
       'AskUserQuestion',
       'codepilot_generate_image',
@@ -126,7 +126,7 @@ describe('host auto-approval (a05)', () => {
     }
   });
 
-  it('the host list contains no human-only tool â€?the list cannot drift into one', () => {
+  it('the host list contains no human-only tool â€” the list cannot drift into one', () => {
     for (const name of HOST_AUTO_APPROVED_TOOLS) {
       assert.equal(isHumanOnlyTool(name), false, `${name} must not be both host-approved and human-only`);
     }
@@ -159,24 +159,24 @@ describe('auto_review capability gate (a07)', () => {
     }
   });
 
-  it('reads a real version off the installed SDK â€?the probe is not vacuously null', () => {
+  it('reads a real version off the installed SDK â€” the probe is not vacuously null', () => {
     // Guards the reverse failure: a probe that always throws would pass every
     // negative test above while silently disabling the feature forever. It
-    // caught exactly that â€?the SDK does not export ./package.json, so the
+    // caught exactly that â€” the SDK does not export ./package.json, so the
     // first implementation returned null on every call.
     const version = getAgentSdkVersion();
     assert.ok(version, 'could not read the installed Agent SDK version');
     assert.match(version!, /^\d+\.\d+\.\d+/);
   });
 
-  it('the installed SDK supports auto â€?the gate is not vacuously false', () => {
+  it('the installed SDK supports auto â€” the gate is not vacuously false', () => {
     assert.equal(isAutoReviewSupported(), true,
       `installed SDK ${getAgentSdkVersion()} should support auto_review`);
     assert.equal(getAutoReviewUnavailableReason(), null);
   });
 });
 
-describe('Claude wire options â€?3 profiles x plan/code (a03 + a06)', () => {
+describe('Claude wire options â€” 3 profiles x plan/code (a03 + a06)', () => {
   const supported = true;
 
   type Row = {
@@ -217,7 +217,7 @@ describe('Claude wire options â€?3 profiles x plan/code (a03 + a06)', () => {
     }
   });
 
-  it('Plan mode outranks full_access â€?a profile is not a licence to execute (a09)', () => {
+  it('Plan mode outranks full_access â€” a profile is not a licence to execute (a09)', () => {
     const wire = resolveClaudeWireOptions({ profile: 'full_access', effectiveMode: 'plan', autoReviewSupported: supported });
     assert.equal(wire.permissionMode, 'plan');
     assert.equal(wire.bypassPermissions, false);
@@ -237,7 +237,7 @@ describe('Claude wire options â€?3 profiles x plan/code (a03 + a06)', () => {
       const auto = resolveClaudeWireOptions({ profile: 'auto_review', effectiveMode, autoReviewSupported: supported });
       const full = resolveClaudeWireOptions({ profile: 'full_access', effectiveMode, autoReviewSupported: supported });
       if (effectiveMode === 'plan') {
-        // Both collapse to read-only Plan â€?that IS the contract.
+        // Both collapse to read-only Plan â€” that IS the contract.
         assert.equal(auto.permissionMode, 'plan');
         assert.equal(full.permissionMode, 'plan');
       } else {
@@ -249,7 +249,7 @@ describe('Claude wire options â€?3 profiles x plan/code (a03 + a06)', () => {
   });
 
   describe('unsupported auto_review degrades loudly, never silently (a07)', () => {
-    it('falls back to asking â€?not to acceptEdits, not to full_access', () => {
+    it('falls back to asking â€” not to acceptEdits, not to full_access', () => {
       const wire = resolveClaudeWireOptions({ profile: 'auto_review', effectiveMode: 'code', autoReviewSupported: false });
       assert.equal(wire.permissionMode, 'default', 'fail-closed direction is MORE asking');
       assert.equal(wire.bypassPermissions, false);
@@ -280,7 +280,7 @@ describe('Claude wire options â€?3 profiles x plan/code (a03 + a06)', () => {
  * green through the bug.
  */
 describe('legacy global skip cannot widen Plan or auto_review (a03 + a09)', () => {
-  it('auto_review x globalSkip stays a reviewer â€?the combination that used to bypass', () => {
+  it('auto_review x globalSkip stays a reviewer â€” the combination that used to bypass', () => {
     const wire = resolveClaudeWireOptions({
       profile: 'auto_review', effectiveMode: 'code', autoReviewSupported: true, globalSkip: true,
     });
@@ -318,7 +318,7 @@ describe('legacy global skip cannot widen Plan or auto_review (a03 + a09)', () =
     }
   });
 
-  it('globalSkip may still widen the default profile â€?the setting is not broken, just scoped', () => {
+  it('globalSkip may still widen the default profile â€” the setting is not broken, just scoped', () => {
     const wire = resolveClaudeWireOptions({
       profile: 'default', effectiveMode: 'code', autoReviewSupported: true, globalSkip: true,
     });
@@ -332,7 +332,7 @@ describe('legacy global skip cannot widen Plan or auto_review (a03 + a09)', () =
  * re-reads the global setting at query-build time. This is the helper that
  * stops it re-widening what the resolver refused.
  */
-describe('resolveEffectiveSkipPermissions â€?the final wire gate (a03)', () => {
+describe('resolveEffectiveSkipPermissions â€” the final wire gate (a03)', () => {
   it('refuses to skip for auto, whatever the global setting and session flag say', () => {
     for (const globalSkip of [true, false]) {
       for (const sessionBypassPermissions of [true, false]) {
@@ -370,7 +370,7 @@ describe('resolveEffectiveSkipPermissions â€?the final wire gate (a03)', () => {
 
 /**
  * Review round #2, P1: `canUseTool` is NOT a pre-review interception under
- * permissionMode 'auto' â€?the SDK classifier can allow a tool without ever
+ * permissionMode 'auto' â€” the SDK classifier can allow a tool without ever
  * calling it. Deny rules are the only interception that runs first (verified
  * against the shipped cli.js classifier; see resolveHumanOnlyDenyTools).
  */
@@ -389,7 +389,7 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
     // Review round #3, P1: the deny list used to be six hand-written names
     // while `getHumanOnlyCategory` classified by three rules. They agreed by
     // coincidence. This asserts the invariant that makes the coincidence
-    // impossible â€?derivation over the same universe the wire is built from.
+    // impossible â€” derivation over the same universe the wire is built from.
     const denied = resolveHumanOnlyDenyTools('auto');
     for (const bare of Object.keys(CODEPILOT_MCP_TOOL_SERVERS)) {
       if (!isHumanOnlyTool(bare)) continue;
@@ -402,8 +402,8 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
 
   it('a credential-shaped tool is denied at the wire boundary by derivation alone', () => {
     // The gap that made this a P1: a tool that is human-only ONLY by
-    // derivation (name marker / mutating_external) â€?never added to any
-    // explicit table â€?must still be blocked before the classifier. Injected
+    // derivation (name marker / mutating_external) â€” never added to any
+    // explicit table â€” must still be blocked before the classifier. Injected
     // through the real universe parameter and asserted on the real assembly,
     // so this proves the wire, not a helper's opinion.
     const universe = { codepilot_rotate_api_key: 'codepilot-secrets' };
@@ -421,7 +421,7 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
       globalSkip: false,
       isHeartbeatMode: false,
       toolUniverse: universe,
-      // Required for 'auto' to survive at all â€?see the external-MCP gate.
+      // Required for 'auto' to survive at all â€” see the external-MCP gate.
       externalMcp: { present: false },
     });
     assert.ok(disallowedTools?.includes('mcp__codepilot-secrets__codepilot_rotate_api_key'),
@@ -430,7 +430,8 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
 
   it('the deny universe matches the servers claude-client actually registers', async () => {
     // Introspects the REAL server instances: if a tool is added to a server and
-    // not to CODEPILOT_MCP_TOOL_SERVERS, derivation would silently skip it â€?    // which is exactly how the previous hand-written table went stale.
+    // not to CODEPILOT_MCP_TOOL_SERVERS, derivation would silently skip it â€”
+    // which is exactly how the previous hand-written table went stale.
     const [memory, notify, media, imageGen, cliTools, dashboard, widget, subagent] = await Promise.all([
       import('@/lib/memory-search-mcp'), import('@/lib/notification-mcp'),
       import('@/lib/media-import-mcp'), import('@/lib/image-gen-mcp'),
@@ -456,7 +457,7 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
       for (const toolName of Object.keys(server.instance._registeredTools)) {
         assert.equal(
           CODEPILOT_MCP_TOOL_SERVERS[toolName], serverKey,
-          `${toolName} is registered on ${serverKey} but the deny universe disagrees â€?` +
+          `${toolName} is registered on ${serverKey} but the deny universe disagrees â€” ` +
           'add it to CODEPILOT_MCP_TOOL_SERVERS or the auto_review deny list will skip it',
         );
       }
@@ -472,14 +473,14 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
     }
   });
 
-  it('every deny entry is fully qualified â€?a bare name would never match an MCP rule', () => {
+  it('every deny entry is fully qualified â€” a bare name would never match an MCP rule', () => {
     for (const qualified of resolveHumanOnlyDenyTools('auto')) {
       assert.match(qualified, /^mcp__[^_]+(?:-[^_]+)*__codepilot_/,
         `${qualified} must be mcp__server__tool`);
     }
   });
 
-  it('AskUserQuestion stays available â€?the SDK already routes it to a human', () => {
+  it('AskUserQuestion stays available â€” the SDK already routes it to a human', () => {
     // Deliberately absent from the deny list: the SDK declares it
     // requiresUserInteraction, so the classifier never sees it, and denying it
     // would break the model's ability to ask the user anything at all.

@@ -1,9 +1,9 @@
 /**
- * WeChat Adapter â€?implements BaseChannelAdapter for WeChat ilink bot API.
+ * WeChat Adapter â€” implements BaseChannelAdapter for WeChat ilink bot API.
  *
  * Uses HTTP long-polling (one worker per enabled account) for real-time
  * message consumption. Text-only outbound. No streaming preview.
- * No inline buttons â€?permission handled via /perm text command.
+ * No inline buttons â€” permission handled via /perm text command.
  *
  * Multi-account: each QR-linked account runs its own poll loop.
  * Synthetic chatId format: weixin::<accountId>::<peerUserId>
@@ -166,7 +166,7 @@ export class WeixinAdapter extends BaseChannelAdapter {
 
       const creds = this.accountToCreds(account);
 
-      // Strip HTML/Markdown â€?WeChat only supports plain text
+      // Strip HTML/Markdown â€” WeChat only supports plain text
       let content = message.text;
       if (message.parseMode === 'HTML') {
         content = content.replace(/<[^>]+>/g, '');
@@ -303,7 +303,7 @@ export class WeixinAdapter extends BaseChannelAdapter {
           throw new Error(`API error: ${resp.errcode} ${resp.errmsg || ''}`);
         }
 
-        // Process messages â€?assign a batch ID so the cursor is only
+        // Process messages â€” assign a batch ID so the cursor is only
         // committed after bridge-manager finishes handleMessage for ALL
         // messages in this batch (via acknowledgeUpdate).
         let batchId: number | undefined;
@@ -322,7 +322,7 @@ export class WeixinAdapter extends BaseChannelAdapter {
           }
           batchCompleted = true;
         } else if (resp.msgs && resp.msgs.length > 0) {
-          // No new cursor â€?process without batch tracking
+          // No new cursor â€” process without batch tracking
           for (const msg of resp.msgs) {
             await this.processMessage(accountId, creds, msg);
           }

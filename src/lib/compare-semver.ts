@@ -2,21 +2,21 @@
  * Minimal semver comparison for the GitHub-release update check
  * (`src/app/api/app/updates/route.ts`).
  *
- * Local on purpose â€?`semver` is NOT a direct dependency (only present
+ * Local on purpose â€” `semver` is NOT a direct dependency (only present
  * transitively), so the update path must not rely on it. This handles exactly
  * what the check needs:
  *   - numeric MAJOR.MINOR.PATCH precedence
  *   - a STABLE release outranks a same-numeric prerelease:
  *     `0.55.0` > `0.55.0-preview.5`. The previous implementation split on `.`
  *     and `Number()`-coerced the first three segments, so the `-preview.N`
- *     suffix was dropped (and `NaN || 0` collapsed the patch to 0) â€?making
+ *     suffix was dropped (and `NaN || 0` collapsed the patch to 0) â€” making
  *     `0.55.0` compare EQUAL to `0.55.0-preview.5`, so preview testers never saw
  *     the stable v0.55.0 update.
  *   - prerelease vs prerelease by dot-separated identifiers:
  *     `0.55.0-preview.4` < `0.55.0-preview.5`
  *
  * Returns 1 if a > b, -1 if a < b, 0 if equal OR if either version is
- * unparseable â€?conservative, so a malformed `latest` from GitHub can't trigger
+ * unparseable â€” conservative, so a malformed `latest` from GitHub can't trigger
  * a false update prompt. The update check still only reads `/releases/latest`;
  * this does not introduce a prerelease channel.
  */
@@ -29,10 +29,10 @@ export function compareSemver(a: string, b: string): number {
   if (pa.minor !== pb.minor) return pa.minor > pb.minor ? 1 : -1;
   if (pa.patch !== pb.patch) return pa.patch > pb.patch ? 1 : -1;
 
-  // Same MAJOR.MINOR.PATCH â€?a stable release outranks a prerelease.
+  // Same MAJOR.MINOR.PATCH â€” a stable release outranks a prerelease.
   if (pa.prerelease === null && pb.prerelease === null) return 0;
-  if (pa.prerelease === null) return 1; // a stable, b prerelease â†?a > b
-  if (pb.prerelease === null) return -1; // a prerelease, b stable â†?a < b
+  if (pa.prerelease === null) return 1; // a stable, b prerelease â†’ a > b
+  if (pb.prerelease === null) return -1; // a prerelease, b stable â†’ a < b
   return comparePrerelease(pa.prerelease, pb.prerelease);
 }
 
@@ -69,7 +69,7 @@ function comparePrerelease(a: string, b: string): number {
   for (let i = 0; i < len; i++) {
     const ai = as[i];
     const bi = bs[i];
-    if (ai === undefined) return -1; // fewer identifiers â†?lower precedence
+    if (ai === undefined) return -1; // fewer identifiers â†’ lower precedence
     if (bi === undefined) return 1;
     const aNum = /^\d+$/.test(ai);
     const bNum = /^\d+$/.test(bi);

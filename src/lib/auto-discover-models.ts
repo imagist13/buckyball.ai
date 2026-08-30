@@ -1,11 +1,11 @@
 /**
- * Provider model auto-discovery ‚Ä?shared probe ‚Ü?apply ‚Ü?outcome flow.
+ * Provider model auto-discovery ‚Äî shared probe ‚Üí apply ‚Üí outcome flow.
  *
  * Two entry points:
- *   - `runAutoDiscoverForProvider`  ‚Ä?single provider, surfaces a single
- *     toast (loading ‚Ü?success/warning/info). Used by Add Service success
+ *   - `runAutoDiscoverForProvider`  ‚Äî single provider, surfaces a single
+ *     toast (loading ‚Üí success/warning/info). Used by Add Service success
  *     and the per-provider "Âà∑Êñ∞" button on the Models page.
- *   - `probeAndApplyProvider`       ‚Ä?pure result, no toast. Building
+ *   - `probeAndApplyProvider`       ‚Äî pure result, no toast. Building
  *     block for the Models page "Âà∑Êñ∞ÂÖ®ÈÉ®" path that aggregates many
  *     providers under one rolling progress toast.
  *
@@ -38,19 +38,19 @@ interface ApplyStatsResponse {
  * Outcome of one provider's discovery cycle. Drives the rolling-summary
  * toast in batch mode and the single-provider toast in interactive mode.
  *
- * - `success`        ‚Ä?apply ran with at least one writeable row
- * - `up-to-date`     ‚Ä?probe ok and upstream returned models, but every
+ * - `success`        ‚Äî apply ran with at least one writeable row
+ * - `up-to-date`     ‚Äî probe ok and upstream returned models, but every
  *                      row was already in the unchanged bucket. We still
  *                      send them through apply so `last_refreshed_at`
  *                      advances and the section's "‰∏äÊ¨°ÂêåÊ≠•" reflects
  *                      this probe.
- * - `no-models`      ‚Ä?probe ok but upstream returned an empty model
- *                      list (legitimate empty state ‚Ä?caller should
+ * - `no-models`      ‚Äî probe ok but upstream returned an empty model
+ *                      list (legitimate empty state ‚Äî caller should
  *                      treat as "this provider has nothing to expose")
- * - `unsupported`    ‚Ä?provider type can't be probed (image / OAuth / env)
- * - `probe-failed`   ‚Ä?HTTP/network error reaching upstream model list
- * - `apply-failed`   ‚Ä?probe succeeded, apply route returned non-2xx
- * - `error`          ‚Ä?uncaught exception
+ * - `unsupported`    ‚Äî provider type can't be probed (image / OAuth / env)
+ * - `probe-failed`   ‚Äî HTTP/network error reaching upstream model list
+ * - `apply-failed`   ‚Äî probe succeeded, apply route returned non-2xx
+ * - `error`          ‚Äî uncaught exception
  */
 export type AutoDiscoverOutcome =
   | 'success'
@@ -65,7 +65,7 @@ export interface AutoDiscoverResult {
   outcome: AutoDiscoverOutcome;
   /** Total upstream model count (modelCount from probe). */
   total?: number;
-  /** Counts from the apply step ‚Ä?only populated when outcome=success. */
+  /** Counts from the apply step ‚Äî only populated when outcome=success. */
   recommendedEnabled?: number;
   discoveredHidden?: number;
   /** Free-form error detail; used for batch error log. */
@@ -108,9 +108,9 @@ export async function probeAndApplyProvider({
     }
 
     // Two upstream-side buckets:
-    //   - `applicable`  ‚Ä?diff entries that result in a substantive write
+    //   - `applicable`  ‚Äî diff entries that result in a substantive write
     //                     (new / will-update / preserve-edited / hidden-but-upstream)
-    //   - `unchangedUpstream` ‚Ä?rows that already match upstream exactly
+    //   - `unchangedUpstream` ‚Äî rows that already match upstream exactly
     //
     // We send BOTH through apply so `last_refreshed_at` advances even when
     // nothing changed substantively. Without this, a periodic refresh
@@ -126,7 +126,7 @@ export async function probeAndApplyProvider({
     const applySet = [...applicable, ...unchangedUpstream];
 
     if (applySet.length === 0) {
-      // Truly empty upstream ‚Ä?no entries on either side. Distinct from
+      // Truly empty upstream ‚Äî no entries on either side. Distinct from
       // up-to-date (which has rows, just nothing to write).
       return { outcome: 'no-models', total: probe.modelCount ?? 0 };
     }
@@ -147,7 +147,7 @@ export async function probeAndApplyProvider({
     const stats = await applyRes.json() as ApplyStatsResponse;
 
     // `applicable.length === 0` means apply only touched unchanged rows
-    // ‚Ä?last_refreshed_at advanced but nothing else moved. Surfaces as
+    // ‚Äî last_refreshed_at advanced but nothing else moved. Surfaces as
     // a distinct outcome so the UI can say "up-to-date" rather than the
     // less-accurate "X enabled / Y hidden" with all-zero counts.
     return {
@@ -170,7 +170,7 @@ interface ToastArgs extends ProbeArgs {
 }
 
 /**
- * Single-provider entry: shows a toast through loading ‚Ü?outcome and
+ * Single-provider entry: shows a toast through loading ‚Üí outcome and
  * dispatches `provider-changed` on success. Returns the result so
  * callers can chain (e.g. trigger a local refetch even when batch
  * mode owns the toast).

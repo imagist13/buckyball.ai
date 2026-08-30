@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       providerId,
       permissionProfile,
       undefined, // source
-      // The branch name is the point of this session â€?a fallback from the
+      // The branch name is the point of this session â€” a fallback from the
       // first message would bury which worktree it belongs to.
       'system',
     );

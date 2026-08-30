@@ -8,7 +8,7 @@
  *      silently generates against the official endpoint.
  *   2. PUT /api/providers/[id] same rejection on update (and clears the
  *      active_image_provider_id when the active row's type moves out of
- *      media �?defensive counterpart to the DELETE cleanup).
+ *      media — defensive counterpart to the DELETE cleanup).
  *   3. GET /api/providers/active-image reports stale=true when the stored
  *      id no longer resolves to a usable media row. This is the branch the
  *      ProviderManager banner relies on to surface a Clear button after a
@@ -50,7 +50,7 @@ function cleanupTestRows() {
 
 // ── POST guard ───────────────────────────────────────────────────
 
-describe('POST /api/providers �?MEDIA_BASE_URL_REQUIRED', () => {
+describe('POST /api/providers — MEDIA_BASE_URL_REQUIRED', () => {
   afterEach(cleanupTestRows);
 
   it('rejects openai-image with empty base_url', async () => {
@@ -96,7 +96,7 @@ describe('POST /api/providers �?MEDIA_BASE_URL_REQUIRED', () => {
 
 // ── PUT guard ───────────────────────────────────────────────────
 
-describe('PUT /api/providers/[id] �?MEDIA_BASE_URL_REQUIRED', () => {
+describe('PUT /api/providers/[id] — MEDIA_BASE_URL_REQUIRED', () => {
   let testId: string;
 
   beforeEach(() => {
@@ -128,7 +128,7 @@ describe('PUT /api/providers/[id] �?MEDIA_BASE_URL_REQUIRED', () => {
 
 // ── Active-image stale-state surfacing ────────────────────────────
 
-describe('/api/providers/active-image �?stale detection', () => {
+describe('/api/providers/active-image — stale detection', () => {
   let originalActive: string;
   let originalXaiBundle: string;
   let originalXaiEnabled: string | undefined;
@@ -164,7 +164,7 @@ describe('/api/providers/active-image �?stale detection', () => {
       extra_env: '{}',
     });
 
-    // Mark the row active �?this is the state the user lands in after
+    // Mark the row active — this is the state the user lands in after
     // clicking a model capsule in ProviderManager.
     const putRes = await activeImagePUT(
       jsonReq('http://localhost/api/providers/active-image', 'PUT', { providerId: created.id }),
@@ -179,7 +179,7 @@ describe('/api/providers/active-image �?stale detection', () => {
 
     // Edit the row's type to something non-media. The PUT handler clears
     // active_image_provider_id as a defensive cleanup, so GET reports no
-    // active row rather than a stale one �?either outcome surfaces the
+    // active row rather than a stale one — either outcome surfaces the
     // setting (vs. the original bug where it stayed hidden).
     const editRes = await providerPUT(
       jsonReq(`http://localhost/api/providers/${created.id}`, 'PUT', {
@@ -201,7 +201,7 @@ describe('/api/providers/active-image �?stale detection', () => {
 
   it('reports stale=true when the active row key is cleared (no defensive cleanup on this path)', async () => {
     // Clearing the api_key on the active row goes through PUT too, but unlike
-    // the type change, we keep the setting intact �?the row is still a media
+    // the type change, we keep the setting intact — the row is still a media
     // provider, just not currently usable. GET must flag stale=true so the
     // per-row amber badge (`已失效（缺少密钥）`) renders.
     const created = createProvider({

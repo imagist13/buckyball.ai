@@ -3,7 +3,7 @@
  *
  * Codex app-server persists rollouts below CODEX_HOME. Pointing CodePilot at
  * the user's default ~/.codex made those rollouts indistinguishable from
- * first-party Codex Desktop threads. Keep runtime state in buckyball.ai's data
+ * first-party Codex Desktop threads. Keep runtime state in CodePilot's data
  * root while mirroring the user-owned Harness inputs that should remain
  * portable across clients.
  */
@@ -504,7 +504,7 @@ export function prepareCodePilotCodexHome(
     : sourceCodexHome;
   const canonicalTarget = fs.realpathSync.native(codexHome);
   if (canonicalSource === canonicalTarget) {
-    throw new Error('buckyball.ai Codex home must be different from the user Codex home');
+    throw new Error('CodePilot Codex home must be different from the user Codex home');
   }
 
   // Profiles are open-ended (`<name>.config.toml`), so discover them instead

@@ -2,9 +2,9 @@
  * Unified reference-image store for image generation.
  *
  * Keys:
- *   PENDING_KEY          â€?images uploaded via the input bar, not yet bound to a message
- *   lastGenKey(sid)      â€?file paths of the most recently generated images, scoped per session
- *   <message-id>         â€?images bound to a specific assistant message
+ *   PENDING_KEY          â€“ images uploaded via the input bar, not yet bound to a message
+ *   lastGenKey(sid)      â€“ file paths of the most recently generated images, scoped per session
+ *   <message-id>         â€“ images bound to a specific assistant message
  */
 import type { ReferenceImage } from '@/types';
 

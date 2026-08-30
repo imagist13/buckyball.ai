@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { streamClaude } from '@/lib/claude-client';
 import { resolveInTreeAttachmentPath } from '@/lib/in-tree-attachment';
-import { addMessage, getMessages, getSession, getSessionSummary, updateSessionTitle, updateSdkSessionId, updateSessionModel, updateSessionProvider, updateSessionProviderId, updateSessionRuntime, getSetting, acquireSessionLock, renewSessionLock, releaseSessionLock, setSessionRuntimeStatus, isLockOwner } from '@/lib/db';
+import { addMessage, getActiveProvider, getDefaultProviderId, getMessages, getProvider, getSession, getSessionSummary, updateSessionTitle, updateSdkSessionId, updateSessionModel, updateSessionProvider, updateSessionProviderId, updateSessionRuntime, getSetting, acquireSessionLock, renewSessionLock, releaseSessionLock, setSessionRuntimeStatus, isLockOwner } from '@/lib/db';
 import { deriveConversationTitle } from '@/lib/conversation-title';
 import { resolveProviderForSession } from '@/lib/provider-resolver';
 import { resolveRuntimeForSession } from '@/lib/chat-runtime';
@@ -27,19 +27,19 @@ import { buildReviewEvent } from '@/lib/permission/review-event';
 import { emitReviewEvent } from '@/lib/permission/review-audit';
 import { isAutoReviewSupported, getAutoReviewUnavailableReason } from '@/lib/permission/sdk-capability';
 
-// codex-stop-recovery Phase 3 �?after an explicit Runtime interrupt aborts the
+// codex-stop-recovery Phase 3 — after an explicit Runtime interrupt aborts the
 // turn controller, how long to wait for the natural interrupt→terminal→collect
 // path to release the lock before the watchdog forces it. Transport disconnect
 // is deliberately NOT an interrupt: switching chats or refreshing may detach
 // the renderer while the server-owned collector continues to a durable terminal.
 const LOCK_RECOVERY_GRACE_MS = 8000;
 
-// Session lock renewal (I3) �?cap on how many times an autoTrigger
+// Session lock renewal (I3) — cap on how many times an autoTrigger
 // (background/heartbeat) turn's lock-renewal interval may renew before it is
-// force-settled. 30 renewals �?30min @ 60s tick. A background turn has no
+// force-settled. 30 renewals ≈ 30min @ 60s tick. A background turn has no
 // Stop/abort watchdog (its initiating request may disconnect while it keeps
 // running), so without this cap a stuck background turn would renew its lock
-// forever and beat the TTL �?the session could never be reclaimed. Foreground
+// forever and beat the TTL — the session could never be reclaimed. Foreground
 // turns stay uncapped here; they are bounded by the watchdog instead.
 const AUTO_TRIGGER_MAX_RENEWALS = 30;
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     const body: SendMessageRequest & { files?: FileAttachment[]; toolTimeout?: number; provider_id?: string; systemPromptAppend?: string; autoTrigger?: boolean; thinking?: unknown; effort?: string; enableFileCheckpointing?: boolean; displayOverride?: string; context_1m?: boolean; selectedSkills?: readonly string[] } = await request.json();
     const { session_id, content, model, mode, files, toolTimeout, provider_id, systemPromptAppend, autoTrigger, thinking, effort, enableFileCheckpointing, displayOverride, context_1m, selectedSkills } = body;
 
-    // Required-field validation BEFORE any use of `content` (audit �?. The
+    // Required-field validation BEFORE any use of `content` (audit ③). The
     // logs below read content.length/slice; a missing or non-string content
     // would throw here and surface as a 500 instead of an honest 400.
     const bodyValidationError = validateSendMessageBody(body);
@@ -75,10 +75,31 @@ export async function POST(request: NextRequest) {
     console.log('[chat API] content length:', content.length, 'first 200 chars:', content.slice(0, 200));
     console.log('[chat API] systemPromptAppend:', systemPromptAppend ? `${systemPromptAppend.length} chars` : 'none');
 
-    // Precondition: CodePilot must have a provider configured. ~/.claude/settings.json
-    // (cc-switch, CLI login) is intentionally NOT counted �?users with only that source
-    // are redirected to the setup flow to add a proper CodePilot provider.
-    if (!hasCodePilotProvider()) {
+    const session = getSession(session_id);
+    if (!session) {
+      return new Response(JSON.stringify({ error: 'Session not found' }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Precondition: CodePilot must have a provider configured. A selected DB
+    // row with a missing/unreadable key is deliberately allowed through this
+    // coarse global gate so the session-aware resolver below can return the
+    // precise recovery response. Otherwise an install whose only provider lost
+    // Safe Storage access would be misreported as "no provider configured".
+    const intendedProviderId = provider_id || session.provider_id || '';
+    const hasDbProviderIntent = !!(
+      intendedProviderId
+      && intendedProviderId !== 'env'
+      && intendedProviderId !== 'openai-oauth'
+      && intendedProviderId !== 'xai-oauth'
+      && intendedProviderId !== 'codex_account'
+    );
+    const fallbackDbProvider = !intendedProviderId
+      ? (getProvider(getDefaultProviderId() || '') || getActiveProvider())
+      : undefined;
+    if (!hasCodePilotProvider() && !hasDbProviderIntent && !fallbackDbProvider) {
       return new Response(
         JSON.stringify({
           error: 'No provider configured in CodePilot.',
@@ -88,14 +109,6 @@ export async function POST(request: NextRequest) {
         }),
         { status: 412, headers: { 'Content-Type': 'application/json' } },
       );
-    }
-
-    const session = getSession(session_id);
-    if (!session) {
-      return new Response(JSON.stringify({ error: 'Session not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
     }
 
     // Acquire exclusive lock for this session to prevent concurrent requests
@@ -111,15 +124,15 @@ export async function POST(request: NextRequest) {
     activeLockId = lockId;
     setSessionRuntimeStatus(session_id, 'running');
 
-    // ─── Phase 2 Step 3 �?early resolver gate ───────────────────────
+    // ─── Phase 2 Step 3 — early resolver gate ───────────────────────
     //
     // Resolve provider + runtime BEFORE any user-visible side effect
     // (Telegram notify, file uploads, addMessage, title update) AND
-    // before the `/compact` branch �?the compressor calls
+    // before the `/compact` branch — the compressor calls
     // `resolveAuxiliaryModel` internally and would otherwise silently
     // fall through to env / another provider when the session's
     // committed provider has been deleted, bypassing the same "session
-    // provider missing �?fail closed" promise we make for normal sends.
+    // provider missing → fail closed" promise we make for normal sends.
     // Failing closed up here means: if the session points at a deleted
     // provider, NO compression runs, NO transcript writes happen, and
     // the same composer text / `/compact` invocation can be retried
@@ -147,26 +160,30 @@ export async function POST(request: NextRequest) {
       setSessionRuntimeStatus(session_id, 'idle');
       return new Response(
         JSON.stringify({
-          error: 'Session points at a provider that no longer exists.',
+          error: resolved.invalidReason === 'credentials-unreadable'
+            ? 'The saved provider credential can no longer be decrypted after the update. The API key may still be valid. In Settings → Providers, delete the old provider and add it again using the same API key.'
+            : resolved.invalidReason === 'credentials-missing'
+              ? 'The selected provider credential is missing. Enter its API key in Settings → Providers.'
+            : 'Session points at a provider that no longer exists.',
           code: 'INVALID_SESSION_PROVIDER',
           reason: resolved.invalidReason,
           // Frontend can use this to render "your saved provider was
-          // deleted �?pick another or revert to default" without
+          // deleted — pick another or revert to default" without
           // having to refetch session state.
-          sessionProviderId: session.provider_id || '',
+          sessionProviderId: provider_id || session.provider_id || '',
         }),
         { status: 409, headers: { 'Content-Type': 'application/json' } },
       );
     }
     const resolvedProvider = resolved.provider;
 
-    // Phase 2 Step 4a �?lazy-seed `session.runtime_pin`.
+    // Phase 2 Step 4a — lazy-seed `session.runtime_pin`.
     //
     // Sessions created before the column shipped (or before the user
     // ever explicitly switched runtime in the chat) carry an empty
     // `runtime_pin`, which means `resolveRuntimeForSession` falls
     // through to the global `agent_runtime` setting. That's fine for
-    // THIS turn �?but on the NEXT turn, after the user has flipped
+    // THIS turn — but on the NEXT turn, after the user has flipped
     // the global setting in Settings, the same session would silently
     // resolve to the new global value: drift.
     //
@@ -179,7 +196,7 @@ export async function POST(request: NextRequest) {
     //
     // **autoTrigger guard (Step 4a review)**: invisible system turns
     // (heartbeat checks, assistant hooks, /skill expansion etc.) must
-    // NOT pin the runtime �?the user contract is "first USER send
+    // NOT pin the runtime — the user contract is "first USER send
     // fixes it", and an autoTrigger firing at the wrong moment would
     // silently capture whatever global was active for the BACKGROUND
     // task, not the user's choice. Background turns still resolve via
@@ -202,7 +219,7 @@ export async function POST(request: NextRequest) {
         const { getMessages: getDbMessages, getSessionSummary: getDbSummary, updateSessionSummary: updateDbSummary } = await import('@/lib/db');
         // Note: addMessage is intentionally NOT imported here. Neither the
         // success path nor the no-op path persists slash-command feedback
-        // to DB �?both are UI artifacts that would otherwise land after
+        // to DB — both are UI artifacts that would otherwise land after
         // context_summary_boundary_rowid and leak into the model's
         // transcript on subsequent turns. Repeated /compact calls would
         // accumulate those rows and eventually get folded into the next
@@ -244,8 +261,8 @@ export async function POST(request: NextRequest) {
           // would fold them into the summary. SSE delivers the message
           // to the user on this turn; the DB transcript stays clean.
           const msg = existingSummaryData.summary
-            ? '上下文已经压缩过，新消息不多，暂不需要再次压缩�?
-            : '对话还很短，暂不需要压缩�?;
+            ? '上下文已经压缩过，新消息不多，暂不需要再次压缩。'
+            : '对话还很短，暂不需要压缩。';
           releaseSessionLock(session_id, lockId);
           setSessionRuntimeStatus(session_id, 'idle');
           const sseData = `data: ${JSON.stringify({ type: 'text', data: msg })}\n\ndata: ${JSON.stringify({ type: 'done' })}\n\n`;
@@ -263,24 +280,24 @@ export async function POST(request: NextRequest) {
 
         // Coverage boundary = rowid of the last message actually compressed
         // in THIS pass (the last of rowsToCompactCandidate). If the filter
-        // returned nothing (shouldn't happen �?short path above covers it)
+        // returned nothing (shouldn't happen — short path above covers it)
         // fall back to the existing boundary rather than resetting to 0.
         const compactBoundaryRowid =
           rowsToCompactCandidate[rowsToCompactCandidate.length - 1]._rowid
           ?? existingSummaryData.boundaryRowid
           ?? 0;
         // Do NOT persist the confirmation message to DB. It's a UI artifact
-        // �?the summary + SSE frame already convey the outcome. Persisting it
+        // — the summary + SSE frame already convey the outcome. Persisting it
         // as an assistant message would leak "上下文已压缩..." into the
         // transcript the model sees on subsequent turns (rowid > boundary
-        // �?kept by filter). Claude Code's own /compact handler behaves the
+        // → kept by filter). Claude Code's own /compact handler behaves the
         // same way: slash-command feedback stays out of the model's context.
         const msg = `上下文已压缩。压缩了 ${result.messagesCompressed} 条消息，预计节省 ~${Math.round(result.estimatedTokensSaved / 1000)}K tokens。`;
         updateDbSummary(session_id, result.summary, compactBoundaryRowid);
         // Invalidate the SDK session so the next user message does NOT resume
         // the old (pre-compaction) transcript. Without this, the Claude Code
         // SDK keeps using its own full history on resume and our fresh summary
-        // would never reach the model �?reactive compact would re-trigger on
+        // would never reach the model — reactive compact would re-trigger on
         // the very next turn. See feedback_db_migration_safety note: we only
         // clear the session-id link, never the underlying messages.
         updateSdkSessionId(session_id, '');
@@ -309,7 +326,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Telegram notification: session started (fire-and-forget)
-    // Skip for auto-trigger turns (onboarding/heartbeat) �?these are invisible system triggers
+    // Skip for auto-trigger turns (onboarding/heartbeat) — these are invisible system triggers
     const telegramNotifyOpts = {
       sessionId: session_id,
       // Same derivation as the fallback title below, so the Telegram
@@ -324,7 +341,7 @@ export async function POST(request: NextRequest) {
       notifySessionStart(telegramNotifyOpts).catch(() => {});
     }
 
-    // Save user message �?persist file metadata so attachments survive page reload
+    // Save user message — persist file metadata so attachments survive page reload
     // Skip saving for autoTrigger messages (invisible system triggers for assistant hooks)
     // Use displayOverride for DB storage if provided (e.g. /skillName instead of expanded prompt)
     let savedContent = displayOverride || content;
@@ -343,18 +360,18 @@ export async function POST(request: NextRequest) {
         fileMeta = await Promise.all(files.map(async (f) => {
           // Directory references travel through the same files[] pipeline
           // (so they render as chips in the message bubble), but they
-          // don't have file content �?skip the disk write and just
+          // don't have file content — skip the disk write and just
           // preserve the user-facing directory path verbatim. The chip
           // renderer keys off `type === 'inode/directory'` to switch to
           // the Folder icon and skip URL fetching.
           if (f.type === 'inode/directory') {
             return { id: f.id, name: f.name, type: f.type, size: 0, filePath: f.filePath || '' };
           }
-          // #628 �?@-mention of an in-tree project file: preserve the REAL path so
+          // #628 — @-mention of an in-tree project file: preserve the REAL path so
           // the AI's Read/Edit lands on the user's actual file, not a copy. Never
-          // trust the client path �?resolveInTreeAttachmentPath realpath-resolves
+          // trust the client path — resolveInTreeAttachmentPath realpath-resolves
           // it (rejecting symlinks that escape cwd, Codex P1) and requires
-          // containment; out-of-cwd / symlink / missing �?null �?fall through to
+          // containment; out-of-cwd / symlink / missing → null → fall through to
           // the copy below (non-destructive).
           const inTreeReal = await resolveInTreeAttachmentPath(f.originPath, workDir);
           if (inTreeReal) {
@@ -370,7 +387,7 @@ export async function POST(request: NextRequest) {
       }
       addMessage(session_id, 'user', savedContent);
 
-      // Fallback title �?derived from the first REAL user message, which is
+      // Fallback title — derived from the first REAL user message, which is
       // exactly the message we just persisted (autoTrigger turns never reach
       // here, so an invisible system trigger can't name the user's chat).
       //
@@ -382,8 +399,8 @@ export async function POST(request: NextRequest) {
       //
       // The CAS on 'placeholder' is what makes this safe to run on every
       // non-autoTrigger send instead of gating on `title === 'New Chat'`: a
-      // session that already has any real title �?manual, system, import, or
-      // an earlier fallback �?matches zero rows and is left alone.
+      // session that already has any real title — manual, system, import, or
+      // an earlier fallback — matches zero rows and is left alone.
       const fallbackTitle = deriveConversationTitle(displayOverride || content);
       if (fallbackTitle) {
         // The CAS return value doubles as the "this is the FIRST real turn"
@@ -401,7 +418,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine model: request override > session model. We deliberately
-    // do NOT fall through to `getSetting('default_model')` here �?Phase 2
+    // do NOT fall through to `getSetting('default_model')` here — Phase 2
     // Step 3 contract (drift point #5) is "session.model is the truth;
     // global settings only seed new chats, never silently affect old ones".
     // If both request body and session.model are empty (new chat first
@@ -412,10 +429,10 @@ export async function POST(request: NextRequest) {
 
     // When Claude Code is disabled, sessions with env-provider models
     // (sonnet/opus/haiku) can't use them anymore. The only "safe" silent
-    // move (clearing to undefined �?resolver picks next) is preserved
+    // move (clearing to undefined → resolver picks next) is preserved
     // here as a degenerate-state fallback. NOTE: this branch still
     // reads `default_model` from settings for the env-only escape-hatch
-    // case �?that's separate from the Step 3 contract about session.model
+    // case — that's separate from the Step 3 contract about session.model
     // being the source of truth (see the line above that drops the
     // legacy `|| default_model` tail). RED #5 closes because the
     // `session.model OR default_model` chain shape is no longer present;
@@ -431,7 +448,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Phase 2 Step 3 �?`resolved` was computed in the early gate above
+    // Phase 2 Step 3 — `resolved` was computed in the early gate above
     // (before any side effects, so an invalid session can fail closed
     // without leaving a half-written user turn in the DB). Reuse the
     // same value here for downstream lazy-seeding + persistence.
@@ -442,7 +459,7 @@ export async function POST(request: NextRequest) {
     // first message didn't carry either), persist whatever the resolver
     // picked so the next send no longer needs to re-resolve via the
     // global picker. This is the contract that lets the route stop
-    // reading `default_model` �?session.model + session.provider_id
+    // reading `default_model` — session.model + session.provider_id
     // are guaranteed non-empty after first send.
     if (!effectiveModel && resolved.model) {
       effectiveModel = resolved.model;
@@ -456,11 +473,11 @@ export async function POST(request: NextRequest) {
       updateSessionProvider(session_id, providerName);
     }
     // Persist provider_id: prefer request override, then existing session,
-    // then the resolver's pick (real DB providers only �?virtual
+    // then the resolver's pick (real DB providers only — virtual
     // 'env' / 'openai-oauth' don't have a row to point at). Without the
     // resolver fallback, a brand-new session whose request didn't carry
     // a provider_id would write '' here and the next send would re-resolve
-    // through the global fallback chain �?exactly the drift Step 3 closes.
+    // through the global fallback chain — exactly the drift Step 3 closes.
     const persistProviderId = provider_id
       || session.provider_id
       || resolved.provider?.id
@@ -472,10 +489,10 @@ export async function POST(request: NextRequest) {
     // Resolve permission mode from request body (sent by frontend on each message)
     // or fall back to session's persisted mode from DB.
     // Request body mode takes priority to avoid race condition: user switches mode
-    // then immediately sends �?the PATCH may not have landed in DB yet.
+    // then immediately sends — the PATCH may not have landed in DB yet.
     const effectiveMode = mode || session.mode || 'code';
 
-    // Profile �?SDK wire options. Plan mode takes precedence over every
+    // Profile → SDK wire options. Plan mode takes precedence over every
     // profile: if the user explicitly chose Plan, they expect no tool
     // execution regardless of permission profile. `auto_review` maps to the
     // SDK's own reviewer ('auto') and never sets the bypass flag; only
@@ -492,7 +509,7 @@ export async function POST(request: NextRequest) {
     const bypassPermissions = permissionWire.bypassPermissions;
 
     // The session persisted a profile this SDK build can't honour. Degrading
-    // is allowed (to MORE asking, never less) but going quiet is not �?the
+    // is allowed (to MORE asking, never less) but going quiet is not — the
     // user picked "review on my behalf" and is owed the news that nobody is
     // reviewing.
     if (permissionWire.degradedReason === 'auto_review_unsupported') {
@@ -502,7 +519,7 @@ export async function POST(request: NextRequest) {
       );
       // A console line is not an audit trail and is not a user-visible fact.
       // The canonical `unavailable` event is what records that this turn ran
-      // with nobody reviewing, and it is a DENYING state by contract �?the
+      // with nobody reviewing, and it is a DENYING state by contract — the
       // session says 替我审批 while the wire says "ask the user for
       // everything", and that gap has to be attributable after the fact.
       emitReviewEvent(buildReviewEvent({
@@ -535,7 +552,7 @@ export async function POST(request: NextRequest) {
             name: f.name,
             type: f.type,
             size: f.size,
-            data: meta?.filePath ? '' : f.data, // Clear base64 once written to disk �?claude-client reads from filePath on demand
+            data: meta?.filePath ? '' : f.data, // Clear base64 once written to disk — claude-client reads from filePath on demand
             filePath: meta?.filePath,
           };
         })
@@ -549,10 +566,10 @@ export async function POST(request: NextRequest) {
     // compact-boundary filter below).
     const sessionSummaryData = getSessionSummary(session_id);
 
-    // Exclude the user message we just saved (last in the list) �?it's already the prompt
+    // Exclude the user message we just saved (last in the list) — it's already the prompt
     const historyBeforeBoundary = recentMsgs.slice(0, -1);
     // Drop history at-or-before the coverage boundary
-    // (context_summary_boundary_rowid �?the rowid of the last message
+    // (context_summary_boundary_rowid — the rowid of the last message
     // actually covered by the summary). Rowid, not timestamp: disambiguates
     // same-second writes. See filterHistoryByCompactBoundary doc.
     const { filterHistoryByCompactBoundary } = await import('@/lib/context-compressor');
@@ -575,7 +592,7 @@ export async function POST(request: NextRequest) {
       _rowid: m._rowid,
     }));
 
-    // Unified context assembly �?extracts workspace, CLI tools, widget prompt
+    // Unified context assembly — extracts workspace, CLI tools, widget prompt
     const assembled = await assembleContext({
       session,
       entryPoint: 'desktop',
@@ -629,8 +646,8 @@ export async function POST(request: NextRequest) {
 
       const modelForWindow = resolved.upstreamModel || resolved.model || effectiveModel || 'sonnet';
       // Pass upstream explicitly so alias lookups (e.g. 'opus') resolve to
-      // the correct per-provider window �?first-party opus �?4.7 (1M) vs
-      // Bedrock/Vertex opus �?4.6 (200K).
+      // the correct per-provider window — first-party opus → 4.7 (1M) vs
+      // Bedrock/Vertex opus → 4.6 (200K).
       const contextWindow = getContextWindow(modelForWindow, {
         context1m: context_1m,
         upstream: resolved.upstreamModel,
@@ -660,7 +677,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (needsCompression(estimate.total, contextWindow, session_id)) {
-        console.log(`[chat API] Context at ${((estimate.total / contextWindow) * 100).toFixed(1)}% �?triggering compression`);
+        console.log(`[chat API] Context at ${((estimate.total / contextWindow) * 100).toFixed(1)}% — triggering compression`);
 
         // Slice keep/compress on the raw DB rows (with _rowid) FIRST, then
         // map to {role, content} when calling compressConversation. This
@@ -678,7 +695,7 @@ export async function POST(request: NextRequest) {
           keptTokens += msgTokens;
         }
         const rowsToCompress = historyAfterBoundary.slice(0, historyAfterBoundary.length - rowsToKeep.length);
-        // messagesToKeep must carry _rowid through �?if a reactive compact
+        // messagesToKeep must carry _rowid through — if a reactive compact
         // fires on this same turn (CONTEXT_TOO_LONG retry) it will see
         // these rows as conversationHistory and need the rowids to write a
         // correct boundary. messagesToCompress only feeds compressConversation
@@ -721,7 +738,7 @@ export async function POST(request: NextRequest) {
               tokensSaved: result.estimatedTokensSaved,
             };
 
-            // Force this turn AND all subsequent turns off SDK resume �?see
+            // Force this turn AND all subsequent turns off SDK resume — see
             // planStreamHandoffAfterCompaction for the rationale.
             updateSdkSessionId(session_id, '');
             const { planStreamHandoffAfterCompaction } = await import('@/lib/context-compressor');
@@ -748,7 +765,7 @@ export async function POST(request: NextRequest) {
     console.log('[chat API] streamClaude params:', {
       promptLength: content.length,
       promptFirst200: content.slice(0, 200),
-      // Log the handoff value, not the DB value �?after auto-compaction these
+      // Log the handoff value, not the DB value — after auto-compaction these
       // diverge and the handoff is what streamClaude actually receives.
       sdkSessionId: streamSdkSessionId || 'none',
       compressionOccurred,
@@ -774,14 +791,14 @@ export async function POST(request: NextRequest) {
       provider: resolvedProvider,
       // Use the lazy-seeded provider id so a brand-new chat (request
       // didn't carry a provider, session.provider_id was empty) actually
-      // sends to the resolver-picked provider on this turn �?not just
+      // sends to the resolver-picked provider on this turn — not just
       // on the next one after `persistProviderId` writes back. Same
       // priority chain as the persist branch above.
       providerId: persistProviderId || effectiveProviderId || undefined,
       sessionProviderId: session.provider_id || undefined,
       // Phase 2 Step 3: pass the session's runtime pin so streamClaude
       // honors per-session execution-engine commitment over the global
-      // `agent_runtime` setting. Empty pin �?streamClaude falls back to
+      // `agent_runtime` setting. Empty pin → streamClaude falls back to
       // global, preserving today's behavior for legacy / unpinned chats.
       sessionRuntimePin: session.runtime_pin || undefined,
       mcpServers,
@@ -819,10 +836,10 @@ export async function POST(request: NextRequest) {
     // Tee the stream: one for client, one for collecting the response
     const [streamForClient, streamForCollect] = stream.tee();
 
-    // Session lock renewal �?renewal interval + its autoTrigger cap
+    // Session lock renewal — renewal interval + its autoTrigger cap
     // counter are forward-declared here (assigned after settleLock below). The
     // interval callback now references settleLock (to force-settle at the cap),
-    // and settleLock's clearRenewal closure references lockRenewalInterval �?a
+    // and settleLock's clearRenewal closure references lockRenewalInterval — a
     // mutual reference. Declaring both as `let` before settleLock, then creating
     // the interval AFTER settleLock is defined, avoids a TDZ: settleLock is a
     // live const by the time the interval closes over it, and lockRenewalInterval
@@ -831,12 +848,12 @@ export async function POST(request: NextRequest) {
     // eslint-disable-next-line prefer-const -- intentional forward declaration for the mutual closures described above
     let lockRenewalInterval: ReturnType<typeof setInterval>;
 
-    // codex-stop-recovery Phase 3 �?Stop/abort watchdog resources. Declared
+    // codex-stop-recovery Phase 3 — Stop/abort watchdog resources. Declared
     // before the settler so its (one-shot) clearRenewal can also tear these
     // down: whichever settle path fires first must clear the pending
     // setTimeout AND detach the abort listener, or the timer keeps the event
     // loop alive for the full grace window after a turn already settled
-    // normally, and the listener lingers on abortController (audit �?.
+    // normally, and the listener lingers on abortController (audit ⑥).
     let watchdogTimer: ReturnType<typeof setTimeout> | undefined;
     let watchdogAbortListener: (() => void) | undefined;
     const clearWatchdog = () => {
@@ -850,12 +867,12 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    // codex-stop-recovery Phase 3 �?one settler shared by the normal completion
+    // codex-stop-recovery Phase 3 — one settler shared by the normal completion
     // path and the Stop/abort watchdog below. Idempotent; only writes status
     // when releaseSessionLock confirms we still own the lock (lockId-scoped
-    // release vs session-scoped status �?see session-lock-settle.ts).
+    // release vs session-scoped status — see session-lock-settle.ts).
     const settleLock = createSessionLockSettler({
-      // Runs exactly once (settler is one-shot) �?tear down both the renewal
+      // Runs exactly once (settler is one-shot) — tear down both the renewal
       // interval and the watchdog timer/listener at the first settle.
       clearRenewal: () => { clearInterval(lockRenewalInterval); clearWatchdog(); },
       releaseLock: () => releaseSessionLock(session_id, lockId),
@@ -865,7 +882,7 @@ export async function POST(request: NextRequest) {
     // Periodically renew the session lock so long-running tasks don't expire.
     // Session lock renewal bounds two runaway modes via the pure
     // evaluateRenewal decision (session-lock-renewal.ts):
-    //  - DP3 (both turn types): renewSessionLock returned false �?this lockId no
+    //  - DP3 (both turn types): renewSessionLock returned false → this lockId no
     //    longer owns the row (taken over / already released). Stop renewing; the
     //    interval is spinning on a lock we don't hold.
     //  - I3 (autoTrigger only): a stuck background/heartbeat turn would renew
@@ -877,7 +894,7 @@ export async function POST(request: NextRequest) {
       try {
         renewed = renewSessionLock(session_id, lockId, 600);
       } catch {
-        // Transient DB error �?best effort. Keep the interval alive (do NOT
+        // Transient DB error — best effort. Keep the interval alive (do NOT
         // conflate a throw with a definitive renew-false) and retry next tick.
         return;
       }
@@ -891,16 +908,16 @@ export async function POST(request: NextRequest) {
         max: AUTO_TRIGGER_MAX_RENEWALS,
       });
       if (decision === 'stop-renew-false') {
-        console.warn(`[chat/route] lockId 已不 own（被接管/已释放），停止续�?session ${session_id}`);
+        console.warn(`[chat/route] lockId 已不 own（被接管/已释放），停止续租 session ${session_id}`);
         clearInterval(lockRenewalInterval);
         return;
       }
       if (decision === 'settle-cap') {
-        console.warn(`[chat/route] autoTrigger 续租达上�?${AUTO_TRIGGER_MAX_RENEWALS}，settle interrupted session ${session_id}`);
+        console.warn(`[chat/route] autoTrigger 续租达上限 ${AUTO_TRIGGER_MAX_RENEWALS}，settle interrupted session ${session_id}`);
         settleLock('interrupted');
         return;
       }
-      // 'continue' �?still own the lock and under any cap; wait for next tick.
+      // 'continue' — still own the lock and under any cap; wait for next tick.
     }, 60_000);
 
     // Save assistant message in background, with cleanup callback to release lock
@@ -910,7 +927,7 @@ export async function POST(request: NextRequest) {
       suppressNotifications: !!autoTrigger,
       // Phase 2 semantic title. Non-null only on the first real user turn.
       // The provider/runtime handed over here are THIS session's resolved
-      // values �?the same ones that answered the message �?so generation can
+      // values — the same ones that answered the message — so generation can
       // never reach a provider the user didn't pick for this chat.
       titleGeneration: titleGenerationInput
         ? {
@@ -922,10 +939,10 @@ export async function POST(request: NextRequest) {
         : undefined,
     });
 
-    // codex-stop-recovery Phase 3 �?Stop/abort watchdog. The normal path settles
+    // codex-stop-recovery Phase 3 — Stop/abort watchdog. The normal path settles
     // when the runtime stream closes on a terminal event. But a turn that's
     // explicitly interrupted yet never emits a terminal event (a Codex stuck turn) would
-    // leave collect reading forever and the lock renewing forever �?the next
+    // leave collect reading forever and the lock renewing forever → the next
     // same-session send is blocked by SESSION_BUSY indefinitely. When the Runtime
     // aborts (only through the explicit Stop path) we give the natural
     // interrupt→terminal→collect path a grace window, then force the lock to

@@ -255,7 +255,7 @@ describe('CodePilot Design Method', () => {
       );
       const unrelated = projectCanonicalRepository({
         repository: repo,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         userPrompt: 'Summarize this log.',
       });
       assert.deepEqual(unrelated.diagnostics.selectedMethodIds, []);
@@ -266,7 +266,7 @@ describe('CodePilot Design Method', () => {
 
       const relevant = projectCanonicalRepository({
         repository: repo,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         userPrompt: 'Create a landing page for this product.',
       });
       assert.deepEqual(relevant.diagnostics.selectedMethodIds, ['web.hierarchy']);
@@ -297,7 +297,7 @@ describe('CodePilot Design Method', () => {
       });
       const projection = projectCanonicalRepository({
         repository: repo,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         userPrompt: 'Create a landing page.',
       });
       assert.deepEqual(projection.diagnostics.selectedMethodIds, []);
@@ -508,7 +508,7 @@ describe('evidence-backed Taste Memory', () => {
 
       const projection = projectCanonicalRepository({
         repository: repo,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
       });
       assert.deepEqual(
         projection.diagnostics.invalidTasteMemoryIds,
@@ -534,7 +534,7 @@ describe('creative project continuity', () => {
         scope: { kind: 'project', projectId: '/workspace/launch' },
         methodRef: 'web.hierarchy',
         methodVersion: '0.1.0',
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         providerId: 'provider-a',
         modelId: 'model-a',
         createdAt: '2026-07-30T12:00:00.000Z',
@@ -588,7 +588,7 @@ describe('creative project continuity', () => {
       assert.equal(reloaded.directions.length, 2);
       assert.deepEqual(
         reloaded.executionHistory.map((entry) => entry.runtimeId),
-        ['bbagent', 'codex_runtime'],
+        ['codepilot_runtime', 'codex_runtime'],
       );
       assert.deepEqual(reloaded.assets[0]?.parentAssetIds, [
         'asset-direction-board',

@@ -2,21 +2,21 @@ import { test, expect } from '@playwright/test';
 import { goToChat } from '../helpers';
 
 /**
- * First-message composer clear â€?the lingering-text bug (behavioral lock).
+ * First-message composer clear â€” the lingering-text bug (behavioral lock).
  *
  * The /chat new-chat composer is a single stable-keyed MessageInput that no
  * longer remounts at the isStreaming flip (#615), and `sendFirstMessage` does
  * not resolve until the whole stream ends. So MessageInput clears the composer
- * OPTIMISTICALLY at submit (before `await onSend`), not after delivery â€?without
+ * OPTIMISTICALLY at submit (before `await onSend`), not after delivery â€” without
  * that, the just-sent text sat in the box for the entire turn.
  *
  * Why a dedicated e2e: the "new-chat submit" test in
- * context-chips-send-clear.spec.ts deliberately can NOT assert this â€?it lets
+ * context-chips-send-clear.spec.ts deliberately can NOT assert this â€” it lets
  * /api/chat finish, which redirects to a fresh ChatView that masks whether the
  * original composer cleared (Codex flagged that trap). Here we HOLD the
  * /api/chat response open so the page stays on /chat (no redirect) and assert
  * the SAME composer empties right after submit. A regression to "clear after
- * await onSend" leaves the text in the box â†?this goes red.
+ * await onSend" leaves the text in the box â†’ this goes red.
  *
  * Pairs with unit/composer-first-message-clear.test.ts (source-pin).
  */
@@ -73,7 +73,8 @@ test.describe('First-message composer clears optimistically @smoke', () => {
     await expect(input).toHaveValue('hello first message');
     await input.press('Enter');
 
-    // Skip (don't false-fail) if the new-chat send can't fire in this env â€?    // e.g. no provider/model is sendable under the active runtime. The send
+    // Skip (don't false-fail) if the new-chat send can't fire in this env â€”
+    // e.g. no provider/model is sendable under the active runtime. The send
     // reaching /api/chat is the precondition for a meaningful clear assertion.
     let sent = false;
     try {

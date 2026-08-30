@@ -1,24 +1,24 @@
 /**
- * provider-endpoint-sanitize.ts ‚Ä?masking helper for provider base_url
+ * provider-endpoint-sanitize.ts ‚Äî masking helper for provider base_url
  * display.
  *
  * Some user records (especially from imported configs or paste-into-
  * wrong-field accidents) end up with API keys / tokens stored in the
  * `base_url` column. The Provider Card was rendering those values as
- * "Êé•ÂÖ•Âú∞ÂùÄ sk-or-v1-‚Ä? ‚Ä?leaking secrets in screenshots, screen
+ * "Êé•ÂÖ•Âú∞ÂùÄ sk-or-v1-‚Ä¶" ‚Äî leaking secrets in screenshots, screen
  * recordings, and logs.
  *
  * This helper is the single source of truth for "is this string safe to
- * surface as an endpoint?" ‚Ä?used by the Provider Card today, and any
+ * surface as an endpoint?" ‚Äî used by the Provider Card today, and any
  * future surface that wants to render `base_url` should route through
  * here too. Pure function (no React / DOM deps) so it's unit-testable.
  *
  * Returns:
  *   - { display, suspicious: false }
- *       Normal HTTP(S) endpoint ‚Ä?`display` is `host[:port]/path` (the
+ *       Normal HTTP(S) endpoint ‚Äî `display` is `host[:port]/path` (the
  *       protocol prefix is stripped, matching the historic UI).
  *   - { display, suspicious: true, tooltip }
- *       Looks like a secret ‚Ä?`display` is the i18n-rendered "Suspicious
+ *       Looks like a secret ‚Äî `display` is the i18n-rendered "Suspicious
  *       endpoint (‚Ä¶last4)" copy, with the last 4 chars exposed so users
  *       can identify which row needs fixing without seeing the secret.
  *       Caller MUST also drop any title/aria-label that would echo the
@@ -32,7 +32,7 @@ export interface SanitizedEndpoint {
 }
 
 /**
- * Translation callback shape ‚Ä?kept minimal so the helper stays
+ * Translation callback shape ‚Äî kept minimal so the helper stays
  * decoupled from `useTranslation` and the test can pass a stub.
  */
 export type SanitizeTranslator = (
@@ -56,7 +56,7 @@ export function sanitizeEndpointForDisplay(
   t: SanitizeTranslator,
 ): SanitizedEndpoint {
   const trimmed = rawUrl.trim();
-  // Empty input ‚Ä?caller already guards against this, but mirror the
+  // Empty input ‚Äî caller already guards against this, but mirror the
   // contract for defensive callers / tests.
   if (!trimmed) {
     return { display: '', suspicious: false };
@@ -65,7 +65,7 @@ export function sanitizeEndpointForDisplay(
   const looksLikeSecret = SECRET_PREFIX.test(trimmed);
 
   // Try URL parsing as the next gate. Anything that isn't HTTP(S) shouldn't
-  // sit in `base_url` either ‚Ä?Bedrock/Vertex live in env_overrides, not
+  // sit in `base_url` either ‚Äî Bedrock/Vertex live in env_overrides, not
   // base_url, so a non-http(s) value here is wrong shape regardless of
   // whether it's a secret.
   let parsed: URL | null = null;
@@ -85,9 +85,9 @@ export function sanitizeEndpointForDisplay(
     };
   }
 
-  // Normal endpoint ‚Ä?drop the protocol prefix (matches previous UI).
+  // Normal endpoint ‚Äî drop the protocol prefix (matches previous UI).
   // `host` includes a non-default port; `pathname` + `search` keep custom
-  // routes (e.g. `‚Ä?anthropic`, `‚Ä?api/coding`). Trim trailing slashes so
+  // routes (e.g. `‚Ä¶/anthropic`, `‚Ä¶/api/coding`). Trim trailing slashes so
   // `https://api.example.com/` and `https://api.example.com` render
   // identically.
   const hostPath = `${parsed.host}${parsed.pathname}${parsed.search}`.replace(/\/+$/, '');

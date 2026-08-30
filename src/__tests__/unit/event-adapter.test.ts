@@ -1,16 +1,16 @@
 /**
- * Phase 0.5 Slice E â€?Event adapter translators.
+ * Phase 0.5 Slice E â€” Event adapter translators.
  *
  * Pins:
  *   1. Constructor helpers produce the canonical RuntimeRunEvent
  *      shapes correctly (each of the 9 event types).
- *   2. SDK SSEEventType â†?canonical mapping table is exhaustive
+ *   2. SDK SSEEventType â†’ canonical mapping table is exhaustive
  *      over the SDK's 17 event types. Each maps to one of the 8
  *      canonical types, `unknown_item`, or null (transport-only).
  *   3. `permission_request` SSE event is NOT in the canonical
- *      RuntimeRunEvent mapping â€?it flows through RuntimePermissionEvent
+ *      RuntimeRunEvent mapping â€” it flows through RuntimePermissionEvent
  *      (separate union, see permission-adapter.ts).
- *   4. `unknown_item` is the only fallback channel â€?never silently
+ *   4. `unknown_item` is the only fallback channel â€” never silently
  *      dropped at the adapter layer.
  */
 
@@ -100,7 +100,7 @@ describe('RuntimeRunEvent constructor helpers', () => {
   });
 });
 
-describe('mapSdkSseToCanonicalType â€?SDK SSE â†?canonical mapping', () => {
+describe('mapSdkSseToCanonicalType â€” SDK SSE â†’ canonical mapping', () => {
   // The 17 SSE types known to the adapter. Three return categories:
   // canonical type | null (known transport-only) | 'unknown_item' (drift fallback).
   const cases: Array<[string, string | null]> = [
@@ -124,14 +124,14 @@ describe('mapSdkSseToCanonicalType â€?SDK SSE â†?canonical mapping', () => {
   ];
 
   for (const [sdkType, expected] of cases) {
-    it(`maps SDK '${sdkType}' â†?${expected ?? 'null (transport-only)'}`, () => {
+    it(`maps SDK '${sdkType}' â†’ ${expected ?? 'null (transport-only)'}`, () => {
       assert.equal(mapSdkSseToCanonicalType(sdkType), expected);
     });
   }
 
   it('unknown SDK type falls into unknown_item fallback (P2 fix)', () => {
     // Earlier revision returned null for both transport-only and
-    // unknown â€?that conflation lost new SDK / Codex items silently.
+    // unknown â€” that conflation lost new SDK / Codex items silently.
     // Now unknown types route to unknown_item so the adapter MUST
     // surface them via makeUnknownItem / translateUnknownSdkEvent.
     assert.equal(mapSdkSseToCanonicalType('completely_unknown_sdk_event'), 'unknown_item');
@@ -140,7 +140,7 @@ describe('mapSdkSseToCanonicalType â€?SDK SSE â†?canonical mapping', () => {
 
   it('null is reserved for known transport-only types only', () => {
     // After P2 fix, the only null returns are explicit entries in
-    // the mapping table â€?keep_alive (heartbeat) and permission_request
+    // the mapping table â€” keep_alive (heartbeat) and permission_request
     // (routed elsewhere). Adapters can confidently ignore null
     // because nothing has been dropped silently.
     assert.equal(mapSdkSseToCanonicalType('keep_alive'), null);
@@ -148,7 +148,7 @@ describe('mapSdkSseToCanonicalType â€?SDK SSE â†?canonical mapping', () => {
   });
 });
 
-describe('translateUnknownSdkEvent â€?drift fallback helper', () => {
+describe('translateUnknownSdkEvent â€” drift fallback helper', () => {
   it('wraps an unknown SDK event as canonical unknown_item with sdk.<type> sourceType', () => {
     const event = translateUnknownSdkEvent(
       { runtimeId: 'claude_code', sessionId: 's' },
@@ -159,9 +159,9 @@ describe('translateUnknownSdkEvent â€?drift fallback helper', () => {
     assert.deepEqual(event.payload, { foo: 1 });
   });
 
-  it('preserves opaque payload â€?UI renders generically', () => {
+  it('preserves opaque payload â€” UI renders generically', () => {
     const event = translateUnknownSdkEvent(
-      { runtimeId: 'bbagent', sessionId: 's' },
+      { runtimeId: 'codepilot_runtime', sessionId: 's' },
       { sdkType: 'mystery' },
     );
     assert.equal(event.sourceType, 'sdk.mystery');

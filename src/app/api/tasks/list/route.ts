@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET(request: NextRequest) {
   try {
     const status = request.nextUrl.searchParams.get('status') || undefined;
-    // Phase 3 Step 4 â€?`source` query param controls heartbeat
+    // Phase 3 Step 4 â€” `source` query param controls heartbeat
     // visibility. Default: hide the system-injected
     // `assistant_heartbeat` task so the user-facing Tasks list isn't
     // polluted with rows they didn't create.
     // `?source=assistant_heartbeat` returns only heartbeat history
-    // (used by the Settings â†?Assistant "view heartbeat history" link).
+    // (used by the Settings â†’ Assistant "view heartbeat history" link).
     // `?source=all` shows everything (debugging).
     const sourceParam = request.nextUrl.searchParams.get('source');
     const { listScheduledTasks } = await import('@/lib/db');

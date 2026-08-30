@@ -1,5 +1,5 @@
 /**
- * Phase 0.5 Slice B â?`getModelCompat` populates `supportedRuntimes`
+ * Phase 0.5 Slice B — `getModelCompat` populates `supportedRuntimes`
  * for every provider compat tier.
  *
  * Pins the migration from the two legacy `*_compatible` booleans to
@@ -20,9 +20,9 @@ function compatFor(tier: ProviderRuntimeCompat) {
   });
 }
 
-describe('getModelCompat â?supportedRuntimes', () => {
+describe('getModelCompat → supportedRuntimes', () => {
   it('claude_code_ready exposes all three runtimes (Phase 5b proxy adapter ready)', () => {
-    // Phase 5b (2026-05-15) â?Codex Runtime reach lit up after the
+    // Phase 5b (2026-05-15) — Codex Runtime reach lit up after the
     // unified provider-proxy translator landed. claude_code_ready
     // (Anthropic-shape wire) routes through the proxy's Anthropic-
     // compat path, so codex_runtime joins the supported set and the
@@ -30,7 +30,7 @@ describe('getModelCompat â?supportedRuntimes', () => {
     const cap = compatFor('claude_code_ready');
     assert.deepEqual([...(cap.supportedRuntimes ?? [])].sort(), [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ]);
     assert.equal(cap.unsupportedReasonByRuntime?.codex_runtime, undefined);
@@ -40,7 +40,7 @@ describe('getModelCompat â?supportedRuntimes', () => {
     const cap = compatFor('claude_code_verified');
     assert.deepEqual([...(cap.supportedRuntimes ?? [])].sort(), [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ]);
   });
@@ -49,7 +49,7 @@ describe('getModelCompat â?supportedRuntimes', () => {
     const cap = compatFor('claude_code_experimental');
     assert.deepEqual([...(cap.supportedRuntimes ?? [])].sort(), [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ]);
   });
@@ -60,17 +60,17 @@ describe('getModelCompat â?supportedRuntimes', () => {
       'claude_code',
       'codex_runtime',
     ]);
-    assert.ok(cap.unsupportedReasonByRuntime?.bbagent);
+    assert.ok(cap.unsupportedReasonByRuntime?.codepilot_runtime);
     assert.match(
-      cap.unsupportedReasonByRuntime!.bbagent!,
+      cap.unsupportedReasonByRuntime!.codepilot_runtime!,
       /OpenRouter|skin|\/v1/,
     );
   });
 
-  it('bbagent_only reaches CodePilot Runtime + Codex Runtime; Claude Code stays gated on Anthropic wire', () => {
-    const cap = compatFor('bbagent_only');
+  it('codepilot_only reaches CodePilot Runtime + Codex Runtime; Claude Code stays gated on Anthropic wire', () => {
+    const cap = compatFor('codepilot_only');
     assert.deepEqual([...(cap.supportedRuntimes ?? [])].sort(), [
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ]);
     assert.ok(cap.unsupportedReasonByRuntime?.claude_code);
@@ -84,7 +84,7 @@ describe('getModelCompat â?supportedRuntimes', () => {
     const cap = compatFor('unknown');
     assert.deepEqual([...(cap.supportedRuntimes ?? [])].sort(), [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
     ]);
     assert.match(
       cap.unsupportedReasonByRuntime?.codex_runtime ?? '',
@@ -92,27 +92,27 @@ describe('getModelCompat â?supportedRuntimes', () => {
     );
   });
 
-  it('media_only short-circuits â?no supportedRuntimes set', () => {
+  it('media_only short-circuits — no supportedRuntimes set', () => {
     const cap = compatFor('media_only');
     assert.equal(cap.media, true);
     assert.equal(cap.supportedRuntimes, undefined);
   });
 
   it('codex_account exposes ONLY codex_runtime + carries reasons for the others', () => {
-    // Phase 5 Phase 2 (2026-05-13) â?Codex account models flow only
+    // Phase 5 Phase 2 (2026-05-13) — Codex account models flow only
     // through Codex Runtime; legacy compat booleans stay unset.
     const cap = compatFor('codex_account');
     assert.deepEqual(cap.supportedRuntimes, ['codex_runtime']);
     assert.equal(cap.claude_code_compatible, undefined);
-    assert.equal(cap.bbagent_compatible, undefined);
+    assert.equal(cap.codepilot_runtime_compatible, undefined);
     assert.ok(cap.unsupportedReasonByRuntime?.claude_code);
-    assert.ok(cap.unsupportedReasonByRuntime?.bbagent);
+    assert.ok(cap.unsupportedReasonByRuntime?.codepilot_runtime);
     assert.match(cap.unsupportedReasonByRuntime!.claude_code!, /Codex/);
   });
 
   it('legacy booleans still mirror supportedRuntimes (back-compat input)', () => {
     const cap = compatFor('claude_code_verified');
     assert.equal(cap.claude_code_compatible, true);
-    assert.equal(cap.bbagent_compatible, true);
+    assert.equal(cap.codepilot_runtime_compatible, true);
   });
 });

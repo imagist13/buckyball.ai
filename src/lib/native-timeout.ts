@@ -1,22 +1,23 @@
 /**
- * native-timeout â€?Native Runtime timeout reason codes (AI SDK 7 exec plan
- * Phase 4 â‘?.
+ * native-timeout â€” Native Runtime timeout reason codes (AI SDK 7 exec plan
+ * Phase 4 â‘ ).
  *
  * ## Semantic contract (per user-visible reason code)
  *
  * Every fired timeout carries `{ reason, budgetMs, source }` where `source`
- * is the breadcrumb naming the exact signal the measurement is anchored to â€? * no code is ever inferred from an error-message regex.
+ * is the breadcrumb naming the exact signal the measurement is anchored to â€”
+ * no code is ever inferred from an error-message regex.
  *
- * - `connect` â€?the provider did not RESPOND (HTTP response headers) within
+ * - `connect` â€” the provider did not RESPOND (HTTP response headers) within
  *   `connectMs` of `streamText()` being invoked for a step. Anchor: the
- *   step's first `start-step` fullStream part â€?ai@7 emits it only after
+ *   step's first `start-step` fullStream part â€” ai@7 emits it only after
  *   `doStream()` resolves, i.e. after response headers arrived (it carries
  *   the request metadata + provider warnings). Covers DNS/TCP/TLS/queueing.
  *   Source breadcrumb: `agent-loop.fullStream[start-step]`.
- * - `first-token` â€?the provider RESPONDED but produced no MODEL OUTPUT
+ * - `first-token` â€” the provider RESPONDED but produced no MODEL OUTPUT
  *   (text/reasoning/tool-call) within `firstTokenMs` of the response
  *   arriving. The timer is armed ONLY by the step's `start-step` part (the
- *   response-arrived signal) â€?never at request time â€?so an unresponsive
+ *   response-arrived signal) â€” never at request time â€” so an unresponsive
  *   connection can never be misclassified as first-token: a black hole with
  *   only `firstTokenMs` configured fires nothing (that window is `connect`'s
  *   to cover), and with both configured only `connect` can fire before the
@@ -25,26 +26,28 @@
  *   tool-input-delta, tool-call}. Measured per step (each step is one
  *   provider request). Source breadcrumb:
  *   `agent-loop.fullStream[first-output-part]`.
- * - `tool-execution` â€?one tool call's execution did not finish within
- *   `toolExecutionMs`. Anchor: `tool-call` part (execution starts) â†? *   matching `tool-result` / `tool-error` part (by toolCallId). NOTE: for
+ * - `tool-execution` â€” one tool call's execution did not finish within
+ *   `toolExecutionMs`. Anchor: `tool-call` part (execution starts) â†’
+ *   matching `tool-result` / `tool-error` part (by toolCallId). NOTE: for
  *   permission-gated tools the in-execute approval wait counts toward this
- *   budget (approval blocks inside `execute()` for up to 5 minutes â€? *   permission-registry TIMEOUT_MS); budgets at or below the approval
+ *   budget (approval blocks inside `execute()` for up to 5 minutes â€”
+ *   permission-registry TIMEOUT_MS); budgets at or below the approval
  *   window will cut approval waits short. Source breadcrumb:
  *   `agent-loop.fullStream[tool-callâ†’tool-result]`. Because ai@7 merely
  *   passes the abort signal INTO `execute()` and still awaits its promise,
- *   firing this budget must not rely on the SDK ending the stream â€?the
+ *   firing this budget must not rely on the SDK ending the stream â€” the
  *   consumer loop must iterate via `guardStream` (below) to escape a tool
  *   that ignores the signal.
- * - `total-run` â€?the whole run (all steps + tool executions) exceeded
- *   `totalRunMs`. Anchor: `runAgentLoop` start â†?run teardown. Source
+ * - `total-run` â€” the whole run (all steps + tool executions) exceeded
+ *   `totalRunMs`. Anchor: `runAgentLoop` start â†’ run teardown. Source
  *   breadcrumb: `agent-loop.run`.
  *
  * ## Persistence / display path (source breadcrumb for the stored value)
  *
- * fired reason â†?agent-loop catch â†?`buildNativeErrorEventData` (category
- * `TIMEOUT_*` + `timeout` payload) â†?SSE `error` event â†?chat route
+ * fired reason â†’ agent-loop catch â†’ `buildNativeErrorEventData` (category
+ * `TIMEOUT_*` + `timeout` payload) â†’ SSE `error` event â†’ chat route
  * persists `**Error:** <event.data JSON>` into `messages.content` when the
- * turn produced no other content (route.ts error fallback) â†?chat page
+ * turn produced no other content (route.ts error fallback) â†’ chat page
  * renders `parsed.userMessage` from the same JSON. So DB, SSE, and UI all
  * read the one JSON payload; there is no second derivation.
  *
@@ -53,7 +56,8 @@
  * Every budget is opt-in (`AgentLoopOptions.timeouts` or the
  * `CODEPILOT_NATIVE_TIMEOUTS` env JSON, e.g.
  * `{"connectMs":30000,"totalRunMs":600000}`). With no config the controller
- * arms no timers and `signal` degrades to the caller's own abort signal â€? * zero behavior change. Turning any budget ON aborts runs that previously
+ * arms no timers and `signal` degrades to the caller's own abort signal â€”
+ * zero behavior change. Turning any budget ON aborts runs that previously
  * hung forever, which is a user-visible behavior change reserved for a
  * product decision (Phase 4 ships the accurate plumbing, not new defaults).
  */
@@ -102,7 +106,7 @@ const OUTPUT_PART_TYPES = new Set([
 /**
  * Resolve the effective config: explicit options win; otherwise the
  * `CODEPILOT_NATIVE_TIMEOUTS` env JSON; otherwise disabled. Malformed env
- * values are ignored (warn once) â€?a bad env var must never break chat.
+ * values are ignored (warn once) â€” a bad env var must never break chat.
  */
 export function resolveNativeTimeoutConfig(
   explicit?: NativeTimeoutConfig,
@@ -152,12 +156,13 @@ export interface NativeTimeoutController {
   onStreamPart(part: { type: string; toolCallId?: string }): void;
   /**
    * Race the stream's iteration against a fired budget. Needed because
-   * ai@7 only PASSES the abort signal to a tool's `execute()` â€?it still
+   * ai@7 only PASSES the abort signal to a tool's `execute()` â€” it still
    * awaits the execute promise, so a tool that ignores the signal (hung
    * network call, wedged MCP server) keeps `fullStream` open forever and
    * aborting alone never unblocks the consumer loop. With no budget
    * configured this returns the iterable unchanged (zero overhead /
-   * zero behavior change); user aborts are NOT short-circuited here â€?   * they keep the SDK's own abort semantics.
+   * zero behavior change); user aborts are NOT short-circuited here â€”
+   * they keep the SDK's own abort semantics.
    */
   guardStream<T>(iterable: AsyncIterable<T>): AsyncIterable<T>;
   /** Clear step-scoped timers at the end of a step's stream consumption. */
@@ -174,7 +179,7 @@ export function createNativeTimeoutController(
   let fired: NativeTimeoutFired | null = null;
   const anyBudget = Object.values(config).some((v) => typeof v === 'number' && v > 0);
 
-  // Rejects when a budget fires â€?raced against stream reads by guardStream
+  // Rejects when a budget fires â€” raced against stream reads by guardStream
   // so a hung tool execute cannot wedge the run. Pre-attach a no-op handler:
   // a fire while nothing is racing must not raise an unhandled rejection.
   let rejectOnFire: ((err: Error) => void) | undefined;
@@ -287,7 +292,7 @@ export function createNativeTimeoutController(
         }
       } finally {
         // On a fired budget the underlying next() is still pending (hung
-        // tool) â€?cancel the stream fire-and-forget; never await it.
+        // tool) â€” cancel the stream fire-and-forget; never await it.
         try { void it.return?.()?.catch(() => {}); } catch { /* ignore */ }
       }
     },

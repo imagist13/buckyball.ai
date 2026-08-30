@@ -5,9 +5,9 @@ import type { MentionRef } from '@/types';
 
 /**
  * Estimate the token cost of pending @ mention chips so the user can
- * tell â€?before sending â€?roughly how much context they're about to
+ * tell â€” before sending â€” roughly how much context they're about to
  * spend. Estimation is intentionally cheap and approximate
- * (`bytes/4 â‰?tokens`); the goal is a rough order-of-magnitude
+ * (`bytes/4 â‰ˆ tokens`); the goal is a rough order-of-magnitude
  * indicator on the chip ("~3.2K"), not precise accounting. A real
  * tokenizer pass would only matter once we surface a specific
  * "compress / replace" workflow, which is not in Phase 1.
@@ -17,7 +17,7 @@ import type { MentionRef } from '@/types';
  */
 
 interface Options {
-  /** Workspace root â€?required to resolve absolute paths for mentions
+  /** Workspace root â€” required to resolve absolute paths for mentions
    *  inserted before a session has been created (chat/page.tsx). When
    *  omitted, the hook uses `/api/files/serve?sessionId=...&path=...`. */
   workingDirectory?: string;
@@ -33,7 +33,7 @@ const inflight = new Map<string, Promise<number | null>>();
 
 function pruneCache() {
   if (tokenCache.size <= MAX_CACHE_SIZE) return;
-  // Drop the oldest ~25% in insertion order â€?Map iteration order is
+  // Drop the oldest ~25% in insertion order â€” Map iteration order is
   // insertion order so the first keys are the oldest.
   const drop = Math.ceil(MAX_CACHE_SIZE / 4);
   let i = 0;

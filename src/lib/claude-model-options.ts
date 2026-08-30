@@ -1,5 +1,5 @@
 /**
- * claude-model-options.ts â?shared model-option sanitizer for Claude models.
+ * claude-model-options.ts — shared model-option sanitizer for Claude models.
  *
  * The Claude Agent SDK path (claude-client.ts) and the native/AI-SDK path
  * (agent-loop.ts) both assemble thinking / effort / context1m options for
@@ -8,19 +8,19 @@
  * flagged in the Opus 4.7 review).
  *
  * Scope for the adaptive-thinking family (Opus 4.7, 4.8, and 5; Fable 5; and
- * Sonnet 5, per the official migration guides â?they share the same request
- * contract; Fable 5 additionally cannot turn thinking off AT ALL â?adaptive
+ * Sonnet 5, per the official migration guides — they share the same request
+ * contract; Fable 5 additionally cannot turn thinking off AT ALL — adaptive
  * thinking runs even when the param is omitted; see FABLE_PATTERN note below.
- * Sonnet 5 is the opposite on that one axis â?thinking CAN be turned off, see
+ * Sonnet 5 is the opposite on that one axis — thinking CAN be turned off, see
  * SONNET_5_PATTERN note):
  *   - These models do NOT accept manual extended thinking
- *     ({ type: 'enabled', budgetTokens }) â?returns 400. Convert to adaptive.
+ *     ({ type: 'enabled', budgetTokens }) — returns 400. Convert to adaptive.
  *   - They support adaptive thinking + effort-based reasoning budget.
  *     (Display=summarized can be added by callers separately.)
- *   - 1M context is the default â?context-1m-2025-08-07 beta header is
+ *   - 1M context is the default — context-1m-2025-08-07 beta header is
  *     unnecessary and gets skipped.
  *   - Non-default sampling params (temperature / top_p / top_k) 400 on the
- *     adaptive family (official Sonnet 5 / Fable 5 docs). buckyball.ai's current
+ *     adaptive family (official Sonnet 5 / Fable 5 docs). CodePilot's current
  *     callers don't assemble sampling params for Anthropic requests (grep:
  *     agent-loop.ts / claude-client.ts carry no temperature / topP / topK), but
  *     "safe by construction" is one refactor away from a silent 400. So this
@@ -29,20 +29,23 @@
  *     values are stripped from `sampling` and their names reported in
  *     `strippedSamplingParams` so the caller can tell the user (same
  *     surface-don't-swallow rule as `thinkingForcedOn`). Non-adaptive models
- *     (e.g. Sonnet 4.6) pass sampling through untouched â?the guard must not
+ *     (e.g. Sonnet 4.6) pass sampling through untouched — the guard must not
  *     misfire on them. "Default" = temperature omitted or exactly 1 (Anthropic's
  *     default); topP / topK have no default, so ANY explicit value is
  *     non-default and stripped for the adaptive family.
- *   - Sonnet 5 ships a new tokenizer: the same text counts â?+30% tokens vs
+ *   - Sonnet 5 ships a new tokenizer: the same text counts ≈ +30% tokens vs
  *     Sonnet 4.6. This does NOT change request shape, but char-based token
- *     budget estimates (model-context.ts fallback window) under-count on it â? *     prefer SDK / upstream-reported usage. (Note carried in model-context.ts.)
+ *     budget estimates (model-context.ts fallback window) under-count on it —
+ *     prefer SDK / upstream-reported usage. (Note carried in model-context.ts.)
  *
- * NOTE on effort DEFAULT (4.7 â?xhigh, 4.8 â?high): per-model defaults remain
+ * NOTE on effort DEFAULT (4.7 → xhigh, 4.8 → high): per-model defaults remain
  * owned by the Claude Code CLI / SDK when `effort` is left unset. The sole
  * exception is Opus 5 + explicit thinking off: Auto is pinned to the documented
  * compatible High tier so a mutable Runtime default cannot create a 400. That
  * synthesized value carries `effortProvenance: compatibility-default`.
  */
+
+import { isContext1mBetaModelId } from './model-option-support';
 
 export type ThinkingConfig =
   | { type: 'adaptive'; display?: 'summarized' | 'omitted' }
@@ -53,7 +56,7 @@ export type EffortLevel = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export interface ClaudeModelOptionsInput {
   /** Upstream / full model ID (e.g. 'claude-opus-4-7'). Short aliases like
-   *  'opus' are not detected as 4.7 â?callers should resolve to upstream
+   *  'opus' are not detected as 4.7 — callers should resolve to upstream
    *  before sanitizing. */
   model: string | undefined;
   thinking?: ThinkingConfig;
@@ -103,7 +106,7 @@ export interface ClaudeModelOptionsOutput {
    *  thinking cannot be turned off (Fable 5: an explicit 'disabled' 400s
    *  AND an omitted param still runs adaptive thinking). The sanitized
    *  request omits the param to stay wire-valid, but the user's "thinking
-   *  off" choice is NOT honored â?callers MUST surface this (one-shot
+   *  off" choice is NOT honored — callers MUST surface this (one-shot
    *  notification), never swallow it silently. */
   thinkingForcedOn: boolean;
   /**
@@ -138,11 +141,11 @@ export interface ClaudeModelOptionsOutput {
 // / provider override could send the dotted form here, so we don't rely on
 // that assumption (Codex review P2, 2026-05-29).
 // All model-family patterns below are BOUNDED on both sides (Codex review P1,
-// 2026-07-18). An unbounded `/sonnet-?5/i` matches `claude-sonnet-50` â?a model
-// nobody has verified anything about â?and hands it the whole adaptive-thinking
+// 2026-07-18). An unbounded `/sonnet-?5/i` matches `claude-sonnet-50` — a model
+// nobody has verified anything about — and hands it the whole adaptive-thinking
 // contract. Capability matching must fail closed on unknown IDs, so:
-//   - left  `(?:^|[^a-z0-9])` â?the family token can't be a suffix of a longer word
-//   - right `(?![0-9])`       â?the version number can't be a prefix of a longer
+//   - left  `(?:^|[^a-z0-9])` — the family token can't be a suffix of a longer word
+//   - right `(?![0-9])`       — the version number can't be a prefix of a longer
 //                               version (`-5` must not match `50`), while still
 //                               allowing dated/tagged variants (`-5-20260101`,
 //                               `-5[1m]`) where a non-digit follows.
@@ -166,7 +169,8 @@ const OPUS_5_PATTERN = /(?:^|[^a-z0-9])opus-?5(?![0-9])/i;
 // thinking: {type: 'disabled'} returns an error. On Claude Opus 4.8,
 // requests without a thinking field run without thinking; on
 // claude-fable-5, those requests run with adaptive thinking."
-// So omitting the param avoids the 400 but does NOT mean "thinking off" â?// callers must surface that via `thinkingForcedOn` (Codex review P1,
+// So omitting the param avoids the 400 but does NOT mean "thinking off" —
+// callers must surface that via `thinkingForcedOn` (Codex review P1,
 // 2026-06-10). Matches `claude-fable-5`, `fable-5`, and tagged variants
 // like `claude-fable-5[1m]`.
 const FABLE_PATTERN = /(?:^|[^a-z0-9])fable-?5(?![0-9])/i;
@@ -174,10 +178,10 @@ const FABLE_PATTERN = /(?:^|[^a-z0-9])fable-?5(?![0-9])/i;
 // Sonnet 5 (claude-sonnet-5, 2026-07 launch) shares the Opus 4.7/4.8 request
 // contract (no manual extended thinking; 1M default context; non-default
 // sampling 400s). Two things set it apart from Fable 5:
-//   1. Thinking CAN be turned off â?thinking:{type:'disabled'} is ACCEPTED
+//   1. Thinking CAN be turned off — thinking:{type:'disabled'} is ACCEPTED
 //      (Fable 5 400s on it). So Sonnet 5 must NOT use the fable
-//      thinkingForcedOn path â?an explicit 'disabled' passes straight through.
-//   2. New tokenizer (~+30% tokens for the same text) â?a budget note, not a
+//      thinkingForcedOn path — an explicit 'disabled' passes straight through.
+//   2. New tokenizer (~+30% tokens for the same text) — a budget note, not a
 //      wire concern (see model-context.ts).
 // Matches `claude-sonnet-5`, `sonnet-5`, and tagged variants like
 // `claude-sonnet-5[1m]`. Deliberately does NOT match `claude-sonnet-4-6`
@@ -199,7 +203,7 @@ export function isOpus5Model(model: string | undefined): boolean {
   return OPUS_5_PATTERN.test(model);
 }
 
-// ââ Anthropic API effort support (per-model allowlist) ââââââââââ
+// ── Anthropic API effort support (per-model allowlist) ──────────
 //
 // SEPARATE AXIS from the adaptive-thinking family above. `output_config.effort`
 // is only accepted by the models Anthropic lists as effort-capable
@@ -207,12 +211,12 @@ export function isOpus5Model(model: string | undefined): boolean {
 // 2026-07-18); sending it to any other model is not a supported request shape.
 // The two sets happen to coincide today, but they answer different questions
 // ("does manual extended thinking 400?" vs "does the API accept effort?"), so
-// they stay independent â?a future model could support effort without the
+// they stay independent — a future model could support effort without the
 // adaptive-thinking contract, or vice versa.
 //
 // NOT derived from catalog `capabilities.supportedEffortLevels`: that flag is
 // the UI picker / Claude Code CLI (SDK runtime) capability, which is a broader
-// set â?e.g. first-party `claude-haiku-4-5-20251001` declares
+// set — e.g. first-party `claude-haiku-4-5-20251001` declares
 // supportedEffortLevels ['low','medium','high'] there while the Anthropic API's
 // effort list does NOT include Haiku 4.5. Gating the native wire on the catalog
 // would keep sending effort to models the API doesn't accept it on (the exact
@@ -220,17 +224,17 @@ export function isOpus5Model(model: string | undefined): boolean {
 // {"effort":"max"}).
 //
 // Each entry carries the official breadcrumb it was sourced from. Add a model
-// here ONLY after confirming it on Anthropic's effort docs â?not by inferring
+// here ONLY after confirming it on Anthropic's effort docs — not by inferring
 // from a version-number pattern.
 //
-// This is deliberately a MODEL Ã LEVEL table. The catalog still drives the
+// This is deliberately a MODEL × LEVEL table. The catalog still drives the
 // normal composer picker, but request boundaries cannot trust UI reachability:
 // Codex can supply `model_reasoning_effort` from its own config. Sonnet 4.6 is
-// the important counterexample â?it accepts effort but not `xhigh`. Keeping
+// the important counterexample — it accepts effort but not `xhigh`. Keeping
 // exact levels here lets the official Anthropic wire fail closed instead of
 // forwarding an unsupported tier and relying on a 400.
 //
-// Patterns are bounded the same way as the family patterns above â?`sonnet-?4`
+// Patterns are bounded the same way as the family patterns above — `sonnet-?4`
 // without `(?![0-9])` would claim `claude-sonnet-40`, and unknown IDs must fail
 // closed to "effort not supported" rather than inherit a neighbour's contract.
 export const ANTHROPIC_API_EFFORT_MODELS: ReadonlyArray<{
@@ -244,12 +248,12 @@ export const ANTHROPIC_API_EFFORT_MODELS: ReadonlyArray<{
   {
     pattern: /(?:^|[^a-z0-9])opus-?4[-.]7(?![0-9])/i,
     levels: ['low', 'medium', 'high', 'xhigh', 'max'],
-    breadcrumb: 'anthropic effort docs â?Opus 4.7, GA output_config.effort (low/medium/high/xhigh/max)',
+    breadcrumb: 'anthropic effort docs — Opus 4.7, GA output_config.effort (low/medium/high/xhigh/max)',
   },
   {
     pattern: /(?:^|[^a-z0-9])opus-?4[-.]8(?![0-9])/i,
     levels: ['low', 'medium', 'high', 'xhigh', 'max'],
-    breadcrumb: 'anthropic effort docs â?Opus 4.8, GA output_config.effort (low/medium/high/xhigh/max)',
+    breadcrumb: 'anthropic effort docs — Opus 4.8, GA output_config.effort (low/medium/high/xhigh/max)',
   },
   {
     pattern: /(?:^|[^a-z0-9])opus-?5(?![0-9])/i,
@@ -266,17 +270,17 @@ export const ANTHROPIC_API_EFFORT_MODELS: ReadonlyArray<{
     levels: ['low', 'medium', 'high', 'xhigh', 'max'],
     breadcrumb: 'anthropic effort docs + whats-new-sonnet-5 (low/medium/high/xhigh/max)',
   },
-  // Sonnet 4.6 IS on Anthropic's effort list (low/medium/high/max â?no xhigh),
+  // Sonnet 4.6 IS on Anthropic's effort list (low/medium/high/max — no xhigh),
   // and the first-party catalog entry already declares supportsEffort with that
   // exact level set. Omitting it here was the Codex review P1: the composer
   // legitimately offered the picker, the wire silently dropped the pick, and the
   // user got a "this model doesn't support effort" toast that contradicted both
   // the UI and the provider. Non-adaptive thinking (manual extended thinking
-  // still works here) is a SEPARATE axis â?see isOpusAdaptiveThinkingModel.
+  // still works here) is a SEPARATE axis — see isOpusAdaptiveThinkingModel.
   {
     pattern: /(?:^|[^a-z0-9])sonnet-?4[-.]6(?![0-9])/i,
     levels: ['low', 'medium', 'high', 'max'],
-    breadcrumb: 'anthropic effort docs â?Claude Sonnet 4.6 (low/medium/high/max; no xhigh)',
+    breadcrumb: 'anthropic effort docs — Claude Sonnet 4.6 (low/medium/high/max; no xhigh)',
   },
 ];
 
@@ -290,7 +294,8 @@ export function getAnthropicApiSupportedEffortLevels(
 
 /**
  * Whether the Anthropic Messages API accepts `output_config.effort` for this
- * model. Callers on the native/AI-SDK path MUST gate the effort field on this â? * an unsupported model has to omit effort AND tell the user their pick wasn't
+ * model. Callers on the native/AI-SDK path MUST gate the effort field on this —
+ * an unsupported model has to omit effort AND tell the user their pick wasn't
  * sent (same surface-don't-swallow rule as `thinkingForcedOn`).
  *
  * Unknown / undefined models return false (fail-closed): omitting effort
@@ -316,8 +321,8 @@ export function anthropicApiSupportsEffortLevel(
 
 export function isOpusAdaptiveThinkingModel(model: string | undefined): boolean {
   if (!model) return false;
-  // Fable 5 and Sonnet 5 are in the same adaptive-thinking family â?every
-  // 4.7+ guard (enabledâadaptive conversion, no context-1m beta, effort
+  // Fable 5 and Sonnet 5 are in the same adaptive-thinking family — every
+  // 4.7+ guard (enabled→adaptive conversion, no context-1m beta, effort
   // pass-through) applies to them too. Fable 5's extra "can't disable
   // thinking" rule is handled separately via isFableModel below.
   return OPUS_ADAPTIVE_THINKING_PATTERN.test(model)
@@ -328,7 +333,7 @@ export function isOpusAdaptiveThinkingModel(model: string | undefined): boolean 
 
 /**
  * Normalize thinking / effort / context1m for a single Anthropic request.
- * Idempotent â?safe to call multiple times on the same input.
+ * Idempotent — safe to call multiple times on the same input.
  */
 export function sanitizeClaudeModelOptions(
   input: ClaudeModelOptionsInput,
@@ -350,7 +355,7 @@ export function sanitizeClaudeModelOptions(
       thinking = { type: 'adaptive', display: 'summarized' };
     } else if (thinking.type === 'adaptive' && !thinking.display) {
       // Adaptive thinking defaults display to 'omitted', which means the
-      // SDK will not emit thinking deltas and buckyball.ai's reasoning block
+      // SDK will not emit thinking deltas and CodePilot's reasoning block
       // disappears. Explicitly request 'summarized' so users still see the
       // reasoning UI they saw on 4.6.
       thinking = { ...thinking, display: 'summarized' };
@@ -359,14 +364,14 @@ export function sanitizeClaudeModelOptions(
       // { type: 'disabled' } returns 400, and a request WITHOUT a thinking
       // field still runs adaptive thinking (official migration guide).
       // Omitting is the only wire-valid shape, but it is NOT "thinking
-      // off" â?flag it so callers tell the user instead of silently
+      // off" — flag it so callers tell the user instead of silently
       // misrepresenting their choice.
       //
       // NOT Sonnet 5: on Sonnet 5 thinking:{type:'disabled'} is a VALID,
       // honored request (adaptive is the default, but it can be turned off).
       // Sonnet 5 is in the adaptive family (isOpusAdaptiveThinking) but not
       // isFableModel, so it falls through here and 'disabled' passes straight
-      // through untouched â?same behavior as Opus 4.8.
+      // through untouched — same behavior as Opus 4.8.
       thinking = undefined;
       thinkingForcedOn = true;
     }
@@ -400,24 +405,27 @@ export function sanitizeClaudeModelOptions(
     }
   }
 
-  // Opus 4.7+ ship 1M by default â?the beta header is unnecessary and
-  // kept out to make regression hunting cleaner.
-  const applyContext1mBeta = !!input.context1m && !isOpusAdaptiveThinking;
+  // The descriptor and both Runtime request paths share this exact upstream-ID
+  // allowlist. A stale/forged persisted flag must not attach the beta to Haiku,
+  // a bare role alias, or another Anthropic model with a 200K window.
+  const applyContext1mBeta = !!input.context1m
+    && isContext1mBetaModelId(input.model)
+    && !isOpusAdaptiveThinking;
 
   // Sampling guard. The adaptive family 400s on non-default temperature/top_p/
   // top_k; strip non-defaults and report them so the caller can surface the
   // drop. Non-adaptive models (e.g. Sonnet 4.6) pass sampling through untouched
-  // â?the guard must not misfire on them.
+  // — the guard must not misfire on them.
   const sampling: SanitizedSampling = {};
   const strippedSamplingParams: Array<'temperature' | 'topP' | 'topK'> = [];
   if (isOpusAdaptiveThinking) {
     // temperature: default is 1 (Anthropic). Omitted or exactly 1 is fine;
-    // anything else 400s â?strip + report.
+    // anything else 400s → strip + report.
     if (input.temperature !== undefined) {
       if (input.temperature === 1) sampling.temperature = 1;
       else strippedSamplingParams.push('temperature');
     }
-    // topP / topK have no default â?ANY explicit value is non-default.
+    // topP / topK have no default — ANY explicit value is non-default.
     if (input.topP !== undefined) strippedSamplingParams.push('topP');
     if (input.topK !== undefined) strippedSamplingParams.push('topK');
   } else {

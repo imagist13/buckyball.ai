@@ -1,18 +1,18 @@
 /**
- * Phase 5b â€?Responses tools[] â†?ai-sdk ToolSet.
+ * Phase 5b â€” Responses tools[] â†’ ai-sdk ToolSet.
  *
  * The adapter passes tool DEFINITIONS to ai-sdk so the model knows
  * what it can call; ai-sdk emits `tool-call` stream events for the
  * model's requests. We do NOT supply `execute` because Codex
  * executes the tool itself and supplies the result via a subsequent
  * `function_call_output` item in the next request's input. ai-sdk
- * supports definition-only tools â€?when `execute` is absent the
+ * supports definition-only tools â€” when `execute` is absent the
  * SDK stops at the tool-call boundary instead of fanning out.
  *
  * The translator preserves tool names verbatim so Codex's reader
  * can correlate function_call events back to its declared tools.
  *
- * Phase 5b smoke round 3 (2026-05-16) â€?AI SDK v6 schema contract.
+ * Phase 5b smoke round 3 (2026-05-16) â€” AI SDK v6 schema contract.
  * ai-sdk v6 (the version this project depends on) requires the
  * tool's `inputSchema` to be a **schema wrapper object** built via
  * `jsonSchema(...)` / `zodSchema(...)` / `tool(...)`. Passing a raw
@@ -29,7 +29,7 @@ import { tool, jsonSchema, type Tool } from 'ai';
 import type { JSONSchema7 } from '@ai-sdk/provider';
 import type { ResponsesTool } from './types';
 
-/** ai-sdk ToolSet without execute â€?definition-only. The `never`
+/** ai-sdk ToolSet without execute â€” definition-only. The `never`
  *  output parameter matches what `tool({ inputSchema })` (no execute,
  *  no outputSchema) returns; ai-sdk's `ToolSet` union accepts it. */
 export type ResponsesProxyToolSet = Record<string, Tool<unknown, never>>;
@@ -39,7 +39,7 @@ export type ResponsesProxyToolSet = Record<string, Tool<unknown, never>>;
  *
  * Returns `undefined` when the input is empty so callers can omit
  * the `tools` field on streamText (ai-sdk treats `tools: undefined`
- * and `tools: {}` differently in some places â€?undefined is safer).
+ * and `tools: {}` differently in some places â€” undefined is safer).
  *
  * Non-function Codex tool descriptors do not pass through this
  * function. `parse-request.ts` preserves them in `passthroughTools`;
@@ -77,11 +77,11 @@ export function translateResponsesTools(
       // flag down to provider-format `LanguageModelV3FunctionTool.strict`
       // so providers that honour strict mode (OpenAI, etc.) receive
       // it. Pre-fix the parser preserved the field but the translator
-      // dropped it silently â€?Codex's request shape uses strict on
+      // dropped it silently â€” Codex's request shape uses strict on
       // structured-output tools and the lost flag changed model
       // behaviour without telling the user.
       ...(t.strict !== undefined ? { strict: t.strict } : {}),
-      // Intentionally NO `execute` â€?ai-sdk stops at the tool-call
+      // Intentionally NO `execute` â€” ai-sdk stops at the tool-call
       // boundary and emits tool-call events the translator forwards
       // to Codex. Codex runs the tool and sends back
       // function_call_output in the next turn.

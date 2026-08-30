@@ -3,6 +3,7 @@ import { streamTextFromProvider } from '@/lib/text-generator';
 import { resolveProvider } from '@/lib/provider-resolver';
 import fs from 'fs';
 import type { PlanMediaJobRequest } from '@/types';
+import { SingleOwnerStreamWriter } from '@/lib/single-owner-stream-writer';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,8 +35,8 @@ Guidelines:
 - Generate the requested number of items, or determine an appropriate count from the content`;
 
 /**
- * POST /api/media/jobs/plan â€?SSE streaming planner
- * Does NOT write to DB â€?returns plan for client preview/editing
+ * POST /api/media/jobs/plan â€” SSE streaming planner
+ * Does NOT write to DB â€” returns plan for client preview/editing
  */
 export async function POST(request: NextRequest) {
   try {
@@ -73,13 +74,13 @@ export async function POST(request: NextRequest) {
         try {
           const stat = fs.statSync(docPath);
           if (stat.size > 100 * 1024) {
-            parts.push(`[File: ${docPath} â€?skipped, too large (${Math.round(stat.size / 1024)}KB)]`);
+            parts.push(`[File: ${docPath} â€” skipped, too large (${Math.round(stat.size / 1024)}KB)]`);
             continue;
           }
           const content = fs.readFileSync(docPath, 'utf-8');
           parts.push(`--- File: ${docPath} ---\n${content}`);
         } catch {
-          parts.push(`[File: ${docPath} â€?could not be read]`);
+          parts.push(`[File: ${docPath} â€” could not be read]`);
         }
       }
       docContent = parts.join('\n\n');
@@ -91,15 +92,23 @@ export async function POST(request: NextRequest) {
 
 ${countHint}
 
-${docContent ? `Document content:\n${docContent}` : 'No document provided â€?generate images based on the style prompt alone.'}`;
+${docContent ? `Document content:\n${docContent}` : 'No document provided â€” generate images based on the style prompt alone.'}`;
 
     // Create SSE stream
     const encoder = new TextEncoder();
+    const writer = new SingleOwnerStreamWriter<Uint8Array>();
+    const cancellation = new AbortController();
+    const abortSignal = AbortSignal.any([
+      request.signal,
+      cancellation.signal,
+      AbortSignal.timeout(120_000),
+    ]);
     const stream = new ReadableStream({
       async start(controller) {
-        const send = (event: string, data: unknown) => {
-          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
-        };
+        writer.attach(controller);
+        const send = (event: string, data: unknown) => writer.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
+        );
 
         send('planning_start', { message: 'Starting plan generation...' });
 
@@ -113,9 +122,10 @@ ${docContent ? `Document content:\n${docContent}` : 'No document provided â€?gen
             system: PLANNER_SYSTEM_PROMPT,
             prompt: userPrompt,
             maxTokens: 4096,
+            abortSignal,
           })) {
             fullText += chunk;
-            send('text', { chunk });
+            if (!send('text', { chunk })) return;
           }
 
           // Extract JSON from the response
@@ -123,7 +133,7 @@ ${docContent ? `Document content:\n${docContent}` : 'No document provided â€?gen
           if (!jsonMatch) {
             send('error', { message: 'Failed to extract plan JSON from LLM response' });
             send('done', {});
-            controller.close();
+            writer.close();
             return;
           }
 
@@ -135,7 +145,11 @@ ${docContent ? `Document content:\n${docContent}` : 'No document provided â€?gen
         }
 
         send('done', {});
-        controller.close();
+        writer.close();
+      },
+      cancel() {
+        writer.cancel();
+        cancellation.abort();
       },
     });
 

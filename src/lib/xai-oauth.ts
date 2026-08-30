@@ -2,7 +2,7 @@
  * xAI OAuth protocol primitives.
  *
  * Compatibility source: xAI's open-source Grok Build client. The OAuth client
- * is not buckyball.ai-owned, so UI and release notes must keep the upstream-policy
+ * is not CodePilot-owned, so UI and release notes must keep the upstream-policy
  * dependency visible and preserve API Key as an independent fallback.
  */
 import { createHash, randomBytes } from 'node:crypto';
@@ -29,7 +29,7 @@ export const XAI_GROK_BUILD_TOKEN_HEADER = 'xai-grok-cli';
 /**
  * Grok Build compatibility profile pinned to xai-org/grok-build
  * e5fd4816d43260c15ba785f103990c1ed6cea230 (xai-grok-version 1.0.3).
- * This is deliberately not buckyball.ai's app version: the Build proxy applies
+ * This is deliberately not CodePilot's app version: the Build proxy applies
  * its version gate against the upstream Grok client contract.
  */
 export const XAI_GROK_BUILD_CLIENT_VERSION = '1.0.3';

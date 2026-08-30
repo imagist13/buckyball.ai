@@ -42,7 +42,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
   it('keeps unauthenticated OAuth providers out of both managed Runtime route lists', () => {
     assert.deepEqual(listManagedVirtualProviderModelGroups(), []);
     assert.equal(
-      listSubagentRoutes('bbagent').some(route => route.providerId === 'xai-oauth'),
+      listSubagentRoutes('codepilot_runtime').some(route => route.providerId === 'xai-oauth'),
       false,
     );
     assert.equal(
@@ -67,7 +67,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
       virtual.models.map(model => model.modelId),
       ['grok-4.6', 'grok-4.5'],
     );
-    assert.equal(virtual.compat, 'bbagent_only');
+    assert.equal(virtual.compat, 'codepilot_only');
     assert.equal(virtual.protocol, 'xai');
     assert.equal(
       getModelCompat({
@@ -78,7 +78,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
       'the compatibility matrix, not candidate omission, must exclude xAI from Claude Code',
     );
 
-    for (const runtime of ['bbagent', 'codex_runtime'] as const) {
+    for (const runtime of ['codepilot_runtime', 'codex_runtime'] as const) {
       const route = listSubagentRoutes(runtime).find(
         candidate => candidate.providerId === 'xai-oauth'
           && candidate.id === 'grok-4.6',
@@ -92,7 +92,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
     }
 
     const response = await listProviderModels(
-      new NextRequest('http://test.local/api/providers/models?runtime=bbagent'),
+      new NextRequest('http://test.local/api/providers/models?runtime=codepilot_runtime'),
     );
     const data = await response.json() as {
       groups: Array<{
@@ -103,7 +103,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
     const pickerGroup = data.groups.find(group => group.provider_id === 'xai-oauth');
     assert.ok(pickerGroup, 'the picker and Sub-agent catalog must share xAI OAuth availability');
     assert.equal(pickerGroup.models[0]?.value, 'grok-4.6');
-    assert.ok(pickerGroup.models[0]?.supportedRuntimes?.includes('bbagent'));
+    assert.ok(pickerGroup.models[0]?.supportedRuntimes?.includes('codepilot_runtime'));
 
     assert.equal(
       listClaudeSubagentRoutes().some(route => route.providerId === 'xai-oauth'),
@@ -125,7 +125,7 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
       false,
     );
     assert.equal(
-      listSubagentRoutes('bbagent').some(route => route.providerId === 'xai-oauth'),
+      listSubagentRoutes('codepilot_runtime').some(route => route.providerId === 'xai-oauth'),
       false,
     );
   });
@@ -140,10 +140,10 @@ describe('managed virtual providers share picker and Sub-agent route discovery',
     );
     assert.ok(virtual);
     assert.match(virtual.providerName, /plus/);
-    assert.equal(virtual.compat, 'bbagent_only');
+    assert.equal(virtual.compat, 'codepilot_only');
     assert.equal(virtual.protocol, 'openai-compatible');
 
-    for (const runtime of ['bbagent', 'codex_runtime'] as const) {
+    for (const runtime of ['codepilot_runtime', 'codex_runtime'] as const) {
       assert.ok(
         listSubagentRoutes(runtime).some(
           route => route.providerId === 'openai-oauth' && route.id === 'gpt-5.5',

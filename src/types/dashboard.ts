@@ -1,5 +1,5 @@
 /**
- * Dashboard â€?Persisted generative UI widgets as project-level dashboard cards.
+ * Dashboard â€” Persisted generative UI widgets as project-level dashboard cards.
  * Storage: {projectDir}/.codepilot/dashboard/dashboard.json
  */
 
@@ -12,7 +12,7 @@ export interface DashboardWidget {
   /** Unique ID: "w_{timestamp}_{random}" */
   id: string;
   title: string;
-  /** Raw HTML/SVG/JS â€?the widget code */
+  /** Raw HTML/SVG/JS â€” the widget code */
   widgetCode: string;
   /** Natural language: what this widget shows and how to extract it from source data */
   dataContract: string;

@@ -1,15 +1,15 @@
 /**
- * OpenAI-compatible third-party provider â?end-to-end classification (2026-06-09).
+ * OpenAI-compatible third-party provider — end-to-end classification (2026-06-09).
  *
  * Pins the fix for the "runtime classification reverses" P0: a generic
  * openai-compatible gateway (user-supplied base_url) must classify as
- * `bbagent_only` â?CodePilot + Codex runtimes, Claude Code gated â?NOT fall
+ * `codepilot_only` — CodePilot + Codex runtimes, Claude Code gated — NOT fall
  * through to `unknown` (which would expose it to Claude Code and gate Codex,
  * the exact opposite of intent). The chain is:
  *   provider_type 'openai-compatible'
- *     â?findMatchingPresetForRecord â?generic 'openai-compatible' preset
- *     â?getProviderCompat â?'bbagent_only'
- *     â?getModelCompat â?supportedRuntimes [codepilot, codex], claude_code gated.
+ *     → findMatchingPresetForRecord → generic 'openai-compatible' preset
+ *     → getProviderCompat → 'codepilot_only'
+ *     → getModelCompat → supportedRuntimes [codepilot, codex], claude_code gated.
  *
  * See docs/exec-plans/active/mimo-ultraspeed-openai-compatible-provider.md.
  */
@@ -25,7 +25,7 @@ import { POST as providersPOST } from '../../app/api/providers/route';
 import { PUT as providerPUT } from '../../app/api/providers/[id]/route';
 import { createProvider } from '@/lib/db';
 
-// A generic third-party gateway with an arbitrary URL â?the case that used to
+// A generic third-party gateway with an arbitrary URL — the case that used to
 // fall through every matcher branch and land in `unknown`.
 const GW = {
   preset_key: '',
@@ -35,22 +35,22 @@ const GW = {
 };
 
 describe('openai-compatible classification end-to-end (P0: must not reverse)', () => {
-  it('an arbitrary-URL openai-compatible gateway claims the openai-compatible preset (not undefined â?unknown)', () => {
+  it('an arbitrary-URL openai-compatible gateway claims the openai-compatible preset (not undefined → unknown)', () => {
     const preset = findMatchingPresetForRecord(GW);
     assert.ok(preset, 'arbitrary-URL openai-compatible provider must claim a preset');
     assert.equal(preset!.key, 'openai-compatible');
     assert.equal(preset!.protocol, 'openai-compatible');
   });
 
-  it('getProviderCompat classifies it as bbagent_only', () => {
-    assert.equal(getProviderCompat(GW), 'bbagent_only');
+  it('getProviderCompat classifies it as codepilot_only', () => {
+    assert.equal(getProviderCompat(GW), 'codepilot_only');
   });
 
-  it('bbagent_only â?CodePilot + Codex runtimes, Claude Code gated (the reversed bug would expose Claude Code / gate Codex)', () => {
+  it('codepilot_only → CodePilot + Codex runtimes, Claude Code gated (the reversed bug would expose Claude Code / gate Codex)', () => {
     const cap = getModelCompat({ modelId: 'sample', providerCompat: getProviderCompat(GW) });
     assert.deepEqual(
       [...(cap.supportedRuntimes ?? [])].sort(),
-      ['bbagent', 'codex_runtime'],
+      ['codepilot_runtime', 'codex_runtime'],
     );
     assert.ok(cap.unsupportedReasonByRuntime?.claude_code, 'Claude Code must carry a gated reason');
     assert.equal(cap.unsupportedReasonByRuntime?.codex_runtime, undefined, 'Codex must NOT be gated');
@@ -62,7 +62,7 @@ describe('openai-compatible classification end-to-end (P0: must not reverse)', (
   });
 });
 
-// ââ DB: created openai-compatible providers must survive (no destructive migration) ââ
+// ── DB: created openai-compatible providers must survive (no destructive migration) ──
 
 const originalDataDir = process.env.CLAUDE_GUI_DATA_DIR;
 const originalHome = process.env.HOME;
@@ -92,13 +92,13 @@ describe('openai-compatible providers are not wiped (P0 no-delete migration)', (
     // restart-tolerance guarantee is pinned at the source: the only path that
     // ever removed these rows was this DELETE. It must stay gone.
     const dbSrc = fs.readFileSync(path.resolve(__dirname, '../../lib/db.ts'), 'utf8');
-    // Match the executable db.exec(...) form only â?the surrounding history
+    // Match the executable db.exec(...) form only — the surrounding history
     // comment legitimately quotes the old SQL, so a bare-string match would
     // false-positive on the documentation.
     assert.doesNotMatch(
       dbSrc,
       /db\.exec\(\s*["']DELETE FROM api_providers WHERE protocol = 'openai-compatible'/,
-      'the openai-compatible DELETE migration must stay removed â?it wiped user-created providers on restart',
+      'the openai-compatible DELETE migration must stay removed — it wiped user-created providers on restart',
     );
   });
 
@@ -118,7 +118,7 @@ describe('openai-compatible providers are not wiped (P0 no-delete migration)', (
   });
 });
 
-// ââ Wiring source pins (client/JSX + runtime path can't be imported cleanly) ââ
+// ── Wiring source pins (client/JSX + runtime path can't be imported cleanly) ──
 
 describe('openai-compatible wiring source pins', () => {
   it('renderer findMatchingPreset delegates to the shared identity resolver', () => {
@@ -135,7 +135,7 @@ describe('openai-compatible wiring source pins', () => {
     assert.match(
       src,
       /return openai\.chat\(config\.modelId\)/,
-      'openai-compatible/openrouter/proxy path must use openai.chat() â?bare openai() defaults to /v1/responses in @ai-sdk/openai v3',
+      'openai-compatible/openrouter/proxy path must use openai.chat() — bare openai() defaults to /v1/responses in @ai-sdk/openai v3',
     );
     assert.doesNotMatch(
       src,
@@ -148,16 +148,16 @@ describe('openai-compatible wiring source pins', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../../components/settings/ProviderForm.tsx'), 'utf8');
     assert.match(
       src,
-      // [^\n]* (not [^}]*) â?the preset is one line and contains extra_env: "{}",
+      // [^\n]* (not [^}]*) — the preset is one line and contains extra_env: "{}",
       // whose `}` would otherwise truncate the match before `protocol`.
       /"openai-compatible":\s*\{[^\n]*protocol:\s*"openai-compatible"/,
-      'PROVIDER_PRESETS must map openai-compatible â?protocol openai-compatible (not custom-as-anthropic)',
+      'PROVIDER_PRESETS must map openai-compatible → protocol openai-compatible (not custom-as-anthropic)',
     );
     assert.match(src, /value:\s*"openai-compatible"/, 'PROVIDER_TYPES must list openai-compatible');
   });
 });
 
-// ââ API base_url guards (POST + PUT): empty URL must not fall back to api.openai.com ââ
+// ── API base_url guards (POST + PUT): empty URL must not fall back to api.openai.com ──
 
 function jsonReq(url: string, method: string, body: unknown): NextRequest {
   return new NextRequest(url, {
@@ -210,16 +210,16 @@ describe('openai-compatible base_url guards (no silent fallback to official Open
   });
 });
 
-describe('bbagent_only runtime copy reflects CodePilot + Codex (P2 semantic acceptance)', () => {
+describe('codepilot_only runtime copy reflects CodePilot + Codex (P2 semantic acceptance)', () => {
   for (const isZh of [true, false]) {
     it(`label + tooltip mention Codex and do not claim CodePilot-only (${isZh ? 'zh' : 'en'})`, () => {
-      const label = compatLabel('bbagent_only', isZh);
-      const tip = compatTooltip('bbagent_only', isZh);
+      const label = compatLabel('codepilot_only', isZh);
+      const tip = compatTooltip('codepilot_only', isZh);
       assert.match(label, /Codex/i, 'label must mention Codex');
       assert.match(tip, /Codex/i, 'tooltip must mention Codex');
       assert.doesNotMatch(
         tip,
-        /only reachable from CodePilot Runtime|ä»å¨ CodePilot Runtime ä¸å¯ç?i,
+        /only reachable from CodePilot Runtime|仅在 CodePilot Runtime 下可用/i,
         'tooltip must not claim CodePilot-only',
       );
     });
@@ -228,7 +228,7 @@ describe('bbagent_only runtime copy reflects CodePilot + Codex (P2 semantic acce
 
 describe('test-connection routes openai-compatible to an OpenAI-shape probe (source pin)', () => {
   // claude-client.ts statically imports @anthropic-ai/claude-agent-sdk, so it
-  // can't be imported cheaply in a unit test â?pin the fix at the source.
+  // can't be imported cheaply in a unit test — pin the fix at the source.
   it('claude-client probes openai-compatible with a base-URL guard + Bearer auth, not the Anthropic /v1/messages fallback', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../../lib/claude-client.ts'), 'utf8');
     assert.match(

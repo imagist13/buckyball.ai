@@ -1,5 +1,5 @@
 /**
- * Phase 4 Phase 1 â€?PreviewSource trust classification.
+ * Phase 4 Phase 1 â€” PreviewSource trust classification.
  *
  * Pins the contract that `classifyPath` is the single source of truth
  * for deciding whether a file path the AI just named should be opened
@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 
 import { classifyPath } from '../../lib/preview-source';
 
-describe('classifyPath â€?workspace vs agent-referenced', () => {
+describe('classifyPath â€” workspace vs agent-referenced', () => {
   it('treats paths under the working directory as workspace + R/W + baseDir set', () => {
     const c = classifyPath('/Users/me/proj/docs/x.md', '/Users/me/proj');
     assert.equal(c.trust, 'workspace');
@@ -69,8 +69,8 @@ describe('classifyPath â€?workspace vs agent-referenced', () => {
   it('user-selected confirm transition shape (documented contract)', () => {
     // This test documents the call shape PreviewPanel uses to promote
     // an agent-referenced source to user-selected on confirm. There's
-    // no helper for the transition itself â€?the panel constructs the
-    // new source directly â€?but a future refactor that adds one should
+    // no helper for the transition itself â€” the panel constructs the
+    // new source directly â€” but a future refactor that adds one should
     // produce a source matching this shape: kind=file, trust=user-selected,
     // readonly=true, baseDir intentionally absent.
     const promoted = {

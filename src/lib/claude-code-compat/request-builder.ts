@@ -1,5 +1,5 @@
 /**
- * request-builder.ts â€?Convert AI SDK call options to Anthropic Messages API format.
+ * request-builder.ts â€” Convert AI SDK call options to Anthropic Messages API format.
  *
  * Translates LanguageModelV3CallOptions (messages + tools + system)
  * into the request body that Claude Code-compatible proxies expect.
@@ -19,7 +19,7 @@ export function buildHeaders(config: ClaudeCodeCompatConfig): Record<string, str
     ...config.headers,
   };
 
-  // Auth: api_key style â†?x-api-key, auth_token style â†?Authorization Bearer
+  // Auth: api_key style â†’ x-api-key, auth_token style â†’ Authorization Bearer
   if (config.apiKey) {
     headers['x-api-key'] = config.apiKey;
   } else if (config.authToken) {
@@ -43,7 +43,7 @@ export function buildBody(
 
   for (const msg of prompt) {
     if (msg.role === 'system') {
-      // System messages â†?top-level system field
+      // System messages â†’ top-level system field
       if (typeof msg.content === 'string') {
         systemBlocks.push({ type: 'text', text: msg.content });
       } else if (Array.isArray(msg.content)) {
@@ -58,7 +58,7 @@ export function buildBody(
     } else if (msg.role === 'assistant') {
       messages.push({ role: 'assistant', content: convertAssistantContent(msg.content) });
     } else if (msg.role === 'tool') {
-      // Tool results â†?user message with tool_result content blocks
+      // Tool results â†’ user message with tool_result content blocks
       messages.push({ role: 'user', content: convertToolContent(msg.content) });
     }
   }
@@ -119,7 +119,7 @@ function convertUserContent(content: unknown): unknown {
   return content.map((part: Record<string, unknown>) => {
     if (part.type === 'text') return { type: 'text', text: part.text };
     if (part.type === 'image') {
-      // AI SDK image â†?Anthropic image
+      // AI SDK image â†’ Anthropic image
       if (part.image instanceof URL || typeof part.image === 'string') {
         return { type: 'image', source: { type: 'url', url: String(part.image) } };
       }

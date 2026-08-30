@@ -1,9 +1,9 @@
 /**
- * Phase 5c (2026-05-16) â€?parse-request tool classification.
+ * Phase 5c (2026-05-16) â€” parse-request tool classification.
  *
  * Pre-5c `parse-request.ts` silently dropped every non-function tool.
  * The drop was the surface manifestation of "CodePilot built-in tool
- * bridge isn't wired" â€?GLM/Kimi saw `imagegen` Skill text but had
+ * bridge isn't wired" â€” GLM/Kimi saw `imagegen` Skill text but had
  * no actual tool to call, and started CLI / auth.json / npm install
  * fallback chains.
  *
@@ -28,7 +28,7 @@ const baseBody = {
   stream: true,
 };
 
-describe('parseResponsesRequest â€?tool classification (Phase 5c)', () => {
+describe('parseResponsesRequest â€” tool classification (Phase 5c)', () => {
   it('function tools land on body.tools and have no passthroughTools', () => {
     const result = parseResponsesRequest({
       ...baseBody,
@@ -52,7 +52,7 @@ describe('parseResponsesRequest â€?tool classification (Phase 5c)', () => {
     });
     assert.equal(result.ok, true);
     if (!result.ok) return;
-    assert.equal(result.body.tools, undefined, 'no function tools â†?tools should be undefined, not []');
+    assert.equal(result.body.tools, undefined, 'no function tools â†’ tools should be undefined, not []');
     assert.equal(result.body.passthroughTools?.length, 1);
     assert.equal(result.body.passthroughTools?.[0].rawType, 'custom');
     assert.equal(result.body.passthroughTools?.[0].name, 'apply_patch');
@@ -78,11 +78,11 @@ describe('parseResponsesRequest â€?tool classification (Phase 5c)', () => {
     assert.deepEqual(
       result.body.passthroughTools?.map((t) => t.rawType),
       ['custom', 'web_search'],
-      'non-function entries preserve order too â€?log line wants to show what Codex sent',
+      'non-function entries preserve order too â€” log line wants to show what Codex sent',
     );
   });
 
-  it('unknown tool type â†?unsupported_tool_kind structured error (NOT silent drop)', () => {
+  it('unknown tool type â†’ unsupported_tool_kind structured error (NOT silent drop)', () => {
     const result = parseResponsesRequest({
       ...baseBody,
       tools: [
@@ -124,14 +124,14 @@ describe('parseResponsesRequest â€?tool classification (Phase 5c)', () => {
     // Mutating the parsed payload must NOT mutate the caller's input
     // (parse-request did a shallow spread copy of the object).
     if (preserved && typeof preserved.payload.config === 'object' && preserved.payload.config !== null) {
-      // Shallow spread doesn't deep-clone â€?but the top level is
+      // Shallow spread doesn't deep-clone â€” but the top level is
       // independent, and that's enough to keep diagnostic logs from
       // surprising the caller mid-flight.
       assert.notStrictEqual(preserved.payload, customTool, 'top-level payload must be a fresh object, not the same reference');
     }
   });
 
-  it('tools whose `type` field is missing/not-a-string â†?invalid_request, NOT unsupported_tool_kind', () => {
+  it('tools whose `type` field is missing/not-a-string â†’ invalid_request, NOT unsupported_tool_kind', () => {
     const result = parseResponsesRequest({
       ...baseBody,
       tools: [{ name: 'no-type-field' }],
@@ -142,7 +142,7 @@ describe('parseResponsesRequest â€?tool classification (Phase 5c)', () => {
     assert.match(result.message, /must be a string/);
   });
 
-  it('all tools filtered (zero function, zero recognised non-function) â†?both fields undefined', () => {
+  it('all tools filtered (zero function, zero recognised non-function) â†’ both fields undefined', () => {
     const result = parseResponsesRequest({ ...baseBody, tools: [] });
     assert.equal(result.ok, true);
     if (!result.ok) return;

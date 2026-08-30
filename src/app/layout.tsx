@@ -12,7 +12,7 @@ import { renderThemeFamilyCSS } from "@/lib/theme/render-css";
 import { getSetting } from "@/lib/db";
 
 export const metadata: Metadata = {
-  title: "buckyball.ai",
+  title: "CodePilot",
   description: "A multi-model AI agent desktop client",
 };
 
@@ -36,7 +36,7 @@ export default function RootLayout({
     dbThemeMode = getSetting('theme_mode') || undefined;
     dbThemeFamily = getSetting('theme_family') || undefined;
   } catch {
-    // Build-time or DB unavailable â??fall back to localStorage-only theme
+    // Build-time or DB unavailable â€” fall back to localStorage-only theme
   }
 
   return (
@@ -46,21 +46,21 @@ export default function RootLayout({
             `data-platform-style` on <html> before hydration so
             platform-scoped CSS (the `--platform-*` token layer) lands
             on first paint.
-            Round 17 (2026-05-23) â??Codex P1 fix: separated OS
+            Round 17 (2026-05-23) â€” Codex P1 fix: separated OS
             detection from shell detection. The previous script set
             `data-platform="darwin"` for *any* macOS UA (Playwright,
             plain Safari, CDP smoke), which then activated Electron-
             only treatments (body transparency, traffic-light safe
             area). Now:
-              - data-platform = darwin|win32|linux|web  â??OS
-              - data-shell    = electron|web            â??host shell
+              - data-platform = darwin|win32|linux|web  â†’ OS
+              - data-shell    = electron|web            â†’ host shell
             macOS-material CSS now scopes on both:
               html[data-platform="darwin"][data-shell="electron"]
                   [data-platform-style="auto"]
             so a regular browser staying on macOS still gets the
             standard product look. */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var ua=navigator.userAgent||'';var uaIsElectron=/Electron\\//.test(ua);var api=window.electronAPI&&window.electronAPI.versions&&window.electronAPI.versions.platform;var isElectron=!!api||uaIsElectron;var p='web';if(api)p=api;else if(/Mac/i.test(ua))p='darwin';else if(/Win/i.test(ua))p='win32';else if(/Linux/i.test(ua))p='linux';document.documentElement.setAttribute('data-platform',p);document.documentElement.setAttribute('data-shell',isElectron?'electron':'web');if(!document.documentElement.hasAttribute('data-platform-style')){document.documentElement.setAttribute('data-platform-style','auto')}}catch(e){}})();` }} />
-        {/* Anti-FOUC: set data-theme-family from localStorage â??DB fallback, validate against known IDs */}
+        {/* Anti-FOUC: set data-theme-family from localStorage â†’ DB fallback, validate against known IDs */}
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var v=${JSON.stringify(validIds)};var db=${JSON.stringify(dbThemeFamily || null)};var f=localStorage.getItem('codepilot_theme_family')||db||'default';if(v.indexOf(f)<0)f='default';document.documentElement.setAttribute('data-theme-family',f);if(!localStorage.getItem('codepilot_theme_family')&&f!=='default'){localStorage.setItem('codepilot_theme_family',f)}}catch(e){}})();` }} />
         {/* Sync DB theme mode to next-themes localStorage if not yet set */}
         {dbThemeMode && (

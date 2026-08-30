@@ -2,13 +2,14 @@
  * Tests for `src/lib/runtime/effective.ts`. Locks in two contracts:
  *
  *   1. `computeEffectiveRuntime` mirrors `registry.ts:resolveRuntime`'s
- *      priority chain â€?`cli_enabled=false` is the highest-priority
+ *      priority chain â€” `cli_enabled=false` is the highest-priority
  *      override, beating the stored `agent_runtime` value.
  *   2. `resolveNewChatDefault` enforces the Phase 2C contract:
- *      - **Pinned mode** demands an exact match; missing target â†? *        `'invalid-default'` with a reason. **No fallback.**
- *      - **Auto mode** walks the saved â†?apiDefault â†?first chain and
+ *      - **Pinned mode** demands an exact match; missing target â†’
+ *        `'invalid-default'` with a reason. **No fallback.**
+ *      - **Auto mode** walks the saved â†’ apiDefault â†’ first chain and
  *        always lands on `'auto-resolved'` when groups is non-empty.
- *      - Empty groups â†?`'no-compatible'` regardless of mode.
+ *      - Empty groups â†’ `'no-compatible'` regardless of mode.
  *
  * Both helpers run on the Settings Runtime page AND the chat header
  * RuntimeBadge AND the chat init path. Drift between any of those
@@ -44,13 +45,13 @@ describe("computeEffectiveRuntime", () => {
     assert.equal(computeEffectiveRuntime("native", false, true), "native");
   });
 
-  it("codex_runtime is sticky â€?cli_enabled=false does NOT downgrade it", () => {
+  it("codex_runtime is sticky â€” cli_enabled=false does NOT downgrade it", () => {
     // Phase 6 IA correction round 2 (2026-05-14). RuntimePanel saves
     // `agent_runtime='codex_runtime'` + `cli_enabled='false'` when the
     // user picks Codex as global default (Codex doesn't need the Claude
-    // CLI). The earlier "cli_enabled=false â†?always native" rule would
+    // CLI). The earlier "cli_enabled=false â†’ always native" rule would
     // hijack this back to native, and the Models page filter would then
-    // run on `codepilot_runtime` instead of `codex_runtime` â€?the exact
+    // run on `codepilot_runtime` instead of `codex_runtime` â€” the exact
     // misroute the user caught in P1.
     assert.equal(computeEffectiveRuntime("codex_runtime", false, true), "codex_runtime");
     assert.equal(computeEffectiveRuntime("codex_runtime", false, false), "codex_runtime");
@@ -61,7 +62,7 @@ describe("computeEffectiveRuntime", () => {
     // This is the second drift case (the user-reported P2): registry's
     // resolveRuntime gates step 2 on `r?.isAvailable()`. If the user
     // picked Claude Code but CLI isn't installed/detected, registry
-    // falls through to native â€?the helper must too, so the badge in
+    // falls through to native â€” the helper must too, so the badge in
     // the chat header doesn't claim Claude Code is running.
     assert.equal(computeEffectiveRuntime("claude-code-sdk", true, false), "native");
   });
@@ -107,7 +108,7 @@ describe("runtimeDisplayLabel", () => {
     // Phase 6 UIæ”¶å£ P1 fix-up (2026-05-14): three short product
     // names. "AI SDK" was an internal implementation detail leaking
     // into the UI label; the user-visible name is "CodePilot". Same
-    // for "Codex Runtime" â†?"Codex" â€?the page title + section header
+    // for "Codex Runtime" â†’ "Codex" â€” the page title + section header
     // carry the runtime framing, repeating it here was redundant.
     assert.equal(runtimeDisplayLabel("claude-code-sdk"), "Claude Code");
     assert.equal(runtimeDisplayLabel("native"), "CodePilot");
@@ -135,9 +136,9 @@ const groupB = {
   ],
 };
 
-describe("resolveNewChatDefault â€?empty groups (precedence over mode)", () => {
+describe("resolveNewChatDefault â€” empty groups (precedence over mode)", () => {
   it("Pinned + valid pin still returns 'no-compatible' when groups is empty", () => {
-    // 'no-compatible' wins over Pinned validity â€?empty groups means the
+    // 'no-compatible' wins over Pinned validity â€” empty groups means the
     // current Runtime can't run anything; "fix runtime" comes before
     // "fix pin" in the user's mental order.
     const result = resolveNewChatDefault({
@@ -160,7 +161,7 @@ describe("resolveNewChatDefault â€?empty groups (precedence over mode)", () => {
   });
 });
 
-describe("resolveNewChatDefault â€?Pinned mode", () => {
+describe("resolveNewChatDefault â€” Pinned mode", () => {
   it("'ok' when pinned provider + model both valid in the runtime-filtered group", () => {
     const result = resolveNewChatDefault({
       groups: [groupA, groupB],
@@ -205,7 +206,7 @@ describe("resolveNewChatDefault â€?Pinned mode", () => {
   });
 
   it("'invalid-default' with reason='pin-incomplete' when mode='pinned' but pin values empty", () => {
-    // Defensive â€?migration shouldn't create this state, but if it
+    // Defensive â€” migration shouldn't create this state, but if it
     // exists we surface it instead of silently coercing to Auto.
     const result = resolveNewChatDefault({
       groups: [groupA],
@@ -226,7 +227,7 @@ describe("resolveNewChatDefault â€?Pinned mode", () => {
       mode: "pinned",
       pinnedProviderId: "openrouter",
       pinnedModel: "non-existent",
-      // Plenty of fallback signals â€?all should be ignored:
+      // Plenty of fallback signals â€” all should be ignored:
       apiDefaultProviderId: "anthropic-official",
       savedProviderId: "anthropic-official",
       savedModel: "sonnet",
@@ -238,7 +239,7 @@ describe("resolveNewChatDefault â€?Pinned mode", () => {
   });
 });
 
-describe("resolveNewChatDefault â€?Auto mode", () => {
+describe("resolveNewChatDefault â€” Auto mode", () => {
   it("'auto-resolved' via saved pair when validated against a runtime-compatible group", () => {
     const result = resolveNewChatDefault({
       groups: [groupA, groupB],
@@ -263,7 +264,7 @@ describe("resolveNewChatDefault â€?Auto mode", () => {
     assert.equal(result.modelValue, "sonnet");
   });
 
-  it("saved provider missing â†?falls through to API default", () => {
+  it("saved provider missing â†’ falls through to API default", () => {
     const result = resolveNewChatDefault({
       groups: [groupA, groupB],
       mode: "auto",
@@ -275,7 +276,7 @@ describe("resolveNewChatDefault â€?Auto mode", () => {
     assert.equal(result.providerId, "openrouter");
   });
 
-  it("no saved + no API default â†?falls through to first compatible group", () => {
+  it("no saved + no API default â†’ falls through to first compatible group", () => {
     const result = resolveNewChatDefault({
       groups: [groupA, groupB],
       mode: "auto",
@@ -293,7 +294,7 @@ describe("resolveNewChatDefault â€?Auto mode", () => {
       mode: "auto",
       pinnedProviderId: "openrouter",
       pinnedModel: "anthropic/claude-3-opus",
-      // Saved pair points elsewhere â€?this should win, not the pin.
+      // Saved pair points elsewhere â€” this should win, not the pin.
       savedProviderId: "anthropic-official",
       savedModel: "sonnet",
     });

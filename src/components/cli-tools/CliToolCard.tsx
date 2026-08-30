@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { CaretDown } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
@@ -82,8 +82,8 @@ export function CliToolCard({
           onDetail();
         }
       }}
-      aria-label={`${tool.name} â?${summary || t('cliTools.noDescription' as TranslationKey)}`}
-      // Canonical Settings card chrome (`docs/design.md` Â§ Card system):
+      aria-label={`${tool.name} — ${summary || t('cliTools.noDescription' as TranslationKey)}`}
+      // Canonical Settings card chrome (`docs/design.md` § Card system):
       // rounded-lg + soft border + p-5 + bg-card. Same as Skills + MCP
       // cards so the three plugin lists read as one continuous catalogue.
       className="rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -116,7 +116,7 @@ export function CliToolCard({
               <span className="text-[10px] text-muted-foreground">{t('cliTools.agentFriendliness' as TranslationKey)}</span>
               <div className="flex gap-0.5">
                 {[1, 2, 3, 4, 5].map(i => (
-                  <BuckyballIcon
+                  <CodePilotIcon
                     key={i}
                     name="rating"
                     size={10}
@@ -142,7 +142,7 @@ export function CliToolCard({
               >
                 {availableMethods.length > 1
                   ? <CaretDown size={16} />
-                  : <BuckyballIcon name="plus" size="md" aria-hidden />}
+                  : <CodePilotIcon name="plus" size="md" aria-hidden />}
               </Button>
               {showMethodPicker && availableMethods.length > 1 && (
                 <div className="absolute right-0 top-8 z-10 rounded-md border bg-popover p-1 shadow-md min-w-[140px]">

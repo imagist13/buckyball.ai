@@ -1,5 +1,5 @@
 /**
- * Harness Bundle â?Phase 5e Phase 1 (2026-05-17).
+ * Harness Bundle — Phase 5e Phase 1 (2026-05-17).
  *
  * Single typed envelope that every Runtime adapter consumes ONCE per
  * turn. Replaces the pre-Phase-5e shape where each Runtime
@@ -11,20 +11,20 @@
  *   - whether to surface ClaudeCode-side `~/.claude/*` configuration
  *   - which capabilities are "advertised but actually unavailable"
  *
- * Phase 5e formalises three layers â?every Runtime must walk through
+ * Phase 5e formalises three layers — every Runtime must walk through
  * the SAME bundle, even when a particular path can only execute a
  * subset:
  *
- *   1. **Built-in Harness** â?CodePilot ships these (widget, memory,
+ *   1. **Built-in Harness** — CodePilot ships these (widget, memory,
  *      tasks_and_notify, image_generation, media_import, dashboard,
  *      cli_tools, ...). Sourced from `capability-contract.ts`.
  *
- *   2. **User CodePilot Harness** â?what the user installed *inside
- *      CodePilot* (Settings â?MCP servers, Skills, slash commands,
+ *   2. **User CodePilot Harness** — what the user installed *inside
+ *      CodePilot* (Settings → MCP servers, Skills, slash commands,
  *      project CLAUDE.md). Sourced from
  *      `user-codepilot-extensions.ts` scanner.
  *
- *   3. **External Framework Harness** â?what the user installed
+ *   3. **External Framework Harness** — what the user installed
  *      *inside another agent framework* and CodePilot should at least
  *      surface to the model (e.g. `~/.claude/mcp.json`,
  *      `~/.claude/CLAUDE.md`, `~/.codex/config.toml` plugins). Cross-
@@ -32,7 +32,7 @@
  *      is best-effort (Codex MCP can't run a ClaudeCode-only hook,
  *      etc.). Sourced from `external-framework-harness.ts` scanner.
  *
- * ââ Invariants the type system enforces ââââââââââââââââââââââââââââ
+ * ── Invariants the type system enforces ────────────────────────────
  *
  *   - Any extension where `executable === false` MUST carry a
  *     `perceptionHint` so the model gets a human-readable explanation
@@ -43,7 +43,7 @@
  *   - `relatedCapabilityId` (when present) must resolve to a
  *     capability in `HARNESS_CAPABILITIES`. Builder cross-checks.
  *
- *   - "æç¥ â?å¯æ§è¡? â?extensions where `executable === false`
+ *   - "感知 ≠ 可执行" — extensions where `executable === false`
  *     contribute to `contextFragments` (so model + UI list it) but
  *     do NOT contribute to `toolSurfaces` (model can't call them).
  *     The split is structural, not convention.
@@ -55,9 +55,9 @@ import {
   type CapabilityContract,
 } from './capability-contract';
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Layer 1 â?Built-in Harness capability mount
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Layer 1 — Built-in Harness capability mount
+// ─────────────────────────────────────────────────────────────────────
 
 /**
  * A capability the current Runtime + Provider path actually mounts.
@@ -78,9 +78,9 @@ export interface BuiltinCapabilityMount {
    *  the capability but the user must switch Runtime to execute. */
   readonly executable: boolean;
   /** When `executable === false`, required: a model-visible / UI-
-   *  visible explanation. e.g. "å½å Runtime åè®®æªå¼æ¾ç¬¬ä¸æ¹å·¥å·
-   *  æè½½ï¼æ æ³è°ç?CodePilot Widgetï¼å¦é Widget è¯·åå?Native
-   *  Runtime æ?ClaudeCode SDK". */
+   *  visible explanation. e.g. "当前 Runtime 协议未开放第三方工具
+   *  挂载，无法调用 CodePilot Widget；如需 Widget 请切到 Native
+   *  Runtime 或 ClaudeCode SDK". */
   readonly perceptionHint?: string;
   /** Permission boundary the wrapper / UI should display.
    *  `auto_safe` = no approval needed (allowlisted read-only).
@@ -104,9 +104,9 @@ export interface UnavailableCapability {
   readonly suggestedRuntime?: RuntimeId;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Layer 2 â?User CodePilot Harness extension
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Layer 2 — User CodePilot Harness extension
+// ─────────────────────────────────────────────────────────────────────
 
 export type UserExtensionKind =
   | 'mcp_server'
@@ -117,7 +117,7 @@ export type UserExtensionKind =
 
 export interface UserHarnessExtension {
   readonly kind: UserExtensionKind;
-  /** Where the user installed it inside buckyball.ai. */
+  /** Where the user installed it inside CodePilot. */
   readonly origin: 'codepilot_settings' | 'project_file';
   readonly id: string;
   readonly displayName: string;
@@ -129,9 +129,9 @@ export interface UserHarnessExtension {
   readonly perceptionHint?: string;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Layer 3 â?External Framework Harness reference
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Layer 3 — External Framework Harness reference
+// ─────────────────────────────────────────────────────────────────────
 
 export type ExternalFrameworkId = 'claude_code' | 'codex' | 'future';
 
@@ -148,7 +148,7 @@ export interface ExternalFrameworkHarnessRef {
   readonly kind: ExternalExtensionKind;
   /** Read-only filesystem origin (config file path / install
    *  location). The scanner reads non-secret config; auth tokens are
-   *  forbidden â?`scan-external-framework-harness.ts` enforces the
+   *  forbidden — `scan-external-framework-harness.ts` enforces the
    *  filename allowlist. */
   readonly origin: string;
   readonly id: string;
@@ -160,9 +160,9 @@ export interface ExternalFrameworkHarnessRef {
   readonly perceptionHint?: string;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// HarnessBundle â?assembled per-turn input for each Runtime adapter
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// HarnessBundle — assembled per-turn input for each Runtime adapter
+// ─────────────────────────────────────────────────────────────────────
 
 export interface HarnessBundle {
   readonly runtimeId: RuntimeId;
@@ -171,7 +171,7 @@ export interface HarnessBundle {
   readonly userCapabilities: readonly UserHarnessExtension[];
   readonly externalExtensions: readonly ExternalFrameworkHarnessRef[];
   readonly unavailableCapabilities: readonly UnavailableCapability[];
-  /** Diagnostic record â?what the bundle decided per capability id +
+  /** Diagnostic record — what the bundle decided per capability id +
    *  why. Mirrors `CompiledContext.diagnostics.capabilityDecisions`
    *  but at the bundle granularity (which is one layer above the
    *  prompt compiler). */
@@ -181,7 +181,7 @@ export interface HarnessBundle {
 export interface BundleDiagnostics {
   readonly capabilityDecisions: readonly CapabilityBundleDecision[];
   /** Number of perception-only (executable=false) entries across all
-   *  three layers â?used by Settings UI to show a count. */
+   *  three layers — used by Settings UI to show a count. */
   readonly perceptionOnlyCount: number;
 }
 
@@ -195,9 +195,9 @@ export interface CapabilityBundleDecision {
   readonly reason: string;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Builder input + builder
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface BuildHarnessBundleInput {
   readonly runtimeId: RuntimeId;
@@ -207,12 +207,12 @@ export interface BuildHarnessBundleInput {
    *  of the bundle). Bundle filters this against capability-contract
    *  exposure + the runtime's mount limits. */
   readonly attemptedCapabilities: ReadonlySet<string>;
-  /** Pre-scanned User Harness â?see `user-codepilot-extensions.ts`. */
+  /** Pre-scanned User Harness — see `user-codepilot-extensions.ts`. */
   readonly userCapabilities?: readonly UserHarnessExtension[];
-  /** Pre-scanned External Framework Harness â?see
+  /** Pre-scanned External Framework Harness — see
    *  `external-framework-harness.ts`. */
   readonly externalExtensions?: readonly ExternalFrameworkHarnessRef[];
-  /** Optional overrides â?used by tests + future Codex Account
+  /** Optional overrides — used by tests + future Codex Account
    *  degradation work to mark specific capabilities as
    *  perception-only on a provider path that fundamentally can't
    *  execute them. The builder honours this by emitting the
@@ -222,9 +222,9 @@ export interface BuildHarnessBundleInput {
 }
 
 /**
- * Map RuntimeId â?the `exposure` key in `CapabilityContract`. Identical
+ * Map RuntimeId → the `exposure` key in `CapabilityContract`. Identical
  * to the helper in `context-compiler.ts` (kept private to bundle for
- * dependency direction â?compiler should ultimately consume bundle,
+ * dependency direction — compiler should ultimately consume bundle,
  * not the other way around).
  */
 function exposureKeyForRuntime(
@@ -233,7 +233,7 @@ function exposureKeyForRuntime(
   switch (runtimeId) {
     case 'claude_code':
       return 'claudecode_sdk';
-    case 'bbagent':
+    case 'codepilot_runtime':
       return 'native';
     case 'codex_runtime':
       return 'codex_proxy';
@@ -246,16 +246,16 @@ function exposureKeyForRuntime(
 function deriveTrustBoundary(
   capability: CapabilityContract,
 ): 'auto_safe' | 'requires_approval' | 'bypass_in_full_access' {
-  // Read-only capabilities â?all tools are listed in PERMISSION_SAFE_TOOLS
+  // Read-only capabilities — all tools are listed in PERMISSION_SAFE_TOOLS
   // in agent-tools.ts. Mirror the classification here so the bundle's
   // trustBoundary matches the wrapper's actual behaviour.
   const READ_ONLY_CAPS = new Set(['memory', 'widget']);
   if (READ_ONLY_CAPS.has(capability.id)) {
-    // Widget = load_widget_guidelines (read static spec) â?safe.
+    // Widget = load_widget_guidelines (read static spec) → safe.
     // Memory = read-only search/get/recent.
     return 'auto_safe';
   }
-  // Capabilities that write filesystem / DB / shell-exec â?must
+  // Capabilities that write filesystem / DB / shell-exec → must
   // require approval. Phase 5 mutationLevel makes this per-tool;
   // Phase 1 builds it at capability granularity.
   return 'requires_approval';
@@ -269,7 +269,7 @@ function deriveTrustBoundary(
  *
  * Throws on contract violations (executable=false without
  * perceptionHint, dangling relatedCapabilityId, etc.). Throwing is
- * deliberate â?silently producing a bundle with missing perception
+ * deliberate — silently producing a bundle with missing perception
  * data is exactly the regression the Phase 5e plan is built against.
  */
 export function buildHarnessBundle(
@@ -298,7 +298,7 @@ export function buildHarnessBundle(
     }
 
     if (!input.attemptedCapabilities.has(cap.id)) {
-      // Caller didn't ask for this â?don't decide, don't list. The
+      // Caller didn't ask for this — don't decide, don't list. The
       // compiler / adapter only emit fragments for capabilities the
       // caller mounted; we follow the same rule here.
       continue;
@@ -354,7 +354,7 @@ export function buildHarnessBundle(
     });
   }
 
-  // Validate user + external layers â?perceptionHint contract.
+  // Validate user + external layers — perceptionHint contract.
   const userCapabilities = input.userCapabilities ?? [];
   const externalExtensions = input.externalExtensions ?? [];
 
@@ -409,9 +409,9 @@ export function buildHarnessBundle(
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Convenience accessors â?used by Settings UI matrix derivation
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Convenience accessors — used by Settings UI matrix derivation
+// ─────────────────────────────────────────────────────────────────────
 
 export function bundleExecutableCapabilities(
   bundle: HarnessBundle,

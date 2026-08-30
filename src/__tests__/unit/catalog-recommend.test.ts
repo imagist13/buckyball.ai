@@ -22,7 +22,7 @@ const minimalPreset = (defaultModels: { modelId: string }[]): VendorPreset => ({
 describe('catalog-recommend / isRecommendedModel', () => {
   describe('blacklist', () => {
     // The blacklist should win regardless of catalog whitelist or anthropic
-    // tier â?these models don't belong in the chat picker even when the
+    // tier — these models don't belong in the chat picker even when the
     // catalog incorrectly lists them, and even when the provider is a
     // first-party Anthropic-tier connection.
     const blacklisted = [
@@ -42,7 +42,7 @@ describe('catalog-recommend / isRecommendedModel', () => {
     ];
     for (const id of blacklisted) {
       it(`rejects '${id}' even when in catalog and anthropic-tier`, () => {
-        // Whitelist contains the id and tier is claude_code_ready â?the
+        // Whitelist contains the id and tier is claude_code_ready — the
         // blacklist is the only thing standing between this and `true`.
         const preset = minimalPreset([{ modelId: id }]);
         assert.equal(isRecommendedModel(id, preset, 'claude_code_ready'), false);
@@ -87,15 +87,15 @@ describe('catalog-recommend / isRecommendedModel', () => {
       });
     }
 
-    it('also enables alias for bbagent_only tier (OpenAI-compat relays)', () => {
+    it('also enables alias for codepilot_only tier (OpenAI-compat relays)', () => {
       // OpenRouter exposes anthropic/claude-3-opus through OpenAI-compat
-      // wire format â?tier becomes bbagent_only but the user still
+      // wire format → tier becomes codepilot_only but the user still
       // expects "Claude Opus" to surface as recommended.
-      assert.equal(isRecommendedModel('anthropic/claude-3-opus', undefined, 'bbagent_only'), true);
+      assert.equal(isRecommendedModel('anthropic/claude-3-opus', undefined, 'codepilot_only'), true);
     });
 
     it('does NOT enable alias on unknown tier', () => {
-      // `unknown` means we couldn't classify the provider â?refuse to
+      // `unknown` means we couldn't classify the provider — refuse to
       // auto-enable a Claude-shaped id without positive evidence that
       // this is actually a Claude relay.
       assert.equal(isRecommendedModel('sonnet', undefined, 'unknown'), false);

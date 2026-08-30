@@ -1,5 +1,5 @@
 /**
- * Provider Resolver â?unified provider/model resolution for all consumers.
+ * Provider Resolver — unified provider/model resolution for all consumers.
  *
  * Every entry point (chat, bridge, onboarding, check-in, media plan) calls
  * this module instead of doing its own provider resolution. This guarantees
@@ -29,6 +29,7 @@ import {
   getSetting,
   getAllModelsForProvider,
   getProviderOptions,
+  getProviderSecretErrorCode,
 } from './db';
 import { ensureTokenFresh } from './openai-oauth-manager';
 import { CODEX_API_ENDPOINT } from './openai-oauth';
@@ -50,7 +51,7 @@ import {
   getManagedVirtualProviderDefinition,
 } from './managed-virtual-provider-models';
 
-// ââ Resolution result âââââââââââââââââââââââââââââââââââââââââââ
+// ── Resolution result ───────────────────────────────────────────
 
 export interface ResolvedProvider {
   /** The DB provider record (undefined = use env vars) */
@@ -61,7 +62,7 @@ export interface ResolvedProvider {
   authStyle: AuthStyle;
   /** Resolved model ID (internal/UI model ID) */
   model: string | undefined;
-  /** Upstream model ID (what actually gets sent to the API â?may differ from model) */
+  /** Upstream model ID (what actually gets sent to the API — may differ from model) */
   upstreamModel: string | undefined;
   /** Display name for the model */
   modelDisplayName: string | undefined;
@@ -82,7 +83,7 @@ export interface ResolvedProvider {
   /** Internal: true when resolved as the xAI OAuth virtual provider. */
   _xaiOAuth?: boolean;
   /**
-   * Phase 5 review round 4 (2026-05-13) â?true when resolved as the
+   * Phase 5 review round 4 (2026-05-13) — true when resolved as the
    * Codex Account virtual provider. CodexRuntime takes over the
    * upstream call via its own app-server thread/turn flow; resolvers
    * downstream of this point MUST NOT try to build a transport
@@ -90,22 +91,23 @@ export interface ResolvedProvider {
    */
   _codexAccount?: boolean;
   /**
-   * Phase 2 Step 2 â?invalid-session signal. Set ONLY by
-   * `resolveProviderForSession` when the session's stored
-   * `provider_id` is non-empty but no longer points at a real DB
-   * provider (deleted by the user, lost in import, etc.). The send
-   * route must check this field and refuse to send rather than
-   * silently routing through the env fallback the resolver picks
-   * for the same input shape today. Frontend already has the
-   * matching gate via `RunCheckpoint`; this is the resolver-side
-   * surface so the route can't be reached with a stale session.
+   * Session-aware invalid destination signal. `resolveProviderForSession`
+   * sets it when an explicitly referenced provider no longer exists OR when
+   * the final resolved DB provider (including default/active fallback for a
+   * legacy unpinned session) has no usable credential. The send route must
+   * check this field before recording or delivering the message.
    *
    * Other callers (`resolveProvider` directly, anything not session-
-   * scoped) do NOT set this â?they keep the legacy "fall through to
+   * scoped) do NOT set this — they keep the legacy "fall through to
    * env" behaviour, because they don't have a session intent to
    * compare against.
    */
-  invalidReason?: 'provider-missing' | 'model-missing' | 'runtime-incompatible';
+  invalidReason?:
+    | 'provider-missing'
+    | 'model-missing'
+    | 'runtime-incompatible'
+    | 'credentials-missing'
+    | 'credentials-unreadable';
 }
 
 /** Model-level effort truth already carried by a resolved provider catalog. */
@@ -132,7 +134,7 @@ export function getResolvedModelEffortContract(
   };
 }
 
-// ââ Public API ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Public API ──────────────────────────────────────────────────
 
 export interface ResolveOptions {
   /** Required by every credential-bearing call; inspection-only callers may omit. */
@@ -145,20 +147,20 @@ export interface ResolveOptions {
   model?: string;
   /** Session's stored model */
   sessionModel?: string;
-  /** Use case â?affects which role model to pick */
+  /** Use case — affects which role model to pick */
   useCase?: 'default' | 'reasoning' | 'small';
   /**
    * Active chat-side runtime. When set, the default-model fallback chain
-   * (globalDefault â?roleModels.default â?setting â?availableModels[0])
+   * (globalDefault → roleModels.default → setting → availableModels[0])
    * skips models whose `getModelCompat()` flag doesn't match this runtime,
    * alongside the existing hidden-id guard.
    *
    * Explicit `opts.model` / `opts.sessionModel` are still honored even when
-   * incompatible â?the caller asked for them by name. Mismatches surface
+   * incompatible — the caller asked for them by name. Mismatches surface
    * downstream (route layer, SDK error) rather than being silently rewritten.
    *
    * Omit (or leave undefined) to keep the legacy behavior of considering
-   * every enabled model â?used by Settings > Providers' global default-model
+   * every enabled model — used by Settings > Providers' global default-model
    * picker which surfaces the full catalog regardless of current runtime.
    */
   runtime?: ChatRuntime;
@@ -176,22 +178,23 @@ export interface ResolveOptions {
  * Special value 'env' = use environment variables (skip DB lookup).
  */
 /**
- * Phase 5b round-9 (2026-05-18) â?alias-row canonicalization for
+ * Phase 5b round-9 (2026-05-18) — alias-row canonicalization for
  * OpenRouter Anthropic-skin providers.
  *
  * Pre-round-8 the preset's `defaultModels` was alias-only
- * (`ANTHROPIC_DEFAULT_MODELS` â?no `upstreamModelId`). Provider
+ * (`ANTHROPIC_DEFAULT_MODELS` — no `upstreamModelId`). Provider
  * records created in that window have `provider_models` rows whose
  * `upstream_model_id` is either NULL or equal to the alias itself
- * (`'haiku' â?'haiku'`). Round 8 added the upstream slugs to the
+ * (`'haiku' → 'haiku'`). Round 8 added the upstream slugs to the
  * preset (`OPENROUTER_ANTHROPIC_MODELS`), but `resolveProvider`'s
- * DB-wins merge shadowed them â?so the resolver kept handing the
+ * DB-wins merge shadowed them — so the resolver kept handing the
  * bare alias to upstream, which OpenRouter rejects with "is not a
  * valid model ID".
  *
  * Fix: after the DB merge, take any alias entry whose upstream is
  * missing or self-referential and fill it from the preset slug.
- * Don't override a user-configured full slug (`anthropic/...`) â? * customization wins. Exported so `/api/providers/models` route
+ * Don't override a user-configured full slug (`anthropic/...`) —
+ * customization wins. Exported so `/api/providers/models` route
  * can apply the same shape so chat send + picker + resolver agree.
  */
 export function normalizeOpenRouterAnthropicAlias(
@@ -224,14 +227,15 @@ export const ANTHROPIC_ALIAS_UPSTREAM: Record<string, string> = {
 };
 
 /**
- * P0.5 (2026-06-01) â?map a bare Anthropic alias (`sonnet` / `opus` / `haiku`)
+ * P0.5 (2026-06-01) — map a bare Anthropic alias (`sonnet` / `opus` / `haiku`)
  * to its real upstream id; returns undefined for anything else.
  *
- * This is DETERMINISTIC (a fixed aliasâupstream table), unlike the
- * single-model "first model in list" fallback â?so it's safe to apply even
+ * This is DETERMINISTIC (a fixed alias→upstream table), unlike the
+ * single-model "first model in list" fallback — so it's safe to apply even
  * for multi-model Claude-compat gateways. Without it, a legacy DB row
  * `model_id='sonnet'` with a NULL / self upstream reaches a New-API /
- * Claude-compat gateway verbatim as `sonnet` â?"åç» auto ä¸æ¨¡å?sonnet æ å¯ç? * æ¸ é" 503 (observed 2026-06-01; tech-debt #23).
+ * Claude-compat gateway verbatim as `sonnet` → "分组 auto 下模型 sonnet 无可用
+ * 渠道" 503 (observed 2026-06-01; tech-debt #23).
  */
 export function canonicalAnthropicAliasUpstream(modelId: string | undefined | null): string | undefined {
   if (!modelId) return undefined;
@@ -249,7 +253,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
   let provider: ApiProvider | undefined;
 
   // Determine if the ID came from an explicit request (providerId) or
-  // from the session â?only explicit requests should skip the inactive check.
+  // from the session — only explicit requests should skip the inactive check.
   const isExplicitRequest = !!opts.providerId;
 
   // Special virtual provider: OpenAI OAuth (Codex API)
@@ -260,7 +264,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
     return finishResolution(buildXaiOAuthResolution(opts), opts.callScene);
   }
 
-  // Phase 5 review round 4 (2026-05-13) â?Codex Account is a virtual
+  // Phase 5 review round 4 (2026-05-13) — Codex Account is a virtual
   // provider produced by `src/lib/codex/models.ts:buildCodexProviderModelGroup`
   // when the user is logged into Codex. It's NOT a DB row, so it needs
   // the same virtual-provider exemption as `env` and `openai-oauth`.
@@ -275,7 +279,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
     provider = getProvider(effectiveProviderId);
 
     // For non-explicit sources (session provider, fallback chain), skip
-    // inactive providers â?a stale session may point to a deactivated
+    // inactive providers — a stale session may point to a deactivated
     // provider (e.g. Google Gemini Image that was turned off).
     if (provider && !provider.is_active && !isExplicitRequest) {
       console.warn(`[provider-resolver] Provider "${provider.name}" (${effectiveProviderId}) is inactive, falling back`);
@@ -284,11 +288,11 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
 
     if (!provider) {
       // Requested provider not found (or inactive session provider),
-      // fall back to default â?any active.
+      // fall back to default → any active.
       //
       // NOTE: We intentionally do NOT check default_provider's is_active here.
       // is_active is a "currently selected" marker (see activateProvider in
-      // db.ts â?radio-button style, only one provider can have is_active=1),
+      // db.ts — radio-button style, only one provider can have is_active=1),
       // NOT an enabled/disabled flag. A user setting default_provider_id is
       // an explicit choice that must be honored regardless of is_active.
       // Ignoring it here is the root cause of "Default provider X is inactive,
@@ -304,7 +308,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
       }
     }
   } else if (!effectiveProviderId) {
-    // No provider specified â?use global default.
+    // No provider specified — use global default.
     // See NOTE above: is_active is a UI selection marker, not an enable flag.
     // The user's default_provider_id is an explicit choice; honor it even if
     // the provider isn't currently the "active" one.
@@ -321,7 +325,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
       provider = getActiveProvider();
     }
   }
-  // effectiveProviderId === 'env' â?provider stays undefined
+  // effectiveProviderId === 'env' → provider stays undefined
 
   return finishResolution(buildResolution(provider, opts), opts.callScene);
 }
@@ -330,7 +334,7 @@ export function resolveProvider(opts: ResolveOptions = {}): ResolvedProvider {
  * Fail-closed resolution: return the resolution for EXACTLY this provider id, or
  * `null`. Never falls back to the default / active provider.
  *
- * `resolveProvider` is deliberately forgiving â?a stale or deleted session
+ * `resolveProvider` is deliberately forgiving — a stale or deleted session
  * provider silently becomes the user's default one, which is right for "answer
  * the user's question" but WRONG for any call that carries the user's text to a
  * vendor of its own accord. If the provider a session was pinned to is gone,
@@ -367,7 +371,7 @@ export function resolveExactProvider(
  * NOTE: When the caller already resolved a provider upstream and hands it to
  * us, we trust it unconditionally. `is_active` is a radio-button "currently
  * selected" marker in the DB (see activateProvider in db.ts), not an
- * enable/disable flag â?second-guessing the caller here would undo the
+ * enable/disable flag — second-guessing the caller here would undo the
  * upstream resolution and surface false-positive "inactive, re-resolving"
  * warnings in doctor logs. Stale-session defense lives in resolveProvider()'s
  * session-provider branch, not here.
@@ -386,7 +390,7 @@ export function resolveForClaudeCode(
   if (!resolved.provider && !opts.providerId && !opts.sessionProviderId) {
     const defaultId = getDefaultProviderId();
     if (!defaultId) {
-      // No default configured either â?last resort backwards compat
+      // No default configured either — last resort backwards compat
       const active = getActiveProvider();
       if (active) return buildResolution(active, opts);
     }
@@ -394,7 +398,7 @@ export function resolveForClaudeCode(
   return resolved;
 }
 
-// ââ Claude Code env builder âââââââââââââââââââââââââââââââââââââ
+// ── Claude Code env builder ─────────────────────────────────────
 
 /**
  * Build environment variables for a Claude Code SDK subprocess.
@@ -408,6 +412,14 @@ export function toClaudeCodeEnv(
   baseEnv: Record<string, string>,
   resolved: ResolvedProvider,
 ): Record<string, string> {
+  // An explicitly selected DB provider owns the whole auth group. If its
+  // credential is missing/unreadable, continuing here would leave ambient
+  // ANTHROPIC_* variables or Claude OAuth available to the SDK and silently
+  // send the request to a different vendor. Session routes normally catch
+  // this earlier; this guard protects auxiliary/direct SDK callers too.
+  if (resolved.provider && !resolved.hasCredentials) {
+    throw new Error('provider_credentials_unavailable');
+  }
   const env = { ...baseEnv };
   const roleModelForEnv = (modelId: string | undefined): string | undefined => {
     if (!modelId) return undefined;
@@ -415,12 +427,12 @@ export function toClaudeCodeEnv(
     const resolvedId = catalogEntry?.upstreamModelId
       || (modelId === resolved.model ? resolved.upstreamModel : undefined)
       || modelId;
-    // P0.5 â?this builds the Claude Code (Anthropic) env. When the provider
+    // P0.5 — this builds the Claude Code (Anthropic) env. When the provider
     // LISTS this alias as a model (catalogEntry) but the resolved id is still a
     // bare alias (legacy self-referential / NULL upstream), canonicalize it so
-    // it can't ship to the gateway as `sonnet`/`opus`/`haiku` â?503 "no channel".
+    // it can't ship to the gateway as `sonnet`/`opus`/`haiku` → 503 "no channel".
     // If the alias isn't a listed model, preserve it (let upstream surface the
-    // real error â?the existing multi-model contract).
+    // real error — the existing multi-model contract).
     if (catalogEntry) return canonicalAnthropicAliasUpstream(resolvedId) ?? resolvedId;
     return resolvedId;
   };
@@ -461,12 +473,12 @@ export function toClaudeCodeEnv(
       switch (resolved.authStyle) {
         case 'auth_token':
           env.ANTHROPIC_AUTH_TOKEN = apiKey;
-          env.ANTHROPIC_API_KEY = '';  // Explicitly empty â?required by Ollama and other auth_token providers
+          env.ANTHROPIC_API_KEY = '';  // Explicitly empty — required by Ollama and other auth_token providers
           break;
         case 'api_key':
         default:
           // Only set ANTHROPIC_API_KEY (X-Api-Key header).
-          // Do NOT set ANTHROPIC_AUTH_TOKEN â?upstream Claude Code adds
+          // Do NOT set ANTHROPIC_AUTH_TOKEN — upstream Claude Code adds
           // Authorization: Bearer when it sees AUTH_TOKEN, which conflicts
           // with providers that expect API-key-only auth (e.g. Kimi).
           env.ANTHROPIC_API_KEY = apiKey;
@@ -511,7 +523,7 @@ export function toClaudeCodeEnv(
     }
 
     // Inject env overrides (empty string = delete).
-    // Skip provider-owned Anthropic keys â?they were already correctly
+    // Skip provider-owned Anthropic keys — they were already correctly
     // injected above based on authStyle + role model resolution. Legacy
     // extra_env often contains placeholder auth entries, and older gateway
     // configs may carry bare UI aliases like ANTHROPIC_MODEL=sonnet; letting
@@ -538,7 +550,7 @@ export function toClaudeCodeEnv(
       }
     }
   } else if (!resolved.provider) {
-    // No provider â?check legacy DB settings, then fall back to existing env
+    // No provider — check legacy DB settings, then fall back to existing env
     const appToken = getSetting('anthropic_auth_token');
     const appBaseUrl = getSetting('anthropic_base_url');
     if (appToken) env.ANTHROPIC_AUTH_TOKEN = appToken;
@@ -547,15 +559,15 @@ export function toClaudeCodeEnv(
 
   // NOTE: We previously set CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST=1 here in an attempt
   // to tell the Agent SDK to strip ~/.claude/settings.json env overrides. That flag
-  // does not exist in the current SDK (@anthropic-ai/claude-agent-sdk 0.2.62) â?it
+  // does not exist in the current SDK (@anthropic-ai/claude-agent-sdk 0.2.62) — it
   // was either aspirational or came from an older SDK spec. Removing it avoids
   // shipping misleading dead code. The SDK already filters its own env blocklist
-  // (model aliases, AWS/OTEL/Bedrock keys â?see rG6 in cli.js), and when CodePilot
+  // (model aliases, AWS/OTEL/Bedrock keys — see rG6 in cli.js), and when CodePilot
   // has an active provider, toClaudeCodeEnv() already deletes all ANTHROPIC_* keys
   // from baseEnv above before injecting the provider's values, so settings.json
   // env cannot override the provider's auth/baseUrl for authenticated users.
   // For env-mode (no active provider) users, we intentionally let settings.json
-  // provide credentials â?that's how cc-switch integration works.
+  // provide credentials — that's how cc-switch integration works.
 
   return env;
 }
@@ -567,15 +579,14 @@ export function toClaudeCodeEnv(
  *
  *   - DB provider WITH credentials (`provider && hasCredentials`): toClaudeCodeEnv
  *     clears every ANTHROPIC_* var then injects this provider's base_url. An empty
- *     base_url leaves it unset â?SDK falls back to official api.anthropic.com
+ *     base_url leaves it unset → SDK falls back to official api.anthropic.com
  *     (return undefined).
- *   - DB provider WITHOUT credentials (`provider && !hasCredentials`): toClaudeCodeEnv
- *     runs NEITHER branch â?its provider branch is gated on `hasCredentials`, its
- *     env branch on `!provider` â?so it neither clears nor injects ANTHROPIC_*. The
- *     SDK inherits ONLY the ambient `process.env.ANTHROPIC_BASE_URL`; provider.base_url
- *     is NOT injected and settings is NOT consulted. Mirror that (a third-party env
- *     override here must still untrust the window â?Codex P2, 2026-06-20).
- *   - env / legacy / cc-switch (`!provider`): SDK inherits the ambient base URL â? *     `settings.anthropic_base_url` first (mirrors the `!resolved.provider` branch),
+ *   - DB provider WITHOUT credentials (`provider && !hasCredentials`): subprocess
+ *     construction now fails closed before this trust helper is consumed. This
+ *     branch remains conservative for diagnostic callers that inspect a resolution
+ *     without spawning: report only the ambient URL, never the selected provider URL.
+ *   - env / legacy / cc-switch (`!provider`): SDK inherits the ambient base URL —
+ *     `settings.anthropic_base_url` first (mirrors the `!resolved.provider` branch),
  *     then `process.env.ANTHROPIC_BASE_URL`.
  *
  * Returning undefined means "official first-party endpoint". Callers gate the
@@ -590,13 +601,13 @@ export function resolveEffectiveAnthropicBaseUrl(
     return resolved.provider.base_url || undefined;
   }
   if (resolved.provider) {
-    // provider selected but no credentials â?SDK inherits ambient env only.
+    // provider selected but no credentials → SDK inherits ambient env only.
     return process.env.ANTHROPIC_BASE_URL || undefined;
   }
   return getSetting('anthropic_base_url') || process.env.ANTHROPIC_BASE_URL || undefined;
 }
 
-// ââ AI SDK config builder âââââââââââââââââââââââââââââââââââââââ
+// ── AI SDK config builder ───────────────────────────────────────
 
 export interface AiSdkConfig {
   /** Which AI SDK factory to use */
@@ -664,9 +675,10 @@ export function toAiSdkConfig(
       }
     }
 
-    // 3. Last resort for SINGLE-MODEL third-party providers: short alias â?    //    that single model. Third-party proxies (Kimi, GLM, OpenRouter relays,
+    // 3. Last resort for SINGLE-MODEL third-party providers: short alias →
+    //    that single model. Third-party proxies (Kimi, GLM, OpenRouter relays,
     //    custom enterprise endpoints) usually do NOT accept bare "sonnet" /
-    //    "opus" / "haiku" â?they want fully-qualified model IDs. Sending the
+    //    "opus" / "haiku" — they want fully-qualified model IDs. Sending the
     //    alias produces "model 'sonnet' not found" errors from the upstream
     //    (Sentry: HTTP 400/404/502 across multiple fingerprints, 310+ events
     //    over 14d).
@@ -674,7 +686,7 @@ export function toAiSdkConfig(
     //    IMPORTANT: We only fall back when the provider has EXACTLY ONE model
     //    in its catalog. Multi-model providers (e.g. OpenRouter with dozens
     //    of models) must NOT silently rewrite the user's chosen alias to
-    //    "first model in list" â?that's a hard-to-diagnose behavior change
+    //    "first model in list" — that's a hard-to-diagnose behavior change
     //    affecting both correctness and cost. For multi-model providers
     //    without a role mapping, we keep the alias and let upstream return
     //    its real "model not found" error so the user can see the problem
@@ -691,13 +703,13 @@ export function toAiSdkConfig(
       }
     }
 
-    // 4. P0.5 â?a bare Anthropic alias that the provider LISTS as a model
+    // 4. P0.5 — a bare Anthropic alias that the provider LISTS as a model
     //    (legacy materialized row with NULL/self upstream) on an anthropic
     //    protocol provider: canonicalize to the real upstream id. Gated on
     //    "alias is in availableModels" so we DON'T rewrite an alias the
-    //    provider doesn't offer (that stays bare â?upstream surfaces the real
+    //    provider doesn't offer (that stays bare → upstream surfaces the real
     //    error, preserving the multi-model contract in step 3's note). Unlike
-    //    step 3 this is a fixed aliasâupstream map, not "first model in list".
+    //    step 3 this is a fixed alias→upstream map, not "first model in list".
     if (
       SHORT_ALIASES.has(modelId) &&
       resolved.protocol === 'anthropic' &&
@@ -727,7 +739,7 @@ export function toAiSdkConfig(
     ? getVerifiedProviderWireCapabilities(provider, modelId)
     : {};
 
-  // OpenAI OAuth (Codex API) â?special path using OAuth Bearer token.
+  // OpenAI OAuth (Codex API) — special path using OAuth Bearer token.
   // The actual OAuth token is resolved in ai-provider.ts at model creation time
   // (via getOAuthCredentialsSync) because token refresh is async.
   if (resolved._openaiOAuth) {
@@ -797,13 +809,13 @@ export function toAiSdkConfig(
   // and they are mutually exclusive. We must pick the right one based on authStyle.
   const resolveAnthropicAuth = (): { apiKey: string | undefined; authToken: string | undefined } => {
     if (provider) {
-      // Configured provider â?use authStyle to decide
+      // Configured provider — use authStyle to decide
       if (resolved.authStyle === 'auth_token') {
         return { apiKey: undefined, authToken: provider.api_key || undefined };
       }
       return { apiKey: provider.api_key || undefined, authToken: undefined };
     }
-    // Env mode â?check env vars and legacy DB settings.
+    // Env mode — check env vars and legacy DB settings.
     // ANTHROPIC_AUTH_TOKEN takes precedence (it's the Claude Code SDK auth path).
     const envAuthToken = process.env.ANTHROPIC_AUTH_TOKEN || getSetting('anthropic_auth_token');
     if (envAuthToken) {
@@ -847,7 +859,7 @@ export function toAiSdkConfig(
             sdkType = 'claude-code-compat';
           }
         } catch {
-          sdkType = 'claude-code-compat'; // malformed URL â?safer with adapter
+          sdkType = 'claude-code-compat'; // malformed URL → safer with adapter
         }
       }
 
@@ -865,22 +877,23 @@ export function toAiSdkConfig(
     }
 
     case 'openrouter': {
-      // Phase 5b round-7 fix (2026-05-18) â?OpenRouter exposes TWO
+      // Phase 5b round-7 fix (2026-05-18) — OpenRouter exposes TWO
       // skin endpoints under the same `openrouter` preset:
-      //   - `https://openrouter.ai/api/v1` â?OpenAI Chat Completions skin
-      //   - `https://openrouter.ai/api`    â?Anthropic Messages skin
+      //   - `https://openrouter.ai/api/v1` — OpenAI Chat Completions skin
+      //   - `https://openrouter.ai/api`    — Anthropic Messages skin
       // Pre-fix this case hardcoded `sdkType: 'openai'` for both,
       // which meant Anthropic-skin requests (e.g. `anthropic/claude-haiku`)
       // were sent in OpenAI Chat Completions wire format against the
       // Messages endpoint. Result on real smoke: HTTP 200 but only
-      // `response.created â?response.completed` with empty text;
+      // `response.created → response.completed` with empty text;
       // non-stream returned "Invalid JSON response". `runtime-compat.ts`
       // already classifies this as `openrouter_anthropic_skin` (the
-      // detection predicate is `isOpenRouterAnthropicSkinUrl` â?exported
+      // detection predicate is `isOpenRouterAnthropicSkinUrl` — exported
       // for reuse here), but the resolver never read the same predicate.
-      // Fix: branch on the same predicate. Anthropic skin â?route through
+      // Fix: branch on the same predicate. Anthropic skin → route through
       // `claude-code-compat` (third-party Anthropic-compatible adapter
-      // we already use for sdkProxyOnly proxies like Zhipu/Kimi â?      // same wire format, just a different base URL).
+      // we already use for sdkProxyOnly proxies like Zhipu/Kimi —
+      // same wire format, just a different base URL).
       const baseUrl = provider?.base_url || 'https://openrouter.ai/api/v1';
       if (provider?.base_url && isOpenRouterAnthropicSkinUrl(provider.base_url)) {
         return {
@@ -1009,19 +1022,19 @@ export function toAiSdkConfig(
   }
 }
 
-// ââ Internal helpers ââââââââââââââââââââââââââââââââââââââââââââ
+// ── Internal helpers ────────────────────────────────────────────
 
 /**
  * Build resolution for the virtual OpenAI OAuth provider.
  * Uses OAuth Bearer token + Codex API endpoint.
  */
 /**
- * Phase 5 review round 4 (2026-05-13) â?Codex Account virtual provider
+ * Phase 5 review round 4 (2026-05-13) — Codex Account virtual provider
  * resolution. Returns a minimal ResolvedProvider so callers that
  * destructure it don't crash; the actual upstream call goes through
  * Codex Runtime's app-server thread/turn flow, NOT through this
  * resolver's transport. We populate `hasCredentials: true` because
- * Codex's account/read endpoint is the real gate â?by the time the
+ * Codex's account/read endpoint is the real gate — by the time the
  * picker shows a codex_account model, the account is already logged
  * in (codex-models.ts:buildCodexProviderModelGroup returns null
  * otherwise).
@@ -1039,7 +1052,7 @@ function buildCodexAccountResolution(opts: ResolveOptions): ResolvedProvider {
     envOverrides: {},
     roleModels: { default: model },
     // Account-managed: Codex app-server owns credentials. The resolver
-    // never makes the upstream call for this provider â?CodexRuntime
+    // never makes the upstream call for this provider — CodexRuntime
     // bypasses provider-transport entirely.
     hasCredentials: true,
     availableModels: [],
@@ -1096,7 +1109,7 @@ function buildResolution(
   opts: ResolveOptions,
 ): ResolvedProvider {
   if (!provider) {
-    // Environment-based provider (no DB record) â?credentials come from shell env,
+    // Environment-based provider (no DB record) — credentials come from shell env,
     // legacy DB settings, or ~/.claude/settings.json (managed by cc-switch etc.).
     // When only settings.json has creds, we must still flag hasCredentials=true so
     // ai-provider.ts's guard doesn't preemptively abort before the SDK runtime has
@@ -1107,7 +1120,7 @@ function buildResolution(
       getSetting('anthropic_auth_token') ||
       hasClaudeSettingsCredentials()
     );
-    // Read user-configured global default model â?only use it if it's an env-provider model
+    // Read user-configured global default model — only use it if it's an env-provider model
     const globalDefaultModel = getSetting('global_default_model') || undefined;
     const globalDefaultProvider = getSetting('global_default_model_provider') || undefined;
     // Only apply global default when it belongs to the env provider (or no provider is specified)
@@ -1117,7 +1130,8 @@ function buildResolution(
 
     // Env mode uses short aliases (sonnet/opus/haiku/...) in the UI.
     // Map them to full Anthropic model IDs so toAiSdkConfig can resolve
-    // correctly. Single source of truth lives in provider-catalog.ts â?    // do NOT re-inline a copy here (three copies drifted before; Codex
+    // correctly. Single source of truth lives in provider-catalog.ts —
+    // do NOT re-inline a copy here (three copies drifted before; Codex
     // review P1, 2026-06-10).
     const envModels: CatalogModel[] = ENV_CLAUDE_CODE_MODELS;
 
@@ -1185,7 +1199,7 @@ function buildResolution(
   // BEFORE that change had `provider_models` rows with
   // upstream_model_id='haiku' (or NULL). The DB-wins merge below then
   // shadowed the preset slug. The normalize step below fills the missing
-  // upstream from the preset for OpenRouter Anthropic-skin only â?never
+  // upstream from the preset for OpenRouter Anthropic-skin only — never
   // overrides a user-configured full slug.
   const presetModels = getDefaultModelsForProvider(protocol, provider.base_url, provider.provider_type);
   let availableModels: CatalogModel[] = [...presetModels];
@@ -1231,10 +1245,10 @@ function buildResolution(
   // upstream is missing or equals the alias itself (legacy DB shape).
   // Gates strictly:
   //   - inferred `protocol === 'openrouter'` (the LOCAL var computed at
-  //     line 894 above, NOT `provider.protocol` â?that DB column may be
+  //     line 894 above, NOT `provider.protocol` — that DB column may be
   //     NULL on legacy rows and is normalized via inferProtocolFromProvider)
   //   - base_url passes `isOpenRouterAnthropicSkinUrl` (i.e. ends with `/api`,
-  //     not `/api/v1` â?runtime-compat.ts:49 owns the predicate)
+  //     not `/api/v1` — runtime-compat.ts:49 owns the predicate)
   //   - modelId is one of the three aliases
   //   - upstreamModelId is undefined OR === modelId (alias self-reference)
   // User-configured full slugs (anything else, e.g. `anthropic/claude-haiku-4.6`)
@@ -1253,7 +1267,7 @@ function buildResolution(
   // Read per-provider options
   const providerOpts = getProviderOptions(provider.id);
 
-  // Read global default model â?only use it if it belongs to THIS provider
+  // Read global default model — only use it if it belongs to THIS provider
   const globalDefaultModel = getSetting('global_default_model') || undefined;
   const globalDefaultProvider = getSetting('global_default_model_provider') || undefined;
   const applicableGlobalDefault = (globalDefaultModel && globalDefaultProvider === provider.id)
@@ -1261,14 +1275,14 @@ function buildResolution(
 
   // Pre-compute provider compat + a model-id index so the runtime guard
   // below can check capabilities in O(1). Only built when a runtime is
-  // requested â?keeps the no-runtime path the same shape as before.
+  // requested — keeps the no-runtime path the same shape as before.
   const providerCompat = getProviderCompat(provider);
   const modelIndex: Map<string, CatalogModel> = opts.runtime
     ? new Map(availableModels.map(m => [m.modelId, m]))
     : new Map();
   /** Runtime-compat guard for default-model fallback selection.
-   *  - No runtime requested â?always pass (legacy behavior).
-   *  - Unknown id â?fall back to the upstream defaults of the runtime
+   *  - No runtime requested → always pass (legacy behavior).
+   *  - Unknown id → fall back to the upstream defaults of the runtime
    *    (resolved via `getModelCompat({ providerCompat })`); this matters
    *    for ids that are referenced from `roleModels` / settings but
    *    haven't materialized into `availableModels` yet (e.g. preset
@@ -1284,7 +1298,7 @@ function buildResolution(
       capabilities: entry?.capabilities,
     });
     if (cap.media) return false;
-    // Phase 0.5 Slice E.1 (2026-05-13) â?filter by the canonical
+    // Phase 0.5 Slice E.1 (2026-05-13) — filter by the canonical
     // `supportedRuntimes` array. Adding Codex Runtime later requires
     // zero changes here: `getModelCompat` populates supportedRuntimes
     // for every provider tier, and Codex's adapter / catalog entry
@@ -1299,24 +1313,24 @@ function buildResolution(
     ? availableModels.filter(m => runtimeOk(m.modelId))
     : availableModels;
 
-  // Resolve model â?priority:
-  //   1. Explicit request model (opts.model)        â?honored even if hidden /
+  // Resolve model — priority:
+  //   1. Explicit request model (opts.model)        ← honored even if hidden /
   //                                                   runtime-incompatible;
   //                                                   user asked for it explicitly
-  //   2. Session's stored model (opts.sessionModel) â?stored at the session level,
+  //   2. Session's stored model (opts.sessionModel) ← stored at the session level,
   //                                                   trust it
   //   3. Global default model (only if it belongs to this provider)
   //   4. Provider's roleModels.default (preset default, e.g. "ark-code-latest")
   //   5. Global default_model setting (legacy)
   //
   // Steps 3-5 fall through to the next entry when the candidate is in
-  // `dbHiddenIds` OR is incompatible with `opts.runtime` â?a hidden model
+  // `dbHiddenIds` OR is incompatible with `opts.runtime` — a hidden model
   // must never be silently selected as a default, and a model the active
   // runtime can't reach should not be picked as the default either (it
   // would fail at the route / SDK layer with a confusing error). Final
   // fallback: the first enabled+compatible entry in `availableModels`,
   // and only if that filter yields nothing do we fall back to the first
-  // enabled model regardless of runtime â?that lets us still produce a
+  // enabled model regardless of runtime — that lets us still produce a
   // resolution for users with no compatible model configured.
   const visibleOrUndef = (id: string | undefined) =>
     (!id || dbHiddenIds.has(id) || !runtimeOk(id)) ? undefined : id;
@@ -1332,7 +1346,7 @@ function buildResolution(
   let upstreamModel: string | undefined;
   let modelDisplayName: string | undefined;
 
-  // If a use case is specified, check role models for that use case â?but
+  // If a use case is specified, check role models for that use case — but
   // skip if that role's mapped model is hidden or runtime-incompatible
   // (fall back to the request model). Same precedence as the default chain
   // above; useCase routing must not bypass the runtime gate.
@@ -1365,7 +1379,7 @@ function buildResolution(
   //              honoring it in the subprocess violates that intent.
   //   - Runtime: when the active chat-side runtime is requested, slots that
   //              point at runtime-incompatible models can't be served by the
-  //              Claude Code subprocess (e.g. a `bbagent_only` row used as
+  //              Claude Code subprocess (e.g. a `codepilot_only` row used as
   //              `roleModels.default` would set `ANTHROPIC_MODEL` to a model
   //              that Claude Code can't reach).
   // `runtimeOk` returns `true` when no `opts.runtime` was given, so the
@@ -1388,7 +1402,7 @@ function buildResolution(
   //   1. Explicit override path: caller passed opts.model and catalog mapped
   //      it to a different upstream id (existing behaviour).
   //   2. Fill-stripped path: the original default was just stripped as hidden
-  //      above, so default is now empty â?fill it with the picked fallback
+  //      above, so default is now empty — fill it with the picked fallback
   //      so toClaudeCodeEnv() still sets ANTHROPIC_MODEL. Without this,
   //      ANTHROPIC_MODEL would be unset and the Claude Code subprocess would
   //      fall back to its own internal default, which may not match what
@@ -1404,10 +1418,10 @@ function buildResolution(
   // Has credentials?
   const hasCredentials = !!(provider.api_key) || authStyle === 'env_only';
 
-  // Settings sources for DB-backed providers â?KEEP 'user', DROP 'project'+'local'.
+  // Settings sources for DB-backed providers — KEEP 'user', DROP 'project'+'local'.
   //
   // Why 'user' stays: the SDK relies on `settingSources: ['user']` to
-  // automatically discover user-scoped features that buckyball.ai does NOT
+  // automatically discover user-scoped features that CodePilot does NOT
   // pass explicitly:
   //   - User-level MCP servers from ~/.claude.json / ~/.claude/settings.json
   //   - User-level plugins via `enabledPlugins` in settings.json
@@ -1415,7 +1429,7 @@ function buildResolution(
   //   - User-level hooks, permissions, CLAUDE.md
   // Dropping 'user' silently disables all of the above. The cc-switch-style
   // env-bleed concern at the user layer is handled by per-request shadow
-  // HOME in `claude-home-shadow.ts` â?settings.json is materialized with
+  // HOME in `claude-home-shadow.ts` — settings.json is materialized with
   // ANTHROPIC_* keys stripped while everything else is preserved.
   //
   // Why 'project' and 'local' are dropped:
@@ -1428,10 +1442,10 @@ function buildResolution(
   // relative paths, so a shadow cwd would silently make new files vanish.
   // Cleaner: stop exposing project/local layers and explicitly preserve
   // the non-auth project features we actually need:
-  //   - Project CLAUDE.md / AGENTS.md â?loaded via context-assembler.ts:89
+  //   - Project CLAUDE.md / AGENTS.md → loaded via context-assembler.ts:89
   //     (workspacePrompt) AND agent-system-prompt.ts:119 (discoverProject-
   //     Instructions). Both run without going through SDK settingSources.
-  //   - Project `<cwd>/.mcp.json` â?explicitly injected into the SDK's
+  //   - Project `<cwd>/.mcp.json` → explicitly injected into the SDK's
   //     `mcpServers` Option in claude-client.ts (~line 647) via
   //     `loadProjectMcpServers(resolvedWorkingDirectory.path)`. We can't
   //     rely on SDK auto-loading because that's gated by 'project'
@@ -1439,11 +1453,11 @@ function buildResolution(
   //     the desktop app is the Next.js server's working dir (wrong).
   // Lost (rare): `<cwd>/.claude/settings.json` mcpServers / hooks / plugins
   // / permissions and `<cwd>/.claude/settings.local.json` overrides. Most
-  // users don't author project-level Claude Code config, and buckyball.ai has
+  // users don't author project-level Claude Code config, and CodePilot has
   // its own permission system, so this is an acceptable trade-off.
   //
-  // Env mode (no DB provider) keeps all 3 sources â?see buildResolution()
-  // around line 640 â?so cc-switch users without a configured DB provider
+  // Env mode (no DB provider) keeps all 3 sources — see buildResolution()
+  // around line 640 — so cc-switch users without a configured DB provider
   // get the full Claude Code config experience.
   const settingSources = ['user'];
 
@@ -1480,7 +1494,7 @@ function inferProtocolFromProvider(provider: ApiProvider): Protocol {
 }
 
 function inferAuthStyleFromProvider(provider: ApiProvider): AuthStyle {
-  // Check preset match first â?pass protocol to avoid cross-protocol fuzzy mismatches
+  // Check preset match first — pass protocol to avoid cross-protocol fuzzy mismatches
   const protocol = inferProtocolFromProvider(provider);
   const preset = findPresetForLegacy(provider.base_url, provider.provider_type, protocol, provider.preset_key);
   if (preset) return preset.authStyle;
@@ -1507,22 +1521,22 @@ function safeParseCapabilities(json: string | undefined | null): CatalogModel['c
 }
 
 // ApiProvider now includes protocol, headers_json, env_overrides_json, role_models_json
-// directly â?no type augmentation needed.
+// directly — no type augmentation needed.
 
-// ââ Auxiliary model routing âââââââââââââââââââââââââââââââââââââ
+// ── Auxiliary model routing ─────────────────────────────────────
 //
 // Auxiliary tasks (context compression, short summaries, vision,
 // web extract, etc.) should use a small/fast model to save cost.
 // This section implements the 5-step resolution chain documented in
-// docs/research/hermes-agent-analysis.md Â§3.2:
+// docs/research/hermes-agent-analysis.md §3.2:
 //
 //   1. Per-task env override (AUXILIARY_<TASK>_PROVIDER + _MODEL)
 //   2. Main provider's roleModels.small (if not sdkProxyOnly)
 //   3. Main provider's roleModels.haiku (if not sdkProxyOnly)
 //   4. First other non-sdkProxyOnly provider with .small or .haiku
-//   5. Main provider + main model (ultimate floor â?never returns null)
+//   5. Main provider + main model (ultimate floor — never returns null)
 //
-// buckyball.ai background: provider preset's roleModels.small slot is
+// CodePilot background: provider preset's roleModels.small slot is
 // already populated for many providers (see provider-catalog.ts) and
 // already consumed by toClaudeCodeEnv() to set ANTHROPIC_SMALL_FAST_MODEL
 // for the SDK path. This routing extends the same slot to Native Runtime
@@ -1539,11 +1553,11 @@ export type AuxiliaryResolutionSource =
   | 'main_floor';
 
 export interface AuxiliaryModelResolution {
-  /** Provider ID â?'env' when no DB provider is configured (environment mode). */
+  /** Provider ID — 'env' when no DB provider is configured (environment mode). */
   providerId: string;
   /** Upstream model ID to send to the API. May be empty string if nothing is configured. */
   modelId: string;
-  /** Which resolution tier produced this result â?for telemetry / debugging. */
+  /** Which resolution tier produced this result — for telemetry / debugging. */
   source: AuxiliaryResolutionSource;
 }
 
@@ -1553,7 +1567,7 @@ export interface AuxiliaryModelResolution {
  * itself performs no IO and is trivial to unit test.
  */
 export interface AuxiliaryRoutingContext {
-  /** Result of resolveProvider() â?may have provider=undefined in env mode. */
+  /** Result of resolveProvider() — may have provider=undefined in env mode. */
   main: ResolvedProvider;
   /** Whether main provider is flagged sdkProxyOnly via its preset. */
   isMainSdkProxyOnly: boolean;
@@ -1564,12 +1578,12 @@ export interface AuxiliaryRoutingContext {
     isSdkProxyOnly: boolean;
     isInteractiveOnly: boolean;
   }>;
-  /** Per-task env override â?env_override tier only applies when BOTH are set. */
+  /** Per-task env override — env_override tier only applies when BOTH are set. */
   envOverride?: { providerId?: string; modelId?: string };
 }
 
 /**
- * Pure routing function â?implements the 5-step resolution chain.
+ * Pure routing function — implements the 5-step resolution chain.
  *
  * Separated from the live wrapper so unit tests can feed in fixtures
  * without mocking DB / env. All dependencies come in via `ctx`.
@@ -1580,7 +1594,7 @@ export function routeAuxiliaryModel(
 ): AuxiliaryModelResolution {
   void task; // per-task logic currently limited to env var name (handled in wrapper)
 
-  // Tier 1: Per-task env override â?requires both provider and model set.
+  // Tier 1: Per-task env override — requires both provider and model set.
   const env = ctx.envOverride;
   if (env?.providerId && env?.modelId) {
     return {
@@ -1630,7 +1644,7 @@ export function routeAuxiliaryModel(
     }
   }
 
-  // Tier 5: Ultimate floor â?main provider + main model.
+  // Tier 5: Ultimate floor — main provider + main model.
   // This is the "never return null" guarantee: if no cheap model is available,
   // the auxiliary task simply uses the same model as the main conversation.
   // Callers treat this as "auxiliary optimization unavailable, run on primary".
@@ -1642,12 +1656,12 @@ export function routeAuxiliaryModel(
 }
 
 /**
- * Live entry point â?fetches the main provider, enumerates other configured
+ * Live entry point — fetches the main provider, enumerates other configured
  * providers, reads per-task env overrides, and delegates to routeAuxiliaryModel.
  *
  * **Never returns null.** When no cheap auxiliary model is available, falls
  * back to the main provider + main model (source: 'main_floor') so callers
- * can always make a valid model call â?even if it doesn't save cost.
+ * can always make a valid model call — even if it doesn't save cost.
  *
  * **Session context**: callers MUST pass the session's provider context
  * (providerId / sessionProviderId / sessionModel) so that "main" means
@@ -1659,7 +1673,7 @@ export function routeAuxiliaryModel(
  *
  * @param task The auxiliary task type (compact, vision, summarize, web_extract)
  * @param opts Session context forwarded to `resolveProvider()`. Omitting
- *   this falls back to the global default provider â?intentionally kept
+ *   this falls back to the global default provider — intentionally kept
  *   for callers that don't have a session (e.g. background jobs).
  */
 export function resolveAuxiliaryModel(
@@ -1667,7 +1681,7 @@ export function resolveAuxiliaryModel(
   opts: ResolveOptions = {},
 ): AuxiliaryModelResolution {
   // Resolve the main provider with session context. Passing opts through
-  // is critical â?otherwise auxiliary routing targets the global default
+  // is critical — otherwise auxiliary routing targets the global default
   // instead of the session's active provider.
   const main = resolveProvider(opts);
 
@@ -1705,13 +1719,13 @@ export function resolveAuxiliaryModel(
       }
     } catch (err) {
       // getAllProviders may fail in test environments or on fresh DBs.
-      // Degrade gracefully â?the routing still returns a usable result via
+      // Degrade gracefully — the routing still returns a usable result via
       // the main_floor tier.
       console.warn('[resolveAuxiliaryModel] getAllProviders failed:', err);
     }
   }
 
-  // Per-task env override â?read e.g. AUXILIARY_COMPACT_PROVIDER + _MODEL.
+  // Per-task env override — read e.g. AUXILIARY_COMPACT_PROVIDER + _MODEL.
   const envKey = task.toUpperCase();
   const envProvider = process.env[`AUXILIARY_${envKey}_PROVIDER`];
   const envModel = process.env[`AUXILIARY_${envKey}_MODEL`];
@@ -1737,13 +1751,13 @@ export function resolveAuxiliaryModel(
  * default/sonnet is set" rule used by `buildResolution()` (see :664-675).
  *
  * Extracting this ensures the tier-4 auxiliary fallback sees the same
- * effective role models as the main provider resolution â?without it,
+ * effective role models as the main provider resolution — without it,
  * providers that rely on preset defaults (instead of user-persisted JSON)
  * would appear to have no small/haiku slot, silently downgrading the
  * auxiliary fallback chain to `main_floor`.
  *
  * **Exported for unit testing.** The merge rule is simple but the logic
- * is load-bearing â?the pre-fix auxiliary path diverged from the main
+ * is load-bearing — the pre-fix auxiliary path diverged from the main
  * path by skipping this merge, and a direct unit test is the cheapest
  * way to lock the contract down. Callers inside this file use this
  * helper at the tier-4 scan site; external callers should prefer the
@@ -1776,7 +1790,7 @@ function safeParseRoleModels(json: string | undefined | null): RoleModels {
   return {};
 }
 
-// ââ Phase 2 Step 2 â?session-aware wrapper âââââââââââââââââââââââââââ
+// ── Phase 2 Step 2 — session-aware wrapper ───────────────────────────
 
 /**
  * Minimal shape consumed from a `ChatSession`. Avoids importing the
@@ -1794,7 +1808,7 @@ export interface SessionRuntimeIntent {
    *
    * **Important**: this can be either (a) a *real* user override (the
    * user just picked a different provider in the composer) or (b) just
-   * the session's current provider echoed back through the wire â?the
+   * the session's current provider echoed back through the wire — the
    * default `ChatView` send path includes `provider_id` on every
    * request. The wrapper does NOT use this field to decide "skip
    * validation"; it validates whichever provider will actually be sent
@@ -1802,7 +1816,7 @@ export interface SessionRuntimeIntent {
    * value). See the `effectiveProviderId` logic below.
    *
    * If a future caller wants to explicitly mark "user just clicked
-   * switch", surface that intent through a separate flag â?don't piggy-
+   * switch", surface that intent through a separate flag — don't piggy-
    * back on the request body, because the request body looks the same
    * for "user override" and "normal echo".
    */
@@ -1814,24 +1828,20 @@ export interface SessionRuntimeIntent {
 /**
  * Phase 2 Step 2: session-aware provider resolver.
  *
- * Wraps `resolveProvider` and adds **one** behavior on top: when the
- * session committed to a specific provider id but that provider no
- * longer exists in the DB (deleted, lost in import, never created),
- * the wrapper returns a `ResolvedProvider` carrying
- * `invalidReason: 'provider-missing'`. Callers (chat send route,
- * future RunCheckpoint signal) can then refuse to send instead of
- * silently falling through to the env provider â?which is what the
- * raw `resolveProvider` does today and what the user is afraid of.
+ * Wraps `resolveProvider` with fail-closed session intent checks. It labels
+ * deleted providers and DB providers whose selected credential is missing or
+ * unreadable. Callers can then refuse before any side effect instead of
+ * silently falling through to env credentials / Claude OAuth.
  *
  * Everything else delegates straight to `resolveProvider` with the
  * session's data plumbed in: per-message request overrides win, then
  * session.model / session.provider_id, then global defaults. This is
- * the same priority chain the existing resolver enforces â?we are
+ * the same priority chain the existing resolver enforces — we are
  * not changing it, just labelling the missing-provider case.
  *
  * Caller contract:
  *   - Pass the session's stored fields explicitly. The wrapper does
- *     NOT call `getSession()` â?keeps the function pure and testable,
+ *     NOT call `getSession()` — keeps the function pure and testable,
  *     and avoids accidental coupling to DB mocks.
  *   - To opt out of the invalid-session check (e.g. legacy paths
  *     that still want silent env fallback), call `resolveProvider`
@@ -1845,30 +1855,31 @@ export function resolveProviderForSession(
   const requestProviderId = intent.requestProviderId;
   // Validate whichever provider id will *actually* be sent to. We
   // can't use the request body's mere presence as a "user explicitly
-  // overrode, so trust it" signal â?the chat composer wires the
+  // overrode, so trust it" signal — the chat composer wires the
   // session's current provider id into every send, so `requestProviderId
   // === sessionProviderId === <ghost id>` is a perfectly normal echo,
   // and gating on `!requestProviderId` would let a deleted session
   // provider quietly slip past this check (Step 2 review caught this).
   //
   // Effective id rule (matches `resolveProvider`'s own priority):
-  //   - request override differs from session â?override is the real
+  //   - request override differs from session → override is the real
   //     destination; validate THAT one.
-  //   - request matches session OR no request â?session value is the
+  //   - request matches session OR no request → session value is the
   //     destination; validate it.
   // Either way, if the destination doesn't resolve to a DB row, surface
   // `invalidReason: 'provider-missing'` so the send route can refuse
   // instead of silently rerouting through env.
   const isExplicitOverride = !!requestProviderId && requestProviderId !== sessionProviderId;
   const effectiveProviderId = isExplicitOverride ? requestProviderId : sessionProviderId;
-  if (
+  const isDbProviderId = !!(
     effectiveProviderId
     && effectiveProviderId !== 'env'
     && effectiveProviderId !== 'openai-oauth'
     && effectiveProviderId !== 'xai-oauth'
     && effectiveProviderId !== 'codex_account'
-    && !getProvider(effectiveProviderId)
-  ) {
+  );
+  const exactProvider = isDbProviderId ? getProvider(effectiveProviderId) : undefined;
+  if (isDbProviderId && !exactProvider) {
     // Still produce a ResolvedProvider shape so destructuring callers
     // don't crash; the env-fallback fields are populated so a route
     // that forgets to check `invalidReason` at least doesn't behave
@@ -1884,8 +1895,8 @@ export function resolveProviderForSession(
     });
     return { ...fallback, invalidReason: 'provider-missing' };
   }
-  // Healthy path â?same priority chain as the legacy resolver.
-  return resolveProvider({
+  // Healthy identity path — same priority chain as the legacy resolver.
+  const resolved = resolveProvider({
     providerId: requestProviderId || undefined,
     sessionProviderId: sessionProviderId || undefined,
     model: intent.requestModel,
@@ -1894,4 +1905,20 @@ export function resolveProviderForSession(
     runtime: extras.runtime,
     callScene: extras.callScene,
   });
+
+  // Gate the FINAL resolved DB provider, not only an explicit/session id.
+  // Legacy sessions may have provider_id='' and resolve through the current
+  // default/active provider. If that row's encrypted secret is unreadable,
+  // waiting for the SDK/native guard would reject only after the chat route
+  // had already persisted the user's message. Virtual/env providers have no
+  // `resolved.provider`; env_only DB providers resolve hasCredentials=true.
+  if (resolved.provider && !resolved.hasCredentials) {
+    return {
+      ...resolved,
+      invalidReason: getProviderSecretErrorCode(resolved.provider.id)
+        ? 'credentials-unreadable'
+        : 'credentials-missing',
+    };
+  }
+  return resolved;
 }

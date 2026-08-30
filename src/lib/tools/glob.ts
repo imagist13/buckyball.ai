@@ -1,5 +1,5 @@
 /**
- * tools/glob.ts â€?Find files by pattern.
+ * tools/glob.ts â€” Find files by pattern.
  */
 
 import { tool } from 'ai';

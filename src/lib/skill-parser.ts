@@ -1,5 +1,5 @@
 /**
- * skill-parser.ts â€?Parse SKILL.md files (YAML frontmatter + Markdown body).
+ * skill-parser.ts â€” Parse SKILL.md files (YAML frontmatter + Markdown body).
  *
  * Compatible with Claude Code's skill format. Parses all execution-semantic
  * fields (allowed-tools, context, when_to_use, arguments, etc.) not just

@@ -1,5 +1,5 @@
 /**
- * mcp-tool-adapter.ts â€?Convert MCP tools to Vercel AI SDK tools.
+ * mcp-tool-adapter.ts â€” Convert MCP tools to Vercel AI SDK tools.
  *
  * Takes MCP tool definitions (JSON Schema) from the connection manager
  * and wraps them as Vercel AI SDK dynamicTool() instances for streamText().

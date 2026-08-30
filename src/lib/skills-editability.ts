@@ -27,13 +27,13 @@ export interface SkillEditabilityResult {
  * UI should expose edit/delete affordances.
  *
  * Rules (order matters):
- *   1. SDK skills â†?never editable. The Agent SDK owns them.
+ *   1. SDK skills â†’ never editable. The Agent SDK owns them.
  *   2. Project skills must live inside the resolved cwd subtree.
  *      Without an active cwd we report `out_of_cwd` rather than guessing.
- *   3. Empty filePath â†?read-only by default (no file to write to).
+ *   3. Empty filePath â†’ read-only by default (no file to write to).
  *   4. fs.access W_OK is the final gate for file-backed sources.
  *
- * Filesystem checks are synchronous on purpose â€?`/api/skills` already
+ * Filesystem checks are synchronous on purpose â€” `/api/skills` already
  * walks dozens of files, the marginal stat() per file is negligible
  * compared to the existing readdirSync / readFileSync pass.
  */

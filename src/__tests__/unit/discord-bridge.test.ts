@@ -6,7 +6,7 @@
  * Tests cover:
  * - Markdown chunking (short text, line split, code fence balance, hard split)
  * - Authorization logic (deny when empty, allow by user/channel)
- * - Command normalization (! â†?/)
+ * - Command normalization (! â†’ /)
  * - HTML to Discord markdown conversion
  */
 

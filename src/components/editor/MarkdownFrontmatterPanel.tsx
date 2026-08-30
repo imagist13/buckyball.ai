@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Frontmatter metadata strip for Markdown previews â€?Phase 4.
+ * Frontmatter metadata strip for Markdown previews â€” Phase 4.
  *
  * Renders the YAML frontmatter key/value pairs as a compact dl above
  * the body. Hidden when the file has no frontmatter.
  *
- * The display is read-only on purpose â€?the source markdown remains
+ * The display is read-only on purpose â€” the source markdown remains
  * authoritative. Edits go through the existing MarkdownEditor save
  * path, which writes the verbatim text. We never round-trip data
  * through this panel back into the file.

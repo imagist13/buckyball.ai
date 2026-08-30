@@ -6,14 +6,14 @@
  * The shell is intentionally *empty* of section imports: route-level split
  * pushes each section into its own page.tsx so Next dev only compiles the
  * one Settings subgraph the user actually opens. The desktop sidebar lives
- * in AppShell â?SettingsSidebar; this layout only provides the narrow-
+ * in AppShell → SettingsSidebar; this layout only provides the narrow-
  * viewport horizontal tab strip and the scrolling content slot.
  *
  * Memory contract: this file must NEVER statically or dynamically import
  * any section component. See `src/__tests__/unit/settings-routes-shape.test.ts`.
  *
  * v6 fix (P2): the nav items list is shared with `SettingsSidebar.tsx`
- * via `@/components/settings/nav-config` â?having two parallel
+ * via `@/components/settings/nav-config` — having two parallel
  * literals diverged once (Tasks ended up in different slots) and
  * produced a hydration mismatch. One source of truth now.
  */
@@ -26,7 +26,7 @@ import {
   SETTINGS_NAV_ITEMS,
   pathnameToSettingsSection,
 } from "@/components/settings/nav-config";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 
 export default function SettingsRouteLayout({
   children,
@@ -67,16 +67,16 @@ export default function SettingsRouteLayout({
                   : "text-muted-foreground hover:bg-sidebar-accent hover:text-foreground",
               )}
             >
-              <BuckyballIcon name={item.icon} size="md" className="shrink-0 text-inherit" aria-hidden />
+              <CodePilotIcon name={item.icon} size="md" className="shrink-0 text-inherit" aria-hidden />
               {t(item.i18nKey)}
             </Link>
           );
         })}
       </nav>
 
-      {/* Content slot â?children come from the active /settings/<section>/page.tsx.
+      {/* Content slot — children come from the active /settings/<section>/page.tsx.
           Round 12 (2026-05-23): padding bumped from p-4/lg:p-6 to
-          p-6/lg:p-10 â?the previous values left the page title sitting
+          p-6/lg:p-10 — the previous values left the page title sitting
           almost flush with the topbar, which user feedback flagged as
           cramped. */}
       <div className="flex min-h-0 flex-1">

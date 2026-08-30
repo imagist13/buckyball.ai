@@ -74,8 +74,8 @@ export function buildPermissionResolvedEvent(
  * Single finalize exit for a pending permission (codebase-health A5 Step 1).
  *
  * allow / deny / timeout / abort all converge here so the four-step teardown
- * â€?clearTimeout, persist to DB, resolve the in-memory waiter, drop the map
- * entry â€?can't drift between paths. Previously each of the three paths
+ * â€” clearTimeout, persist to DB, resolve the in-memory waiter, drop the map
+ * entry â€” can't drift between paths. Previously each of the three paths
  * re-implemented it and they had already diverged in DB-write ordering.
  *
  * DB write happens BEFORE resolve(): resolvePendingPermission documented that
@@ -84,7 +84,7 @@ export function buildPermissionResolvedEvent(
  * resolve that unblocks the agent turn.
  *
  * Returns true if a pending entry was found and finalized, false otherwise
- * (already resolved / unknown id) â€?callers no-op idempotently on false.
+ * (already resolved / unknown id) â€” callers no-op idempotently on false.
  */
 function finalizePermission(
   id: string,
@@ -129,7 +129,7 @@ export function registerPendingPermission(
   id: string,
   toolInput: Record<string, unknown>,
   abortSignal?: AbortSignal,
-  // codebase-health A5 Step 2 â€?invoked when (and only when) the request
+  // codebase-health A5 Step 2 â€” invoked when (and only when) the request
   // auto-denies on TIMEOUT, so the caller can push a `permission_resolved`
   // event down its still-open stream and the chat UI can show "auto-denied,
   // timed out" instead of the request silently vanishing. Not called on user
@@ -141,7 +141,7 @@ export function registerPendingPermission(
   return new Promise<PermissionResult>((resolve) => {
     // Per-request independent timer: auto-deny after TIMEOUT_MS.
     // `.unref()` so this timer doesn't prevent Node process from exiting
-    // during graceful shutdown â€?if the app is closing, we don't need to
+    // during graceful shutdown â€” if the app is closing, we don't need to
     // fire the timeout handler.
     const timer = setTimeout(() => {
       if (map.has(id)) {
@@ -149,7 +149,7 @@ export function registerPendingPermission(
         // Notify the UI via the caller's still-open stream BEFORE finalizing,
         // so a `permission_resolved(timeout)` event rides the same channel the
         // original `permission_request` did. Guarded: if the stream is already
-        // closing/errored the enqueue can throw â€?the deny must still apply.
+        // closing/errored the enqueue can throw â€” the deny must still apply.
         try {
           onTimeout?.();
         } catch {
@@ -195,7 +195,8 @@ export function resolvePendingPermission(
   const entry = map.get(id);
   if (!entry) return false;
 
-  // Default updatedInput to the originally-requested toolInput on allow â€?  // needs the entry, so resolved here before delegating to the shared exit.
+  // Default updatedInput to the originally-requested toolInput on allow â€”
+  // needs the entry, so resolved here before delegating to the shared exit.
   if (result.behavior === 'allow' && !result.updatedInput) {
     result = { ...result, updatedInput: entry.toolInput };
   }

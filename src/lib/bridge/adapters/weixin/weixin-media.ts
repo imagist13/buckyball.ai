@@ -1,5 +1,5 @@
 /**
- * WeChat media handling â€?AES-128-ECB encryption/decryption for CDN.
+ * WeChat media handling â€” AES-128-ECB encryption/decryption for CDN.
  *
  * WeChat CDN requires media to be encrypted before upload and
  * decrypted after download using AES-128-ECB with PKCS7 padding.

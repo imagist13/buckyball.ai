@@ -1,5 +1,5 @@
 /**
- * builtin-tools/dashboard.ts â€?Dashboard widget management tools (shared).
+ * builtin-tools/dashboard.ts â€” Dashboard widget management tools (shared).
  */
 
 import { tool } from 'ai';

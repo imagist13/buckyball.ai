@@ -150,6 +150,30 @@ describe('telemetry U0 contract', () => {
     assert.deepEqual(configured, [{ name: 'InboundFilters' }, eager, breadcrumbsOnly]);
   });
 
+  it('drops raw native minidump attachments unless the isolated smoke build opts in', () => {
+    const eager = { name: 'MainProcessSession' };
+    const breadcrumbsOnly = { name: 'ChildProcess' };
+    const defaults = [
+      { name: 'InboundFilters' },
+      { name: 'SentryMinidump' },
+    ];
+
+    assert.equal(
+      configureElectronMainIntegrations(defaults, eager, breadcrumbsOnly)
+        .some((integration) => integration.name === 'SentryMinidump'),
+      false,
+    );
+    assert.equal(
+      configureElectronMainIntegrations(
+        defaults,
+        eager,
+        breadcrumbsOnly,
+        { allowNativeMinidumps: true },
+      ).some((integration) => integration.name === 'SentryMinidump'),
+      true,
+    );
+  });
+
   it('separates product faults from expected/user-action outcomes', () => {
     assert.equal(classifyTelemetryOutcome('SESSION_STATE_ERROR', new Error('bad state')), 'product_fault');
     assert.equal(classifyTelemetryOutcome('EMPTY_RESPONSE', new Error('empty')), 'provider_protocol_fault');
@@ -187,7 +211,7 @@ describe('telemetry U0 contract', () => {
     assert.deepEqual(buildNormalizedFingerprint({
       category: 'EMPTY_RESPONSE',
       layer: 'next_server',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       providerProtocol: 'openai_responses',
       providerClass: 'official',
       statusCode: 502,
@@ -195,7 +219,7 @@ describe('telemetry U0 contract', () => {
       'normalized-v1',
       'empty_response',
       'next_server',
-      'bbagent',
+      'codepilot_runtime',
       'openai_responses',
       'official',
       '5xx',

@@ -11,7 +11,7 @@ const REFRESH_SYSTEM_PROMPT = `You are updating a dashboard widget with fresh da
 Rules:
 1. Output ONLY the raw HTML string. No markdown fences, no explanation, no wrapping.
 2. Keep all CSS, SVG structure, JavaScript logic, and visual styling identical.
-3. Only change text content, numbers, data points, labels â€?things that reflect the underlying data.
+3. Only change text content, numbers, data points, labels â€” things that reflect the underlying data.
 4. If the data hasn't meaningfully changed, output the original HTML unchanged.`;
 
 async function refreshWidget(
@@ -23,8 +23,8 @@ async function refreshWidget(
   if (widget.dataSource.type === 'mcp_tool') return null;
 
   // CLI data source: user approved this command when pinning the widget in conversation.
-  // Button-triggered refresh is safe â€?the command is already persisted and visible.
-  // (MCP auto-approval path doesn't execute commands â€?it delegates to bash tool.)
+  // Button-triggered refresh is safe â€” the command is already persisted and visible.
+  // (MCP auto-approval path doesn't execute commands â€” it delegates to bash tool.)
   if (widget.dataSource.type === 'cli') {
     const { content: cliOutput, exitCode } = executeCLISource(widget.dataSource.command, workDir);
     if (exitCode !== 0) return null;
@@ -41,7 +41,7 @@ async function refreshWidget(
   }
 
   // File data source
-  // No file paths â†?skip
+  // No file paths â†’ skip
   if (!widget.dataSource.paths.length) return null;
 
   // Resolve globs
@@ -78,7 +78,7 @@ async function refreshWidget(
   return { ...widget, widgetCode: updatedCode, updatedAt: now };
 }
 
-/** POST /api/dashboard/refresh â€?refresh one or all widgets */
+/** POST /api/dashboard/refresh â€” refresh one or all widgets */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();

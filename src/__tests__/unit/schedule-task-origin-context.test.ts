@@ -1,5 +1,5 @@
 /**
- * Phase 3 Step 4 follow-up â€?`codepilot_schedule_task` origin context.
+ * Phase 3 Step 4 follow-up â€” `codepilot_schedule_task` origin context.
  *
  * The bug it closes: when the model called `codepilot_schedule_task`
  * inside a chat in project A, the task POST went to /api/tasks/schedule
@@ -31,7 +31,7 @@
  *      working_directory / sdk_cwd / provider_id / model /
  *      runtime_pin / permission_profile into the new task-bound
  *      session. No fallback to buddy/heartbeat/latest-assistant
- *      session â€?those would re-open the cross-project bleed.
+ *      session â€” those would re-open the cross-project bleed.
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -62,7 +62,7 @@ describe('createNotificationMcpServer accepts hidden run context (Codex P1)', ()
     assert.match(
       src,
       /(?:interface|type)\s+NotificationMcpContext[\s\S]{0,400}workingDirectory\?:\s*string/,
-      'NotificationMcpContext must also carry `workingDirectory?: string` â€?when the scheduler later fires the task, the runner has no other way to know which project the task was scheduled from.',
+      'NotificationMcpContext must also carry `workingDirectory?: string` â€” when the scheduler later fires the task, the runner has no other way to know which project the task was scheduled from.',
     );
   });
 
@@ -110,7 +110,7 @@ describe('createNotificationMcpServer accepts hidden run context (Codex P1)', ()
     assert.match(
       sessionTaskLiteral![0],
       /origin_session_id:\s*ctx\.sessionId/,
-      'session-task literal must carry origin_session_id too â€?same project anchoring as the durable=true branch.',
+      'session-task literal must carry origin_session_id too â€” same project anchoring as the durable=true branch.',
     );
     assert.match(
       sessionTaskLiteral![0],
@@ -126,7 +126,7 @@ describe('createNotificationTools accepts hidden run context (parity with MCP va
     assert.match(
       src,
       /(?:interface|type)\s+NotificationToolsContext[\s\S]{0,400}sessionId\?:\s*string[\s\S]{0,200}workingDirectory\?:\s*string/,
-      'builtin-tools/notification.ts must declare a NotificationToolsContext mirror of the MCP variant â€?Native Runtime needs the same anchor.',
+      'builtin-tools/notification.ts must declare a NotificationToolsContext mirror of the MCP variant â€” Native Runtime needs the same anchor.',
     );
     assert.match(
       src,
@@ -232,7 +232,7 @@ describe('/api/tasks/schedule route accepts origin_session_id + blocks source ov
     assert.match(
       src,
       /body\.source\s*!==\s*undefined[\s\S]{0,500}status:\s*400/,
-      'route must reject body.source â€?codepilot_schedule_task should never be able to mint heartbeat-source rows; that is reserved for ensureHeartbeatTask.',
+      'route must reject body.source â€” codepilot_schedule_task should never be able to mint heartbeat-source rows; that is reserved for ensureHeartbeatTask.',
     );
   });
 });
@@ -268,7 +268,7 @@ afterEach(async () => {
 describe('runner ensureTaskBoundSession inherits origin chat context', () => {
   it('task-bound session inherits working_directory + provider_id + model + runtime_pin + permission_profile from origin chat', async () => {
     const db = await import('../../lib/db');
-    // Project-A user chat â€?provider, model, runtime pin, permission
+    // Project-A user chat â€” provider, model, runtime pin, permission
     // profile all set, working dir points at project A.
     const projectAPath = '/tmp/project-a';
     const originSession = db.createSession(
@@ -281,7 +281,7 @@ describe('runner ensureTaskBoundSession inherits origin chat context', () => {
       'full_access',
       'user',
     );
-    db.updateSessionRuntime(originSession.id, 'bbagent');
+    db.updateSessionRuntime(originSession.id, 'codepilot_runtime');
 
     // Schedule a task from that chat (mimics what the route would do
     // after the AI tool POST lands).
@@ -306,7 +306,7 @@ describe('runner ensureTaskBoundSession inherits origin chat context', () => {
     // is module-private, so we exercise it through the public
     // runScheduledTaskNow path AND check the resulting session row.
     // Simpler: import the module and call it via the back-channel
-    // exposed by re-importing the function â€?but it's not exported.
+    // exposed by re-importing the function â€” but it's not exported.
     // Instead, reach into the runner via a direct module require and
     // call the exported wrapper that triggers session creation.
     // The cleanest hook is to call runScheduledAgentTask and inspect
@@ -343,7 +343,7 @@ describe('runner ensureTaskBoundSession inherits origin chat context', () => {
     assert.match(
       runnerSrc,
       /inheritedWorkingDirectory/,
-      'runner must compute an inheritedWorkingDirectory from origin â†?fallback.',
+      'runner must compute an inheritedWorkingDirectory from origin â†’ fallback.',
     );
     assert.match(
       runnerSrc,
@@ -374,7 +374,7 @@ describe('runner ensureTaskBoundSession inherits origin chat context', () => {
     );
     assert.ok(
       branch,
-      'resolveBuddySessionId must only be called inside the isHeartbeat branch â€?calling it for a regular ai_task would re-introduce the cross-project bleed (heartbeat session is a global "latest assistant" pointer).',
+      'resolveBuddySessionId must only be called inside the isHeartbeat branch â€” calling it for a regular ai_task would re-introduce the cross-project bleed (heartbeat session is a global "latest assistant" pointer).',
     );
   });
 });
@@ -436,7 +436,7 @@ describe('ensureTaskBoundSession refuses to reuse a user-visible session (Codex 
     assert.notEqual(
       resolvedId,
       userChat.id,
-      'ensureTaskBoundSession must NOT return the user chat\'s id â€?that\'s the dirty pointer we are trying to ignore.',
+      'ensureTaskBoundSession must NOT return the user chat\'s id â€” that\'s the dirty pointer we are trying to ignore.',
     );
     const resolved = db.getSession(resolvedId);
     assert.ok(resolved);
@@ -466,7 +466,7 @@ describe('ensureTaskBoundSession refuses to reuse a user-visible session (Codex 
     const db = await import('../../lib/db');
     const { ensureTaskBoundSession } = await import('../../lib/agent-task-runner');
     // Pre-create a legit task-bound session and a task pointing at
-    // it â€?this is the post-fix steady state, the runner must NOT
+    // it â€” this is the post-fix steady state, the runner must NOT
     // create a brand-new session every time.
     const taskSession = db.createSession(
       '[Task] Existing',
@@ -487,7 +487,7 @@ describe('ensureTaskBoundSession refuses to reuse a user-visible session (Codex 
     assert.equal(
       resolvedId,
       taskSession.id,
-      'a healthy source="task" session_id must be reused â€?re-creating it on every run would churn message history + lose SDK resume.',
+      'a healthy source="task" session_id must be reused â€” re-creating it on every run would churn message history + lose SDK resume.',
     );
   });
 
@@ -500,7 +500,8 @@ describe('ensureTaskBoundSession refuses to reuse a user-visible session (Codex 
       schedule_type: 'once', schedule_value: past, next_run: past,
       consecutive_errors: 0, status: 'active', priority: 'normal',
       notify_on_complete: 1, permanent: 0,
-      // No session_id, no origin â€?bare-bones task (e.g. Settings â†?      // Tasks "Add" path).
+      // No session_id, no origin â€” bare-bones task (e.g. Settings â†’
+      // Tasks "Add" path).
     });
     const resolvedId = await ensureTaskBoundSession(task);
     const resolved = db.getSession(resolvedId);
@@ -579,6 +580,6 @@ describe('two tasks from two project sessions persist as separate origin context
     assert.ok(row);
     // SQLite returns null for NULL columns; coerce to undefined for
     // the assertion shape.
-    assert.ok(!row!.origin_session_id, 'origin_session_id must default to NULL when not provided â€?the runner falls back to task.working_directory in that case.');
+    assert.ok(!row!.origin_session_id, 'origin_session_id must default to NULL when not provided â€” the runner falls back to task.working_directory in that case.');
   });
 });

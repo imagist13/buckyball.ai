@@ -50,7 +50,7 @@ interface BridgeLayoutProps {
    * `/settings/bridge` route). In embedded mode:
    *   - The page-level `<h1>` + description are hidden (the host shell
    *     already provides identity).
-   *   - The inner sub-nav drives only local state â€?URL writes are
+   *   - The inner sub-nav drives only local state â€” URL writes are
    *     suppressed so they don't compete with the host route's path.
    *   - The hash is read once on mount but never mirrored back.
    */

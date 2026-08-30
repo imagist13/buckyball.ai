@@ -22,20 +22,20 @@ import {
 } from '@/lib/runtime/runtime-catalog';
 
 /**
- * Per-runtime i18n label keys. Single source of truth â?adding a new
+ * Per-runtime i18n label keys. Single source of truth — adding a new
  * runtime (Codex Runtime in Phase 5) means appending the id to
  * `RUNTIME_IDS` in runtime-id.ts AND adding the matching label / desc
  * entries here. The dropdown auto-renders the new option.
  *
- * Phase 0.5 Slice E.1 (2026-05-13) â?replaces the previous hand-rolled
- * 2-item dropdown that hard-coded `claude_code` / `bbagent`
+ * Phase 0.5 Slice E.1 (2026-05-13) — replaces the previous hand-rolled
+ * 2-item dropdown that hard-coded `claude_code` / `codepilot_runtime`
  * branches in JSX.
  *
- * Phase 6 UIæ¶å£ P1 (2026-05-14) â?short labels: trigger shows
+ * Phase 6 UI收口 P1 (2026-05-14) — short labels: trigger shows
  * "Claude Code" / "CodePilot" / "Codex" without the duplicate
- * "Runtime" / "å¼æ" suffix that bloated the composer toolbar.
+ * "Runtime" / "引擎" suffix that bloated the composer toolbar.
  */
-function runtimeTranslationKeys(runtime: RuntimeId): {
+export function runtimeTranslationKeys(runtime: RuntimeId): {
   label: TranslationKey;
   desc: TranslationKey;
 } {
@@ -47,16 +47,16 @@ function runtimeTranslationKeys(runtime: RuntimeId): {
 }
 
 /**
- * Per-runtime brand icon. Phase 6 UIæ¶å£ P1 (2026-05-14) â?replaces the
+ * Per-runtime brand icon. Phase 6 UI收口 P1 (2026-05-14) — replaces the
  * generic `Brain` icon shared across all three rows. Recognition was
  * too costly: three identical brains forced users to read the label
  * to disambiguate. Now each engine carries its vendor mark:
  *
- *   claude_code       â?Anthropic (Claude Code is Anthropic's CLI)
- *   bbagent â?buckyball.ai's own cube logo (host product)
- *   codex_runtime     â?OpenAI (Codex is an OpenAI product)
+ *   claude_code       → Anthropic (Claude Code is Anthropic's CLI)
+ *   codepilot_runtime → CodePilot's own cube logo (host product)
+ *   codex_runtime     → OpenAI (Codex is an OpenAI product)
  */
-function RuntimeIcon({ runtime, size, className }: { runtime: RuntimeId; size: number; className?: string }) {
+export function RuntimeIcon({ runtime, size, className }: { runtime: RuntimeId; size: number; className?: string }) {
   const icon: RuntimeBrandIcon = requireRuntimeRegistration(runtime).icon;
   if (icon === 'anthropic') return <Anthropic size={size} className={className} />;
   if (icon === 'openai') return <OpenAI size={size} className={className} />;
@@ -68,24 +68,24 @@ interface RuntimeSelectorProps {
   // is following the global default (new sessions, or sessions whose
   // runtime hasn't been seeded yet by the chat route).
   runtimePin: string;
-  // The currently effective runtime label â?what would actually run if
+  // The currently effective runtime label — what would actually run if
   // the user pressed send right now. Used to render the trigger label
   // when `runtimePin === ''` so the user sees a concrete name instead
   // of a "follow default" hedge that doesn't tell them what's happening.
   effectiveRuntime: ChatRuntime;
-  // Called with the new pin value. New chat (no sessionId yet) â?caller
-  // updates local state only. Existing session â?caller PATCHes
+  // Called with the new pin value. New chat (no sessionId yet) → caller
+  // updates local state only. Existing session → caller PATCHes
   // `/api/chat/sessions/{id}` with `{ runtime_pin }`.
   onRuntimePinChange: (pin: ChatRuntime) => void;
   // Streaming guard: changing runtime mid-flight would either silently
   // fall through to the next message (confusing) or kill the active
-  // stream (worse). Match ModeIndicator/ChatPermissionSelector â?both
+  // stream (worse). Match ModeIndicator/ChatPermissionSelector — both
   // disable during stream.
   disabled?: boolean;
 }
 
 // Composer toolbar select for the session-level execution runtime.
-// Visual language matches ModeIndicator + ChatPermissionSelector â?invisible
+// Visual language matches ModeIndicator + ChatPermissionSelector — invisible
 // ghost button at default weight, hover surfaces the accent. The icon and
 // label do the disambiguation; no colour cue.
 export function RuntimeSelector({
@@ -97,7 +97,7 @@ export function RuntimeSelector({
   const { t } = useTranslation();
 
   // The label always reflects what would actually run. We previously
-  // appended a "æ¬ä¼è¯å·²åæ¢" sub-badge whenever `runtimePin` was non-
+  // appended a "本会话已切换" sub-badge whenever `runtimePin` was non-
   // empty, but Step 4c round-5 user feedback dropped it: if the user
   // just clicked this select themselves, telling them they switched
   // is redundant; mid-conversation switches will get a proper inline
@@ -139,9 +139,9 @@ export function RuntimeSelector({
               {/* Round 16: trimmed to one line. The description was
                   wrapping over 2-3 lines in zh and made the runtime
                   picker feel like a settings page. Active-state
-                  checkmark removed â?DropdownMenuItem already shows
+                  checkmark removed — DropdownMenuItem already shows
                   the active row via its own bg highlight, the
-                  redundant â?added visual noise. */}
+                  redundant ✓ added visual noise. */}
               <span className="text-[11px] text-muted-foreground leading-tight line-clamp-1 max-w-[200px]">
                 {t(runtimeTranslationKeys(id).desc)}
               </span>

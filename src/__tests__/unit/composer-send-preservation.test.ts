@@ -1,12 +1,12 @@
 /**
- * #615 â€?screenshots eaten on a no-op send. Generalizes the run-checkpoint
+ * #615 â€” screenshots eaten on a no-op send. Generalizes the run-checkpoint
  * preservation contract: the composer must keep the user's text + attachments
  * whenever a submit is NOT actually delivered, not just on the checkpoint block.
  *
  * Two halves:
  *   1. MessageInput routes EVERY file-carrying no-send branch through
- *      abortComposerSubmit() (which throws â†?PromptInput's reject branch keeps
- *      text/files) instead of a bare `return` (which resolves â†?PromptInput
+ *      abortComposerSubmit() (which throws â†’ PromptInput's reject branch keeps
+ *      text/files) instead of a bare `return` (which resolves â†’ PromptInput
  *      clears). The normal + badge sends now AWAIT onSend and abort when it
  *      reports the send was gated.
  *   2. The onSend providers (ChatView.sendMessage for subsequent messages,
@@ -35,15 +35,16 @@ describe('MessageInput: no-send branches preserve the composer (#615)', () => {
   });
 
   it('awaits onSend and aborts when the send was not delivered (normal + badge paths)', () => {
-    // Both file-carrying sends must await the delivery signal â€?    assert.ok(
+    // Both file-carrying sends must await the delivery signal â€¦
+    assert.ok(
       countMatches(src, /const delivered = await onSend\(/g) >= 2,
       'both the normal and badge send paths must await onSend for the delivery signal',
     );
-    // â€?and abort (preserve) when it comes back false. The badge path aborts
+    // â€¦ and abort (preserve) when it comes back false. The badge path aborts
     // inline; the normal path now clears the composer optimistically before the
     // await and RESTORES it inside the `delivered === false` block before
-    // aborting (so the box empties immediately on a real send â€?the lingering-
-    // text fix â€?without losing a gated send's text). Both still gate on
+    // aborting (so the box empties immediately on a real send â€” the lingering-
+    // text fix â€” without losing a gated send's text). Both still gate on
     // `delivered === false` and still call abortComposerSubmit to preserve.
     assert.ok(
       countMatches(src, /if \(delivered === false\)/g) >= 2,
@@ -64,8 +65,8 @@ describe('MessageInput: no-send branches preserve the composer (#615)', () => {
     assert.doesNotMatch(src, /\|\| disabled\)\s*return;/);
   });
 
-  it('QuickActions awaits onSend and clears ONLY on delivery (Codex P3 â€?gated send keeps the composer)', () => {
-    // Was `onSend(text); setInputValue('')` â€?fire-and-forget, no await, no
+  it('QuickActions awaits onSend and clears ONLY on delivery (Codex P3 â€” gated send keeps the composer)', () => {
+    // Was `onSend(text); setInputValue('')` â€” fire-and-forget, no await, no
     // delivery check, so a gated send (provider/model/runtime not ready) still
     // ate the user's text. Must mirror handleSubmit's await + `!== false` gate.
     assert.match(
@@ -108,7 +109,7 @@ describe('page.tsx sendFirstMessage signals not-delivered on its gates (#615)', 
   });
 
   it('pre-delivery failure (session create / POST rejected) preserves the composer via the accepted flag (#615 Codex smoke)', () => {
-    // Codex's real UI smoke: inject a 500 into POST /api/chat/sessions â†?error
+    // Codex's real UI smoke: inject a 500 into POST /api/chat/sessions â†’ error
     // banner shows, text stays, but the screenshot was eaten because the catch
     // only set a banner (no return false). The `accepted` flag fixes it: only
     // true once the backend accepts the message; the catch returns false otherwise.
@@ -120,10 +121,10 @@ describe('page.tsx sendFirstMessage signals not-delivered on its gates (#615)', 
   it('defers the isStreaming flip until after accept so a pre-accept failure does not remount the composer (#615 remount fix)', () => {
     // Root cause beyond the return value: the isNewChat ternary renders the
     // composer under two different parents (centered hero vs active layout).
-    // Flipping isStreaming before accept swaps the parent â†?MessageInput remounts
-    // â†?PromptInput loses the attachment BEFORE we learn the send failed. So the
+    // Flipping isStreaming before accept swaps the parent â†’ MessageInput remounts
+    // â†’ PromptInput loses the attachment BEFORE we learn the send failed. So the
     // layout-driving flip must happen only after `accepted = true`, guarded
-    // against double-submit by an in-flight ref. (Source-pin only â€?the real
+    // against double-submit by an in-flight ref. (Source-pin only â€” the real
     // proof is Codex's inject-500 UI smoke; this just guards the structure.)
     assert.match(src, /const firstSendInFlightRef = useRef\(false\)/);
     assert.match(src, /if \(firstSendInFlightRef\.current\) return false/);

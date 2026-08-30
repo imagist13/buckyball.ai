@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { SubagentModelIcon } from './SubagentModelIcon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useWorkspaceSidebarOptional } from '@/hooks/useWorkspaceSidebar';
@@ -222,7 +222,7 @@ export function SubagentCard(props: SubagentCardProps) {
           onClick={() => workspace.openTab(tab)}
           aria-label={t('subagent.openDetailsNamed' as TranslationKey, { name: run.agentName })}
         >
-          <BuckyballIcon name="panel_right" size="sm" aria-hidden />
+          <CodePilotIcon name="panel_right" size="sm" aria-hidden />
           {t('subagent.openDetails' as TranslationKey)}
         </Button>
       )}

@@ -1,5 +1,5 @@
 /**
- * Telegram utility functions â€?shared between the notification bot
+ * Telegram utility functions â€” shared between the notification bot
  * (telegram-bot.ts) and the bridge adapter (telegram-adapter.ts).
  *
  * Extracted from telegram-bot.ts to avoid duplication.
@@ -68,7 +68,7 @@ export async function callTelegramApi(
 
 /**
  * Send a draft message preview via Telegram Bot API 9.5 sendMessageDraft.
- * Plain text only (no parse_mode) â€?used for streaming preview.
+ * Plain text only (no parse_mode) â€” used for streaming preview.
  */
 export async function sendMessageDraft(
   botToken: string,

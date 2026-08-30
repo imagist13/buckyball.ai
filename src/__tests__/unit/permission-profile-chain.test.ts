@@ -1,15 +1,15 @@
 /**
- * `runtime-permission-modes.md` Phase 0/1 â€?the three-profile union has to
+ * `runtime-permission-modes.md` Phase 0/1 â€” the three-profile union has to
  * survive the whole chain, not just the type file.
  *
- *   a01 â€?DB roundtrip + real route 400s
- *   a05 â€?bare `allowedTools` narrowing at the real options boundary
- *   a09 â€?negatives: nothing elevates a profile behind the user's back
+ *   a01 â€” DB roundtrip + real route 400s
+ *   a05 â€” bare `allowedTools` narrowing at the real options boundary
+ *   a09 â€” negatives: nothing elevates a profile behind the user's back
  *
  * ## Why these call the real thing (review round #3, P1)
  *
  * The previous version asserted a01/a05/a09 by reading source files and
- * matching strings. That proves a file CONTAINS some text â€?not that the route
+ * matching strings. That proves a file CONTAINS some text â€” not that the route
  * returns 400, not that the wire omits a server, not that a pending prompt
  * survives a profile switch. A rename or a reordered branch could keep every
  * assertion green while the behaviour broke. These now invoke the shipping
@@ -20,7 +20,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createSession, getSession, updateSessionPermissionProfile, createPermissionRequest } from '@/lib/db';
+import { createSession, getSession, updateSessionAccessLevel, updateSessionPermissionProfile, createPermissionRequest } from '@/lib/db';
 import { POST as createSessionRoute } from '@/app/api/chat/sessions/route';
 import { PATCH as patchSessionRoute } from '@/app/api/chat/sessions/[id]/route';
 import { registerPendingPermission, resolvePendingPermission } from '@/lib/permission-registry';
@@ -83,6 +83,16 @@ describe('DB roundtrip (a01)', () => {
     }
   });
 
+  it('updates the consolidated mode/profile pair through one DB boundary', () => {
+    const session = createSession('perm-access-pair', '', '', '/tmp', 'code', '', 'auto_review');
+    updateSessionAccessLevel(session.id, 'plan', 'default');
+    assert.equal(getSession(session.id)?.mode, 'plan');
+    assert.equal(getSession(session.id)?.permission_profile, 'default');
+    updateSessionAccessLevel(session.id, 'code', 'full_access');
+    assert.equal(getSession(session.id)?.mode, 'code');
+    assert.equal(getSession(session.id)?.permission_profile, 'full_access');
+  });
+
   it('writes fail closed if an unvalidated value reaches the DB layer', () => {
     const session = createSession('perm-bad', '', '', '/tmp', 'code', '', 'default');
     // Simulating an un-typechecked caller (JS, old client, bad migration).
@@ -106,7 +116,7 @@ describe('API validation rejects unknown profiles (a01)', () => {
     });
     assert.equal(res.status, 400, 'creation with an unknown profile must be rejected');
     const body = await res.json() as { error?: string };
-    // The message names the legal values â€?a 400 the caller can't act on is
+    // The message names the legal values â€” a 400 the caller can't act on is
     // only marginally better than a silent coercion.
     assert.match(String(body.error), /permission_profile/);
     for (const profile of PERMISSION_PROFILES) assert.match(String(body.error), new RegExp(profile));
@@ -117,7 +127,7 @@ describe('API validation rejects unknown profiles (a01)', () => {
       const res = await postSession({ working_directory: REPO_ROOT, permission_profile: profile });
       assert.equal(res.status, 201, `${profile} must be accepted`);
       const { session } = await res.json() as { session: { id: string; permission_profile: string } };
-      // Both what the caller is told AND what was stored â€?a route that
+      // Both what the caller is told AND what was stored â€” a route that
       // echoes the requested profile while persisting another is the exact
       // state-drift this contract exists to prevent.
       assert.equal(session.permission_profile, profile, `${profile} must be echoed back honestly`);
@@ -140,6 +150,25 @@ describe('API validation rejects unknown profiles (a01)', () => {
       'a rejected PATCH must not disturb the existing profile');
   });
 
+  it('validates the consolidated mode/profile pair before writing either half', async () => {
+    const session = createSession('perm-pair-bad', '', '', '/tmp', 'code', '', 'auto_review');
+    const rejected = await patchSession(session.id, {
+      mode: 'plan',
+      permission_profile: 'bypass',
+    });
+    assert.equal(rejected.status, 400);
+    assert.equal(getSession(session.id)?.mode, 'code');
+    assert.equal(getSession(session.id)?.permission_profile, 'auto_review');
+
+    const accepted = await patchSession(session.id, {
+      mode: 'plan',
+      permission_profile: 'default',
+    });
+    assert.equal(accepted.status, 200);
+    assert.equal(getSession(session.id)?.mode, 'plan');
+    assert.equal(getSession(session.id)?.permission_profile, 'default');
+  });
+
   it('PATCH moves between all three profiles', async () => {
     const session = createSession('perm-patch-ok', '', '', '/tmp', 'code', '', 'default');
     for (const profile of ['auto_review', 'full_access', 'default'] as SessionPermissionProfile[]) {
@@ -156,7 +185,7 @@ describe('API validation rejects unknown profiles (a01)', () => {
 });
 
 describe('bare allowedTools narrowing at the real options boundary (a05)', () => {
-  // The SHIPPING assembly â€?claude-client spreads this exact result into the
+  // The SHIPPING assembly â€” claude-client spreads this exact result into the
   // Agent SDK Options.
   const wire = (over: Partial<Parameters<typeof buildClaudePermissionQueryOptions>[0]> = {}) =>
     buildClaudePermissionQueryOptions({
@@ -175,7 +204,7 @@ describe('bare allowedTools narrowing at the real options boundary (a05)', () =>
     const { allowedTools } = wire();
     // `allowedTools` is auto-approve, not a whitelist: presence here means the
     // request never reaches canUseTool. Each of these auto-approved a whole
-    // server before â€?including codepilot_cli_tools_install, which shell-execs.
+    // server before â€” including codepilot_cli_tools_install, which shell-execs.
     for (const server of [
       'mcp__codepilot-cli-tools',
       'mcp__codepilot-media',
@@ -188,7 +217,7 @@ describe('bare allowedTools narrowing at the real options boundary (a05)', () =>
     }
   });
 
-  it('read-only MCP servers stay on the wire â€?they are why the list exists', () => {
+  it('read-only MCP servers stay on the wire â€” they are why the list exists', () => {
     const { allowedTools } = wire();
     for (const server of ['mcp__codepilot-memory', 'mcp__codepilot-widget', 'mcp__codepilot-widget-guidelines']) {
       assert.ok(allowedTools.includes(server), `${server} should remain prompt-free`);
@@ -198,7 +227,7 @@ describe('bare allowedTools narrowing at the real options boundary (a05)', () =>
   it('a mutating MCP tool now reaches the permission decision path', () => {
     const { allowedTools } = wire();
     // Two halves of one claim: the SDK won't auto-approve it (not covered by
-    // any allowlist entry), and our own rule engine won't either â€?so it lands
+    // any allowlist entry), and our own rule engine won't either â€” so it lands
     // in front of a human. Server-prefix check mirrors how the SDK matches a
     // bare server rule against `mcp__server__tool`.
     for (const tool of ['codepilot_generate_image', 'codepilot_cli_tools_install', 'codepilot_notify']) {
@@ -229,7 +258,7 @@ describe('bare allowedTools narrowing at the real options boundary (a05)', () =>
 
   it('an UNKNOWN tool fails closed at the decision head, not just in a helper', () => {
     // The fail-closed claim is about what the callback DOES with a tool nobody
-    // classified â€?asserting isHostAutoApproved(x) === false only shows one
+    // classified â€” asserting isHostAutoApproved(x) === false only shows one
     // helper's opinion.
     for (const tool of ['totally_unknown_tool', 'mcp__third-party__do_something', '']) {
       assert.equal(decideHostToolPermission(tool).decision, 'ask',
@@ -276,9 +305,9 @@ describe('no path elevates a profile on its own (a09)', () => {
  * In-flight prompts across a profile switch (a09), driven through the real
  * PATCH handler and the real pending-permission registry.
  *
- * The rule: only the deliberate `â†?full_access` elevation resolves a prompt
- * that is already on screen â€?the user is looking at that request when they
- * click. Every other transition leaves it alone; `â†?auto_review` especially,
+ * The rule: only the deliberate `â†’ full_access` elevation resolves a prompt
+ * that is already on screen â€” the user is looking at that request when they
+ * click. Every other transition leaves it alone; `â†’ auto_review` especially,
  * because "let a model review things" is not a decision about the specific
  * question already in front of the user.
  */
@@ -338,7 +367,7 @@ describe('in-flight prompts across a profile switch (a09)', () => {
       await new Promise((r) => setImmediate(r));
 
       assert.deepEqual((pending.outcome() as { behavior?: string })?.behavior, 'allow',
-        'the user elevated while looking at this request â€?it should go through');
+        'the user elevated while looking at this request â€” it should go through');
     } finally {
       await pending.cleanup();
     }
@@ -346,7 +375,7 @@ describe('in-flight prompts across a profile switch (a09)', () => {
 
   it('full_access does NOT resolve a pending human-only prompt', async () => {
     const session = createSession('perm-inflight-human', '', '', '/tmp', 'code', '', 'default');
-    // Bills the user's image API â€?elevation is not consent to spend.
+    // Bills the user's image API â€” elevation is not consent to spend.
     const pending = arm(session.id, 'codepilot_generate_image');
     try {
       const res = await patchSession(session.id, { permission_profile: 'full_access' });

@@ -4,7 +4,7 @@
  * Background: External tools (cc-switch, manual edits) manage Claude Code CLI
  * credentials by writing an `env` block into ~/.claude/settings.json. Before
  * the fix, CodePilot's `hasCredentialsForRequest()` only checked shell env and
- * its own DB â€?never the settings file â€?so auto mode fell back to native
+ * its own DB â€” never the settings file â€” so auto mode fell back to native
  * runtime, which throws "No provider credentials available". See
  * docs/exec-plans/active/cc-switch-credential-bridge.md.
  *
@@ -44,7 +44,7 @@ function writeSettings(filename: string, contents: unknown) {
   fs.writeFileSync(path.join(dir, filename), body);
 }
 
-// The module caches nothing â€?every call reads the file â€?so freshImport() is
+// The module caches nothing â€” every call reads the file â€” so freshImport() is
 // only needed once; subsequent calls in the same test see live changes.
 async function freshImport() {
   return await import('../../lib/claude-settings');
@@ -135,14 +135,14 @@ describe('claude-settings credential reader', () => {
 // â”€â”€ End-to-end chain: cc-switch user, no CodePilot provider â”€â”€
 //
 // Simulates the exact production scenario from #461 / #478:
-//   1. Fresh CodePilot install â€?empty DB, no providers configured
+//   1. Fresh CodePilot install â€” empty DB, no providers configured
 //   2. No ANTHROPIC_* env vars (Electron app not launched from a shell with them)
 //   3. cc-switch has written ~/.claude/settings.json with the user's chosen relay
 //
 // Walks the actual call chain (no mocks, no inlined logic):
-//   provider-resolver.resolveProvider() â†?hasCredentials becomes TRUE
-//   runtime/registry.predictNativeRuntime() â†?returns FALSE (i.e. picks SDK)
-//   ai-provider.createModel() â†?does NOT throw the legacy "No provider credentials" error
+//   provider-resolver.resolveProvider() â†’ hasCredentials becomes TRUE
+//   runtime/registry.predictNativeRuntime() â†’ returns FALSE (i.e. picks SDK)
+//   ai-provider.createModel() â†’ does NOT throw the legacy "No provider credentials" error
 //
 // Pre-fix this would all fail and route to native, which throws.
 describe('cc-switch end-to-end (no CodePilot provider, settings.json only)', () => {
@@ -186,7 +186,7 @@ describe('cc-switch end-to-end (no CodePilot provider, settings.json only)', () 
     // Pre-fix: hasCredentials would be false (resolver only checked process.env + DB).
     // Post-fix: settings.json is recognized as a credential source.
     assert.equal(resolved.hasCredentials, true, 'hasCredentials must be true so ai-provider does not abort');
-    assert.equal(resolved.provider, undefined, 'still env mode â€?settings.json does not create a DB provider');
+    assert.equal(resolved.provider, undefined, 'still env mode â€” settings.json does not create a DB provider');
     // settingSources includes 'user' so the SDK subprocess will load and apply the env
     assert.deepEqual(resolved.settingSources, ['user', 'project', 'local']);
   });
@@ -208,14 +208,14 @@ describe('cc-switch end-to-end (no CodePilot provider, settings.json only)', () 
     const { predictNativeRuntime } = await import('../../lib/runtime/registry');
     // We cannot easily mock SDK availability without registering a runtime, so the
     // assertion is conditional on what predictNativeRuntime returns when SDK is
-    // unavailable in the test env â€?but we CAN assert the credential branch:
+    // unavailable in the test env â€” but we CAN assert the credential branch:
     // when SDK is available, hasCredentialsForRequest() must return true so
     // predictNativeRuntime returns false.
     //
     // In the unit test environment SDK runtime is not registered, so SDK is
     // "unavailable" and predict returns true regardless of credentials. We
     // verify hasCredentialsForRequest indirectly by checking resolveProvider
-    // (above) â€?predictNativeRuntime here just guards against accidental
+    // (above) â€” predictNativeRuntime here just guards against accidental
     // regressions in the wiring.
     const result = predictNativeRuntime(undefined);
     // Document what we expect to see: in dev/test (no SDK runtime registered),
@@ -245,8 +245,8 @@ describe('cc-switch end-to-end (no CodePilot provider, settings.json only)', () 
     assert.equal(err, undefined, `createModel should not throw, got: ${err?.message}`);
     assert.ok(result, 'createModel returns a result');
     // The resolved baseUrl should reflect either the settings.json relay
-    // (if ai-provider reads process.env after settings load â€?it does for env mode)
-    // OR an undefined baseUrl (if it didn't pick up the relay yet â€?that's still
+    // (if ai-provider reads process.env after settings load â€” it does for env mode)
+    // OR an undefined baseUrl (if it didn't pick up the relay yet â€” that's still
     // fine, the SDK subprocess will get it via settingSources).
     // Either way the chain doesn't abort.
     assert.ok(result.modelId, 'modelId is set');
@@ -258,7 +258,7 @@ describe('cc-switch end-to-end (no CodePilot provider, settings.json only)', () 
 // The previous `hasCredentialsForRequest()` helper was removed in 0.50.3 when
 // `resolveRuntime`'s auto mode switched to a pure CLI binary check. Provider-
 // group ownership (settings.json may only supply the env group, never an
-// explicit DB provider) is still enforced â€?but now by `claude-home-shadow.ts`
+// explicit DB provider) is still enforced â€” but now by `claude-home-shadow.ts`
 // stripping ANTHROPIC_* from the SDK subprocess when a DB provider is active.
 // See `claude-home-shadow.test.ts` for the direct coverage of that rule. The
 // cc-switch end-to-end suite above still exercises the "settings.json token is

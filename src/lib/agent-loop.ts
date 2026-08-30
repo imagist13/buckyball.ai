@@ -1,5 +1,5 @@
 /**
- * agent-loop.ts â?Native Agent Loop (no Claude Code CLI dependency).
+ * agent-loop.ts — Native Agent Loop (no Claude Code CLI dependency).
  *
  * Replaces the SDK's `query()` for the self-hosted runtime path.
  * Uses Vercel AI SDK `streamText()` in a manual while-loop (not maxSteps / stopWhen)
@@ -52,7 +52,7 @@ import {
   XAI_X_SEARCH_TOOL_NAME,
 } from './xai-hosted-search';
 
-// ââ Types âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Types ───────────────────────────────────────────────────────
 
 export interface AgentLoopOptions {
   /** User's prompt text */
@@ -99,8 +99,8 @@ export interface AgentLoopOptions {
    * unit tests (Codex review P2, 2026-07-18: `strippedSamplingParams` had zero
    * production consumers, so a strip was silent).
    *
-   * No UI surface populates these today â?buckyball.ai doesn't expose sampling
-   * controls â?so the live behavior is unchanged. The plumbing exists so the
+   * No UI surface populates these today — CodePilot doesn't expose sampling
+   * controls — so the live behavior is unchanged. The plumbing exists so the
    * guard fires the moment a caller does set them, instead of the guard being
    * "safe by construction" one refactor away from a silent 400.
    */
@@ -118,20 +118,20 @@ export interface AgentLoopOptions {
   /** Callback when runtime status changes */
   onRuntimeStatusChange?: (status: string) => void;
   /**
-   * Native timeout budgets (Phase 4 â?â?src/lib/native-timeout.ts).
+   * Native timeout budgets (Phase 4 ① — src/lib/native-timeout.ts).
    * ALL DISABLED by default; may also be enabled via the
    * CODEPILOT_NATIVE_TIMEOUTS env JSON when this option is absent.
    */
   timeouts?: NativeTimeoutConfig;
 }
 
-// ââ Constants âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Constants ───────────────────────────────────────────────────
 
 const DEFAULT_MAX_STEPS = 50;
 const DOOM_LOOP_THRESHOLD = 3; // same tool called 3 times in a row
 const KEEPALIVE_INTERVAL_MS = 15_000;
 
-// ââ Main ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Main ────────────────────────────────────────────────────────
 
 /**
  * Run the native Agent Loop and return a ReadableStream of SSE events.
@@ -176,13 +176,13 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
       // handlers, keep-alive timer) can call enqueue() without crashing
       // when the consumer aborts. See src/lib/safe-stream.ts.
       const controller = wrapController(controllerRaw, (kind) => {
-        console.warn(`[agent-loop] late ${kind} after stream close â?silently dropped`);
+        console.warn(`[agent-loop] late ${kind} after stream close — silently dropped`);
       });
       const keepAliveTimer = setInterval(() => {
         controller.enqueue(formatSSE({ type: 'keep_alive', data: '' }));
       }, KEEPALIVE_INTERVAL_MS);
 
-      // Phase 4 â?â?native timeout reason codes. With no configured budget
+      // Phase 4 ① — native timeout reason codes. With no configured budget
       // (the default) this controller arms no timers and its signal merely
       // mirrors the user's abortController: zero behavior change. When a
       // budget fires it aborts the SAME signal streamText and the permission
@@ -193,14 +193,15 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
         abortController.signal,
       );
 
-      // Phase 4 â?â?redacted AI SDK trace. Requires the explicit
+      // Phase 4 ③ — redacted AI SDK trace. Requires the explicit
       // CODEPILOT_AISDK_TRACE=1 env switch; default is OFF and the
       // streamText call below then carries NO telemetry option (wire- and
       // behavior-identical to before). When enabled, every event is
-      // structurally redacted (see aisdk-trace.ts) before reaching stdout â?      // prompts / tool payloads / credentials never land in the trace.
+      // structurally redacted (see aisdk-trace.ts) before reaching stdout —
+      // prompts / tool payloads / credentials never land in the trace.
       const traceIntegration = isAiSdkTraceEnabled() ? createRedactedTraceTelemetry() : null;
 
-      // Phase 5e Phase 0.5 P1 (2026-05-17) â?subscribe to the harness
+      // Phase 5e Phase 0.5 P1 (2026-05-17) — subscribe to the harness
       // side-channel for `tool_completed` events that built-in tools
       // (currently `codepilot_generate_image` / `codepilot_import_media`)
       // use to ship MediaBlock[] payloads to the chat UI. The tool's
@@ -211,14 +212,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
       //
       // Subscribed BEFORE the streamText loop runs so even the very
       // first tool call's emit lands on this listener (the bus drops
-      // emits without subscribers, no buffering â?see contract note
+      // emits without subscribers, no buffering — see contract note
       // in `harness/builtin-event-bus.ts`).
       const pendingMediaByCallId = new Map<string, MediaBlock[]>();
       let xaiSearchEnabled = false;
       let telemetryProvider: ProviderTelemetryIdentity | undefined;
       const providerStreamTelemetry = new NativeStreamTelemetryState();
 
-      // Phase 7 Context Accounting â?per-turn ToolInvocationAccumulator.
+      // Phase 7 Context Accounting — per-turn ToolInvocationAccumulator.
       // Lives in start(controller) closure so step loop tool_use/tool_result
       // events accumulate across all steps. Drained at result emit (line ~588).
       const { ToolInvocationAccumulator } = await import(
@@ -280,7 +281,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
               emitSSE: (event) => {
                 controller.enqueue(formatSSE(event as SSEEvent));
               },
-              // Combined signal: user abort OR fired timeout budget â?a
+              // Combined signal: user abort OR fired timeout budget — a
               // timed-out run must also unblock any pending approval wait.
               abortSignal: timeoutCtl.signal,
             },
@@ -289,14 +290,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
           toolSystemPrompts = assembled.systemPrompts;
         }
 
-        // Phase 5d Phase 2 P1 fix (2026-05-17) â?augment system
+        // Phase 5d Phase 2 P1 fix (2026-05-17) — augment system
         // prompt with tool-specific context snippets EVEN WHEN no
         // base systemPrompt was provided. The compiler-produced
         // tool prompts are how the model learns about capability
         // surfaces (codepilot_load_widget_guidelines, the wire
         // format spec, image-gen / memory / tasks rules, etc.). If
         // the upstream caller didn't pass a base systemPrompt, we
-        // STILL need to inject the capability prompts â?they're a
+        // STILL need to inject the capability prompts — they're a
         // contract the bridge layer ships, not optional decoration.
         //
         // Pre-fix: `length > 0 && systemPrompt ? join : systemPrompt`
@@ -389,12 +390,12 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
 
           // Build provider options (Anthropic-specific).
           // Shared sanitizer applies Opus 4.7 migration guards (manual
-          // thinking â?adaptive, skip context-1m beta). Same function is
+          // thinking → adaptive, skip context-1m beta). Same function is
           // also called from the Claude Code SDK path in claude-client.ts
           // so the two runtimes can't drift on 4.7 semantics.
           //
           // Third-party proxies still get additional filtering (no adaptive
-          // thinking or effort) â?those are proxy compatibility concerns,
+          // thinking or effort) — those are proxy compatibility concerns,
           // not Opus 4.7 migration concerns, so they stay inline here.
           //
           // Effort on the native path (@ai-sdk/anthropic 4.0.5): sent per model
@@ -429,12 +430,12 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             }));
           }
           if (sanitized.thinkingForcedOn && step === 1) {
-            // Fable 5: thinking cannot be turned off â?the sanitizer omitted
+            // Fable 5: thinking cannot be turned off — the sanitizer omitted
             // the user's thinking:'disabled' to stay wire-valid, but adaptive
             // thinking still runs. Surface it once instead of silently
             // misrepresenting the "thinking off" choice (Codex review P1).
             console.warn(
-              `[agent-loop] Fable 5: thinking cannot be disabled â?request runs with adaptive thinking despite thinking_mode='disabled'.`,
+              `[agent-loop] Fable 5: thinking cannot be disabled — request runs with adaptive thinking despite thinking_mode='disabled'.`,
             );
             controller.enqueue(formatSSE({
               type: 'status',
@@ -442,14 +443,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
                 notification: true,
                 code: 'THINKING_ALWAYS_ON',
                 title: 'Thinking stays on for this model',
-                message: `Fable 5 always uses adaptive thinking â?the "thinking off" setting can't apply to this model. Use Effort to tune thinking depth instead.`,
+                message: `Fable 5 always uses adaptive thinking — the "thinking off" setting can't apply to this model. Use Effort to tune thinking depth instead.`,
               }),
             }));
           }
           // The adaptive family 400s on non-default temperature/top_p/top_k, so
           // the sanitizer strips them to keep the request valid. Say so once
           // instead of silently sending a different request than the caller
-          // asked for (Codex review P2 â?same surface-don't-swallow rule as
+          // asked for (Codex review P2 — same surface-don't-swallow rule as
           // thinkingForcedOn / RUNTIME_EFFORT_IGNORED). Shared with the SDK
           // runtime so the two can't drift.
           const samplingNotice = buildSamplingIgnoredNotice({
@@ -459,14 +460,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
           });
           if (samplingNotice && step === 1) {
             console.warn(
-              `[agent-loop] ${config.modelId}: sampling params (${samplingNotice.unsent.join(', ')}) not sent â?this model rejects non-default values.`,
+              `[agent-loop] ${config.modelId}: sampling params (${samplingNotice.unsent.join(', ')}) not sent — this model rejects non-default values.`,
             );
             controller.enqueue(formatSSE({
               type: 'status',
               data: JSON.stringify({
                 notification: true,
                 code: samplingNotice.code,
-                // Decision + interpolation values only â?the client renders it
+                // Decision + interpolation values only — the client renders it
                 // from src/i18n (Codex review P2). The console.warn above stays
                 // as the server-side diagnostic breadcrumb; it names the param
                 // keys, never their values.
@@ -492,14 +493,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             });
             if (wire.effortDroppedUnsupportedModel && step === 1) {
               console.warn(
-                `[agent-loop] ${config.modelId} is not on Anthropic's effort-capable model list â?dropping explicit effort='${sanitized.effort}'. The model runs at its own default reasoning depth.`,
+                `[agent-loop] ${config.modelId} is not on Anthropic's effort-capable model list — dropping explicit effort='${sanitized.effort}'. The model runs at its own default reasoning depth.`,
               );
               controller.enqueue(formatSSE({
                 type: 'status',
                 data: JSON.stringify({
                   notification: true,
                   code: 'RUNTIME_EFFORT_IGNORED',
-                  // Client-localized (Codex review P2) â?see status-notice-i18n.ts.
+                  // Client-localized (Codex review P2) — see status-notice-i18n.ts.
                   reason: 'unsupported-model',
                   params: { model: config.modelId || '', effort: sanitized.effort || '' },
                 }),
@@ -508,7 +509,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             if (wire.effortDroppedForProxy && step === 1) {
               const requestedEffort = wire.effortDroppedForProxyRequested || 'unknown';
               console.warn(
-                `[agent-loop] Third-party Anthropic proxy: dropping explicit effort='${requestedEffort}' â?effort GA beta header may not be supported by proxies. Switch to SDK runtime or the official Anthropic endpoint to control effort.`,
+                `[agent-loop] Third-party Anthropic proxy: dropping explicit effort='${requestedEffort}' — effort GA beta header may not be supported by proxies. Switch to SDK runtime or the official Anthropic endpoint to control effort.`,
               );
               controller.enqueue(formatSSE({
                 type: 'status',
@@ -523,7 +524,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             if (wire.effortDroppedUnsupportedTier && step === 1) {
               const { requested, supported } = wire.effortDroppedUnsupportedTier;
               console.warn(
-                `[agent-loop] ${config.modelId} does not accept effort='${requested}' â?supported tiers: ${supported.join(', ')}. The unsupported tier was omitted.`,
+                `[agent-loop] ${config.modelId} does not accept effort='${requested}' — supported tiers: ${supported.join(', ')}. The unsupported tier was omitted.`,
               );
               controller.enqueue(formatSSE({
                 type: 'status',
@@ -544,7 +545,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             }
           }
 
-          // OpenAI Responses API (Codex) â?pass system prompt + reasoning
+          // OpenAI Responses API (Codex) — pass system prompt + reasoning
           // Follows OpenCode's approach: default effort=medium, verbosity=medium
           if (config.useResponsesApi) {
             providerOptions = {
@@ -579,11 +580,11 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
               )
             : undefined; // undefined = all tools active
 
-          // Phase 4 â?â?arm connect + first-token budgets for this step's
+          // Phase 4 ① — arm connect + first-token budgets for this step's
           // provider request (cleared by the fullStream observer below).
           timeoutCtl.onStepRequest();
 
-          // Call streamText (single step â?we control the loop)
+          // Call streamText (single step — we control the loop)
           const result = streamText({
             model: languageModel,
             // ai@7: `system` is a deprecated alias of `instructions` (wire-identical);
@@ -598,15 +599,15 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             providerOptions,
             // Sampling params that survived sanitization. Spread (not
             // `temperature: x ?? undefined`) so an absent value leaves the
-            // option off the call entirely â?wire-identical to before for every
+            // option off the call entirely — wire-identical to before for every
             // caller that doesn't set them. Values stripped by the sanitizer
             // never reach here; the user was told about them above.
             ...sanitized.sampling,
             abortSignal: timeoutCtl.signal,
             // Codex API doesn't support max_output_tokens
             ...(config.useResponsesApi ? {} : { maxOutputTokens: 16384 }),
-            // Phase 4 â?â?redacted trace, only when explicitly enabled via
-            // CODEPILOT_AISDK_TRACE=1 (null â?option absent â?no change).
+            // Phase 4 ③ — redacted trace, only when explicitly enabled via
+            // CODEPILOT_AISDK_TRACE=1 (null → option absent → no change).
             ...(traceIntegration
               ? { telemetry: { isEnabled: true, functionId: 'native-agent-loop', integrations: [traceIntegration] } }
               : {}),
@@ -632,7 +633,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
 
             // onAbort: cleanup on interruption. A fired timeout budget also
             // aborts this signal but is an ERROR (classified in the catch
-            // tail), not a user interruption â?skip the aborted teardown.
+            // tail), not a user interruption — skip the aborted teardown.
             onAbort: () => {
               if (timeoutCtl.fired) return;
               onRuntimeStatusChange?.('idle');
@@ -691,10 +692,10 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
 
           // guardStream: a fired budget must unblock this loop even when a
           // hung tool ignores the abort signal (ai@7 awaits execute() and
-          // would otherwise keep fullStream open forever). No budgets â?the
+          // would otherwise keep fullStream open forever). No budgets → the
           // iterable passes through unchanged.
           for await (const event of timeoutCtl.guardStream(result.fullStream)) {
-            // Phase 4 â?â?timeout observer: clears connect on start-step,
+            // Phase 4 ① — timeout observer: clears connect on start-step,
             // first-token on the first output part; tracks per-tool timers.
             timeoutCtl.onStreamPart(event as { type: string; toolCallId?: string });
             switch (event.type) {
@@ -716,7 +717,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
                 else hasContent = true;
                 stepToolNames.push(event.toolName);
                 distinctTools.add(event.toolName);
-                // Phase 7 â?accumulate for Context Accounting at result time.
+                // Phase 7 — accumulate for Context Accounting at result time.
                 toolInvocationAccumulator.recordToolUse(
                   event.toolCallId,
                   event.toolName,
@@ -733,21 +734,21 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
                 break;
 
               case 'tool-result': {
-                // Phase 5e Phase 0.5 P1 (2026-05-17) â?splice any
+                // Phase 5e Phase 0.5 P1 (2026-05-17) — splice any
                 // MediaBlock the tool emitted via the harness
                 // side-channel (`harness/builtin-event-bus.ts`) into
                 // the SSE `tool_result.media` field. useSSEStream on
                 // the frontend already reads `tool_result.media` and
                 // pipes it into `MediaPreview` (the same path the
                 // Codex bridge already used). Tool text stays clean
-                // â?the model only sees the plain output below, never
+                // — the model only sees the plain output below, never
                 // the MediaBlock payload.
                 const media = pendingMediaByCallId.get(event.toolCallId);
                 if (media) pendingMediaByCallId.delete(event.toolCallId);
                 const resultText = typeof event.output === 'string'
                   ? event.output
                   : JSON.stringify(event.output);
-                // Phase 7 â?accumulate for Context Accounting.
+                // Phase 7 — accumulate for Context Accounting.
                 toolInvocationAccumulator.recordToolResult(event.toolCallId, resultText);
                 if (event.providerExecuted && isXSearchTool(event.toolName)) {
                   providerSearchResults.set(event.toolCallId, {
@@ -771,7 +772,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
               }
 
               case 'tool-error': {
-                // #49 â?a tool's execute() threw. The AI SDK emits a
+                // #49 — a tool's execute() threw. The AI SDK emits a
                 // `tool-error` fullStream part (not `tool-result`); before
                 // this case existed it fell to `default` and was silently
                 // swallowed, leaving the tool_use bubble with no result.
@@ -829,7 +830,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
             }
           }
 
-          // Step's stream fully consumed â?clear step-scoped timeout budgets.
+          // Step's stream fully consumed — clear step-scoped timeout budgets.
           timeoutCtl.onStepEnd();
 
           // AI SDK's response metadata is the Runtime/Provider fact for the
@@ -873,7 +874,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
                 type: 'error',
                 data: JSON.stringify({
                   category: 'EMPTY_RESPONSE',
-                  userMessage: `æ¨¡åæªè¿åä»»ä½åå®?(finishReason: ${finishReason})ãå¯è½æ¯ API ä»£çä¸å¼å®¹ææ¨¡å ID "${modelId}" ä¸è¢«æ¯æã`,
+                  userMessage: `模型未返回任何内容 (finishReason: ${finishReason})。可能是 API 代理不兼容或模型 ID "${modelId}" 不被支持。`,
                 }),
               }));
             }
@@ -915,14 +916,14 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
           }));
         }
 
-        // 6. Emit result event (Phase 7 â?Context Accounting Runtime Contract:
+        // 6. Emit result event (Phase 7 — Context Accounting Runtime Contract:
         // collectAutoInvokeSnapshot replaces produceNativeAccountingSnapshot,
         // unifying with ClaudeCode/Codex via auto-invoke-accounting.ts.
         // Skills/MCP/Tools now come from real per-turn invocations accumulated
         // during streaming, not from filesystem guesses).
         //
         // Context window (2026-06-19, v0.56.x #632): Native's Vercel AI SDK
-        // LanguageModelUsage doesn't expose a model context window â?unlike
+        // LanguageModelUsage doesn't expose a model context window — unlike
         // ClaudeCode (SDKResultMessage.modelUsage) and Codex
         // (ThreadTokenUsage.modelContextWindow), which get it from upstream.
         // We DELIBERATELY no longer fall back to the static catalog here:
@@ -930,9 +931,10 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
         // the field `useContextUsage` treats as SDK-authoritative, so the UI
         // rendered a "trusted" capacity / percentage against a window the
         // runtime never reported (the GLM "200K" the user flagged). Leaving it
-        // absent lets useContextUsage fall back to the catalog as UNtrusted â?        // used-tokens only, no fabricated percentage. The runtime-agnostic
+        // absent lets useContextUsage fall back to the catalog as UNtrusted →
+        // used-tokens only, no fabricated percentage. The runtime-agnostic
         // TRUSTED source is a real per-model window override (provider config)
-        // â?see the v0.56.x plan Phase 2 context-window source-priority design.
+        // — see the v0.56.x plan Phase 2 context-window source-priority design.
 
         const nativeAccountingSnapshot = await buildNativeAccountingSnapshot(
           toolInvocationAccumulator.drain(),
@@ -955,7 +957,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
         emitEvent('session:end', { sessionId, steps: step });
         onRuntimeStatusChange?.('idle');
       } catch (err: unknown) {
-        // Phase 4 â?â?a fired timeout budget aborts the combined signal, so
+        // Phase 4 ① — a fired timeout budget aborts the combined signal, so
         // it surfaces here as an AbortError. It must be classified as a
         // TIMEOUT_* error (reason code from the controller, never inferred
         // from the message), NOT swallowed as a user abort.
@@ -982,7 +984,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
           // ran, so drain here too and attach the snapshot to the error event
           // (the same context_accounting field the result event carries).
           // Only collect when this turn actually invoked tools before the
-          // throw â?an empty turn would otherwise pay collectAutoInvokeSnapshot's
+          // throw — an empty turn would otherwise pay collectAutoInvokeSnapshot's
           // CLAUDE.md file read for nothing. (Codex P2)
           const errorRecords = toolInvocationAccumulator.drain();
           const errorAccounting =
@@ -1003,12 +1005,13 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
           }));
         }
 
-        // ç¨æ·ä¸»å¨ä¸­æ­¢ä¸æ¯éè¯¯ï¼ç¶ææ  'idle'ï¼å¦åä¼è¯å¨ route æ¶å°¾ç«æçªå£å
-        // æ¾ç¤ºå?errorï¼è¯­ä¹å¤±çï¼ãçå®éè¯¯ä¸ timeout ä»æ  'error'ã?        onRuntimeStatusChange?.(isAbort ? 'idle' : 'error');
+        // 用户主动中止不是错误：状态标 'idle'，否则会话在 route 收尾竞态窗口内
+        // 显示假 error（语义失真）。真实错误与 timeout 仍标 'error'。
+        onRuntimeStatusChange?.(isAbort ? 'idle' : 'error');
       } finally {
         timeoutCtl.dispose();
         clearInterval(keepAliveTimer);
-        // Phase 5e Phase 0.5 P1 â?release the side-channel listener.
+        // Phase 5e Phase 0.5 P1 — release the side-channel listener.
         // Leaving it attached across turns would leak MediaBlock from
         // one turn's tool call into the next turn's UI if the same
         // session id gets reused (see contract note in
@@ -1021,7 +1024,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
   });
 }
 
-// ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Helpers ─────────────────────────────────────────────────────
 
 /**
  * Build the Native-runtime context-accounting snapshot from the turn's drained
@@ -1040,15 +1043,15 @@ async function buildNativeAccountingSnapshot(
     return collectAutoInvokeSnapshot({
       workspacePath,
       records,
-      producedBy: 'bbagent',
-      // Native unsupported list â?same as ClaudeCode (system_prompt is ai-sdk
+      producedBy: 'codepilot_runtime',
+      // Native unsupported list — same as ClaudeCode (system_prompt is ai-sdk
       // preset opaque; memory not wired; files_attachments via composer
       // pending channel not Runtime).
       unsupported: ['system_prompt', 'memory', 'files_attachments'],
       resolveRulesEntry: resolveWorkspaceClaudeMdRules,
     });
   } catch {
-    return undefined; // best-effort â?snapshot omitted on producer failure
+    return undefined; // best-effort — snapshot omitted on producer failure
   }
 }
 

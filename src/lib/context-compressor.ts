@@ -1,5 +1,5 @@
 /**
- * Context Compressor â?automatic conversation compression engine.
+ * Context Compressor — automatic conversation compression engine.
  *
  * When estimated context usage exceeds 80% of the window, compresses older
  * messages into a summary stored in the session. Subsequent fallback contexts
@@ -11,18 +11,18 @@
  *   2. Main provider's roleModels.small (if not sdkProxyOnly)
  *   3. Main provider's roleModels.haiku
  *   4. Other non-sdkProxyOnly provider's small/haiku slot
- *   5. Main provider + main model (ultimate floor â?never null)
+ *   5. Main provider + main model (ultimate floor — never null)
  *
  * This was upgraded from the simpler `resolveProvider({ useCase: 'small' })`
  * call in an earlier version, which only implemented tier 2 and had no
  * cross-provider fallback for sdkProxyOnly main providers. See
- * docs/research/hermes-agent-analysis.md Â§3.2 and docs/exec-plans/active/
+ * docs/research/hermes-agent-analysis.md §3.2 and docs/exec-plans/active/
  * hermes-inspired-runtime-upgrade.md task 3.5b for the rationale.
  */
 
 import { roughTokenEstimate } from './context-estimator';
 
-// ââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Types ────────────────────────────────────────────────────────────
 
 export interface CompressionResult {
   summary: string;
@@ -33,7 +33,7 @@ export interface CompressionResult {
 /**
  * Payload shape for the `context_compressed` SSE status event. Both the
  * pre-compression wrapper (app/api/chat/route.ts) and the reactive-compact
- * retry path (claude-client.ts) MUST emit this exact shape â?the SSE consumer
+ * retry path (claude-client.ts) MUST emit this exact shape — the SSE consumer
  * at useSSEStream.ts dispatches onContextCompressed only when
  * `subtype === 'context_compressed'`. An earlier shape
  * `{ message: 'context_compressed' }` was silently ignored after the consumer
@@ -65,7 +65,7 @@ export function buildContextCompressedStatus(stats: {
  * Decide what (sdkSessionId, conversationHistory) to hand to streamClaude
  * after a compaction attempt.
  *
- * Rule: once buckyball.ai has produced a fresh context_summary (manual /compact or
+ * Rule: once CodePilot has produced a fresh context_summary (manual /compact or
  * auto pre-compression), we MUST stop resuming the old SDK session. Otherwise
  * the Claude Code SDK resumes with its own full transcript and ignores our
  * summary, defeating the whole point of compressing. On the next turn the
@@ -74,7 +74,7 @@ export function buildContextCompressedStatus(stats: {
  * When `compressed` is true:
  *   - sdkSessionId is cleared (caller must also updateSdkSessionId(id, '') in DB)
  *   - conversationHistory is truncated to `messagesToKeep`, so fallback context
- *     is {summary + messagesToKeep + prompt} â?not {summary + full history}
+ *     is {summary + messagesToKeep + prompt} — not {summary + full history}
  *     (which would double-count the turns summary already covers)
  *
  * When `compressed` is false, the original values pass through unchanged.
@@ -106,17 +106,18 @@ export function planStreamHandoffAfterCompaction<T>(input: {
 /**
  * Filter DB history to messages strictly after the compact coverage boundary.
  *
- * The boundary is `chat_sessions.context_summary_boundary_rowid` â?the
+ * The boundary is `chat_sessions.context_summary_boundary_rowid` — the
  * SQLite rowid of the last message ACTUALLY covered by the current summary.
  * Messages with `_rowid <= boundary` are in the summary; messages with
  * `_rowid > boundary` are post-compaction turns not yet covered and MUST
  * stay. Pass `0` as boundary when unknown (legacy rows, reactive compact
- * paths with no DB rowid metadata) â?filter then passes history through
+ * paths with no DB rowid metadata) — filter then passes history through
  * unchanged.
  *
  * Why rowid and not created_at: earlier iterations used timestamps. DB
  * addMessage writes `YYYY-MM-DD HH:MM:SS` (second precision). If the last
- * compressed message and the first kept message land in the same second â? * very possible on fast paths â?the strict-greater-than filter would either
+ * compressed message and the first kept message land in the same second —
+ * very possible on fast paths — the strict-greater-than filter would either
  * drop the first kept message (if > boundary timestamp) or keep a
  * compressed message (if >= boundary). rowid is monotonic per insert and
  * disambiguates regardless of wall-clock precision. Claude Code's own
@@ -124,19 +125,19 @@ export function planStreamHandoffAfterCompaction<T>(input: {
  * compact.ts:328, messages.ts:4530).
  *
  * Do NOT pass summary WRITE time (context_summary_updated_at) here; that's a
- * different quantity â?write time lands AFTER the current user turn's
+ * different quantity — write time lands AFTER the current user turn's
  * created_at on the auto pre-compression path, which would silently drop
  * the unsummarized user turn. Always use last-covered rowid.
  *
  * Filter is NOT gated on sdk_session_id. A historical version passed through
  * when sdk_session_id was set, assuming SDK resume ignored our local
- * history. Wrong â?the same history feeds assembleContext,
+ * history. Wrong — the same history feeds assembleContext,
  * estimateContextTokens, and needsCompression. streamClaude's SDK-resume
  * path runs with useHistory=false and never reads conversationHistory, so
  * filtering uniformly is safe for resume and correct for estimation.
  *
  * Messages without `_rowid` (synthesized in-memory objects, not loaded from
- * DB via `getMessages`) are always kept â?they can't be compared against
+ * DB via `getMessages`) are always kept — they can't be compared against
  * the rowid boundary.
  */
 export function filterHistoryByCompactBoundary<T extends { _rowid?: number }>(input: {
@@ -170,19 +171,19 @@ export function filterHistoryByCompactBoundary<T extends { _rowid?: number }>(in
  *   2. If some row DOES carry a `_rowid` but it's lower than
  *      `existingBoundaryRowid` (e.g. caller accidentally passed unfiltered
  *      history, or mixed old + new rows), we still return
- *      `existingBoundaryRowid`. Boundary only advances â?never retreats.
+ *      `existingBoundaryRowid`. Boundary only advances — never retreats.
  *      Under current route invariants this never fires (history is
  *      boundary-filtered upstream), but belt-and-suspenders against future
  *      callers that don't filter.
  *
  * Returns 0 only when both the history has no known rowid AND no existing
- * boundary was provided â?first-ever reactive compact on a session whose
+ * boundary was provided — first-ever reactive compact on a session whose
  * caller didn't plumb rowids.
  *
  * IMPORTANT: this relies on the invariant that reactive compact compresses
  * the WHOLE conversationHistory. If a future refactor splits reactive into
  * messagesToCompress/messagesToKeep (as auto pre-compression already does),
- * "last _rowid in history" is no longer "last covered rowid" â?the boundary
+ * "last _rowid in history" is no longer "last covered rowid" — the boundary
  * must then come from the last ROW ACTUALLY COMPRESSED. Update both the
  * caller and this helper together.
  */
@@ -209,7 +210,7 @@ export interface CompressParams {
   sessionModel?: string;
 }
 
-// ââ Circuit breaker âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Circuit breaker ─────────────────────────────────────────────────
 
 const compressionFailures = new Map<string, number>();
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -231,7 +232,7 @@ export function resetCompressionState(sessionId: string): void {
   compressionFailures.delete(sessionId);
 }
 
-// ââ Compression threshold check âââââââââââââââââââââââââââââââââââââ
+// ── Compression threshold check ─────────────────────────────────────
 
 const COMPRESSION_THRESHOLD = 0.8; // 80% of context window
 
@@ -248,7 +249,7 @@ export function needsCompression(
   return (estimatedTokens / contextWindow) >= COMPRESSION_THRESHOLD;
 }
 
-// ââ Main compression function âââââââââââââââââââââââââââââââââââââââ
+// ── Main compression function ───────────────────────────────────────
 
 /**
  * Compress older conversation messages into a concise summary.
@@ -269,7 +270,7 @@ export async function compressConversation(params: CompressParams): Promise<Comp
     const { normalizeMessageContent } = await import('./message-normalizer');
 
     // Resolve auxiliary model via the 5-tier chain introduced in task 3.2.
-    // Produces { providerId, modelId, source } â?never null.
+    // Produces { providerId, modelId, source } — never null.
     // When `source === 'main_floor'`, the chain found no small/haiku slot
     // anywhere, so compression will run on the main model (at main-model
     // cost). This is an intentional floor so compression never silently
@@ -294,7 +295,7 @@ export async function compressConversation(params: CompressParams): Promise<Comp
 
     if (auxiliary.source === 'main_floor') {
       console.warn(
-        `[context-compressor] No cheap auxiliary model configured â?` +
+        `[context-compressor] No cheap auxiliary model configured — ` +
         `falling back to main provider/model (${effectiveProviderId}/${effectiveModel}). ` +
         `Set AUXILIARY_COMPACT_PROVIDER + AUXILIARY_COMPACT_MODEL or configure ` +
         `roleModels.small on a non-sdkProxyOnly provider to save cost.`,

@@ -1,5 +1,5 @@
 /**
- * Phase 5b �?Codex Runtime �?provider proxy wiring regression tests.
+ * Phase 5b — Codex Runtime ↔ provider proxy wiring regression tests.
  *
  * The unified translator at `/api/codex/proxy/v1/responses` only
  * works if `thread/start` is called with the matching
@@ -8,17 +8,17 @@
  * earlier Phase 5b commit shipped the helper but didn't actually wire
  * it into `CodexRuntime.stream()`, which meant the UI showed Codex
  * Runtime as available for CodePilot providers while the actual
- * thread/start params didn't carry the injection �?a silent failure
+ * thread/start params didn't carry the injection — a silent failure
  * mode (the user sees the model in the picker, sends, and the run
  * fails because Codex tries to call the upstream API directly).
  *
  * These tests pin the contract at two layers:
  *
- *   1. `buildCodexThreadStartParams` (pure helper) �?exercises every
- *      provider-resolution branch (env / empty �?throw, codex_account
- *      �?no injection, real provider �?full injection).
+ *   1. `buildCodexThreadStartParams` (pure helper) — exercises every
+ *      provider-resolution branch (env / empty → throw, codex_account
+ *      → no injection, real provider → full injection).
  *
- *   2. `CodexRuntime.stream` �?observes the failure surface for the
+ *   2. `CodexRuntime.stream` — observes the failure surface for the
  *      env case. We can't spawn the real app-server in CI (CODEX_DISABLED=1),
  *      but the env / empty checks fire BEFORE the subprocess boot, so
  *      they're testable end-to-end through the runtime entry point.
@@ -37,10 +37,10 @@ import {
 import { codexRuntime } from '@/lib/codex/runtime';
 
 // ─────────────────────────────────────────────────────────────────────
-// buildCodexThreadStartParams �?provider-resolution branches
+// buildCodexThreadStartParams — provider-resolution branches
 // ─────────────────────────────────────────────────────────────────────
 
-describe('buildCodexThreadStartParams �?provider routing', () => {
+describe('buildCodexThreadStartParams — provider routing', () => {
   it('throws for empty providerId (caller must reject before this layer)', () => {
     assert.throws(
       () =>
@@ -75,7 +75,7 @@ describe('buildCodexThreadStartParams �?provider routing', () => {
     assert.equal(
       (params as Record<string, unknown>).modelProvider,
       undefined,
-      'codex_account must NOT carry modelProvider �?Codex would otherwise try to resolve codepilot_proxy without the matching config',
+      'codex_account must NOT carry modelProvider — Codex would otherwise try to resolve codepilot_proxy without the matching config',
     );
     assert.equal((params as Record<string, unknown>).config, undefined);
   });
@@ -98,7 +98,7 @@ describe('buildCodexThreadStartParams �?provider routing', () => {
     assert.equal(
       cfg!.base_url,
       'http://127.0.0.1:3000/api/codex/proxy/v1',
-      'base_url must point at the local proxy route �?Codex appends /responses for streaming',
+      'base_url must point at the local proxy route — Codex appends /responses for streaming',
     );
     assert.equal(
       cfg!.http_headers['x-codepilot-target-provider'],
@@ -124,7 +124,7 @@ describe('buildCodexThreadStartParams �?provider routing', () => {
     assert.equal(
       cfg!.base_url,
       'http://127.0.0.1:3000/api/codex/proxy/v1',
-      'trailing slash must be normalised away �?Codex appends /responses and a double slash would silently 404',
+      'trailing slash must be normalised away — Codex appends /responses and a double slash would silently 404',
     );
   });
 
@@ -162,17 +162,17 @@ describe('buildCodexThreadStartParams �?provider routing', () => {
       model: 'gpt-5.5',
     });
     assert.equal(params.model, 'gpt-5.5');
-    // codex_account is the virtual provider �?no proxy injection
+    // codex_account is the virtual provider — no proxy injection
     assert.equal(params.modelProvider, undefined);
     assert.equal(params.config, undefined);
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// buildCodexProviderProxyInjection �?the lower-level helper
+// buildCodexProviderProxyInjection — the lower-level helper
 // ─────────────────────────────────────────────────────────────────────
 
-describe('buildCodexProviderProxyInjection �?proxy config shape', () => {
+describe('buildCodexProviderProxyInjection — proxy config shape', () => {
   it('packs the modelProvider key + config.model_providers entry exactly as Codex expects', () => {
     const injection = buildCodexProviderProxyInjection('p1', 'http://127.0.0.1:3000');
     assert.equal(injection.modelProvider, 'codepilot_proxy');
@@ -185,7 +185,7 @@ describe('buildCodexProviderProxyInjection �?proxy config shape', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// CodexRuntime.stream �?env / empty provider rejection
+// CodexRuntime.stream — env / empty provider rejection
 // ─────────────────────────────────────────────────────────────────────
 
 async function collectStream(stream: ReadableStream<string>): Promise<string[]> {
@@ -202,7 +202,7 @@ async function collectStream(stream: ReadableStream<string>): Promise<string[]> 
   }
 }
 
-describe('CodexRuntime.stream �?provider gate (Phase 5b)', () => {
+describe('CodexRuntime.stream — provider gate (Phase 5b)', () => {
   it('rejects with run_failed when providerId is "env"', async () => {
     const stream = codexRuntime.stream({
       callScene: 'interactive_chat',
@@ -245,10 +245,10 @@ describe('CodexRuntime.stream �?provider gate (Phase 5b)', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// buildCodexThreadParams �?same shape serves start AND resume (P1 follow-up)
+// buildCodexThreadParams — same shape serves start AND resume (P1 follow-up)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('buildCodexThreadParams �?shared shape for thread/start + thread/resume', () => {
+describe('buildCodexThreadParams — shared shape for thread/start + thread/resume', () => {
   it('returns the same payload regardless of start vs resume usage (one helper, two call sites)', () => {
     // Two callers (thread/start in fresh path, thread/resume in
     // matching-binding path) call this with identical inputs and MUST
@@ -272,7 +272,7 @@ describe('buildCodexThreadParams �?shared shape for thread/start + thread/resum
   });
 
   it('legacy buildCodexThreadStartParams alias is wired to the same helper', () => {
-    // The rename is non-breaking �?the alias keeps the original name
+    // The rename is non-breaking — the alias keeps the original name
     // valid for callers / tests that haven't migrated. Asserting
     // function identity catches an accidental forked implementation.
     assert.equal(
@@ -284,7 +284,7 @@ describe('buildCodexThreadParams �?shared shape for thread/start + thread/resum
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// thread/resume payload guardrail �?CodexRuntime calls thread/resume
+// thread/resume payload guardrail — CodexRuntime calls thread/resume
 // with the same proxy params it passes to thread/start. Pre-fix, the
 // resume branch passed only `{ threadId }`. Source-grep the runtime
 // because the runtime function spawns the app-server we can't mock
@@ -292,7 +292,7 @@ describe('buildCodexThreadParams �?shared shape for thread/start + thread/resum
 // the AST-level pin still catches the regression at zero runtime cost.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('CodexRuntime �?thread/resume payload mirrors thread/start (Phase 5b P1)', () => {
+describe('CodexRuntime — thread/resume payload mirrors thread/start (Phase 5b P1)', () => {
   const runtimeSrc = fs.readFileSync(
     path.resolve(
       __dirname,
@@ -314,7 +314,7 @@ describe('CodexRuntime �?thread/resume payload mirrors thread/start (Phase 5b P
     assert.match(
       payload,
       /\.\.\.threadParams/,
-      'thread/resume must spread the same `threadParams` object the runtime uses for thread/start �?otherwise the second turn loses the codepilot_proxy injection. Found:\n' + payload,
+      'thread/resume must spread the same `threadParams` object the runtime uses for thread/start — otherwise the second turn loses the codepilot_proxy injection. Found:\n' + payload,
     );
     assert.match(
       payload,

@@ -1,5 +1,5 @@
 /**
- * permission-registry â€?single finalize exit + DB persistence
+ * permission-registry â€” single finalize exit + DB persistence
  * (codebase-health A5 Step 1).
  *
  * The refactor routed allow / deny / timeout / abort through one
@@ -9,8 +9,9 @@
  *
  * Pre-refactor the paths re-implemented the teardown and had already drifted
  * in DB-write ordering. A regression that dropped persistence on a single path
- * would silently lose the audit row while the in-memory resolve still worked â€? * exactly the kind of "pipe still flows but the stored state isn't what the
- * user thinks" bug a source pin wouldn't catch â€?so we assert the real DB row.
+ * would silently lose the audit row while the in-memory resolve still worked â€”
+ * exactly the kind of "pipe still flows but the stored state isn't what the
+ * user thinks" bug a source pin wouldn't catch â€” so we assert the real DB row.
  *
  * DB hits the per-worker isolated temp DB (db-isolation.setup.ts), not the
  * user's real codepilot.db.
@@ -28,7 +29,7 @@ const TIMEOUT_MS = 5 * 60 * 1000; // mirrors permission-registry TIMEOUT_MS
 let seq = 0;
 /**
  * Insert a fresh `pending` permission row (with its owning chat_session, since
- * permission_requests.session_id is an FK â†?chat_sessions(id)) and return the
+ * permission_requests.session_id is an FK â†’ chat_sessions(id)) and return the
  * permission request's unique id.
  */
 function seedPendingRow(): string {
@@ -44,7 +45,7 @@ function seedPendingRow(): string {
   return id;
 }
 
-describe('permission-registry finalize exit â€?DB persistence (A5 Step 1)', () => {
+describe('permission-registry finalize exit â€” DB persistence (A5 Step 1)', () => {
   it('allow path persists status=allow and resolves allow with the original toolInput defaulted in', async () => {
     const id = seedPendingRow();
     const toolInput = { command: 'ls' };
@@ -108,20 +109,20 @@ describe('permission-registry finalize exit â€?DB persistence (A5 Step 1)', () =
     assert.equal(getPermissionRequest(id)?.status, 'aborted');
   });
 
-  it('double-resolve is idempotent â€?second call returns false and does not clobber the stored status', async () => {
+  it('double-resolve is idempotent â€” second call returns false and does not clobber the stored status', async () => {
     const id = seedPendingRow();
     const pending = registerPendingPermission(id, { command: 'ls' });
 
     assert.equal(resolvePendingPermission(id, { behavior: 'allow' }), true);
     await pending;
 
-    // Entry already finalized + removed â†?the second resolve no-ops.
+    // Entry already finalized + removed â†’ the second resolve no-ops.
     assert.equal(resolvePendingPermission(id, { behavior: 'deny', message: 'x' }), false);
     assert.equal(getPermissionRequest(id)?.status, 'allow');
   });
 });
 
-describe('permission-registry onTimeout callback â€?UI notify contract (A5 Step 2)', () => {
+describe('permission-registry onTimeout callback â€” UI notify contract (A5 Step 2)', () => {
   it('fires onTimeout exactly once when the request times out', async () => {
     mock.timers.enable({ apis: ['setTimeout'] });
     try {
@@ -168,7 +169,7 @@ describe('permission-registry onTimeout callback â€?UI notify contract (A5 Step 
       await pending;
       mock.timers.tick(TIMEOUT_MS + 1);
 
-      assert.equal(onTimeout.mock.calls.length, 0, 'abort is the userâ€™s own Stop â€?no timeout event');
+      assert.equal(onTimeout.mock.calls.length, 0, 'abort is the userâ€™s own Stop â€” no timeout event');
       assert.equal(getPermissionRequest(id)?.status, 'aborted');
     } finally {
       mock.timers.reset();

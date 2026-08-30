@@ -1,5 +1,5 @@
 /**
- * ai-provider.ts �?Unified AI model factory for the native Agent Loop.
+ * ai-provider.ts — Unified AI model factory for the native Agent Loop.
  *
  * Creates a Vercel AI SDK LanguageModel from a ResolvedProvider + model override.
  * Both text-generator.ts (simple generation) and agent-loop.ts (agentic chat)
@@ -76,14 +76,19 @@ export function createModel(opts: CreateModelOptions): CreateModelResult {
   });
   assertProviderCallAllowed(resolved.provider, opts.callScene);
 
-  if (!resolved.hasCredentials && !resolved.provider) {
+  if (!resolved.hasCredentials) {
+    if (resolved.provider) {
+      throw new Error(
+        'The selected provider credential is missing or unavailable. Re-enter its API key in Settings → Providers.',
+      );
+    }
     // If the user has credentials in ~/.claude/settings.json (e.g. cc-switch)
     // but we landed here anyway, it means the native runtime was explicitly
-    // selected �?native cannot read settings.json, only the Claude Code SDK
+    // selected — native cannot read settings.json, only the Claude Code SDK
     // runtime can. Point users at the fix instead of the generic message.
     if (hasClaudeSettingsCredentials()) {
       throw new Error(
-        'Credentials found in ~/.claude/settings.json (managed by cc-switch or similar), but the Native runtime cannot read them. Switch the runtime to "Claude Code SDK" in Settings �?Runtime, or add the provider to CodePilot directly.',
+        'Credentials found in ~/.claude/settings.json (managed by cc-switch or similar), but the Native runtime cannot read them. Switch the runtime to "Claude Code SDK" in Settings → Runtime, or add the provider to CodePilot directly.',
       );
     }
     throw new Error(
@@ -101,10 +106,10 @@ export function createModel(opts: CreateModelOptions): CreateModelResult {
   // modelId remains a short alias like "sonnet". We must resolve it further.
   //
   // Resolution chain (matching Claude Code SDK's env var approach):
-  // 1. Provider's roleModels (sonnet/opus/haiku �?provider-specific upstream ID)
+  // 1. Provider's roleModels (sonnet/opus/haiku → provider-specific upstream ID)
   // 2. Hardcoded Anthropic defaults (for env-mode without provider)
   // Model ID: trust what toAiSdkConfig resolved.
-  // It uses the provider's availableModels catalog �?upstreamModelId.
+  // It uses the provider's availableModels catalog → upstreamModelId.
   // If no upstream mapping exists, pass the alias as-is (proxies often accept short aliases).
   // Only for env-mode (no provider) with bare aliases, map to current Anthropic defaults.
   if (!resolved.provider && isShortAlias(config.modelId)) {
@@ -154,7 +159,7 @@ function isOfficialAnthropicUrl(url: string): boolean {
  * Whether a provider base URL points at the first-party Anthropic endpoint.
  * Empty / absent base_url = the SDK default (api.anthropic.com) = first-party.
  * Used to decide whether the SDK's `modelUsage.contextWindow` is trustworthy:
- * it's the SDK's bundled-catalog value �?reliable for first-party Anthropic,
+ * it's the SDK's bundled-catalog value — reliable for first-party Anthropic,
  * but a generic default for third-party Anthropic-compatible proxies (e.g. a
  * GLM endpoint via custom base_url), where it misrepresents the real window. (#632)
  */
@@ -164,14 +169,14 @@ export function isFirstPartyAnthropicEndpoint(baseUrl?: string | null): boolean 
 
 /**
  * @ai-sdk/anthropic appends `/messages` to baseURL.
- * Default is `https://api.anthropic.com/v1` �?`/v1/messages`.
+ * Default is `https://api.anthropic.com/v1` → `/v1/messages`.
  * Third-party proxies expect the same, but users often omit `/v1`.
  */
 function normaliseBaseUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
   const cleaned = url.replace(/\/+$/, '');
   if (cleaned.endsWith('/v1')) return cleaned;
-  // Has a deeper path (e.g. /api/anthropic) �?don't touch
+  // Has a deeper path (e.g. /api/anthropic) — don't touch
   try {
     const pathname = new URL(cleaned).pathname;
     if (pathname !== '/' && pathname !== '') return cleaned;
@@ -271,34 +276,35 @@ function createLanguageModel(config: AiSdkConfig, isThirdPartyProxy: boolean): L
         return createApiKeyResponsesLanguageModel(config);
       }
 
-      // OpenAI OAuth (Codex API) �?use custom fetch to rewrite URL + inject auth
+      // OpenAI OAuth (Codex API) — use custom fetch to rewrite URL + inject auth
       // Pattern from opencode-dev's codex.ts plugin
       if (config.useResponsesApi && config.responsesApiAuth === 'codex_oauth') {
-        // Phase 5b round-7 fix (2026-05-18) �?per-fetch token refresh.
+        // Phase 5b round-7 fix (2026-05-18) — per-fetch token refresh.
         // Pre-fix this captured `getOAuthCredentialsSync()` at model-
         // creation time AND stored `accessToken` / `accountId` in
         // closure. Two problems:
         //   (1) `getOAuthCredentialsSync()` returns undefined for
-        //       expired tokens even when a refresh_token is on hand �?        //       so a session sitting past expiry could never recover,
+        //       expired tokens even when a refresh_token is on hand —
+        //       so a session sitting past expiry could never recover,
         //       and `/api/openai-oauth/status` would say
         //       authenticated:true while the proxy hard-errored.
         //   (2) Even when fresh creds were captured, they went stale
         //       on long sessions; subsequent fetches kept reusing the
         //       captured value.
         // Fix: drop the construction-time check entirely. On every
-        // fetch, `await ensureTokenFresh()` �?it refreshes via
+        // fetch, `await ensureTokenFresh()` — it refreshes via
         // refresh_token if the access token is past/within the 5-min
         // expiry buffer, persists via `saveTokens()`, and returns
         // fresh creds. Only returns undefined when there's no usable
         // refresh path at all, at which point we throw the "log in
-        // again" error �?but at first-fetch time, not lazily at
+        // again" error — but at first-fetch time, not lazily at
         // model-creation.
         const codexEndpoint = config.baseUrl
           ? `${config.baseUrl}/responses`
           : 'https://chatgpt.com/backend-api/codex/responses';
 
         const openai = createOpenAI({
-          apiKey: 'codex-oauth',  // placeholder �?overridden by custom fetch
+          apiKey: 'codex-oauth',  // placeholder — overridden by custom fetch
           // Keep default baseURL so SDK constructs valid paths
           fetch: async (url: RequestInfo | URL, init?: RequestInit) => {
             const creds = await ensureTokenFresh();
@@ -356,7 +362,7 @@ function createLanguageModel(config: AiSdkConfig, isThirdPartyProxy: boolean): L
         baseURL: config.baseUrl,
         ...(hasHeaders ? { headers: config.headers } : {}),
         // @ai-sdk/openai@4.0.5 .chat() emits image_url.url as BARE base64
-        // (missing the data:<mime>;base64, prefix �?Phase 2 发现 3, fixture
+        // (missing the data:<mime>;base64, prefix — Phase 2 发现 3, fixture
         // openai-chat-file-image-upstream-bare-base64). Gateways expect a
         // data URL or remote URL, so bare base64 breaks image input on this
         // wire. The wrapper sniffs the real MIME (png/jpeg/webp/gif/svg) and
@@ -427,7 +433,7 @@ function createLanguageModel(config: AiSdkConfig, isThirdPartyProxy: boolean): L
 // ── Middleware pipeline ────────────────────────────────────────
 
 /**
- * Logging middleware �?logs model calls for debugging.
+ * Logging middleware — logs model calls for debugging.
  * Only active in development (NODE_ENV !== 'production').
  */
 const loggingMiddleware: LanguageModelMiddleware = {
@@ -436,7 +442,7 @@ const loggingMiddleware: LanguageModelMiddleware = {
   wrapGenerate: async ({ doGenerate }: any) => {
     const start = Date.now();
     const result = await doGenerate();
-    console.log(`[ai-provider] generate: ${Date.now() - start}ms, tokens: ${result.usage?.inputTokens ?? '?'}�?{result.usage?.outputTokens ?? '?'}`);
+    console.log(`[ai-provider] generate: ${Date.now() - start}ms, tokens: ${result.usage?.inputTokens ?? '?'}→${result.usage?.outputTokens ?? '?'}`);
     return result;
   },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -452,9 +458,9 @@ const loggingMiddleware: LanguageModelMiddleware = {
  * Apply middleware pipeline to a language model.
  *
  * Middleware stack (applied in order):
- * 1. defaultSettingsMiddleware �?consistent defaults across providers
- * 2. extractReasoningMiddleware �?DeepSeek R1 / <think> tag models
- * 3. loggingMiddleware �?dev-only request/response logging
+ * 1. defaultSettingsMiddleware — consistent defaults across providers
+ * 2. extractReasoningMiddleware — DeepSeek R1 / <think> tag models
+ * 3. loggingMiddleware — dev-only request/response logging
  */
 function applyMiddleware(
   model: LanguageModel,
@@ -463,7 +469,7 @@ function applyMiddleware(
 ): LanguageModel {
   const middlewares: LanguageModelMiddleware[] = [];
 
-  // 1. Default settings �?ensure consistent temperature across providers
+  // 1. Default settings — ensure consistent temperature across providers
   middlewares.push(defaultSettingsMiddleware({
     settings: {
       // Don't set temperature for reasoning models (o3, o4-mini, etc.)
@@ -471,7 +477,7 @@ function applyMiddleware(
     },
   }));
 
-  // 2. Reasoning extraction �?for DeepSeek R1 and similar models that use <think> tags
+  // 2. Reasoning extraction — for DeepSeek R1 and similar models that use <think> tags
   //    Only apply to OpenAI-compatible providers (not Anthropic, which has native thinking)
   if (config.sdkType === 'openai' && !config.useResponsesApi) {
     middlewares.push(extractReasoningMiddleware({

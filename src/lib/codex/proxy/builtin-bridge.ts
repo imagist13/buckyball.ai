@@ -1,5 +1,5 @@
 /**
- * Phase 5c (2026-05-16) â?CodePilot built-in tool bridge for Codex
+ * Phase 5c (2026-05-16) — CodePilot built-in tool bridge for Codex
  * Runtime proxy path.
  *
  * Problem: when a CodePilot provider (GLM / Kimi / OpenAI-compat /
@@ -8,7 +8,7 @@
  * built-in MCP tools (memory / image / widget / tasks / notify). Real
  * smoke (2026-05-16) showed GLM/Kimi reading `imagegen` Skill text,
  * trying to call a tool that wasn't in their function list, then
- * fabricating a fallback chain â?`OPENAI_API_KEY` lookup,
+ * fabricating a fallback chain — `OPENAI_API_KEY` lookup,
  * `~/.codex/auth.json` read attempt, `npm install openai`, then
  * generation stopped.
  *
@@ -20,15 +20,16 @@
  * gets the tool result inline within the same ai-sdk step and
  * continues with assistant text.
  *
- * The result reaches buckyball.ai's chat UI through a side-channel:
+ * The result reaches CodePilot's chat UI through a side-channel:
  *   1. `execute()` emits a `tool_started` + `tool_completed`
  *      `RuntimeRunEvent` on the per-session bus
  *      (`./builtin-event-bus.ts`).
  *   2. `codex/runtime.ts` is already subscribed for the same session;
- *      it forwards each event through `canonicalToSseLine` â?SSE â? *      `useSSEStream` â?`MessageList`. Identical channel Codex's own
+ *      it forwards each event through `canonicalToSseLine` → SSE →
+ *      `useSSEStream` → `MessageList`. Identical channel Codex's own
  *      `item/completed` notifications use today.
  *
- * Anti-patterns this bridge MUST NOT reintroduce â?pinned by
+ * Anti-patterns this bridge MUST NOT reintroduce — pinned by
  * `codex-builtin-no-anti-patterns.test.ts`:
  *
  *   - Reading `~/.codex/auth.json` (Codex Account's private auth).
@@ -82,7 +83,7 @@ import {
 } from '@/lib/db';
 import { formatSubagentRunToolResult } from '@/lib/subagent-run-context';
 import { isXaiOAuthUsable } from '@/lib/xai-oauth-manager';
-// Phase 5d Phase 2 slice 2e (2026-05-17) â?`WIDGET_SYSTEM_PROMPT`
+// Phase 5d Phase 2 slice 2e (2026-05-17) — `WIDGET_SYSTEM_PROMPT`
 // import dropped: the bridge no longer holds a local WIDGET_PROMPT
 // scalar. Capability prompts are produced by the Context Compiler
 // and consumed by unified-adapter.ts.
@@ -119,7 +120,7 @@ export interface BuiltinBridgeOpts {
   workspacePath?: string;
   /** Target CodePilot provider id from
    *  `x-codepilot-target-provider`. Pre-checked by the unified
-   *  adapter â?`codex_account` should never reach here, but the
+   *  adapter — `codex_account` should never reach here, but the
    *  guard below stays as defence in depth. */
   targetProviderId: string;
   /** Test seam; production resolves this from the current OAuth bundle. */
@@ -173,7 +174,7 @@ export interface CodexAccountManagedBridgeResult extends BuiltinBridgeResult {
  * Empty result (no tools, no system prompt) when:
  *   - `sessionId` empty (older runtime build, or smoke without
  *     CodexRuntime).
- *   - `targetProviderId === 'codex_account'` â?Codex Account routes
+ *   - `targetProviderId === 'codex_account'` — Codex Account routes
  *     natively, bridge tools would be a routing bug.
  */
 export function createCodePilotBuiltinTools(
@@ -181,13 +182,13 @@ export function createCodePilotBuiltinTools(
   dependencies: BuiltinBridgeDependencies = {},
 ): BuiltinBridgeResult {
   if (!opts.sessionId) {
-    return emptyResult('Empty sessionId â?runtime did not supply x-codepilot-session-id header.');
+    return emptyResult('Empty sessionId — runtime did not supply x-codepilot-session-id header.');
   }
   if (opts.targetProviderId === 'codex_account') {
-    return emptyResult('Codex Account target â?bridge intentionally disabled (native path owns these capabilities).');
+    return emptyResult('Codex Account target — bridge intentionally disabled (native path owns these capabilities).');
   }
   if (isManagedCodexSubagentSession(opts.sessionId)) {
-    return emptyResult('Managed Codex Sub Agent â?delegation depth is limited to one and bridge tools are disabled.');
+    return emptyResult('Managed Codex Sub Agent — delegation depth is limited to one and bridge tools are disabled.');
   }
 
   const tools: ToolSet = {};
@@ -205,7 +206,7 @@ export function createCodePilotBuiltinTools(
   tools.codepilot_list_subagent_runs = buildCodexSubagentRunsTool(opts);
   tools.codepilot_spawn_subagent = buildCodexSubagentTool(opts, dependencies);
 
-  // Memory tools are workspace-gated â?without a workspace there's
+  // Memory tools are workspace-gated — without a workspace there's
   // no manifest to read. We still register the names in the set so
   // the model can be told they're unavailable, but skipping the
   // tool registration keeps the model from calling them and getting
@@ -216,14 +217,14 @@ export function createCodePilotBuiltinTools(
     tools.codepilot_memory_get = buildMemoryGetTool(opts);
   }
 
-  // Phase 5d Phase 2 slice 2e (2026-05-17) â?bridge no longer assembles
+  // Phase 5d Phase 2 slice 2e (2026-05-17) — bridge no longer assembles
   // its own systemPrompt. The Harness Context Compiler
   // (`src/lib/harness/context-compiler.ts`) is the sole producer of
   // capability prompts across all three runtimes; unified-adapter.ts
   // calls `compileContext({ runtimeId: 'codex_runtime', ... })` and
   // prepends `compiled.systemPromptText` to Codex's instructions. The
   // empty string is a stable signal to callers that haven't migrated
-  // yet â?slice 2e leaves no Codex-local prompt scalars.
+  // yet — slice 2e leaves no Codex-local prompt scalars.
   return {
     tools,
     toolNames: new Set(Object.keys(tools)),
@@ -235,7 +236,7 @@ export function createCodePilotBuiltinTools(
  * Exact cross-model delegation for a Codex Account parent.
  *
  * Codex's native collaboration workers inherit the parent model route. These
- * two tools instead reuse buckyball.ai's durable managed workflow while leaving
+ * two tools instead reuse CodePilot's durable managed workflow while leaving
  * Codex Account auth, native tools, MCP, sandbox, and approvals untouched.
  */
 export function createCodexAccountManagedTools(
@@ -244,19 +245,19 @@ export function createCodexAccountManagedTools(
 ): CodexAccountManagedBridgeResult {
   if (!opts.sessionId) {
     return {
-      ...emptyResult('Empty sessionId â?Codex Account managed tools require an auditable parent session.'),
+      ...emptyResult('Empty sessionId — Codex Account managed tools require an auditable parent session.'),
       dynamicTools: [],
     };
   }
   if (opts.targetProviderId !== 'codex_account') {
     return {
-      ...emptyResult('Non-Codex-Account target â?proxy bridge owns managed delegation.'),
+      ...emptyResult('Non-Codex-Account target — proxy bridge owns managed delegation.'),
       dynamicTools: [],
     };
   }
   if (isManagedCodexSubagentSession(opts.sessionId)) {
     return {
-      ...emptyResult('Managed Codex Sub Agent â?delegation depth is limited to one.'),
+      ...emptyResult('Managed Codex Sub Agent — delegation depth is limited to one.'),
       dynamicTools: [],
     };
   }
@@ -287,12 +288,12 @@ export function createCodexAccountManagedTools(
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Managed Codex Sub Agent â?a separate app-server thread with an exact
+// ─────────────────────────────────────────────────────────────────────
+// Managed Codex Sub Agent — a separate app-server thread with an exact
 // CodePilot Provider + Model route. This is intentionally not Codex's native
 // spawnAgent: native children inherit the parent's modelProvider config and
 // therefore cannot truthfully switch to another CodePilot Provider.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 const activeCodexDelegations = new Map<string, number>();
 const MAX_CONCURRENT_CODEX_DELEGATIONS = 2;
@@ -351,7 +352,7 @@ function buildCodexSubagentDescription(
     'This is a blocking foreground call: it returns only after the child reaches a terminal status, and no background child remains running afterward. Consume terminal=true plus the returned status/body immediately; never describe it as merely submitted, launched, queued, or still processing.',
     'For dependent children in one plan, use one workflow_id, a unique task_key per child, and depends_on upstream task keys; emit upstream task calls before their dependents. CodePilot waits durably and injects upstream terminal results before the downstream child thread starts. Undeclared wait-only placeholders are rejected.',
     'Omit logical_run_id on a first attempt. If retrying the same logical task, reuse the exact logicalRunId returned by the failed attempt; never reuse it for different work.',
-    'buckyball.ai rejects logical_run_id reuse while the prior attempt is running/settling or after it completed successfully. Wait/read the existing run, or omit the ID for genuinely new work.',
+    'CodePilot rejects logical_run_id reuse while the prior attempt is running/settling or after it completed successfully. Wait/read the existing run, or omit the ID for genuinely new work.',
     'Never claim success after a failed status and never substitute another route.',
     getSubagentRoutingGuidance('codex_runtime', routes),
   ].join('\n');
@@ -659,14 +660,15 @@ function emptyResult(reason: string): BuiltinBridgeResult {
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Helper â?wrap an execute() body with side-channel event emission.
+// ─────────────────────────────────────────────────────────────────────
+// Helper — wrap an execute() body with side-channel event emission.
 //
 // Every built-in tool follows the same shape:
-//   1. Generate a fresh toolId so the UI can pair tool_started â?//      tool_completed by id (same convention `useSSEStream` uses for
+//   1. Generate a fresh toolId so the UI can pair tool_started ↔
+//      tool_completed by id (same convention `useSSEStream` uses for
 //      the Codex notification path).
 //   2. Emit tool_started BEFORE the handler runs so the chat UI
-//      shows the "tool runningâ? affordance.
+//      shows the "tool running…" affordance.
 //   3. Run the handler, catching everything.
 //   4. Emit tool_completed AFTER, either with `output` text (success)
 //      + optional MediaBlock, or with `error` string (failure).
@@ -674,7 +676,7 @@ function emptyResult(reason: string): BuiltinBridgeResult {
 //
 // The wrapper centralises the emit/catch pattern so each tool body
 // stays focused on its own business logic.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface HandlerSuccess {
   /** Text the model sees (and CodePilot UI shows as tool result content). */
@@ -698,7 +700,7 @@ async function runWithEvents(
     // Media import boundary: if any block carries a localPath that
     // sits outside `<dataDir>/.codepilot-media`, copy it in BEFORE
     // emitting so `/api/media/serve` will accept it. The same helper
-    // codex/runtime.ts uses for native imageGeneration events â?keeps
+    // codex/runtime.ts uses for native imageGeneration events — keeps
     // every path-bearing event family honest.
     let materializedMedia = result.media;
     if (result.media && result.media.length > 0) {
@@ -734,15 +736,15 @@ async function runWithEvents(
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Image generation
 //
-// Phase 5d Phase 2 slice 2e (2026-05-17) â?MEDIA_PROMPT scalar
+// Phase 5d Phase 2 slice 2e (2026-05-17) — MEDIA_PROMPT scalar
 // removed. Media capability prompt is sourced from the canonical
 // MEDIA_MCP_SYSTEM_PROMPT (media_import) / MEDIA_SYSTEM_PROMPT
 // (image_generation) via the Context Compiler. Bridge no longer
 // holds runtime-local prompt copies.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface ImageGenInput {
   prompt: string;
@@ -882,9 +884,9 @@ function buildVideoGenerationTool(opts: BuiltinBridgeOpts) {
   });
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Media import
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface ImportMediaInput {
   filePath: string;
@@ -922,14 +924,14 @@ function buildImportMediaTool(opts: BuiltinBridgeOpts) {
           tags: input.tags,
           cwd: opts.workspacePath,
         });
-        // P2 fix (smoke round, 2026-05-16) â?the bridge's tool
+        // P2 fix (smoke round, 2026-05-16) — the bridge's tool
         // DESCRIPTION promises image/video/audio support, but
         // pre-fix every imported file got `type: 'image'` regardless.
-        // MediaPreview is type-discriminated (image â?<img>, video
-        // â?<video>, audio â?<audio>), so importing a .mp4 or .wav
+        // MediaPreview is type-discriminated (image → <img>, video
+        // → <video>, audio → <audio>), so importing a .mp4 or .wav
         // landed in the wrong renderer. Infer mediaType from the
         // mimeType prefix the same way `media-saver.mimeToMediaType`
-        // does â?we can't reach that helper directly without
+        // does — we can't reach that helper directly without
         // exporting it, but the prefix check is two lines.
         const mimeType = inferMimeFromPath(result.localPath);
         const mediaType: 'image' | 'video' | 'audio' = mediaTypeOf(mimeType);
@@ -971,7 +973,7 @@ function inferMimeFromPath(localPath: string): string {
   }
 }
 
-/** Mirrors `media-saver.ts mimeToMediaType` â?kept inline to avoid
+/** Mirrors `media-saver.ts mimeToMediaType` — kept inline to avoid
  *  exporting a helper from media-saver just for this caller. Drift
  *  guard: both sides default to `image` so non-AV files still render
  *  in the gallery as a fallback. */
@@ -981,14 +983,14 @@ function mediaTypeOf(mimeType: string): 'image' | 'video' | 'audio' {
   return 'image';
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Memory
 //
-// Phase 5d Phase 2 slice 2e (2026-05-17) â?MEMORY_PROMPT scalar
+// Phase 5d Phase 2 slice 2e (2026-05-17) — MEMORY_PROMPT scalar
 // removed. Memory capability prompt is sourced from the canonical
 // MEMORY_SEARCH_SYSTEM_PROMPT (memory-search-mcp.ts) via the
 // Context Compiler.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface MemorySearchInput {
   query: string;
@@ -1023,7 +1025,7 @@ function buildMemorySearchTool(opts: BuiltinBridgeOpts) {
         const { searchWorkspace } = await import('@/lib/workspace-retrieval');
         let results = searchWorkspace(workspace, input.query, { limit: limit * 3 });
 
-        // P2 fix (smoke round, 2026-05-16) â?the schema + description
+        // P2 fix (smoke round, 2026-05-16) — the schema + description
         // promise `tags` and `file_type` filtering, but the pre-fix
         // bridge ignored both. Mirror `memory-search-mcp.ts` lines
         // 62-88 so the Codex bridge stays in lock-step with the SDK
@@ -1053,7 +1055,7 @@ function buildMemorySearchTool(opts: BuiltinBridgeOpts) {
               return tagsLower.some((t) => entryTagsLower.includes(t));
             });
           } catch {
-            // manifest unavailable (workspace never indexed) â?skip
+            // manifest unavailable (workspace never indexed) → skip
             // tag filter rather than fail the whole search. Same
             // soft-failure stance memory-search-mcp.ts takes.
           }
@@ -1100,7 +1102,7 @@ function buildMemoryGetTool(opts: BuiltinBridgeOpts) {
         // Inlined safe-read with the same boundary checks
         // `memory-search-mcp.ts` performs. Kept in lock-step via
         // the source-grep pin in `codex-builtin-no-anti-patterns.test.ts`
-        // â?refactoring either side without touching the other will
+        // — refactoring either side without touching the other will
         // surface as a smoke divergence, not a security regression.
         const path = await import('node:path');
         const fs = await import('node:fs');
@@ -1128,7 +1130,7 @@ function buildMemoryGetTool(opts: BuiltinBridgeOpts) {
           content = lines.slice(start, end).join('\n');
         }
         if (content.length > 3000) {
-          content = content.slice(0, 3000) + '\n\n[â¦truncatedâ¦]';
+          content = content.slice(0, 3000) + '\n\n[…truncated…]';
         }
         return { text: content || '(empty file)' };
       });
@@ -1165,7 +1167,7 @@ function buildMemoryRecentTool(opts: BuiltinBridgeOpts) {
           const memoryPath = path.join(opts.workspacePath, variant);
           if (fs.existsSync(memoryPath)) {
             const content = fs.readFileSync(memoryPath, 'utf-8').trim();
-            const summary = content.length > 500 ? content.slice(0, 500) + 'â? : content;
+            const summary = content.length > 500 ? content.slice(0, 500) + '…' : content;
             if (summary.length > 0) parts.push(`## Long-term Memory\n${summary}`);
             break;
           }
@@ -1182,7 +1184,7 @@ function buildMemoryRecentTool(opts: BuiltinBridgeOpts) {
           for (const file of files) {
             const content = fs.readFileSync(path.join(dailyDir, file), 'utf-8').trim();
             if (content.length === 0) continue;
-            const truncated = content.length > 800 ? content.slice(0, 800) + 'â? : content;
+            const truncated = content.length > 800 ? content.slice(0, 800) + '…' : content;
             const date = file.replace('.md', '');
             parts.push(`## Daily Memory: ${date}\n${truncated}`);
           }
@@ -1197,17 +1199,17 @@ function buildMemoryRecentTool(opts: BuiltinBridgeOpts) {
 
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
-  return s.slice(0, max - 1) + 'â?;
+  return s.slice(0, max - 1) + '…';
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Widget guidelines
 //
-// Phase 5d Phase 2 slice 2e (2026-05-17) â?WIDGET_PROMPT scalar
+// Phase 5d Phase 2 slice 2e (2026-05-17) — WIDGET_PROMPT scalar
 // removed. The Harness Context Compiler emits the canonical
 // WIDGET_SYSTEM_PROMPT + the widget artifactContract; bridge holds
 // no local copy. The compiler is consulted by unified-adapter.ts.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface WidgetInput {
   modules: Array<'interactive' | 'chart' | 'mockup' | 'art' | 'diagram'>;
@@ -1240,13 +1242,13 @@ function buildWidgetGuidelinesTool(opts: BuiltinBridgeOpts) {
   });
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Notify + tasks
 //
-// Phase 5d Phase 2 slice 2e (2026-05-17) â?NOTIFY_PROMPT scalar
+// Phase 5d Phase 2 slice 2e (2026-05-17) — NOTIFY_PROMPT scalar
 // removed. Tasks + notify capability prompt is sourced from the
 // canonical NOTIFICATION_MCP_SYSTEM_PROMPT via the Context Compiler.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface NotifyInput {
   title: string;
@@ -1316,7 +1318,7 @@ function buildScheduleTaskTool(opts: BuiltinBridgeOpts) {
     execute: async (rawInput: unknown) => {
       const input = rawInput as ScheduleTaskInput;
       return runWithEvents(opts, 'codepilot_schedule_task', input, async () => {
-        // P1 fix (smoke round, 2026-05-16) â?`durable: false` MUST
+        // P1 fix (smoke round, 2026-05-16) — `durable: false` MUST
         // take the session-only branch (writes into the in-process
         // map via addSessionTask), NOT POST to /api/tasks/schedule.
         // Pre-fix the bridge accepted the param then ignored it,
@@ -1357,7 +1359,7 @@ function buildScheduleTaskTool(opts: BuiltinBridgeOpts) {
             priority: input.priority || 'normal',
             notify_on_complete: input.notify_on_complete === false ? 0 : 1,
             permanent: 0,
-            // Hidden run context â?closure-captured, model can't
+            // Hidden run context — closure-captured, model can't
             // override. Same rationale as the MCP variant: scheduled
             // tasks need to know which project / chat they belong
             // to so the runner re-uses the right workspace.
@@ -1386,7 +1388,7 @@ function buildScheduleTaskTool(opts: BuiltinBridgeOpts) {
             notify_on_complete: input.notify_on_complete === false ? 0 : 1,
             origin_session_id: opts.sessionId,
             working_directory: opts.workspacePath,
-            // The model can't override these â?they come from the
+            // The model can't override these — they come from the
             // bridge closure, matching the SDK MCP version's hidden-
             // context contract.
           }),
@@ -1437,7 +1439,7 @@ function buildListTasksTool(opts: BuiltinBridgeOpts) {
           durable: true,
         }));
 
-        // P1 fix (smoke round, 2026-05-16) â?also merge session-only
+        // P1 fix (smoke round, 2026-05-16) — also merge session-only
         // tasks from the in-process map. Mirror notification-mcp.ts
         // lines 224-240. Without this merge, a user who scheduled a
         // non-durable task earlier in the same chat couldn't see it
@@ -1458,7 +1460,7 @@ function buildListTasksTool(opts: BuiltinBridgeOpts) {
             });
           }
         } catch {
-          // Best-effort: scheduler module not loaded â?durable list only.
+          // Best-effort: scheduler module not loaded → durable list only.
         }
 
         if (tasks.length === 0) {
@@ -1491,7 +1493,7 @@ function buildCancelTaskTool(opts: BuiltinBridgeOpts) {
     execute: async (rawInput: unknown) => {
       const input = rawInput as CancelTaskInput;
       return runWithEvents(opts, 'codepilot_cancel_task', input, async () => {
-        // P1 fix (smoke round, 2026-05-16) â?try the session-only
+        // P1 fix (smoke round, 2026-05-16) — try the session-only
         // map first, fall through to durable DELETE if not found.
         // Mirror notification-mcp.ts lines 263-281. Pre-fix the
         // bridge only hit /api/tasks/:id, which returns 404 for
@@ -1505,7 +1507,7 @@ function buildCancelTaskTool(opts: BuiltinBridgeOpts) {
             return { text: `Session task ${input.task_id} cancelled.` };
           }
         } catch {
-          // Scheduler module not loaded â?fall through to durable.
+          // Scheduler module not loaded → fall through to durable.
         }
 
         const baseUrl = `http://127.0.0.1:${process.env.PORT || '3000'}`;

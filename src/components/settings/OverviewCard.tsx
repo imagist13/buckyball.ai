@@ -9,7 +9,7 @@
  *   - `tone="success" / "muted"` cards stay flat with a ghost CTA.
  *
  * That's the rule that keeps Overview reading as a status dashboard
- * rather than a wall of uniform black tiles â€?configured cards fade,
+ * rather than a wall of uniform black tiles â€” configured cards fade,
  * attention-needed cards pop.
  */
 

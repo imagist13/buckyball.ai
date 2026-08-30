@@ -1,17 +1,18 @@
 /**
- * session-lock-settle.ts â€?one-shot session-lock settler.
+ * session-lock-settle.ts â€” one-shot session-lock settler.
  *
  * codex-stop-recovery Phase 3. `POST /api/chat` holds a session lock for the
  * duration of a turn and renews it every 60s; the lock is normally released in
  * `collectStreamResponse`'s completion callback. But if the underlying turn
  * never produces a terminal event (a Codex turn that was Stopped but emits no
  * `turn/completed`, an upstream stuck turn, etc.), the background collect never
- * finishes, the renewal interval never stops, and the lock is renewed forever â€? * the next same-session send gets `SESSION_BUSY` indefinitely.
+ * finishes, the renewal interval never stops, and the lock is renewed forever â€”
+ * the next same-session send gets `SESSION_BUSY` indefinitely.
  *
  * To bound that, BOTH the normal completion path AND a Stop/abort watchdog call
  * the same settler. It must:
  *   - run its side effects AT MOST ONCE (whichever path fires first wins; the
- *     other becomes a no-op â€?so a late natural completion can't double-release
+ *     other becomes a no-op â€” so a late natural completion can't double-release
  *     or flip status back);
  *   - ALWAYS stop the renewal interval;
  *   - only touch runtime status when `releaseLock()` reports we STILL OWNED the
@@ -30,7 +31,7 @@ export interface SessionLockSettleDeps {
   clearRenewal: () => void;
   /**
    * Release THIS turn's lock. Returns true iff this lockId was still the
-   * active lock (i.e. we still owned the session) â€?false if it had already
+   * active lock (i.e. we still owned the session) â€” false if it had already
    * been released or a newer request took over.
    */
   releaseLock: () => boolean;

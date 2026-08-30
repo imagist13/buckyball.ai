@@ -1,28 +1,28 @@
 /**
- * Run Checkpoint trust layer â€?the single source of truth for "Agent
+ * Run Checkpoint trust layer â€” the single source of truth for "Agent
  * is waiting for the user to confirm something before this send"
  * banners on the chat page.
  *
  * Active reasons (Round 1 + Round 2):
- *   - no-compatible-provider     â€?no provider can run the resolved pair
- *   - pinned-invalid             â€?Pinned default unreachable under runtime
- *   - runtime-fallback           â€?Claude Code SDK requested but Native in use
- *   - context-cost-change        â€?pending tokens crossed an attention threshold
+ *   - no-compatible-provider     â€” no provider can run the resolved pair
+ *   - pinned-invalid             â€” Pinned default unreachable under runtime
+ *   - runtime-fallback           â€” Claude Code SDK requested but Native in use
+ *   - context-cost-change        â€” pending tokens crossed an attention threshold
  *
  * Full-access permission is confirmed ONCE at toggle time (the
  * ChatPermissionSelector AlertDialog) and shown by a persistent red chip; it is
  * NOT re-confirmed per send. An earlier `permission-elevation` checkpoint did
- * that and, via the /chat â†?/chat/[id] remount, re-fired on nearly every send
- * ("å·²äº†è§£ï¼Œç»§ç»­å‘é€? each time â€?preview feedback). Removed 2026-06-02.
+ * that and, via the /chat â†’ /chat/[id] remount, re-fired on nearly every send
+ * ("å·²äº†è§£ï¼Œç»§ç»­å‘é€" each time â€” preview feedback). Removed 2026-06-02.
  *
  * Future rounds (see `docs/exec-plans/active/chat-run-checkpoint.md`)
  * will extend `CheckpointReasonId` with `dangerous-tool-call` (Round 3,
  * touches the tool-execution state machine).
  *
  * Design rules:
- *   - Banner only â€?never modal, never wizard, never settings toggle
+ *   - Banner only â€” never modal, never wizard, never settings toggle
  *   - One single primary action per banner
- *   - Returns [] when nothing's waiting â†?composer renders nothing
+ *   - Returns [] when nothing's waiting â†’ composer renders nothing
  *   - `requiresConfirm` reasons block the send until the action runs
  *
  * Pure data, no React. The component renders this list one-for-one.
@@ -39,7 +39,7 @@ export type CheckpointTone = 'error' | 'warning' | 'info';
 /**
  * Action verbs the renderer understands. `'open-...'` ones map to a
  * settings hash navigation. `'confirm-...'` ones map to "complete the
- * pending send" â€?the calling page wires these to MessageInput's
+ * pending send" â€” the calling page wires these to MessageInput's
  * imperative submit channel via the `onAction` prop on `<RunCheckpoint>`.
  */
 export type CheckpointActionId =
@@ -56,7 +56,7 @@ export interface CheckpointAction {
    *  Use the route-level path so the user lands directly in the section
    *  without paying the redirect-from-root recompile cost. */
   href?: string;
-  /** Optional explicit handler â€?wins over `href` if both provided. */
+  /** Optional explicit handler â€” wins over `href` if both provided. */
   onClick?: () => void;
   /** Action verb the calling page can intercept. Used for
    *  `confirm-...` reasons that don't navigate but unblock a
@@ -100,21 +100,21 @@ export interface BuildCheckpointsOpts {
   defaultInvalid?: boolean;
   /** Global "user asked for SDK but CLI fell back to native" notice.
    *  Optional because the chat surfaces dropped this signal entirely
-   *  (it's global health, not session blocking â€?see
+   *  (it's global health, not session blocking â€” see
    *  `chat-static-graph.test.ts` for the contract). Settings / Health
    *  pages still drive it from `useOverviewData` + `useClaudeStatus`.
    *  Defaults to `false`. */
   runtimeFallback?: boolean;
   /** Human-readable "Anthropic / sonnet-4-5" for the pinned-invalid
    *  banner. Renderer interpolates into the description.
-   *  Undefined â†?renders as "?" placeholder. */
+   *  Undefined â†’ renders as "?" placeholder. */
   pinnedDescriptor?: string;
   /**
-   * Round 2 â€?context-cost-change trigger inputs. `pendingContextTokens`
+   * Round 2 â€” context-cost-change trigger inputs. `pendingContextTokens`
    * is the sum of @ mentions + + directories + PromptInput attachments.
    * `usedContextTokens` is what the model has already consumed in the
    * current session (from `useContextUsage().used`).
-   * Defaults to 0 â€?page can omit when not on a session.
+   * Defaults to 0 â€” page can omit when not on a session.
    */
   pendingContextTokens?: number;
   usedContextTokens?: number;
@@ -129,12 +129,12 @@ export const CONTEXT_COST_PENDING_RATIO = 0.3;
  * Whether the current pending vs used context tokens warrants the
  * "this send will add a lot of context" banner.
  *
- *   - pending >= 10K                                   â†?trigger
- *   - used > 0 AND pending / used >= 30%               â†?trigger
- *   - used === 0 AND pending < 10K                     â†?no trigger
+ *   - pending >= 10K                                   â†’ trigger
+ *   - used > 0 AND pending / used >= 30%               â†’ trigger
+ *   - used === 0 AND pending < 10K                     â†’ no trigger
  *     (no banner for tiny first-send context)
  *
- * Returns the *trigger* boolean â€?caller composes the reason itself.
+ * Returns the *trigger* boolean â€” caller composes the reason itself.
  */
 export function shouldTriggerContextCost(
   pendingContextTokens: number,
@@ -149,17 +149,17 @@ export function shouldTriggerContextCost(
 
 /**
  * Decide which checkpoints are active right now. Order in the returned
- * array determines render order â€?most blocking first.
+ * array determines render order â€” most blocking first.
  *
  * Precedence: noCompatibleProvider supersedes everything else because
  * if there's no provider at all, downstream reasons are noise. The
- * other reasons are additive â€?pinned-invalid + runtime-fallback +
+ * other reasons are additive â€” pinned-invalid + runtime-fallback +
  * context-cost can all stack if their triggers fire together.
  *
  * No reason currently sets `requiresConfirm`: they're all informational.
  * Round 1 (no-provider / pinned-invalid / runtime-fallback) rely on
  * MessageInput's existing `disabled` gate; Round 2 context-cost is a
- * non-blocking heads-up (v0.56.x #632 â€?an estimated context size must not
+ * non-blocking heads-up (v0.56.x #632 â€” an estimated context size must not
  * block a non-destructive send). The `requiresConfirm` + `blockingReasonIds`
  * + MessageInput bypass machinery is retained for any FUTURE real-danger
  * reason, but no built-in reason triggers it today.
@@ -190,8 +190,8 @@ export function buildCheckpoints(opts: BuildCheckpointsOpts): CheckpointReason[]
       // blocker. The composer falls back to a runtime-compatible
       // (provider, model) pair and sends normally; this banner just
       // tells the user their default is in a degraded state with a
-      // "fix default" jump link. Tone reflects that â€?warning, not
-      // error â€?so the chat surface isn't lying about whether the
+      // "fix default" jump link. Tone reflects that â€” warning, not
+      // error â€” so the chat surface isn't lying about whether the
       // current send will work.
       tone: 'warning',
       titleKey: 'runCheckpoint.pinnedInvalid.title',
@@ -199,7 +199,7 @@ export function buildCheckpoints(opts: BuildCheckpointsOpts): CheckpointReason[]
       descriptionValues: { pinned: opts.pinnedDescriptor || '?' },
       action: {
         labelKey: 'runCheckpoint.pinnedInvalid.action',
-        // Phase 6 UIæ”¶å£ fix-up (2026-05-14) â€?the action is "Change
+        // Phase 6 UIæ”¶å£ fix-up (2026-05-14) â€” the action is "Change
         // default" (not "Fix runtime"); the user's task is to pin a
         // new default model, so the jump target is /settings/models
         // where pinning lives. Previously this pointed at
@@ -225,14 +225,14 @@ export function buildCheckpoints(opts: BuildCheckpointsOpts): CheckpointReason[]
     });
   }
 
-  // Round 2 â€?context-cost-change. v0.56.x #632 / Phase 2: this is a
+  // Round 2 â€” context-cost-change. v0.56.x #632 / Phase 2: this is a
   // NON-BLOCKING heads-up. The pending context size is an ESTIMATE; per the
   // plan, an estimated risk on a non-destructive, user-initiated send must not
   // be turned into a second confirm / send block. So NO `requiresConfirm` and
-  // NO confirm action â€?it informs (info tone) but never enters
+  // NO confirm action â€” it informs (info tone) but never enters
   // `blockingReasonIds`. Image / file attachments therefore send on the first
   // Enter. (The requiresConfirm + bypass machinery is retained for any FUTURE
-  // real-danger reason â€?write / delete / exec / escalate â€?but none is active
+  // real-danger reason â€” write / delete / exec / escalate â€” but none is active
   // now; those dangerous actions go through the permission system, not here.)
   const pending = opts.pendingContextTokens ?? 0;
   const used = opts.usedContextTokens ?? 0;
@@ -252,7 +252,7 @@ export function buildCheckpoints(opts: BuildCheckpointsOpts): CheckpointReason[]
   return out;
 }
 
-/** "12.3K" / "850" formatting â€?stays inline so unit tests can drive it. */
+/** "12.3K" / "850" formatting â€” stays inline so unit tests can drive it. */
 function formatTokensForBanner(n: number): string {
   if (n >= 1000) {
     const k = n / 1000;

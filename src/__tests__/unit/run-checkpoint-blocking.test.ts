@@ -1,11 +1,11 @@
 /**
- * Round 2 �?flow-level contract tests for the "blocking + confirm-and-send"
+ * Round 2 — flow-level contract tests for the "blocking + confirm-and-send"
  * cycle. Models the MessageInput's bypass-flag state machine without React,
  * so we can lock down the contract independently of the React renderer.
  * (No built-in reason currently sets requiresConfirm: permission-elevation was
  * removed 2026-06-02, and context-cost-change was downgraded to a non-blocking
  * heads-up 2026-06-19 per #632. These tests model the GENERIC bypass machinery
- * with a hypothetical blocking id �?the machinery is retained for any future
+ * with a hypothetical blocking id — the machinery is retained for any future
  * real-danger confirm, and the screenshot-preservation contract below protects
  * ANY rejected submit, not just checkpoint blocks.)
  *
@@ -99,7 +99,7 @@ describe('MessageInput-style submit blocking + bypass', () => {
     assert.equal(m.state.submitsRecorded, 1);
   });
 
-  it('bypass auto-clears after one consume �?next user submit re-blocks', () => {
+  it('bypass auto-clears after one consume — next user submit re-blocks', () => {
     const m = makeSubmitMachine(['future-danger-confirm']);
     m.confirmAndSend();
     assert.equal(m.userSubmit(), false, 'second submit must re-block');
@@ -113,7 +113,7 @@ describe('MessageInput-style submit blocking + bypass', () => {
   });
 });
 
-describe('MessageInput �?PromptInput checkpoint preservation contract', () => {
+describe('MessageInput ↔ PromptInput checkpoint preservation contract', () => {
   it('a checkpoint-blocked submit must reject so PromptInput does not clear screenshots', async () => {
     assert.equal(
       await promptInputWouldClearAfterSubmit(async () => {}),
@@ -160,7 +160,7 @@ describe('PromptInput keeps text/files when an async submit rejects (real source
   const tail = src.indexOf('// Render with or without local provider');
   assert.ok(
     start >= 0 && tail > start,
-    'prompt-input.tsx anchors moved �?re-point the handleSubmit isolation in this test',
+    'prompt-input.tsx anchors moved — re-point the handleSubmit isolation in this test',
   );
   const handleSubmit = src.slice(start, tail);
 
@@ -182,36 +182,36 @@ describe('PromptInput keeps text/files when an async submit rejects (real source
       assert.doesNotMatch(
         body,
         /clear\s*\(|textInput\.clear/,
-        'a catch in handleSubmit must NOT clear �?clearing on a rejected/failed submit drops the screenshots a blocked checkpoint is supposed to preserve',
+        'a catch in handleSubmit must NOT clear — clearing on a rejected/failed submit drops the screenshots a blocked checkpoint is supposed to preserve',
       );
     }
   });
 });
 
 describe('ChatView RunCheckpoint context window source pins', () => {
-  it('checkpoint usage passes context1m + upstreamModelId like RunCockpit', () => {
+  it('checkpoint usage passes route-effective context1m + upstreamModelId like RunCockpit', () => {
     const src = read('components/chat/ChatView.tsx');
     assert.match(
       src,
-      /const usage = useContextUsage\(\s*messages,\s*currentModel,\s*\{\s*context1m,\s*upstreamModelId: currentModelUpstream,\s*\}\s*\)/,
-      'RunCheckpoint cost gating must use the same context-window inputs the status row uses',
+      /const usage = useContextUsage\(\s*messages,\s*currentModel,\s*\{\s*context1m: effectiveContext1m,\s*upstreamModelId: currentModelUpstream,\s*\}\s*\)/,
+      'RunCheckpoint cost gating must use the same route-effective context-window inputs the status row and send path use',
     );
   });
 });
 
-// ─── Contract 1+4: integrated �?context-cost across a "send" ─────────
+// ─── Contract 1+4: integrated — context-cost across a "send" ─────────
 
 describe('Context-cost reason auto-clears after the underlying send', () => {
   // Pure flow: when user has a 12K pending and then confirms+sends,
-  // the chip-add �?send pipeline drops pending to 0; the next call
+  // the chip-add → send pipeline drops pending to 0; the next call
   // to buildCheckpoints with pending=0 must omit the reason.
-  it('pending=12K �?reason fires; pending=0 after send �?reason gone', () => {
+  it('pending=12K → reason fires; pending=0 after send → reason gone', () => {
     let pending = 12_000;
     let used = 0;
     const before = buildCheckpoints({ ...ok, pendingContextTokens: pending, usedContextTokens: used });
     assert.ok(before.some((r) => r.id === 'context-cost-change'));
 
-    // Simulate send: chips clear �?pendingContextTokens drops to 0,
+    // Simulate send: chips clear → pendingContextTokens drops to 0,
     // usedContextTokens climbs by the same amount.
     used += pending;
     pending = 0;

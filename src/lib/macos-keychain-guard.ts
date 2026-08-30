@@ -135,7 +135,7 @@ function probeFromEnvironment(env: Record<string, string>): MacosDefaultKeychain
 }
 
 /**
- * When the macOS default keychain is unavailable, put buckyball.ai's narrow
+ * When the macOS default keychain is unavailable, put CodePilot's narrow
  * `security` shim first on the Claude subprocess PATH. The shim fails only
  * Claude Code credential operations; every other invocation is forwarded to
  * `/usr/bin/security` with the original argv.

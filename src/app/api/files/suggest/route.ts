@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing sessionId or workingDirectory' }, { status: 400 });
   }
 
-  // The workspace chosen by the user IS the trust boundary â€?same model
+  // The workspace chosen by the user IS the trust boundary â€” same model
   // /api/files uses. Filesystem-root paths (/, C:\) would greenlight a
   // full-disk scan, so reject those. Otherwise accept, including workspaces
-  // on external volumes, /tmp, or mounts outside $HOME â€?a common case
+  // on external volumes, /tmp, or mounts outside $HOME â€” a common case
   // that the earlier HOME-only check rejected only on the new-chat first
   // message (sessions had no such restriction), making the same project
   // fail intermittently.

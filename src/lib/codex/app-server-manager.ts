@@ -5,10 +5,11 @@
  *   - binary discovery (`codex` on PATH; future custom-path setting)
  *   - spawn lifecycle (`codex app-server`, default stdio transport)
  *   - JSON-RPC client wiring over the child's stdio
- *   - graceful close (avoid orphan processes per plan Â§ç¡¬çº¦æ?
+ *   - graceful close (avoid orphan processes per plan §硬约束)
  *
  * Singleton-per-process. Renderer / dev-server / Electron main all
- * import the same module and share the cached app-server instance â? * concurrent `getAppServer()` calls deduplicate via an in-flight
+ * import the same module and share the cached app-server instance —
+ * concurrent `getAppServer()` calls deduplicate via an in-flight
  * promise so we don't double-spawn.
  *
  * IMPORTANT: this module is node-only (child_process / fs). Don't
@@ -45,6 +46,10 @@ import {
 } from '../server-lifecycle-contract';
 import { isServerRecoverySafeMode } from '../server-recovery-safe-mode';
 import { codexReleaseAtLeast } from './release-version';
+import {
+  assertCliProviderLaunchAllowed,
+  isCliMaintenanceActive,
+} from '../cli-maintenance-lease';
 
 interface SpawnedTransport extends CodexTransport {
   readonly proc: ChildProcessWithoutNullStreams;
@@ -103,7 +108,7 @@ interface AppServerHealthState {
  * Detect a FATAL config-parse error in Codex stderr.
  *
  * P0.2 (2026-06-01): some codex builds print a fatal config error to
- * stderr and then linger ~30s before the process actually exits â?observed
+ * stderr and then linger ~30s before the process actually exits — observed
  * with old `/opt/homebrew/bin/codex` 0.45.0 rejecting `model_reasoning_effort
  * = "xhigh"` from the user's `~/.codex/config.toml`:
  *   `Failed to deserialize overridden config: unknown variant `xhigh``
@@ -112,10 +117,10 @@ interface AppServerHealthState {
  * fail the moment this signature appears on stderr.
  */
 export function isFatalCodexConfigStderr(chunk: string): boolean {
-  // Two explicit, already config-scoped fatal signatures â?a config load /
+  // Two explicit, already config-scoped fatal signatures — a config load /
   // deserialize failure is terminal regardless of the specific cause.
   if (/Failed to deserialize overridden config|error loading config/i.test(chunk)) return true;
-  // `unknown variant` ALONE is too broad â?a future non-fatal Codex warning /
+  // `unknown variant` ALONE is too broad — a future non-fatal Codex warning /
   // log line could contain it and we'd SIGKILL a healthy process. Only treat it
   // as fatal when it co-occurs with config-load / deserialization context in
   // the SAME chunk (Codex review 2026-06-01 P2). The real fatal lines read
@@ -201,7 +206,7 @@ function makeStdioTransport(
   proc.stderr.on('data', (chunk: string) => {
     for (const line of chunk.split(/\r?\n/)) {
       // B-025: drop the high-frequency INFO span flood (codex_core::tasks /
-      // session::handlers enter/exit) from the tee by default â?it otherwise
+      // session::handlers enter/exit) from the tee by default — it otherwise
       // streams into the persistent main log via the server's stdout. Warn /
       // error / fatal lines are never dropped (see shouldDropCodexTraceLine),
       // and the fatal-config fail-fast below runs on the full chunk regardless.
@@ -209,12 +214,12 @@ function makeStdioTransport(
         console.debug('[codex.app-server]', line);
       }
     }
-    // P0.2 â?fatal config error on stderr: fail NOW + kill the child so a
+    // P0.2 — fatal config error on stderr: fail NOW + kill the child so a
     // lingering old binary can't hold the RPC open for its ~30s timeout.
     // fireClose() rejects every pending request via the onClose subscriber.
     if (isFatalCodexConfigStderr(chunk)) {
       const fatalLine = chunk.split(/\r?\n/).find((l) => isFatalCodexConfigStderr(l)) ?? chunk.trim().slice(0, 200);
-      console.warn('[codex.app-server] fatal config error on stderr â?failing fast + killing child:', fatalLine);
+      console.warn('[codex.app-server] fatal config error on stderr — failing fast + killing child:', fatalLine);
       fireClose(new Error(`Codex app-server fatal config error: ${fatalLine.trim()}`));
       try { proc.kill('SIGKILL'); } catch { /* already gone */ }
     }
@@ -241,7 +246,7 @@ function makeStdioTransport(
       };
     },
     onClose(handler) {
-      // Already dead â?notify synchronously so a client that attaches
+      // Already dead → notify synchronously so a client that attaches
       // after a fast exit still fast-fails (closes the exit-before-attach
       // race). Otherwise queue for the eventual exit/error.
       if (closed) {
@@ -254,14 +259,14 @@ function makeStdioTransport(
     async close() {
       messageHandler = null;
       stdoutReader.reset();
-      // Already exited (self-exit / crash) â?nothing to wait for. Without
+      // Already exited (self-exit / crash) — nothing to wait for. Without
       // this guard we'd block on a `proc.once('exit')` that has already
       // fired and only resolve after the 2s SIGTERM fallback, adding 2s to
       // every failure path. (`proc.killed` is only set when WE kill it, so
       // it stays false for a process that exited on its own.)
       if (proc.exitCode !== null || proc.signalCode !== null) return;
       if (!proc.killed) {
-        // Gentle shutdown first â?close stdin so app-server exits its
+        // Gentle shutdown first — close stdin so app-server exits its
         // request loop. Force-kill after 2s if it hasn't exited.
         try { proc.stdin.end(); } catch { /* ignore */ }
         await new Promise<void>((resolve) => {
@@ -323,13 +328,13 @@ export interface CodexBinaryCandidate {
  *
  * P0.1 (2026-06-01): the macOS packaged-app P0 was an old Homebrew
  * `/opt/homebrew/bin/codex` 0.45.0 on PATH shadowing the newer
- * `/Applications/Codex.app/.../codex` 0.135.0 â?the old build rejected the
+ * `/Applications/Codex.app/.../codex` 0.135.0 — the old build rejected the
  * user's `xhigh` effort config fatally. PATH-first discovery picked the
  * stale binary every time. So when more than one codex is installed we pick
  * the highest version instead of blindly trusting PATH order.
  *
  * Tiebreak rules: a parseable version always beats an unparseable one; among
- * equal versions (or all-unparseable) the FIRST candidate wins â?and since
+ * equal versions (or all-unparseable) the FIRST candidate wins — and since
  * callers pass PATH candidates before the Codex.app fallback, an equal-version
  * custom build on PATH still wins (preserves the original round-6 intent).
  */
@@ -340,7 +345,7 @@ export function selectBestCodexCandidate(candidates: readonly CodexBinaryCandida
     if (best === null) { best = { path: c.path, v }; continue; }
     if (v && !best.v) { best = { path: c.path, v }; continue; }
     if (v && best.v && compareCodexVersion(v, best.v) > 0) { best = { path: c.path, v }; }
-    // equal version / lower / both-unparseable â?keep current (input-order tiebreak)
+    // equal version / lower / both-unparseable → keep current (input-order tiebreak)
   }
   return best?.path ?? null;
 }
@@ -349,19 +354,19 @@ export function selectBestCodexCandidate(candidates: readonly CodexBinaryCandida
  * Windows `.cmd` / `.bat` shims (e.g. the npm-global `codex.cmd` under
  * `%AppData%\npm`) are NOT directly executable: Node hands the path straight
  * to CreateProcess, which rejects a batch file with `EINVAL`. That is the
- * packaged-Windows "Codex app-server spawn failed: spawn EINVAL" report â?the
+ * packaged-Windows "Codex app-server spawn failed: spawn EINVAL" report — the
  * resolved binary was a `.cmd`. Such shims must run through the command
  * interpreter.
  *
- * We wrap them as `cmd.exe /d /s /c "<quoted-command-line>"` â?the same shape
- * cross-spawn / Node's own `{ shell: true }` produce â?and set
+ * We wrap them as `cmd.exe /d /s /c "<quoted-command-line>"` — the same shape
+ * cross-spawn / Node's own `{ shell: true }` produce — and set
  * windowsVerbatimArguments so Node forwards our already-quoted command line
  * unchanged. The whole command line gets an OUTER pair of quotes because
  * `cmd /s /c` strips exactly the first and last quote, which lets a shim path
  * containing spaces (`Program Files`, `AppData\Roaming`) survive.
  *
  * Real `.exe` binaries and ALL macOS / Linux paths are returned for a direct
- * spawn, unchanged â?preserving the `app-server` stdio contract (never
+ * spawn, unchanged — preserving the `app-server` stdio contract (never
  * `--listen`) that older Codex.app builds depend on.
  *
  * `platform` / `comspec` are injectable so both branches are unit-testable
@@ -399,7 +404,7 @@ export function buildCodexLaunch(
 /** Best-effort `codex --version` probe. Returns null on any failure
  *  (not executable / hung / non-zero) so the candidate ranks lowest.
  *  Routes through buildCodexLaunch so a Windows `.cmd` shim is probed via
- *  cmd.exe too â?otherwise version detection fails and ranking goes unstable. */
+ *  cmd.exe too — otherwise version detection fails and ranking goes unstable. */
 function probeCodexVersion(binaryPath: string): string | null {
   try {
     const launch = buildCodexLaunch(binaryPath, ['--version']);
@@ -598,22 +603,23 @@ export function getCodexAutoReviewCapability(): CodexAutoReviewCapability {
  * Strategy:
  *   1. CODEX_DISABLED=1 hard-disables Codex (set in test harness so
  *      unit tests never spawn the subprocess or hit network).
- *   2. CODEX_BIN env var (test / CI override of the resolved path) â? *      highest explicit priority.
+ *   2. CODEX_BIN env var (test / CI override of the resolved path) —
+ *      highest explicit priority.
  *   3. Collect candidates: PATH walk first, then known desktop/standalone
  *      install locations on macOS and Windows.
  *   4. If more than one candidate exists, probe `--version` and pick the
  *      NEWEST (P0.1, 2026-06-01) so a stale Homebrew codex on PATH can't
- *      shadow a newer Codex.app build. Single candidate â?use it as-is
+ *      shadow a newer Codex.app build. Single candidate → use it as-is
  *      except Windows desktop-managed paths, which must prove executable.
  *
  * The cheap candidate-existence scan runs on every idle availability query.
  * Version probes are reused while its fingerprint is unchanged; install,
  * uninstall, PATH and bundle-name changes invalidate resolution + version +
  * stale failure availability together. A healthy running app-server remains
- * pinned until it exits or is disposed â?discovery never hot-kills it.
+ * pinned until it exits or is disposed — discovery never hot-kills it.
  */
 export function findCodexBinary(): string | null {
-  // Phase 5b (2026-05-15) â?hard disable for tests. The wider Codex
+  // Phase 5b (2026-05-15) — hard disable for tests. The wider Codex
   // surface (account, models, runtime) all funnel through this lookup,
   // so a single guard here keeps unit tests off the subprocess and off
   // the ChatGPT plugin-sync network call. CI sets it implicitly via
@@ -660,7 +666,7 @@ export function findCodexBinary(): string | null {
     });
   } else {
     // Multiple codex installs (e.g. old /opt/homebrew/bin/codex alongside a
-    // newer /Applications/Codex.app build) â?probe versions and pick newest
+    // newer /Applications/Codex.app build) — probe versions and pick newest
     // so a stale PATH binary can't shadow Codex.app (packaged P0 2026-06-01).
     const probed: CodexBinaryCandidate[] = candidatePaths.map((p) => ({ path: p, version: probeCodexVersion(p) }));
     const usableCandidates = probed.filter((candidate) => (
@@ -847,6 +853,7 @@ export function buildCodexAppServerArgs(codexHome: string): string[] {
  * they want a non-throwing path.
  */
 export async function getCodexAppServer(): Promise<ManagedAppServer> {
+  assertCliProviderLaunchAllowed('codex');
   if (isServerRecoverySafeMode()) {
     throw new Error('Codex app-server is disabled while CodePilot is in recovery safe mode');
   }
@@ -876,7 +883,7 @@ export async function getCodexAppServer(): Promise<ManagedAppServer> {
     const executableBasename = basename(binary);
     try {
       const preparedHome = prepareCodePilotCodexHome();
-      // Windows `.cmd`/`.bat` shims can't be spawned directly (EINVAL) â?run
+      // Windows `.cmd`/`.bat` shims can't be spawned directly (EINVAL) — run
       // them through cmd.exe. Real .exe / macOS / Linux paths spawn directly.
       const launch = buildCodexLaunch(binary, buildCodexAppServerArgs(preparedHome.codexHome));
       console.info('[codex.app-server] spawning', {
@@ -937,11 +944,11 @@ export async function getCodexAppServer(): Promise<ManagedAppServer> {
     const version = await readCodePilotVersion();
     const client = new CodexAppServerClient(transport, {
       version,
-      title: 'buckyball.ai',
+      title: 'CodePilot',
       // Native dynamic tools (used by Codex Account exact-route managed
       // Sub-agents) are rejected at thread/start unless the client opted into
       // the experimental app-server surface during initialize. Attestation is
-      // intentionally disabled: buckyball.ai has no handler for that request.
+      // intentionally disabled: CodePilot has no handler for that request.
       capabilities: {
         experimentalApi: true,
         requestAttestation: false,
@@ -999,7 +1006,7 @@ export async function getCodexAppServer(): Promise<ManagedAppServer> {
 
 /**
  * Non-throwing availability query for Settings status card.
- * Doesn't spawn â?just inspects the binary and the cached state.
+ * Doesn't spawn — just inspects the binary and the cached state.
  */
 export async function getCodexAvailability(): Promise<CodexAvailability> {
   if (lastAvailability.kind === 'ready') return lastAvailability;
@@ -1038,7 +1045,7 @@ export async function refreshCodexAvailability(): Promise<CodexAvailability> {
 /**
  * Tear down the cached app-server. Used on app exit (Electron main
  * 'before-quit' / dev-server SIGTERM) so we don't leave orphan
- * processes per plan Â§ç¡¬çº¦æ?
+ * processes per plan §硬约束.
  */
 export async function disposeCodexAppServer(): Promise<void> {
   const current = cached;
@@ -1054,13 +1061,27 @@ export async function disposeCodexAppServer(): Promise<void> {
     await client.dispose();
   } catch {
     // If init failed and cached resolved with an error, the dispose
-    // path may itself throw â?ignore, the goal is just to free.
+    // path may itself throw — ignore, the goal is just to free.
   }
   lastAvailability = { kind: 'unknown' };
 }
 
+export type CodexMaintenanceQuiesceResult = 'idle' | 'active' | 'gate_missing';
+
 /**
- * Read buckyball.ai's package.json version. Async wrapper around the
+ * Called only after the provider maintenance gate is visible. It never kills
+ * an active turn; an idle cached app-server is disposed so Windows installers
+ * do not collide with the selected executable during replacement.
+ */
+export async function quiesceCodexForCliMaintenance(): Promise<CodexMaintenanceQuiesceResult> {
+  if (!isCliMaintenanceActive('codex')) return 'gate_missing';
+  if (currentHealthState && currentHealthState.activeTurnIds.size > 0) return 'active';
+  await disposeCodexAppServer();
+  return 'idle';
+}
+
+/**
+ * Read CodePilot's package.json version. Async wrapper around the
  * filesystem read so it's testable / can be mocked.
  */
 async function readCodePilotVersion(): Promise<string> {

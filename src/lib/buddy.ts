@@ -1,10 +1,10 @@
 /**
- * Buddy System �?deterministic AI companion generation.
+ * Buddy System — deterministic AI companion generation.
  * Inspired by Claude Code's companion.ts.
  *
  * Each assistant workspace gets a unique buddy based on a hash of the
  * workspace path + creation timestamp. Rarity is probability-controlled
- * (60% common �?1% legendary) to ensure fair global distribution.
+ * (60% common → 1% legendary) to ensure fair global distribution.
  */
 
 // ── Species ────────────────────────────────────────────────────────
@@ -16,14 +16,14 @@ export const SPECIES = [
 
 export type Species = typeof SPECIES[number];
 
-// Species �?boring-avatars variant for unique visual identity
+// Species → boring-avatars variant for unique visual identity
 export const SPECIES_AVATAR_VARIANT: Record<Species, 'beam' | 'marble' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'> = {
   cat: 'beam', duck: 'sunset', dragon: 'marble', owl: 'bauhaus', penguin: 'pixel',
   turtle: 'ring', octopus: 'marble', ghost: 'sunset', axolotl: 'beam', capybara: 'ring',
   robot: 'pixel', rabbit: 'beam', mushroom: 'bauhaus', fox: 'sunset', panda: 'ring', whale: 'marble',
 };
 
-// Rarity �?avatar color palette (higher rarity = richer colors)
+// Rarity → avatar color palette (higher rarity = richer colors)
 export const RARITY_AVATAR_COLORS: Record<Rarity, string[]> = {
   common: ['#A0AEC0', '#CBD5E0', '#E2E8F0', '#EDF2F7', '#F7FAFC'],
   uncommon: ['#48BB78', '#68D391', '#9AE6B4', '#C6F6D5', '#F0FFF4'],
@@ -70,11 +70,11 @@ export const SPECIES_EMOJI: Record<Species, string> = {
 
 export const SPECIES_LABEL: Record<Species, { en: string; zh: string }> = {
   cat: { en: 'Cat', zh: '猫咪' }, duck: { en: 'Duck', zh: '鸭子' },
-  dragon: { en: 'Dragon', zh: '�? }, owl: { en: 'Owl', zh: '猫头�? },
+  dragon: { en: 'Dragon', zh: '龙' }, owl: { en: 'Owl', zh: '猫头鹰' },
   penguin: { en: 'Penguin', zh: '企鹅' }, turtle: { en: 'Turtle', zh: '海龟' },
   octopus: { en: 'Octopus', zh: '章鱼' }, ghost: { en: 'Ghost', zh: '幽灵' },
-  axolotl: { en: 'Axolotl', zh: '六角�? }, capybara: { en: 'Capybara', zh: '水豚' },
-  robot: { en: 'Robot', zh: '机器�? }, rabbit: { en: 'Rabbit', zh: '兔子' },
+  axolotl: { en: 'Axolotl', zh: '六角龙' }, capybara: { en: 'Capybara', zh: '水豚' },
+  robot: { en: 'Robot', zh: '机器人' }, rabbit: { en: 'Rabbit', zh: '兔子' },
   mushroom: { en: 'Mushroom', zh: '蘑菇' }, fox: { en: 'Fox', zh: '狐狸' },
   panda: { en: 'Panda', zh: '熊猫' }, whale: { en: 'Whale', zh: '鲸鱼' },
 };
@@ -92,11 +92,11 @@ const RARITY_FLOORS: Record<Rarity, number> = {
 };
 
 export const RARITY_DISPLAY: Record<Rarity, { stars: string; label: { en: string; zh: string } }> = {
-  common: { stars: '�?, label: { en: 'Common', zh: '普�? } },
-  uncommon: { stars: '★★', label: { en: 'Uncommon', zh: '稀�? } },
-  rare: { stars: '★★�?, label: { en: 'Rare', zh: '精良' } },
+  common: { stars: '★', label: { en: 'Common', zh: '普通' } },
+  uncommon: { stars: '★★', label: { en: 'Uncommon', zh: '稀有' } },
+  rare: { stars: '★★★', label: { en: 'Rare', zh: '精良' } },
   epic: { stars: '★★★★', label: { en: 'Epic', zh: '史诗' } },
-  legendary: { stars: '★★★★�?, label: { en: 'Legendary', zh: '传说' } },
+  legendary: { stars: '★★★★★', label: { en: 'Legendary', zh: '传说' } },
 };
 
 // ── Stats ──────────────────────────────────────────────────────────
@@ -114,11 +114,11 @@ export const STAT_LABEL: Record<string, { en: string; zh: string }> = {
 
 // Mapping from peak stat to soul.md personality hint
 export const STAT_PERSONALITY_HINTS: Record<StatName, { en: string; zh: string }> = {
-  creativity: { en: 'You excel at creative solutions and unexpected suggestions.', zh: '你擅长给出创意方案和意想不到的建议�? },
-  patience: { en: 'You are very patient, explaining things step by step.', zh: '你非常耐心，善于一步步解释清楚�? },
-  insight: { en: 'You are great at analyzing the essence of problems.', zh: '你善于分析问题的本质�? },
-  humor: { en: 'You add appropriate humor to make interactions enjoyable.', zh: '你会适当加入幽默，让交流更轻松�? },
-  precision: { en: 'You focus on details and accuracy.', zh: '你注重细节和准确性�? },
+  creativity: { en: 'You excel at creative solutions and unexpected suggestions.', zh: '你擅长给出创意方案和意想不到的建议。' },
+  patience: { en: 'You are very patient, explaining things step by step.', zh: '你非常耐心，善于一步步解释清楚。' },
+  insight: { en: 'You are great at analyzing the essence of problems.', zh: '你善于分析问题的本质。' },
+  humor: { en: 'You add appropriate humor to make interactions enjoyable.', zh: '你会适当加入幽默，让交流更轻松。' },
+  precision: { en: 'You focus on details and accuracy.', zh: '你注重细节和准确性。' },
 };
 
 // ── Data Types ─────────────────────────────────────────────────────
@@ -247,20 +247,20 @@ export const TITLE_POOL: Record<string, { en: string; zh: string }[]> = {
     { en: 'Inventive', zh: '善于创造的' },
   ],
   patience: [
-    { en: 'Diligent', zh: '勤奋�? },
-    { en: 'Warm', zh: '温暖�? },
+    { en: 'Diligent', zh: '勤奋的' },
+    { en: 'Warm', zh: '温暖的' },
   ],
   insight: [
-    { en: 'Perceptive', zh: '敏锐�? },
-    { en: 'Wise', zh: '睿智�? },
+    { en: 'Perceptive', zh: '敏锐的' },
+    { en: 'Wise', zh: '睿智的' },
   ],
   humor: [
-    { en: 'Witty', zh: '机智�? },
+    { en: 'Witty', zh: '机智的' },
     { en: 'Cheerful', zh: '开朗的' },
   ],
   precision: [
-    { en: 'Meticulous', zh: '细致�? },
-    { en: 'Precise', zh: '精准�? },
+    { en: 'Meticulous', zh: '细致的' },
+    { en: 'Precise', zh: '精准的' },
   ],
 };
 

@@ -1,7 +1,7 @@
 /**
- * Harness Runtime Capability Adapter â?Phase 5d Phase 3 (2026-05-17).
+ * Harness Runtime Capability Adapter — Phase 5d Phase 3 (2026-05-17).
  *
- * ââ What this module is ââââââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module is ────────────────────────────────────────────
  *
  * Phase 2 gave us a pure `compileContext()` that turns a capability
  * set into a CompiledContext (system prompt + tool descriptors +
@@ -10,15 +10,18 @@
  * Phase 3 layers three thin runtime-specific facades on top so that
  * `claude-client.ts` / `builtin-tools/index.ts` /
  * `codex/proxy/unified-adapter.ts` don't each replicate the
- * "build a CompilerInput â?call compileContext â?unpack
+ * "build a CompilerInput → call compileContext → unpack
  * runtimeHints / systemPromptText" boilerplate. Instead each runtime
  * consumes ONE adapter call and receives a typed result whose fields
  * match exactly what that runtime needs to mount tools + inject the
  * capability prompt:
  *
- *   - `adaptForClaudeCode({...})` â? *     { systemPromptAppend, mcpServerNames, allowedToolNames, compiled }
- *   - `adaptForNative({...})` â? *     { systemPromptText, toolSetKeys, compiled }
- *   - `adaptForCodexProxy({...})` â? *     { systemPromptInstructions, builtinToolNames, stopWhen, stepCount, compiled }
+ *   - `adaptForClaudeCode({...})` →
+ *     { systemPromptAppend, mcpServerNames, allowedToolNames, compiled }
+ *   - `adaptForNative({...})` →
+ *     { systemPromptText, toolSetKeys, compiled }
+ *   - `adaptForCodexProxy({...})` →
+ *     { systemPromptInstructions, builtinToolNames, stopWhen, stepCount, compiled }
  *
  * The adapter is a pure function (no IO, no DB, no provider calls);
  * it composes with the compiler's purity guarantee. Callers still
@@ -26,7 +29,7 @@
  * answers "given this capability set, what does my runtime expose
  * to the model and how should I splice the prompt in?".
  *
- * ââ What this module is NOT ââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module is NOT ────────────────────────────────────────
  *
  *   - It does NOT instantiate MCP servers / AI SDK tools / bridge
  *     tools. Those involve IO (workspace lookup, session id, event
@@ -38,7 +41,7 @@
  *     Callers splice `systemPromptAppend` / `systemPromptInstructions`
  *     into the data structures their SDK expects.
  *
- * ââ Phase 2 review invariants this facade locks in âââââââââââââââââ
+ * ── Phase 2 review invariants this facade locks in ─────────────────
  *
  * The Phase 2 review surfaced two contract holes that have been
  * fixed in the runtime entry points; the adapter shape makes those
@@ -47,13 +50,13 @@
  *   1. ClaudeCode / Native must inject the compiler prompt even when
  *      the upstream caller didn't supply a base systemPrompt. The
  *      adapter ALWAYS returns the compiled prompt string (empty
- *      string when there are no capabilities â?never `null`).
+ *      string when there are no capabilities — never `null`).
  *      Callers can then `length > 0` check + mount the preset shape
  *      themselves without re-deriving "should I even build a
  *      systemPrompt object?".
  *   2. Native's `codepilot-media` group mounts BOTH the media-import
  *      tool AND the image-generation tool. The adapter accepts an
- *      `enabledCapabilities` set â?callers map their group names to
+ *      `enabledCapabilities` set — callers map their group names to
  *      capability ids through `capabilityIdsForGroup` (which Phase 2
  *      P1-fixed to return both ids for `codepilot-media`). The
  *      adapter then trusts the set verbatim and produces matching
@@ -80,9 +83,9 @@ import {
   type CanonicalRuntimeHarness,
 } from '@/lib/harness-home/runtime/repository-projection';
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Input shape (shared across all three runtime facades).
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface RuntimeAdapterInput {
   readonly sessionId: string;
@@ -102,7 +105,7 @@ export interface RuntimeAdapterInput {
     readonly systemPromptMax: number;
     readonly contextMax: number;
   };
-  /** Phase 5e review fix P1 #2 (2026-05-18) â?pre-scanned User
+  /** Phase 5e review fix P1 #2 (2026-05-18) — pre-scanned User
    *  CodePilot Harness extensions (Settings MCP / project .mcp.json /
    *  CLAUDE.md / .claude/skills/ / .claude/commands/). When supplied
    *  the adapter renders a perception fragment into
@@ -110,7 +113,7 @@ export interface RuntimeAdapterInput {
    *  surface in addition to built-in capabilities. Caller produces
    *  this via `scanUserCodePilotExtensions()`. */
   readonly userExtensions?: readonly UserHarnessExtension[];
-  /** Phase 5e review fix P1 #2 â?pre-scanned External Framework
+  /** Phase 5e review fix P1 #2 — pre-scanned External Framework
    *  Harness refs (`~/.claude/*`, `~/.codex/*`). Always rendered as
    *  perception (executable=true entries describe what the current
    *  Runtime can call; executable=false entries get a "switch to X
@@ -132,7 +135,7 @@ const DEFAULT_TOKEN_BUDGET = {
 } as const;
 
 /**
- * Phase 5e review round 3 fix P1 #A (2026-05-18) â?render the
+ * Phase 5e review round 3 fix P1 #A (2026-05-18) — render the
  * **HarnessBundle** extensions as a single perception fragment the
  * model can read.
  *
@@ -149,7 +152,7 @@ const DEFAULT_TOKEN_BUDGET = {
  * built upstream by the adapters via `buildHarnessBundle()`, which
  * (a) throws on missing perceptionHint (no silent fallback), and
  * (b) populates diagnostics callers can audit. No default hints
- * here â?if the bundle made it past the builder, every
+ * here — if the bundle made it past the builder, every
  * non-executable entry already has a hint.
  *
  * Format:
@@ -159,9 +162,9 @@ const DEFAULT_TOKEN_BUDGET = {
  *     Callable in this Runtime:
  *       - <user mcp server / skill / slash> (kind)
  *
- *     Perceptible only (not callable in this Runtime â?switch to <X>
+ *     Perceptible only (not callable in this Runtime — switch to <X>
  *     to use):
- *       - <external ref> â?<perceptionHint>
+ *       - <external ref> — <perceptionHint>
  *
  * Empty when both lists are empty so we don't waste prompt budget.
  * Returns '' (empty string) in that case so the caller can splice
@@ -180,7 +183,7 @@ export function renderHarnessExtensionFragment(bundle: HarnessBundle): string {
       // weakens that builder contract, this throws via undefined string
       // concat rather than silently rendering "not callable".
       perception.push(
-        `  - ${ext.displayName} (user ${ext.kind}) â?${ext.perceptionHint!}`,
+        `  - ${ext.displayName} (user ${ext.kind}) — ${ext.perceptionHint!}`,
       );
     }
   }
@@ -190,7 +193,7 @@ export function renderHarnessExtensionFragment(bundle: HarnessBundle): string {
       executable.push(`  - ${ref.displayName} (${ref.framework} ${ref.kind})`);
     } else {
       perception.push(
-        `  - ${ref.displayName} (${ref.framework} ${ref.kind}) â?${ref.perceptionHint!}`,
+        `  - ${ref.displayName} (${ref.framework} ${ref.kind}) — ${ref.perceptionHint!}`,
       );
     }
   }
@@ -205,7 +208,7 @@ export function renderHarnessExtensionFragment(bundle: HarnessBundle): string {
   }
   if (perception.length > 0) {
     lines.push(
-      'Perceptible only (not callable in this Runtime â?DO NOT pretend you can invoke them; the user knows they exist and can switch Runtime if needed):',
+      'Perceptible only (not callable in this Runtime — DO NOT pretend you can invoke them; the user knows they exist and can switch Runtime if needed):',
     );
     lines.push(...perception);
     lines.push('');
@@ -214,14 +217,14 @@ export function renderHarnessExtensionFragment(bundle: HarnessBundle): string {
 }
 
 /**
- * Helper used by every facade â?build the HarnessBundle from the
+ * Helper used by every facade — build the HarnessBundle from the
  * adapter input + render the extension fragment. Centralised so all
  * three runtime facades go through the same builder + render path
  * (no facade can skip the strong-validation builder).
  */
 function buildBundleAndRender(
   input: RuntimeAdapterInput,
-  runtimeId: 'claude_code' | 'bbagent' | 'codex_runtime',
+  runtimeId: 'claude_code' | 'codepilot_runtime' | 'codex_runtime',
 ): {
   bundle: HarnessBundle;
   extensionFragment: string;
@@ -263,19 +266,20 @@ function composeSystemPromptWithHarness(
   return fragments.filter((fragment) => fragment.length > 0).join('\n\n');
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // ClaudeCode SDK adapter.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface ClaudeCodeAdapterOutput {
   /** Capability system prompt text. Empty string when no live
-   *  capabilities are enabled â?caller can early-out instead of
+   *  capabilities are enabled — caller can early-out instead of
    *  inspecting an Optional. Phase 2 P1 fix lives in `claude-client.ts`
    *  ~1048-1080: when this string is non-empty AND the upstream
    *  request did not supply a `systemPrompt`, the caller mounts the
    *  SDK preset shape with this string in the `append` slot. */
   readonly systemPromptAppend: string;
-  /** Canonical MCP server names (from `BUILTIN_MCP_CATALOG` â?   *  capability-contract). Caller still instantiates the actual
+  /** Canonical MCP server names (from `BUILTIN_MCP_CATALOG` →
+   *  capability-contract). Caller still instantiates the actual
    *  MCP server with its IO dependencies (workspace path, session
    *  id, event bus). */
   readonly mcpServerNames: readonly string[];
@@ -302,7 +306,7 @@ export function adaptForClaudeCode(
     tokenBudget: input.tokenBudget ?? DEFAULT_TOKEN_BUDGET,
   });
   const hints: ClaudeCodeHints | undefined = compiled.runtimeHints.claudecode_sdk;
-  // Phase 5e review round 3 fix P1 #A â?bundle goes through
+  // Phase 5e review round 3 fix P1 #A — bundle goes through
   // buildHarnessBundle() (strong-validation builder) before
   // rendering. No raw-array shortcut.
   const {
@@ -321,9 +325,9 @@ export function adaptForClaudeCode(
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Native (bb-agent Runtime / AI SDK) adapter.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Native (CodePilot Runtime / AI SDK) adapter.
+// ─────────────────────────────────────────────────────────────────────
 
 export interface NativeAdapterOutput {
   /** Capability system prompt text. Caller pushes this onto its
@@ -342,7 +346,7 @@ export function adaptForNative(
   const compiled = compileContext({
     sessionId: input.sessionId,
     workingDirectory: input.workingDirectory,
-    runtimeId: 'bbagent',
+    runtimeId: 'codepilot_runtime',
     providerId: input.providerId,
     model: input.model,
     userPrompt: input.userPrompt,
@@ -351,11 +355,11 @@ export function adaptForNative(
     tokenBudget: input.tokenBudget ?? DEFAULT_TOKEN_BUDGET,
   });
   const hints: NativeHints | undefined = compiled.runtimeHints.native;
-  // Phase 5e review round 3 fix P1 #A â?bundle through builder.
+  // Phase 5e review round 3 fix P1 #A — bundle through builder.
   const {
     extensionFragment,
     canonicalFragment,
-  } = buildBundleAndRender(input, 'bbagent');
+  } = buildBundleAndRender(input, 'codepilot_runtime');
   return {
     systemPromptText: composeSystemPromptWithHarness(
       compiled.systemPromptText,
@@ -367,15 +371,15 @@ export function adaptForNative(
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Codex Runtime (proxy bridge) adapter.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface CodexProxyAdapterOutput {
   /** Capability system prompt text. Caller splices it into the
    *  Responses request body's `instructions` field (Phase 2 slice 2e
    *  +P0 fix in `unified-adapter.ts` ~155-162). Empty when no
-   *  capabilities mounted â?caller leaves body unmodified. */
+   *  capabilities mounted — caller leaves body unmodified. */
   readonly systemPromptInstructions: string;
   /** Built-in tool names the bridge mounted; the unified adapter
    *  passes this to `translate-stream.ts` to suppress Codex-bound
@@ -408,7 +412,7 @@ export function adaptForCodexProxy(
     tokenBudget: input.tokenBudget ?? DEFAULT_TOKEN_BUDGET,
   });
   const hints: CodexProxyHints | undefined = compiled.runtimeHints.codex_proxy;
-  // Phase 5e review round 3 fix P1 #A â?bundle through builder.
+  // Phase 5e review round 3 fix P1 #A — bundle through builder.
   const {
     extensionFragment,
     canonicalFragment,

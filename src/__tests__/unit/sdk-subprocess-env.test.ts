@@ -1,5 +1,5 @@
 /**
- * Tests for prepareSdkSubprocessEnv â€?the single helper that every SDK
+ * Tests for prepareSdkSubprocessEnv â€” the single helper that every SDK
  * subprocess spawn (main stream, generateTextViaSdk, provider-doctor probe)
  * MUST go through, so the provider-group ownership rule is applied
  * uniformly across entry points.
@@ -39,7 +39,7 @@ function writeUserSettingsAuth(creds: Record<string, string>) {
   fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ env: creds }));
 }
 
-describe('prepareSdkSubprocessEnv â€?uniform provider-group ownership', () => {
+describe('prepareSdkSubprocessEnv â€” uniform provider-group ownership', () => {
   it('env-mode (resolved.provider undefined): pass-through real HOME, cc-switch path intact', async () => {
     writeUserSettingsAuth({ ANTHROPIC_AUTH_TOKEN: 'sk-cc-switch' });
     const { prepareSdkSubprocessEnv } = await import('../../lib/sdk-subprocess-env');
@@ -138,5 +138,54 @@ describe('prepareSdkSubprocessEnv â€?uniform provider-group ownership', () => {
     setup.shadow.cleanup();
     assert.ok(!fs.existsSync(dir));
     setup.shadow.cleanup(); // second call must not throw
+  });
+
+  it('refuses an explicit DB provider without credentials before ambient OAuth can be inherited', async () => {
+    writeUserSettingsAuth({ ANTHROPIC_AUTH_TOKEN: 'sk-ambient-claude-oauth' });
+    const originalAnthropicToken = process.env.ANTHROPIC_AUTH_TOKEN;
+    process.env.ANTHROPIC_AUTH_TOKEN = 'sk-ambient-process-token';
+    const { prepareSdkSubprocessEnv } = await import('../../lib/sdk-subprocess-env');
+    const { createModel } = await import('../../lib/ai-provider');
+
+    const unreadableProvider = {
+      provider: {
+        id: 'glm-unreadable', name: 'GLM', preset_key: 'glm-cn', provider_type: 'anthropic', protocol: 'anthropic',
+        base_url: 'https://open.bigmodel.cn/api/anthropic', api_key: '',
+        is_active: 1, sort_order: 0, extra_env: '{}', headers_json: '{}',
+        env_overrides_json: '', role_models_json: '{}', notes: '', options_json: '{}',
+        created_at: '', updated_at: '',
+      },
+      protocol: 'anthropic' as const,
+      authStyle: 'auth_token' as const,
+      model: 'sonnet',
+      modelDisplayName: 'GLM-5.3',
+      upstreamModel: 'glm-5.3[1m]',
+      headers: {},
+      envOverrides: {},
+      roleModels: { default: 'glm-5.3[1m]' },
+      hasCredentials: false,
+      availableModels: [],
+      settingSources: ['user'],
+    };
+
+    try {
+      assert.throws(
+        () => prepareSdkSubprocessEnv(unreadableProvider),
+        /provider_credentials_unavailable/,
+      );
+      assert.throws(
+        () => createModel({
+          callScene: 'interactive_chat',
+          resolvedProvider: unreadableProvider,
+          model: 'sonnet',
+          runtime: 'codepilot_runtime',
+        }),
+        /selected provider credential is missing or unavailable/i,
+        'native runtime must fail before constructing a transport without the selected provider key',
+      );
+    } finally {
+      if (originalAnthropicToken === undefined) delete process.env.ANTHROPIC_AUTH_TOKEN;
+      else process.env.ANTHROPIC_AUTH_TOKEN = originalAnthropicToken;
+    }
   });
 });

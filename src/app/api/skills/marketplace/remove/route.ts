@@ -4,6 +4,7 @@ import {
   spawnSkillsProcess,
   validateMarketplaceMutationRequest,
 } from "@/lib/skills-marketplace-command";
+import { SingleOwnerStreamWriter } from "@/lib/single-owner-stream-writer";
 
 export async function POST(request: Request) {
   const requestError = validateMarketplaceMutationRequest(request);
@@ -42,10 +43,12 @@ export async function POST(request: Request) {
     const child = spawnSkillsProcess(args);
 
     const encoder = new TextEncoder();
+    const writer = new SingleOwnerStreamWriter<Uint8Array>();
     const stream = new ReadableStream({
       start(controller) {
+        writer.attach(controller);
         const send = (event: string, data: string) => {
-          controller.enqueue(
+          writer.enqueue(
             encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
           );
         };
@@ -64,15 +67,16 @@ export async function POST(request: Request) {
           } else {
             send("error", `Process exited with code ${code}`);
           }
-          controller.close();
+          writer.close();
         });
 
         child.on("error", (err) => {
           send("error", err.message);
-          controller.close();
+          writer.close();
         });
       },
       cancel() {
+        writer.cancel();
         child.kill();
       },
     });

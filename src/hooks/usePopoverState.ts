@@ -130,7 +130,7 @@ export function usePopoverState(modelName?: string): UsePopoverStateReturn {
 
         setAiSuggestions(aiItems);
       } catch {
-        // Silently fail â€?don't show AI suggestions on error
+        // Silently fail â€” don't show AI suggestions on error
         if (!abortController.signal.aborted) {
           setAiSuggestions([]);
         }

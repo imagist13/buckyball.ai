@@ -1,5 +1,5 @@
 /**
- * Phase 0.5 Slice D â€?Permission adapter translators.
+ * Phase 0.5 Slice D â€” Permission adapter translators.
  *
  * Pins the adapter-side translation contract: each runtime's native
  * approval / sandbox / confirm shape collapses into the canonical
@@ -42,7 +42,7 @@ describe('translateClaudeCodePermissionRequest', () => {
   });
 
   it('preserves toolName / toolInput / toolUseId for downstream UI', () => {
-    // P1.2 fix â€?PermissionPrompt distinguishes ExitPlanMode /
+    // P1.2 fix â€” PermissionPrompt distinguishes ExitPlanMode /
     // AskUserQuestion / generic tools by `toolName`, renders
     // arguments from `toolInput`, and echoes `toolUseId` on resume.
     const sdk: PermissionRequestEvent = {
@@ -93,7 +93,7 @@ describe('translateClaudeCodePermissionRequest', () => {
   });
 
   it('carries nativeRequestRef so SDK-side resume can round-trip', () => {
-    // UI MUST NOT inspect nativeRequestRef.raw â€?adapter owns the
+    // UI MUST NOT inspect nativeRequestRef.raw â€” adapter owns the
     // shape. The contract is: round-trip ref exists, runtimeId
     // matches, raw is the SDK event verbatim.
     const sdk: PermissionRequestEvent = {
@@ -159,9 +159,9 @@ describe('Terminal-event helpers', () => {
     assert.equal((e as { reason?: string }).reason, 'user clicked deny');
   });
 
-  it('emitPermissionUnavailable always carries a reason â€?conservative default', () => {
+  it('emitPermissionUnavailable always carries a reason â€” conservative default', () => {
     const e = emitPermissionUnavailable(
-      'bbagent',
+      'codepilot_runtime',
       's',
       'r',
       'adapter does not map this approval kind yet',
@@ -170,7 +170,7 @@ describe('Terminal-event helpers', () => {
     assert.equal(e.reason, 'adapter does not map this approval kind yet');
     // Conservative default contract: this event must NEVER imply granted.
     // The fact that the type exists distinguishes it from granted at the
-    // type level â€?UI is forced to render it differently.
+    // type level â€” UI is forced to render it differently.
     assert.notEqual(e.type as string, 'permission_granted');
   });
 });
@@ -180,7 +180,7 @@ describe('Conservative default contract', () => {
     // Implementer guidance check: when an adapter encounters an
     // approval event it can't classify, it MUST emit
     // permission_unavailable (not fall-through to granted). This
-    // test is a documentation pin â€?failing it means someone removed
+    // test is a documentation pin â€” failing it means someone removed
     // emitPermissionUnavailable from the public API.
     assert.equal(typeof emitPermissionUnavailable, 'function');
   });

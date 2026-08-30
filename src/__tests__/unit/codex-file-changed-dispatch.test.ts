@@ -1,15 +1,15 @@
 /**
- * Phase 5 Phase 4 Slice 1 â€?file-changed dispatch contract.
+ * Phase 5 Phase 4 Slice 1 â€” file-changed dispatch contract.
  *
  * Pins the path:
  *
- *   Codex runtime â†?canonical RuntimeRunEvent file_changed
- *   â†?SSE `data: {"type":"file_changed","data":"{\"paths\":[...]}"}`
- *   â†?useSSEStream handleSSEEvent's `file_changed` case
- *   â†?SSECallbacks.onFileChanged(paths)
- *   â†?stream-session-manager dispatchFileChanged({ paths, source: 'ai-tool' })
- *   â†?window 'codepilot:file-changed' event
- *   â†?PreviewPanel quiet-refresh
+ *   Codex runtime â†’ canonical RuntimeRunEvent file_changed
+ *   â†’ SSE `data: {"type":"file_changed","data":"{\"paths\":[...]}"}`
+ *   â†’ useSSEStream handleSSEEvent's `file_changed` case
+ *   â†’ SSECallbacks.onFileChanged(paths)
+ *   â†’ stream-session-manager dispatchFileChanged({ paths, source: 'ai-tool' })
+ *   â†’ window 'codepilot:file-changed' event
+ *   â†’ PreviewPanel quiet-refresh
  *
  * Earlier Phase 3 emitted file_changed as a status SSE with embedded
  * JSON, which useSSEStream's status case rendered as raw text and
@@ -46,7 +46,7 @@ const streamMgrSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('SSE file_changed event â€?Phase 5 Phase 4 Slice 1 contract', () => {
+describe('SSE file_changed event â€” Phase 5 Phase 4 Slice 1 contract', () => {
   it('SSEEventType union includes file_changed', () => {
     // Compile-time pin: assigning 'file_changed' to SSEEventType must
     // typecheck. Breaking the union (removing the member) fails the
@@ -57,7 +57,7 @@ describe('SSE file_changed event â€?Phase 5 Phase 4 Slice 1 contract', () => {
 
   it('Codex runtime emits file_changed SSE (not status fallback)', () => {
     // The `case 'file_changed':` arm in canonicalToSseLine must
-    // produce the dedicated file_changed event type â€?earlier revision
+    // produce the dedicated file_changed event type â€” earlier revision
     // shoved it through `type: 'status'` which never reached the
     // dispatch path. Match the object-literal shape (unquoted key,
     // single-quoted value) the source actually uses. Window generous
@@ -81,7 +81,7 @@ describe('SSE file_changed event â€?Phase 5 Phase 4 Slice 1 contract', () => {
     assert.match(useSseSrc, /onFileChanged\?\:\s*\(paths:\s*string\[\]\)\s*=>\s*void/);
   });
 
-  it('stream-session-manager wires onFileChanged â†?dispatchFileChanged', () => {
+  it('stream-session-manager wires onFileChanged â†’ dispatchFileChanged', () => {
     assert.match(streamMgrSrc, /onFileChanged:\s*\(paths\)\s*=>/);
     // The onFileChanged handler body resolves relative paths and then
     // calls dispatchFileChanged with source:'ai-tool'. Allow generous

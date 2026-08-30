@@ -1,15 +1,15 @@
 /**
- * Phase 5e Phase 3 review round 7 (2026-05-18) �?Capability display
+ * Phase 5e Phase 3 review round 7 (2026-05-18) — Capability display
  * text coverage.
  *
  * Pins that the user-facing copy layer (`capability-display-text.ts`)
  * stays in step with the engineering catalog (`capability-contract.ts`).
  * If a new capability is added to `HARNESS_CAPABILITIES` without a
- * matching `CAPABILITY_DISPLAY` entry, this test fails �?preventing
+ * matching `CAPABILITY_DISPLAY` entry, this test fails — preventing
  * the Settings dialog from rendering an engineering id ("widget" /
  * "tasks_and_notify") to the user.
  *
- * Round 7 ratchet �?we explicitly *don't* allow the UI to fall back
+ * Round 7 ratchet — we explicitly *don't* allow the UI to fall back
  * to the contract's `displayName` even though `getCapabilityDisplay`
  * returns undefined gracefully. The contract `displayName` carries
  * developer language (e.g. "Generative UI widgets via show-widget
@@ -36,7 +36,7 @@ import {
 import { capabilityMatrixForRuntime } from '@/lib/harness/capability-matrix';
 import type { RuntimeId } from '@/lib/runtime/runtime-id';
 
-describe('Capability display text �?coverage', () => {
+describe('Capability display text — coverage', () => {
   it('every capability in HARNESS_CAPABILITIES has a display text entry', () => {
     for (const cap of HARNESS_CAPABILITIES) {
       const display = getCapabilityDisplay(cap.id);
@@ -60,7 +60,7 @@ describe('Capability display text �?coverage', () => {
     for (const id of knownCapabilityIds()) {
       assert.ok(
         catalogIds.has(id),
-        `display text references unknown capability "${id}" �?remove the orphan or add it to HARNESS_CAPABILITIES`,
+        `display text references unknown capability "${id}" — remove the orphan or add it to HARNESS_CAPABILITIES`,
       );
     }
   });
@@ -97,7 +97,7 @@ describe('Capability display text �?coverage', () => {
   });
 });
 
-describe('Capability display text �?buildUserReason', () => {
+describe('Capability display text — buildUserReason', () => {
   it('returns "no runtime supports" sentence when suggestedRuntimes is empty', () => {
     const zh = buildUserReason({
       capabilityId: 'widget',
@@ -118,19 +118,19 @@ describe('Capability display text �?buildUserReason', () => {
     assert.ok(en.includes('Generate Widget'));
   });
 
-  it('lists suggested runtimes joined with "�? (zh) / "or" (en)', () => {
+  it('lists suggested runtimes joined with "或" (zh) / "or" (en)', () => {
     const zh = buildUserReason({
       capabilityId: 'dashboard',
       currentRuntime: 'codex_runtime',
-      suggestedRuntimes: ['claude_code', 'bbagent'],
+      suggestedRuntimes: ['claude_code', 'codepilot_runtime'],
       lang: 'zh',
     });
-    assert.ok(zh.includes('Claude Code �?CodePilot'), `unexpected zh: ${zh}`);
+    assert.ok(zh.includes('Claude Code 或 CodePilot'), `unexpected zh: ${zh}`);
 
     const en = buildUserReason({
       capabilityId: 'dashboard',
       currentRuntime: 'codex_runtime',
-      suggestedRuntimes: ['claude_code', 'bbagent'],
+      suggestedRuntimes: ['claude_code', 'codepilot_runtime'],
       lang: 'en',
     });
     assert.ok(en.includes('Claude Code or CodePilot'), `unexpected en: ${en}`);
@@ -147,7 +147,7 @@ describe('Capability display text �?buildUserReason', () => {
   });
 });
 
-describe('Capability display text �?header notes', () => {
+describe('Capability display text — header notes', () => {
   it('CALLABLE_STATUS_LINE has both zh and en non-empty', () => {
     assert.ok(CALLABLE_STATUS_LINE.zh.length > 0);
     assert.ok(CALLABLE_STATUS_LINE.en.length > 0);
@@ -162,18 +162,18 @@ describe('Capability display text �?header notes', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e round 8 (2026-05-18) �?user-extensions summary.
+// Phase 5e round 8 (2026-05-18) — user-extensions summary.
 // The matrix lives in capability-display-text.ts (user-facing copy
 // layer) and MUST stay in sync with the engineering source of truth
 // in `src/lib/harness/user-codepilot-extensions.ts:executableForKind`.
 // Mismatch = the Settings dialog tells one story while the runtime
-// adapter tells another �?exactly the "假装能调�? reviewer concern.
+// adapter tells another → exactly the "假装能调用" reviewer concern.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('User-extensions summary �?coverage', () => {
+describe('User-extensions summary — coverage', () => {
   const RUNTIMES: readonly RuntimeId[] = [
     'claude_code',
-    'bbagent',
+    'codepilot_runtime',
     'codex_runtime',
   ] as const;
 
@@ -196,7 +196,7 @@ describe('User-extensions summary �?coverage', () => {
   it('summary copy does not leak engineering jargon', () => {
     // Narrower blacklist than the built-in capabilities check: "MCP"
     // and "skills" / "slash commands" are user-facing terms here (the
-    // section is literally called "用户自定�?MCP / Skills" �?users
+    // section is literally called "用户自定义 MCP / Skills" — users
     // who configure these *know* what MCP is). The blacklist focuses
     // on terms that ONLY appear in internal docs: factory names,
     // phase references, bridge / contract / runtime-adapter jargon.
@@ -218,7 +218,7 @@ describe('User-extensions summary �?coverage', () => {
     // file changes the per-Runtime executability of any extension
     // kind, both must update together.
     assert.equal(USER_EXTENSIONS_SUMMARY.claude_code.status, 'executable',
-      'claude_code mounts mcp + skill + slash + workspace_rule �?all wired');
+      'claude_code mounts mcp + skill + slash + workspace_rule — all wired');
     assert.equal(USER_EXTENSIONS_SUMMARY.codepilot_runtime.status, 'partial',
       'codepilot_runtime mounts mcp + workspace_rule; skill + slash are CC-only');
     assert.equal(USER_EXTENSIONS_SUMMARY.codex_runtime.status, 'perception_only',
@@ -226,7 +226,8 @@ describe('User-extensions summary �?coverage', () => {
   });
 
   it('codex_runtime summary explicitly points users to Claude Code / CodePilot as alternatives', () => {
-    // The "perception_only" status by itself is just a label �?    // perceptive users need to know where they CAN run their stuff.
+    // The "perception_only" status by itself is just a label —
+    // perceptive users need to know where they CAN run their stuff.
     const s = USER_EXTENSIONS_SUMMARY.codex_runtime.description;
     assert.ok(s.zh.includes('Claude Code') || s.zh.includes('CodePilot'),
       'codex zh description must name an alternative runtime');
@@ -237,12 +238,12 @@ describe('User-extensions summary �?coverage', () => {
   it('getUserExtensionsSummary falls back to codex_runtime for unknown runtime ids (conservative default)', () => {
     const fallback = getUserExtensionsSummary('not_a_real_runtime' as RuntimeId);
     assert.equal(fallback.status, 'perception_only',
-      'unknown runtime �?conservative perception_only (never overclaim executability)');
+      'unknown runtime → conservative perception_only (never overclaim executability)');
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e round 8 (2026-05-18) �?tool-name �?capability map +
+// Phase 5e round 8 (2026-05-18) — tool-name → capability map +
 // unsupported hint pins. Adding a new built-in tool to
 // HARNESS_CAPABILITIES.toolNames must be paired with an entry in
 // TOOL_NAME_TO_CAPABILITY_ID, otherwise the inline chat hint won't
@@ -250,7 +251,7 @@ describe('User-extensions summary �?coverage', () => {
 // must be paired with CAPABILITY_EXECUTABLE_RUNTIMES.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Tool-name �?capability map �?coverage', () => {
+describe('Tool-name → capability map — coverage', () => {
   it('every tool name in HARNESS_CAPABILITIES.toolNames is in TOOL_NAME_TO_CAPABILITY_ID', () => {
     for (const cap of HARNESS_CAPABILITIES) {
       for (const tool of cap.toolNames) {
@@ -287,7 +288,7 @@ describe('Tool-name �?capability map �?coverage', () => {
     // Pin the static client-safe map against the server-side matrix
     // (which derives from capability-contract.ts:exposure.kind). If
     // they diverge, the chat hint advertises wrong runtimes.
-    const RUNTIMES: readonly RuntimeId[] = ['claude_code', 'bbagent', 'codex_runtime'];
+    const RUNTIMES: readonly RuntimeId[] = ['claude_code', 'codepilot_runtime', 'codex_runtime'];
     for (const cap of HARNESS_CAPABILITIES) {
       const fromMatrix: RuntimeId[] = [];
       for (const r of RUNTIMES) {
@@ -305,7 +306,7 @@ describe('Tool-name �?capability map �?coverage', () => {
   });
 });
 
-describe('isToolUnsupportedError �?narrow false-positive avoidance', () => {
+describe('isToolUnsupportedError — narrow false-positive avoidance', () => {
   it('returns false when isError is undefined / false', () => {
     assert.equal(isToolUnsupportedError({ toolName: 'codepilot_dashboard_pin', errorContent: 'tool not found', isError: undefined }), false);
     assert.equal(isToolUnsupportedError({ toolName: 'codepilot_dashboard_pin', errorContent: 'tool not found', isError: false }), false);
@@ -347,7 +348,7 @@ describe('buildToolUnsupportedHint', () => {
     assert.equal(buildToolUnsupportedHint('not_a_real_tool'), null);
   });
 
-  it('codepilot_dashboard_pin �?hints "Claude Code or CodePilot"', () => {
+  it('codepilot_dashboard_pin → hints "Claude Code or CodePilot"', () => {
     const h = buildToolUnsupportedHint('codepilot_dashboard_pin');
     assert.ok(h);
     assert.equal(h!.capabilityId, 'dashboard');
@@ -357,22 +358,22 @@ describe('buildToolUnsupportedHint', () => {
     assert.ok(h!.hint.en.includes('Dashboard operations'));
   });
 
-  it('codepilot_hatch_buddy �?hints "Claude Code or CodePilot" (round 8 Native parity)', () => {
+  it('codepilot_hatch_buddy → hints "Claude Code or CodePilot" (round 8 Native parity)', () => {
     // Phase 5e round 8 follow-up: Native factory now mounts
     // codepilot_hatch_buddy, so the hint should list both Claude Code
     // AND CodePilot as alternatives (was Claude Code only pre-round-8).
     const h = buildToolUnsupportedHint('codepilot_hatch_buddy');
     assert.ok(h);
     assert.equal(h!.capabilityId, 'assistant_buddy');
-    assert.deepEqual([...h!.suggestedRuntimes], ['claude_code', 'bbagent']);
+    assert.deepEqual([...h!.suggestedRuntimes], ['claude_code', 'codepilot_runtime']);
     assert.ok(h!.hint.zh.includes('Claude Code'));
     assert.ok(h!.hint.zh.includes('CodePilot'));
   });
 
-  it('widget (executable everywhere) �?still produces a hint listing all runtimes (defensive)', () => {
+  it('widget (executable everywhere) → still produces a hint listing all runtimes (defensive)', () => {
     // If widget ever errors as "tool not found" (shouldn't happen in
     // practice since every runtime mounts it), the hint should still
-    // be useful �?listing where the tool DOES live.
+    // be useful — listing where the tool DOES live.
     const h = buildToolUnsupportedHint('codepilot_load_widget_guidelines');
     assert.ok(h);
     assert.equal(h!.suggestedRuntimes.length, 3);

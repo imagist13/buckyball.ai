@@ -1,5 +1,5 @@
 /**
- * codepilot-memory MCP �?in-process MCP server for memory search/retrieval.
+ * codepilot-memory MCP — in-process MCP server for memory search/retrieval.
  *
  * Provides 3 tools:
  * - codepilot_memory_search: Search with temporal decay + optional tag/type filters
@@ -23,14 +23,20 @@ const RECENT_MEMORY_DAYS = 3;
 const MAX_MEMORY_LINES = 200;
 const MAX_MEMORY_BYTES = 25000;
 
-export const MEMORY_SEARCH_SYSTEM_PROMPT = `## 记忆检�?
-**每次对话的第一轮，必须先调�?codepilot_memory_recent 回顾最近记忆�?*
+export const MEMORY_SEARCH_SYSTEM_PROMPT = `## 记忆检索
 
-在回答任何关于过去工作、决策、日期、人物、偏好或待办的问题前�?1. �?codepilot_memory_search 搜索相关记忆（支持按 tags 过滤�?2. 如果搜到相关结果，用 codepilot_memory_get 获取详细内容
-3. 如果搜索后仍不确定，告知用户你已检查但未找到相关记�?
-工作区使�?Obsidian 风格组织�?- 文件间用 [[文件名]] 双向链接
-- �?#标签 分类，搜索时可用 tags 参数过滤
-- 文件顶部�?YAML frontmatter 元数�?
+**每次对话的第一轮，必须先调用 codepilot_memory_recent 回顾最近记忆。**
+
+在回答任何关于过去工作、决策、日期、人物、偏好或待办的问题前：
+1. 用 codepilot_memory_search 搜索相关记忆（支持按 tags 过滤）
+2. 如果搜到相关结果，用 codepilot_memory_get 获取详细内容
+3. 如果搜索后仍不确定，告知用户你已检查但未找到相关记录
+
+工作区使用 Obsidian 风格组织：
+- 文件间用 [[文件名]] 双向链接
+- 用 #标签 分类，搜索时可用 tags 参数过滤
+- 文件顶部有 YAML frontmatter 元数据
+
 不要凭记忆猜测过去发生的事，始终先搜索再回答。`;
 
 export function createMemorySearchMcpServer(workspacePath: string) {
@@ -276,13 +282,13 @@ function applyTemporalDecay(results: SearchResult[]): SearchResult[] {
   const now = Date.now();
   return results.map(r => {
     const dateMatch = r.path.match(/(\d{4}-\d{2}-\d{2})\.md$/);
-    if (!dateMatch) return r; // Evergreen file �?no decay
+    if (!dateMatch) return r; // Evergreen file — no decay
 
     const fileDate = new Date(dateMatch[1]).getTime();
     if (isNaN(fileDate)) return r;
 
     const ageInDays = (now - fileDate) / (24 * 60 * 60 * 1000);
-    if (ageInDays <= 0) return r; // Future or today �?no decay
+    if (ageInDays <= 0) return r; // Future or today — no decay
 
     const decayFactor = Math.exp(-LAMBDA * ageInDays);
     return { ...r, score: r.score * decayFactor };
@@ -311,7 +317,7 @@ async function rerankWithAI(
     if (!resolved.hasCredentials) return null;
 
     const manifest = results.map((r, i) =>
-      `${i}: [${r.path}] ${r.heading || ''} �?${(r.snippet || '').slice(0, 100)}`
+      `${i}: [${r.path}] ${r.heading || ''} — ${(r.snippet || '').slice(0, 100)}`
     ).join('\n');
 
     const response = await generateTextFromProvider({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { FileTypeIcon } from "@/components/ui/FileTypeIcon";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,7 @@ interface FileTreeProps {
   onFileAdd?: (path: string, nodeType: 'file' | 'directory') => void;
   /** Path of the currently-selected folder (for highlight + create target). */
   selectedFolderPath?: string;
-  /** Called when the user clicks a folder row â?selects the folder + toggles. */
+  /** Called when the user clicks a folder row — selects the folder + toggles. */
   onSelectFolder?: (folderPath: string) => void;
   /** Path of the currently-selected file (for highlight). */
   selectedFilePath?: string;
@@ -202,7 +202,7 @@ export function FileTree({
   }, [workingDirectory]);
 
   const fetchTree = useCallback(async () => {
-    // Always cancel in-flight request first â?even when clearing directory,
+    // Always cancel in-flight request first — even when clearing directory,
     // otherwise a stale response from the old project can arrive and repopulate the tree.
     if (abortRef.current) {
       abortRef.current.abort();
@@ -332,13 +332,13 @@ export function FileTree({
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Search row â?full-width, dedicated. The Refresh button used to
+      {/* Search row — full-width, dedicated. The Refresh button used to
           live here on the right; it moved up to the action icons row in
           FileTreePanel, which now dispatches `refresh-file-tree` window
           events that the effect below catches. */}
       <div className="px-3 pb-2 shrink-0">
         <div className="relative">
-          <BuckyballIcon name="search" size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden />
+          <CodePilotIcon name="search" size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" aria-hidden />
           <Input
             placeholder={t('fileTree.filterFiles')}
             value={searchQuery}
@@ -352,7 +352,7 @@ export function FileTree({
       <div className="flex-1 overflow-auto">
         {loading && tree.length === 0 ? (
           <div className="flex items-center justify-center py-8">
-            <BuckyballIcon name="refresh" size="md" className="animate-spin text-muted-foreground" aria-hidden />
+            <CodePilotIcon name="refresh" size="md" className="animate-spin text-muted-foreground" aria-hidden />
           </div>
         ) : tree.length === 0 ? (
           <p className="py-4 text-center text-xs text-muted-foreground">

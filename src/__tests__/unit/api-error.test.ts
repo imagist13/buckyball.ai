@@ -42,7 +42,7 @@ describe('serverErrorResponse (audit A1)', () => {
     const res = withSilencedError(() => serverErrorResponse('TEST', err));
     assert.equal(res.status, 500);
     const body = (await res.json()) as { error: string; stack?: string };
-    // Strongest assertion: the body is exactly the message â€?if any stack had
+    // Strongest assertion: the body is exactly the message â€” if any stack had
     // leaked in, this equality would fail.
     assert.equal(body.error, err.message);
     assert.equal('stack' in body, false);

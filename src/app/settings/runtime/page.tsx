@@ -2,7 +2,7 @@
 // passes one matrix per Runtime to the panel (each rendered as a card).
 //
 // Codex card (decision 2026-05-28): always derived from the **Codex
-// Account** native profile â€?Memory/Widget/Tasks callable with notes,
+// Account** native profile â€” Memory/Widget/Tasks callable with notes,
 // image/media/dashboard/cli honestly "not callable" (native injection is
 // the open decision point). Earlier this keyed off the effective default
 // provider, which rendered the provider-proxy profile when the default
@@ -10,8 +10,8 @@
 // they aren't under Codex Account. claude_code / codepilot_runtime
 // matrices are provider-agnostic.
 //
-// Server-side derivation isolates the capability-contract â†?MCP-factory
-// â†?`child_process` dep chain to the server bundle; the browser bundle
+// Server-side derivation isolates the capability-contract â†’ MCP-factory
+// â†’ `child_process` dep chain to the server bundle; the browser bundle
 // only receives the rendered cell data.
 
 import { RuntimePanel } from "@/components/settings/RuntimePanel";
@@ -24,7 +24,7 @@ export default function SettingsRuntimePage() {
   // The Codex capability card always reflects the **Codex Account** native
   // profile: Memory / Widget / Tasks callable (with notes), and image /
   // media / dashboard / cli honestly "not callable" (native injection is
-  // the open decision point). Per user decision (2026-05-28) â€?aligning the
+  // the open decision point). Per user decision (2026-05-28) â€” aligning the
   // card to how Codex Account actually behaves. Deriving from the effective
   // default provider instead made the card render the provider-proxy
   // profile when the default wasn't Codex Account, which overstated image /

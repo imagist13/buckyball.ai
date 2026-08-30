@@ -1,10 +1,10 @@
 /**
- * Phase 2 (2026-06-03) â?clearer "new chat" entry points in the sidebar.
+ * Phase 2 (2026-06-03) — clearer "new chat" entry points in the sidebar.
  *
  * User ask: the bare "+" on project rows read ambiguously, and the assistant
  * (which has no folder, so it sits at the top level) had no way to start a new
- * chat. Fix: use the "åæ°å¯¹è¯" pencil/compose icon (BuckyballIcon `edit`) on
- * project rows, and add the same compose entry to the top-level å©ç header.
+ * chat. Fix: use the "写新对话" pencil/compose icon (CodePilotIcon `edit`) on
+ * project rows, and add the same compose entry to the top-level 助理 header.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

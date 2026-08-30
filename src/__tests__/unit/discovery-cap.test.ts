@@ -37,7 +37,7 @@ function restoreFetch() {
   global.fetch = ORIGINAL_FETCH;
 }
 
-describe('discoverModels â€?SAMPLE_CAP must not truncate apply/diff source of truth', () => {
+describe('discoverModels â€” SAMPLE_CAP must not truncate apply/diff source of truth', () => {
   beforeEach(() => { /* fresh stub per test */ });
   afterEach(restoreFetch);
 
@@ -54,10 +54,10 @@ describe('discoverModels â€?SAMPLE_CAP must not truncate apply/diff source of tr
     assert.equal(result.ok, true);
     assert.equal(result.modelCount, 750, 'modelCount reflects full upstream count');
     assert.equal(result.fullModelIds?.length, 750,
-      'fullModelIds must NEVER be truncated â€?it is the apply/diff source');
+      'fullModelIds must NEVER be truncated â€” it is the apply/diff source');
     assert.equal(result.sampleModels?.length, 500,
       'sampleModels stays capped at 500 for UI response size');
-    // The 700th entry must survive in fullModelIds â€?that's the bug we fixed.
+    // The 700th entry must survive in fullModelIds â€” that's the bug we fixed.
     assert.equal(result.fullModelIds?.[700], 'model-700',
       'tail entry beyond SAMPLE_CAP survives in fullModelIds');
     // â€¦and must NOT appear in the capped sample.
@@ -97,6 +97,6 @@ describe('discoverModels â€?SAMPLE_CAP must not truncate apply/diff source of tr
 
     assert.equal(result.ok, false);
     assert.equal(result.fullModelIds, undefined,
-      'failed probes have no model list â€?never falsely report ids');
+      'failed probes have no model list â€” never falsely report ids');
   });
 });

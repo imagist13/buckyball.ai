@@ -1,15 +1,15 @@
 /**
- * Phase 3 Step 4a â€?agent-task-runner contract tests.
+ * Phase 3 Step 4a â€” agent-task-runner contract tests.
  *
  * **What this file does NOT pin**: that the runner is a real headless
  * Agent execution chain. It isn't (Step 4a uses
  * `generateTextFromProvider` for the model call). When Step 4b lands
  * a real `streamClaude` background runner, additional tests should
- * land for `permission_request` â†?waiting_for_permission and the
+ * land for `permission_request` â†’ waiting_for_permission and the
  * abandon / re-run flows.
  *
- * **What this file DOES pin** â€?the v2 invariants the runner already
- * enforces and that must survive the 4a â†?4b transition unchanged:
+ * **What this file DOES pin** â€” the v2 invariants the runner already
+ * enforces and that must survive the 4a â†’ 4b transition unchanged:
  *
  *   1. Branches on `task.source`, NOT `task.kind === 'heartbeat'` (no
  *      such kind exists; heartbeat is `kind='ai_task' + source=
@@ -45,7 +45,7 @@ describe('agent-task-runner: heartbeat is source-based, not kind-based', () => {
     assert.doesNotMatch(
       RUNNER_SRC,
       /kind\s*===\s*['"]heartbeat['"]/,
-      'agent-task-runner must not switch on `task.kind === "heartbeat"` â€?heartbeat is identified solely by `task.source === "assistant_heartbeat"`. The user-imposed v2 fix #1 disallows extending ScheduledTaskKind for this case.',
+      'agent-task-runner must not switch on `task.kind === "heartbeat"` â€” heartbeat is identified solely by `task.source === "assistant_heartbeat"`. The user-imposed v2 fix #1 disallows extending ScheduledTaskKind for this case.',
     );
   });
 
@@ -62,11 +62,11 @@ describe('agent-task-runner: HEARTBEAT_OK silent contract is exact-trim', () => 
   it('exposes isHeartbeatSilent for direct testing', async () => {
     const mod = await import('../../lib/agent-task-runner');
     assert.equal(typeof mod.isHeartbeatSilent, 'function');
-    // Exact match after trim â†?silent.
+    // Exact match after trim â†’ silent.
     assert.equal(mod.isHeartbeatSilent('HEARTBEAT_OK'), true);
     assert.equal(mod.isHeartbeatSilent('  HEARTBEAT_OK  '), true);
     assert.equal(mod.isHeartbeatSilent('\nHEARTBEAT_OK\n'), true);
-    // Anything else â†?speak-up.
+    // Anything else â†’ speak-up.
     assert.equal(mod.isHeartbeatSilent('HEARTBEAT_OK\n\nbut also foo'), false);
     assert.equal(mod.isHeartbeatSilent('User has 3 things to do'), false);
     assert.equal(mod.isHeartbeatSilent('heartbeat_ok'), false);
@@ -78,7 +78,7 @@ describe('agent-task-runner: addMessage carries task_run_id via metadata, not co
   it('every addMessage call passes a metadata object with task_run_id (5th arg)', () => {
     // Find every addMessage(...) call in the runner. Each one must
     // include `task_run_id: runId` in a 5th positional metadata
-    // argument â€?never as a sentinel string concatenated to content.
+    // argument â€” never as a sentinel string concatenated to content.
     const calls = RUNNER_SRC.match(/addMessage\([\s\S]*?\)/g) ?? [];
     assert.ok(calls.length >= 2, 'expected at least 2 addMessage calls (user prompt + assistant message)');
     for (const call of calls) {
@@ -91,7 +91,7 @@ describe('agent-task-runner: addMessage carries task_run_id via metadata, not co
   });
 
   it('runner does NOT write any [__TASK_RUN__] / [__HEARTBEAT_RUN__] sentinel string into message content', () => {
-    // Defensive â€?if a future refactor reverts to sentinel strings,
+    // Defensive â€” if a future refactor reverts to sentinel strings,
     // this trips immediately. The marker is rendered React-side from
     // the inline-joined taskRuns map, not parsed from content.
     assert.doesNotMatch(
@@ -113,7 +113,7 @@ describe('agent-task-runner: heartbeat resolves to user-visible buddy session, n
     assert.match(
       RUNNER_SRC,
       /getLatestSessionByWorkingDirectory[\s\S]*?createSession\s*\(/,
-      'agent-task-runner must lazy-create a buddy session when getLatestSessionByWorkingDirectory misses â€?failing the run is hostile UX. Source-of-truth: resolveBuddySessionId.',
+      'agent-task-runner must lazy-create a buddy session when getLatestSessionByWorkingDirectory misses â€” failing the run is hostile UX. Source-of-truth: resolveBuddySessionId.',
     );
     // The fallback session must NOT be source='task' (heartbeat
     // output goes into the user-visible chat, not a hidden execution
@@ -123,7 +123,7 @@ describe('agent-task-runner: heartbeat resolves to user-visible buddy session, n
     assert.doesNotMatch(
       fnBody![0],
       /createSession\([^)]*['"]task['"]/,
-      'lazy-created buddy session must not be source="task" â€?heartbeat speak-up belongs in the main chat list, not an execution session',
+      'lazy-created buddy session must not be source="task" â€” heartbeat speak-up belongs in the main chat list, not an execution session',
     );
   });
 
@@ -141,7 +141,7 @@ describe('agent-task-runner: heartbeat resolves to user-visible buddy session, n
     assert.match(
       fnBody![0],
       /getLatestSessionByWorkingDirectory\s*\([\s\S]*?includeSources:\s*\[\s*['"]user['"]\s*\]/,
-      'resolveBuddySessionId must pass `{ includeSources: ["user"] }` to getLatestSessionByWorkingDirectory â€?without this filter, heartbeat could pick up a hidden task-bound session and write speak-up there.',
+      'resolveBuddySessionId must pass `{ includeSources: ["user"] }` to getLatestSessionByWorkingDirectory â€” without this filter, heartbeat could pick up a hidden task-bound session and write speak-up there.',
     );
   });
 });
@@ -177,7 +177,7 @@ describe('task_run_logs status whitelist (app-layer, no DB CHECK)', () => {
     assert.equal(types.isTaskRunStatus('waiting_for_permission'), true);
     // Legacy values are NOT in the v2 5-state union (they're accepted
     // at the db.ts whitelist for back-compat but the type predicate
-    // rejects them â€?so new code paths can't accidentally write them).
+    // rejects them â€” so new code paths can't accidentally write them).
     assert.equal(types.isTaskRunStatus('success'), false);
     assert.equal(types.isTaskRunStatus('error'), false);
     assert.equal(types.isTaskRunStatus('skipped'), false);

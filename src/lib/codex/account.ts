@@ -1,5 +1,5 @@
 /**
- * Codex account helpers â€?Phase 5 Phase 2 (2026-05-13).
+ * Codex account helpers â€” Phase 5 Phase 2 (2026-05-13).
  *
  * Thin async wrappers around `account/read` + login methods on the
  * shared app-server client. Surfaces the narrowed
@@ -33,7 +33,7 @@ import { getCodexAppServer } from './app-server-manager';
  * built-in refresh path; see GetAccountParams.refreshToken).
  *
  * Returns `{ kind: 'logged_out' }` when Codex reports `account: null`
- * â€?that's the canonical "no auth yet" signal per the schema.
+ * â€” that's the canonical "no auth yet" signal per the schema.
  */
 export async function readCodexAccount(
   refresh = false,
@@ -87,7 +87,8 @@ export type CodexLoginStart =
   | CodexLoginStartApiKey;
 
 /**
- * Kick off a Codex login. ChatGPT streamlined flow is the default â€? * caller opens the returned `authUrl` in the user's browser and waits
+ * Kick off a Codex login. ChatGPT streamlined flow is the default â€”
+ * caller opens the returned `authUrl` in the user's browser and waits
  * for the `account/login/completed` notification (use
  * `waitForLoginCompleted` below).
  */
@@ -143,7 +144,7 @@ export async function startCodexLogin(
  * loginId. Returns success/error info per the upstream schema:
  *   `{ loginId, success, error }`
  *
- * Caller is responsible for the timeout â€?this fn doesn't impose one
+ * Caller is responsible for the timeout â€” this fn doesn't impose one
  * because login flows can legitimately take minutes (user pasting
  * verification code etc.).
  */
@@ -207,7 +208,7 @@ export async function readCodexRateLimits(): Promise<CodexRateLimitSnapshot | nu
     } | null;
     // Phase 6 IA correction round 2 (2026-05-14): `account/rateLimits/read`
     // is a parameterless request per upstream schema. Sending `{}` works in
-    // practice but the cleaner contract is to omit params entirely â€?keeps
+    // practice but the cleaner contract is to omit params entirely â€” keeps
     // request shape exact when Codex tightens its handler validation.
   }>('account/rateLimits/read');
 

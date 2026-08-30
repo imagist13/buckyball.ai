@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * WorkspaceSidebar â€?inner Tab content only.
+ * WorkspaceSidebar â€” inner Tab content only.
  *
- * Phase 7c-C â€?the card chrome (ResizeHandle, CardFrame, CardSurface,
+ * Phase 7c-C â€” the card chrome (ResizeHandle, CardFrame, CardSurface,
  * open guard, width state read) lives in AppShell.ChatContentRow now.
  * This component is responsible only for rendering the TabBar + the
  * active Tab's content. AppShell decides whether to mount it, supplies

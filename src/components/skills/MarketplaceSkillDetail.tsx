@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut, CheckCircle, SpinnerGap } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
 import { InstallProgressDialog } from "./InstallProgressDialog";
@@ -13,12 +13,12 @@ import { cn } from "@/lib/utils";
 import type { MarketplaceSkill } from "@/types";
 
 /**
- * Marketplace skill detail â?inline panel rendered inside the
+ * Marketplace skill detail — inline panel rendered inside the
  * MarketplaceBrowser. Replaces the old nested-Dialog pattern (Dialog
  * inside Dialog) with same-dialog navigation: clicking a card swaps
  * the browser body from list-grid to this panel; the back button
  * returns to the list. The marketplace Dialog wrapper stays open
- * throughout â?no stacked overlays, no "å¼¹çªå å¼¹çª?.
+ * throughout — no stacked overlays, no "弹窗叠弹窗".
  *
  * The inner `<InstallProgressDialog>` is intentionally still a
  * Dialog: it's a transient progress indicator (not navigation), and
@@ -97,7 +97,7 @@ export function MarketplaceSkillDetail({
           onClick={onBack}
           className="-ml-2 mb-2 h-7 gap-1.5"
         >
-          <BuckyballIcon name="back" size="sm" aria-hidden />
+          <CodePilotIcon name="back" size="sm" aria-hidden />
           {t("skills.marketplaceBack" as TranslationKey)}
         </Button>
         <div className="flex items-center gap-2 flex-wrap">
@@ -129,7 +129,7 @@ export function MarketplaceSkillDetail({
           )}
           {skill.installs > 0 && (
             <span className="flex items-center gap-0.5 shrink-0">
-              <BuckyballIcon name="download" size={12} aria-hidden />
+              <CodePilotIcon name="download" size={12} aria-hidden />
               {skill.installs.toLocaleString()}
             </span>
           )}
@@ -167,12 +167,12 @@ export function MarketplaceSkillDetail({
             className="gap-1.5"
             onClick={handleUninstall}
           >
-            <BuckyballIcon name="delete" size="sm" aria-hidden />
+            <CodePilotIcon name="delete" size="sm" aria-hidden />
             {t("skills.uninstall")}
           </Button>
         ) : (
           <Button size="sm" className="gap-1.5" onClick={handleInstall}>
-            <BuckyballIcon name="download" size="sm" aria-hidden />
+            <CodePilotIcon name="download" size="sm" aria-hidden />
             {t("skills.install")}
           </Button>
         )}

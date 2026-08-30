@@ -1,5 +1,5 @@
 /**
- * Phase 3 Step 3 â€?scheduler runtime behavior.
+ * Phase 3 Step 3 â€” scheduler runtime behavior.
  *
  * Covers (in execution-order):
  *   1. `getDueTasks` text-comparison fix: a "now + 5 minutes" once-task
@@ -9,10 +9,10 @@
  *   2. `kind='reminder'` execution: prompt is the notification body,
  *      `generateTextFromProvider` is NEVER called (verified via
  *      module mock). One row in `task_run_logs` gets flipped from
- *      'running' â†?'success'.
+ *      'running' â†’ 'success'.
  *   3. `runScheduledTaskNow` returns `{ status: 'running', runId }`,
  *      writes a single `task_run_logs` row (no duplicate), and a
- *      concurrent call returns `{ status: 'already_running', â€?}`.
+ *      concurrent call returns `{ status: 'already_running', â€¦ }`.
  *   4. Stale `running` recovery: a task whose `last_run` is > 30 min
  *      old and `last_status='running'` gets reset to 'error' on
  *      `ensureSchedulerRunning()`.
@@ -66,7 +66,7 @@ afterEach(async () => {
   } catch { /* ignore */ }
 });
 
-describe('scheduler â€?reminder kind path', () => {
+describe('scheduler â€” reminder kind path', () => {
   it('reminder fire writes notification + a single success run-row, no provider call', async () => {
     const db = await import('../../lib/db');
     // Create a reminder due in the past so it gets picked up immediately.
@@ -113,7 +113,7 @@ describe('scheduler â€?reminder kind path', () => {
     assert.equal(
       matching[0].status,
       'success',
-      'reminder execution flipped the running row to success â€?not appended a new row',
+      'reminder execution flipped the running row to success â€” not appended a new row',
     );
     assert.equal(
       matching[0].result,
@@ -135,19 +135,19 @@ describe('scheduler â€?reminder kind path', () => {
     assert.ok(!channels.has('renderer-toast'), 'normal priority must not duplicate as an in-app toast');
     assert.ok(
       ![...channels].some((c) => c.startsWith('bridge-')),
-      'non-urgent priority must NOT write any bridge-* delivery row (v4 fix #3 â€?Bridge is urgent-only candidate)',
+      'non-urgent priority must NOT write any bridge-* delivery row (v4 fix #3 â€” Bridge is urgent-only candidate)',
     );
   });
 });
 
-describe('scheduler â€?runScheduledTaskNow concurrency', () => {
+describe('scheduler â€” runScheduledTaskNow concurrency', () => {
   it('concurrent run returns already_running with the in-flight runId', async () => {
     const db = await import('../../lib/db');
     const task = db.createScheduledTask({
       name: 'AI summarize',
       prompt: 'Summarize today',
       // Use an ai_task that will FAIL fast (no provider configured)
-      // so we don't depend on a real model â€?but the running lock
+      // so we don't depend on a real model â€” but the running lock
       // still gets taken.
       kind: 'ai_task',
       schedule_type: 'interval',
@@ -186,7 +186,7 @@ describe('scheduler â€?runScheduledTaskNow concurrency', () => {
   });
 });
 
-describe('scheduler â€?stale running recovery', () => {
+describe('scheduler â€” stale running recovery', () => {
   it('does not start or touch runtime state during the Next production build phase', async () => {
     const previousPhase = process.env.NEXT_PHASE;
     process.env.NEXT_PHASE = 'phase-production-build';
@@ -240,7 +240,7 @@ describe('scheduler â€?stale running recovery', () => {
     assert.equal(
       refreshed!.last_status,
       'error',
-      'stale running task must be reset to error on scheduler boot (v3 fix â€?startup recovery)',
+      'stale running task must be reset to error on scheduler boot (v3 fix â€” startup recovery)',
     );
     assert.match(
       refreshed!.last_error || '',

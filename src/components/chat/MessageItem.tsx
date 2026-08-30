@@ -14,7 +14,7 @@ import { MediaPreview } from './MediaPreview';
 import { DiffSummary } from './DiffSummary';
 import { Button } from "@/components/ui/button";
 import { Check, CaretDown, CaretUp, CaretRight } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { FileAttachmentDisplay } from './FileAttachmentDisplay';
 import { ImageGenConfirmation } from './ImageGenConfirmation';
 import { ImageGenCard } from './ImageGenCard';
@@ -41,6 +41,7 @@ import {
   collapseLogicalSubagentRuns,
   isSubagentToolCall,
 } from '@/lib/subagent-view';
+import { parseDisplayTokenUsage } from '@/lib/token-usage-display';
 
 interface ImageGenRequest {
   prompt: string;
@@ -167,7 +168,7 @@ export function parseShowWidget(text: string): { beforeText: string; widget: Sho
       if (seg.type === 'text') { beforeText = seg.content; }
       else if (seg.type === 'widget') { widget = seg.data; foundWidget = true; }
       // Legacy parseShowWidget returns only the first SUCCESSFUL
-      // widget â?malformed_widget segments are skipped here. The
+      // widget — malformed_widget segments are skipped here. The
       // multi-segment renderer (parseAllShowWidgets caller) still
       // shows the error block; this legacy wrapper exists for older
       // call sites that only care about the happy path.
@@ -184,7 +185,7 @@ export type WidgetSegment =
   | { type: 'text'; content: string }
   | { type: 'widget'; data: ShowWidgetData }
   /**
-   * Phase 5c slice 6 (2026-05-16, post-smoke) â?emitted when a
+   * Phase 5c slice 6 (2026-05-16, post-smoke) — emitted when a
    * `show-widget` marker is in the text but the body cannot be
    * parsed into the JSON-wrapper wire format (raw HTML / invalid
    * JSON / missing `widget_code`). Pre-fix all three failure modes
@@ -230,12 +231,12 @@ function findJsonEnd(text: string, start: number): number {
 function clipMalformedRaw(raw: string): string {
   const MAX = 2048;
   if (raw.length <= MAX) return raw;
-  return raw.slice(0, MAX) + '\n[â¦truncatedâ¦]';
+  return raw.slice(0, MAX) + '\n[…truncated…]';
 }
 
 /** Parse ALL show-widget blocks in text, returning alternating text/widget segments.
  *
- *  Three failure modes used to drop silently â?Phase 5c slice 6
+ *  Three failure modes used to drop silently — Phase 5c slice 6
  *  surfaces each as a `malformed_widget` segment so the user knows
  *  the model tried to make a widget and can ask it to retry:
  *
@@ -265,7 +266,7 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
     // Find the JSON object start
     const jsonStart = text.indexOf('{', afterMarker);
     if (jsonStart === -1 || jsonStart > afterMarker + 20) {
-      // (a) No JSON nearby â?surface as malformed_widget so the
+      // (a) No JSON nearby — surface as malformed_widget so the
       // user sees the broken fence instead of the chat looking
       // empty. The smoke S4 failure ended here.
       const fenceClose = text.indexOf('```', afterMarker);
@@ -277,7 +278,7 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
       flushBeforeText(match.index);
       segments.push({
         type: 'malformed_widget',
-        reason: 'No JSON wrapper found inside `show-widget` fence â?the body looked like raw HTML / SVG. Widgets must be wrapped as `{"title":"â?,"widget_code":"â?}` so the runtime can sandbox them.',
+        reason: 'No JSON wrapper found inside `show-widget` fence — the body looked like raw HTML / SVG. Widgets must be wrapped as `{"title":"…","widget_code":"…"}` so the runtime can sandbox them.',
         raw: clipMalformedRaw(raw),
       });
       if (fenceClose !== -1) {
@@ -292,7 +293,7 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
 
     const jsonEnd = findJsonEnd(text, jsonStart);
     if (jsonEnd === -1) {
-      // Truncated JSON â?try extracting partial widget
+      // Truncated JSON — try extracting partial widget
       const partialBody = text.slice(jsonStart);
       const widget = extractTruncatedWidget(partialBody);
       if (widget) {
@@ -319,7 +320,7 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
         lastIndex = endPos;
         markerRegex.lastIndex = endPos;
       } else {
-        // (b) JSON parsed but missing `widget_code` â?surface as
+        // (b) JSON parsed but missing `widget_code` — surface as
         // malformed_widget. Pre-fix this fell through to the
         // implicit "no segment pushed" path; the user saw nothing.
         const fenceClose = text.indexOf('```', jsonEnd + 1);
@@ -328,14 +329,14 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
         flushBeforeText(match.index);
         segments.push({
           type: 'malformed_widget',
-          reason: 'The `show-widget` JSON parsed but did not include a `widget_code` field. The minimal shape is `{"title":"â?,"widget_code":"<escaped HTML>"}`.',
+          reason: 'The `show-widget` JSON parsed but did not include a `widget_code` field. The minimal shape is `{"title":"…","widget_code":"<escaped HTML>"}`.',
           raw: clipMalformedRaw(text.slice(afterMarker, bodyEnd).trim()),
         });
         lastIndex = fenceClose !== -1 ? fenceClose + 3 : text.length;
         markerRegex.lastIndex = lastIndex;
       }
     } catch (parseErr) {
-      // (c) Malformed JSON â?surface as malformed_widget instead of
+      // (c) Malformed JSON — surface as malformed_widget instead of
       // skipping. `parseErr` carries the position so the message
       // can hint at the issue (escape sequence, trailing comma, etc.).
       const fenceClose = text.indexOf('```', jsonStart);
@@ -367,10 +368,10 @@ export function parseAllShowWidgets(text: string): WidgetSegment[] {
 /**
  * Compute the React key for a partial (still-streaming) widget so that it
  * matches the key it will receive once its fence closes and the full content
- * is parsed by parseAllShowWidgets â?`.map((seg, i) => key={`w-${i}`})`.
+ * is parsed by parseAllShowWidgets → `.map((seg, i) => key={`w-${i}`})`.
  *
  * If these keys ever diverge, React will unmount + remount the WidgetRenderer
- * â?iframe destroyed â?height collapse â?scroll jump (P2 regression).
+ * → iframe destroyed → height collapse → scroll jump (P2 regression).
  */
 export function computePartialWidgetKey(content: string): string {
   const markers = [...content.matchAll(/`{1,3}show-widget/g)];
@@ -388,7 +389,7 @@ function extractTruncatedWidget(fenceBody: string): ShowWidgetData | null {
   try {
     const json = JSON.parse(fenceBody);
     if (json.widget_code) return { title: json.title || undefined, widget_code: String(json.widget_code) };
-  } catch { /* expected â?JSON is truncated */ }
+  } catch { /* expected — JSON is truncated */ }
 
   // String-search extraction
   const keyIdx = fenceBody.indexOf('"widget_code"');
@@ -613,7 +614,7 @@ function CopyButton({ text }: { text: string }) {
       {copied ? (
         <Check size={12} className="text-status-success-foreground" />
       ) : (
-        <BuckyballIcon name="copy" size={12} aria-hidden />
+        <CodePilotIcon name="copy" size={12} aria-hidden />
       )}
     </Button>
   );
@@ -622,15 +623,15 @@ function CopyButton({ text }: { text: string }) {
 function TokenUsageDisplay({ usage }: { usage: TokenUsage }) {
   const totalTokens = usage.input_tokens + usage.output_tokens;
   const costStr = usage.cost_usd !== undefined && usage.cost_usd !== null
-    ? ` Â· $${usage.cost_usd.toFixed(4)}`
+    ? ` · $${usage.cost_usd.toFixed(4)}`
     : '';
 
   return (
     <span className="group/tokens relative cursor-default text-xs text-muted-foreground/50">
       <span>{totalTokens.toLocaleString()} tokens{costStr}</span>
       <span className="pointer-events-none absolute bottom-full left-0 mb-1.5 whitespace-nowrap rounded-md bg-popover px-2.5 py-1.5 text-[11px] text-popover-foreground shadow-md border border-border/50 opacity-0 group-hover/tokens:opacity-100 transition-opacity duration-150 z-50">
-        In: {usage.input_tokens.toLocaleString()} Â· Out: {usage.output_tokens.toLocaleString()}
-        {usage.cache_read_input_tokens ? ` Â· Cache: ${usage.cache_read_input_tokens.toLocaleString()}` : ''}
+        In: {usage.input_tokens.toLocaleString()} · Out: {usage.output_tokens.toLocaleString()}
+        {usage.cache_read_input_tokens ? ` · Cache: ${usage.cache_read_input_tokens.toLocaleString()}` : ''}
         {costStr}
       </span>
     </span>
@@ -690,17 +691,14 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
     }
   }, [isUser, displayText]);
 
-  // Memoize token usage JSON parsing
-  const tokenUsage = useMemo<TokenUsage | null>(() => {
-    if (!message.token_usage) return null;
-    try {
-      return JSON.parse(message.token_usage);
-    } catch {
-      return null;
-    }
-  }, [message.token_usage]);
+  // token_usage is persisted by multiple runtimes and historical releases.
+  // Treat it as untrusted DB input instead of relying on a TypeScript cast.
+  const tokenUsage = useMemo(
+    () => parseDisplayTokenUsage(message.token_usage),
+    [message.token_usage],
+  );
 
-  // Hide image-gen system notices â?they exist in DB for Claude's context but shouldn't render
+  // Hide image-gen system notices — they exist in DB for Claude's context but shouldn't render
   if (isUser && message.content.startsWith('[__IMAGE_GEN_NOTICE__')) {
     return null;
   }
@@ -710,7 +708,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
     minute: '2-digit',
   });
 
-  // Assistant chat avatar removed (2026-05-21) â?message bubbles already
+  // Assistant chat avatar removed (2026-05-21) — message bubbles already
   // carry assistant/user attribution via tone + alignment; the buddy
   // egg/species portrait next to every AI reply was visual noise and
   // duplicated identity already shown elsewhere (sidebar, composer
@@ -727,7 +725,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
           <FileAttachmentDisplay files={files} />
         )}
 
-        {/* Tool calls + thinking for assistant messages â?single collapsible group */}
+        {/* Tool calls + thinking for assistant messages — single collapsible group */}
         {!isUser && (regularTools.length > 0 || thinking) && (
           <ToolActionsGroup
             tools={regularTools.map((tool) => ({
@@ -742,7 +740,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
           />
         )}
 
-        {/* Media from tool results â?rendered outside tool group so images stay visible */}
+        {/* Media from tool results — rendered outside tool group so images stay visible */}
         {!isUser && (() => {
           const allMedia = pairedTools.flatMap(t => t.media || []);
           return allMedia.length > 0 ? <MediaPreview media={allMedia} /> : null;
@@ -760,7 +758,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
                   collapse from a CSS `transition: max-height` to
                   framer-motion `animate={{ height }}`. The CSS path
                   toggled between `maxHeight: 300px` and `undefined`
-                  (== auto), which cannot interpolate â?so expanding
+                  (== auto), which cannot interpolate — so expanding
                   and collapsing snapped instantly and looked like a
                   jarring flicker. motion.div measures the real
                   content height at run-time and tweens between the
@@ -790,12 +788,12 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
                   {isExpanded ? (
                     <>
                       <CaretUp size={12} />
-                      <span>æ¶èµ·</span>
+                      <span>收起</span>
                     </>
                   ) : (
                     <>
                       <CaretDown size={12} />
-                      <span>å±å¼</span>
+                      <span>展开</span>
                     </>
                   )}
                 </Button>
@@ -872,7 +870,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
           .filter(f => f.path);
         if (modifiedFiles.length === 0) return null;
         // Deduplicate by path. When the same file appears multiple times (e.g.
-        // created then edited in one turn), the last tool wins â?callers see
+        // created then edited in one turn), the last tool wins — callers see
         // "Modified" rather than "Created" which matches the file's final
         // state at the end of the turn.
         const unique = [...new Map(modifiedFiles.map(f => [f.path, f])).values()];
@@ -881,8 +879,8 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
             files={unique}
             onPreview={(file) => {
               // Phase 4: classify the path against the session's
-              // workingDirectory. Inside the workspace â?workspace trust
-              // + baseDir, opens directly. Outside â?agent-referenced,
+              // workingDirectory. Inside the workspace → workspace trust
+              // + baseDir, opens directly. Outside → agent-referenced,
               // which makes PreviewPanel render a confirm card and
               // delay fetch until the user explicitly accepts (path
               // could be a sensitive location named by the AI). The
@@ -922,7 +920,7 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
             // /api/files/preview and hand them to the long-shot helper.
             // Markdown / JSX long-shot support requires a prior render-
             // to-HTML step (Streamdown serialize for .md; esbuild compile
-            // for .tsx) that's Phase 3 follow-up â?DiffSummary already
+            // for .tsx) that's Phase 3 follow-up — DiffSummary already
             // gates the button by extension so we won't get called for
             // those unless the gate changes later.
             onExportLongShot={async (file) => {
@@ -971,10 +969,10 @@ export const MessageItem = memo(function MessageItem({ message, sessionId, isAss
 });
 
 /**
- * Phase 5c slice 6 (2026-05-16, post-smoke) â?visible error block
+ * Phase 5c slice 6 (2026-05-16, post-smoke) — visible error block
  * for `show-widget` fences the parser couldn't render. Surfaces
  * three failure modes:
- *   - raw HTML body (no JSON wrapper) â?the S4 smoke failure
+ *   - raw HTML body (no JSON wrapper) — the S4 smoke failure
  *   - JSON parsed but no `widget_code` field
  *   - JSON itself malformed
  *
@@ -1005,8 +1003,8 @@ export function MalformedWidgetNotice({ reason, raw }: { reason: string; raw: st
 }
 
 /** Widget wrapper with "Pin to Dashboard" button.
- * Pin triggers a chat message â?AI uses codepilot_dashboard_pin MCP tool.
- * Button is a pure trigger â?no local pin/unpin state tracking.
+ * Pin triggers a chat message → AI uses codepilot_dashboard_pin MCP tool.
+ * Button is a pure trigger — no local pin/unpin state tracking.
  * Brief cooldown prevents double-click. */
 function PinnableWidget({ widgetCode, title }: {
   widgetCode: string; title?: string; messageId: string; sessionId?: string;
@@ -1034,7 +1032,7 @@ function PinnableWidget({ widgetCode, title }: {
     }
   }, [widgetCode, title]);
 
-  // Card action button class â?shared geometry / colors used by widget
+  // Card action button class — shared geometry / colors used by widget
   // toolbar and (round 12 onwards) the Markdown table + code block
   // toolbars. h-7 / text-xs / rounded-md gives a readable hit target
   // without dominating the card chrome. Permanent (no opacity-0
@@ -1053,7 +1051,7 @@ function PinnableWidget({ widgetCode, title }: {
           onClick={handlePin}
           disabled={cooldown}
         >
-          <BuckyballIcon name="pin" size="sm" aria-hidden />
+          <CodePilotIcon name="pin" size="sm" aria-hidden />
           Pin
         </button>
       )}
@@ -1062,7 +1060,7 @@ function PinnableWidget({ widgetCode, title }: {
         onClick={handleExport}
         aria-label="Export PNG"
       >
-        <BuckyballIcon name="download" size="sm" aria-hidden />
+        <CodePilotIcon name="download" size="sm" aria-hidden />
       </button>
     </>
   );
@@ -1073,12 +1071,12 @@ function PinnableWidget({ widgetCode, title }: {
 }
 
 /**
- * Memoized assistant message content â?avoids re-running parseBatchPlan / parseImageGenResult /
+ * Memoized assistant message content — avoids re-running parseBatchPlan / parseImageGenResult /
  * parseImageGenRequest on every render when only unrelated props change.
  */
 const AssistantContent = memo(function AssistantContent({ displayText, messageId, sessionId }: { displayText: string; messageId: string; sessionId?: string }) {
   return useMemo(() => {
-    // Try show-widget first (Generative UI) â?supports multiple widgets interleaved with text
+    // Try show-widget first (Generative UI) — supports multiple widgets interleaved with text
     const widgetSegments = parseAllShowWidgets(displayText);
     if (widgetSegments.length > 0) {
       return (
@@ -1187,7 +1185,7 @@ const AssistantContent = memo(function AssistantContent({ displayText, messageId
       .replace(/```batch-plan[\s\S]*?```/g, '')
       .replace(/```show-widget[\s\S]*?(```|$)/g, '')
       .trim();
-    // Phase 4.D â?DevOutputSegment tokenizes the assistant text for
+    // Phase 4.D — DevOutputSegment tokenizes the assistant text for
     // file references (/abs/path:12, foo.md#L12) and localhost URLs,
     // rendering them as clickable chips alongside the streamdown
     // markdown render. Plain text without dev-output tokens falls

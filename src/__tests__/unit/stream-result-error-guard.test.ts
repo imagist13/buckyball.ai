@@ -1,5 +1,5 @@
 /**
- * Phase 4 / #577B (2026-06-02) â€?a correct answer followed by an "**Error:**"
+ * Phase 4 / #577B (2026-06-02) â€” a correct answer followed by an "**Error:**"
  * bubble on a new session.
  *
  * Root cause: claude-client's SDK stream emits the `result` SSE and then keeps
@@ -7,7 +7,7 @@
  * channel teardown racing capability capture, late stderr, etc.) falls into the
  * catch, which emits a structured `error` SSE AFTER the result. The frontend
  * faithfully renders it as an error bubble. (Native + Codex runtimes are
- * structurally safe â€?only the SDK path keeps awaiting after result.)
+ * structurally safe â€” only the SDK path keeps awaiting after result.)
  *
  * Fix: a `resultEmitted` flag set right after the result enqueue. Once the turn
  * has produced a result it SUCCEEDED, so the catch must not (a) emit an error
@@ -27,7 +27,7 @@ const src = readFileSync(
   'utf8',
 );
 
-describe('claude-client â€?result-authoritative guard (#577B)', () => {
+describe('claude-client â€” result-authoritative guard (#577B)', () => {
   it('declares the resultEmitted flag in the stream scope', () => {
     assert.match(src, /let resultEmitted = false;/);
   });

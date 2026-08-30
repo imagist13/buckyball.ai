@@ -7,14 +7,14 @@
  *
  * "Was it reached" is observed via the module's own telemetry line
  * (`[title-generation] outcome=...`), driven with `runtime: 'codex_runtime'` so
- * the orchestrator returns `unsupported-runtime` immediately â€?the trigger is
+ * the orchestrator returns `unsupported-runtime` immediately â€” the trigger is
  * exercised end-to-end without any provider call, network, or timing luck.
  *
  * The three ways this can go wrong, each a case below:
- *   - firing on a turn that ERRORED â†?a chat gets named after a failed answer
- *   - firing on a turn whose assistant row was DROPPED by the owner gate â†?a
+ *   - firing on a turn that ERRORED â†’ a chat gets named after a failed answer
+ *   - firing on a turn whose assistant row was DROPPED by the owner gate â†’ a
  *     superseded turn names the new owner's chat
- *   - firing on a later turn â†?a chat gets renamed out from under the user
+ *   - firing on a later turn â†’ a chat gets renamed out from under the user
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -102,7 +102,7 @@ function freshSession() {
   return { sessionId: s.id, lockId };
 }
 
-describe('title generation trigger â€?g01', () => {
+describe('title generation trigger â€” g01', () => {
   it('fires after a clean first turn, once the assistant message has persisted', async () => {
     const { sessionId, lockId } = freshSession();
     await collectStreamResponse(
@@ -114,14 +114,14 @@ describe('title generation trigger â€?g01', () => {
       { suppressNotifications: true, titleGeneration: TITLE_CTX },
     );
     // The assistant row is written inside the try, BEFORE the finally that
-    // fires generation â€?so by the time generation is reachable, it is.
+    // fires generation â€” so by the time generation is reachable, it is.
     assert.equal(getMessages(sessionId).messages.filter((m) => m.role === 'assistant').length, 1);
 
     assert.ok(
       await waitForGeneration(),
       'a clean first turn should reach generation',
     );
-    // Codex is unsupported, so the fallback stands â€?the honest degradation.
+    // Codex is unsupported, so the fallback stands â€” the honest degradation.
     assert.ok(logs.some((l) => l.includes('outcome=unsupported-runtime')));
     assert.equal(getSession(sessionId)!.title, 'Fallback title');
   });
@@ -158,6 +158,25 @@ describe('title generation trigger â€?g01', () => {
     assert.equal(getSession(sessionId)!.title, 'Fallback title');
   });
 
+  it('does NOT fire for a Codex interrupted result followed by usage accounting', async () => {
+    const { sessionId, lockId } = freshSession();
+    await collectStreamResponse(
+      streamOf([
+        sse('text', 'partial answer before Stop'),
+        sse('result', { finish_reason: 'interrupted' }),
+        sse('result', { usage: { input_tokens: 3, output_tokens: 1 } }),
+      ]),
+      sessionId,
+      lockId,
+      NO_TELEGRAM,
+      undefined,
+      { suppressNotifications: true, titleGeneration: TITLE_CTX },
+    );
+    await drainMicrotasks();
+    assert.equal(generationFired(), false, 'Codex usage accounting must not rename a Stopped turn');
+    assert.equal(getSession(sessionId)!.title, 'Fallback title');
+  });
+
   it('does NOT fire when the assistant row was dropped by the owner gate', async () => {
     const { sessionId } = freshSession();
     // A superseded turn: it carries a stale lockId, so its writes are dropped.
@@ -190,7 +209,7 @@ describe('title generation trigger â€?g01', () => {
   });
 });
 
-describe('trigger is off the hot path â€?g01 structural pins', () => {
+describe('trigger is off the hot path â€” g01 structural pins', () => {
   const collectSrc = fs.readFileSync(
     path.join(__dirname, '../../lib/chat-collect-stream-response.ts'),
     'utf-8',
@@ -214,13 +233,13 @@ describe('trigger is off the hot path â€?g01 structural pins', () => {
   it('generation is gated on a clean, persisted turn', () => {
     assert.match(
       collectSrc,
-      /if \(opts\?\.titleGeneration && !hasError && lastSavedAssistantMsgId !== null\)/,
+      /opts\?\.titleGeneration\s*&& !hasError\s*&& !sawNonSuccessfulTerminalResult\s*&& lastSavedAssistantMsgId !== null/,
     );
   });
 
   it('the route only arms generation when the fallback CAS actually landed', () => {
-    // `landed` is true exactly once per session â€?on the placeholderâ†’fallback
-    // transition â€?which is what makes this the FIRST real turn and no other.
+    // `landed` is true exactly once per session â€” on the placeholderâ†’fallback
+    // transition â€” which is what makes this the FIRST real turn and no other.
     assert.match(routeSrc, /const landed = updateSessionTitle\(/);
     assert.match(routeSrc, /if \(landed\) \{\s*titleGenerationInput = displayOverride \|\| content;/);
     // And it is declared inside the request scope, defaulting to "do not fire".

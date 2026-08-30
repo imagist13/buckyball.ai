@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRuntimeArchitectureInfo } from "@/lib/platform";
-import { selectRecommendedReleaseAsset, type ReleaseAsset } from "@/lib/update-release";
+import { resolveReleaseAssetAvailability, type ReleaseAsset } from "@/lib/update-release";
 import { compareSemver } from "@/lib/compare-semver";
 
 const GITHUB_REPO = "op7418/CodePilot";
@@ -16,6 +16,7 @@ function noUpdatePayload(currentVersion: string, runtimeInfo: ReturnType<typeof 
     releaseUrl: "",
     downloadUrl: "",
     downloadAssetName: "",
+    platformAssetMissing: false,
     detectedPlatform: runtimeInfo.platform,
     detectedArch: runtimeInfo.processArch,
     hostArch: runtimeInfo.hostArch,
@@ -43,9 +44,10 @@ export async function GET() {
     const release = await res.json();
     const latestVersion = (release.tag_name || "").replace(/^v/, "");
     const updateAvailable = compareSemver(latestVersion, currentVersion) > 0;
-    const recommendedAsset = selectRecommendedReleaseAsset(
+    const { recommendedAsset, platformAssetMissing } = resolveReleaseAssetAvailability(
       Array.isArray(release.assets) ? (release.assets as ReleaseAsset[]) : [],
       runtimeInfo,
+      updateAvailable,
     );
 
     return NextResponse.json({
@@ -56,8 +58,11 @@ export async function GET() {
       releaseNotes: release.body || "",
       publishedAt: release.published_at || "",
       releaseUrl: release.html_url || "",
-      downloadUrl: recommendedAsset?.browser_download_url || release.html_url || "",
+      // Keep the release page as a separate, honest details link. A missing
+      // platform installer must not be encoded as a fake direct download.
+      downloadUrl: recommendedAsset?.browser_download_url || "",
       downloadAssetName: recommendedAsset?.name || "",
+      platformAssetMissing,
       detectedPlatform: runtimeInfo.platform,
       detectedArch: runtimeInfo.processArch,
       hostArch: runtimeInfo.hostArch,

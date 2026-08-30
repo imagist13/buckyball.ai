@@ -1,5 +1,5 @@
 /**
- * Phase 8 Phase 1 â€?Codex MCP config builder.
+ * Phase 8 Phase 1 â€” Codex MCP config builder.
  *
  * Run: npx tsx --test src/__tests__/unit/codex-mcp-config.test.ts
  *
@@ -43,7 +43,7 @@ describe('buildCodexMcpServersConfig', () => {
     assert.deepEqual(servers['s'], { command: 'python', args: ['x.py'] });
   });
 
-  it('maps http â†?streamable_http { url, http_headers } (NO type discriminator)', () => {
+  it('maps http â†’ streamable_http { url, http_headers } (NO type discriminator)', () => {
     const { servers } = buildCodexMcpServersConfig({
       remote: { type: 'http', url: 'http://localhost:9090/mcp', headers: { Authorization: 'Bearer x' } },
     });
@@ -51,7 +51,7 @@ describe('buildCodexMcpServersConfig', () => {
       url: 'http://localhost:9090/mcp',
       http_headers: { Authorization: 'Bearer x' },
     });
-    // Codex selects transport by shape â€?must NOT emit a `type` field.
+    // Codex selects transport by shape â€” must NOT emit a `type` field.
     assert.equal('type' in servers['remote'], false);
   });
 
@@ -108,7 +108,7 @@ describe('buildCodexMemoryMcpConfig', () => {
     assert.equal(entry.http_headers?.[MEMORY_MCP_WORKSPACE_HEADER], '/ws/assistant');
   });
 
-  it('carries no secrets â€?only workspace path + session id in headers', () => {
+  it('carries no secrets â€” only workspace path + session id in headers', () => {
     const { entry } = buildCodexMemoryMcpConfig({ baseUrl: 'http://x:3000', workspacePath: '/ws' });
     const headerValues = Object.values(entry.http_headers ?? {});
     for (const v of headerValues) {
@@ -151,8 +151,8 @@ describe('fingerprintCodexMcpConfig', () => {
   });
 });
 
-describe('sameRealPath (runtime gate â†?route authorization)', () => {
-  it('equal paths â†?true; trailing slash normalized â†?true', () => {
+describe('sameRealPath (runtime gate â†” route authorization)', () => {
+  it('equal paths â†’ true; trailing slash normalized â†’ true', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'srp-'));
     try {
       assert.equal(sameRealPath(dir, dir), true);
@@ -162,7 +162,7 @@ describe('sameRealPath (runtime gate â†?route authorization)', () => {
     }
   });
 
-  it('symlink resolves to the same real path â†?true (e.g. /tmp â†?/private/tmp class)', () => {
+  it('symlink resolves to the same real path â†’ true (e.g. /tmp â†’ /private/tmp class)', () => {
     const real = fs.mkdtempSync(path.join(os.tmpdir(), 'srp-real-'));
     const link = path.join(os.tmpdir(), `srp-link-${Date.now()}`);
     try {
@@ -174,7 +174,7 @@ describe('sameRealPath (runtime gate â†?route authorization)', () => {
     }
   });
 
-  it('different dirs â†?false; non-existent path â†?false', () => {
+  it('different dirs â†’ false; non-existent path â†’ false', () => {
     const a = fs.mkdtempSync(path.join(os.tmpdir(), 'srp-a-'));
     const b = fs.mkdtempSync(path.join(os.tmpdir(), 'srp-b-'));
     try {

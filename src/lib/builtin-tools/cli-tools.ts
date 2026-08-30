@@ -1,9 +1,9 @@
 /**
- * builtin-tools/cli-tools.ts �?CLI tool management handlers (shared between runtimes).
+ * builtin-tools/cli-tools.ts — CLI tool management handlers (shared between runtimes).
  *
  * These are the pure handler functions extracted from cli-tools-mcp.ts.
  * Both SDK Runtime (via createSdkMcpServer) and Native Runtime (via AI SDK tool())
- * use these same handlers �?single source of truth.
+ * use these same handlers — single source of truth.
  *
  * Provides 6 tools:
  * - codepilot_cli_tools_list: List all CLI tools (text or JSON format)
@@ -51,9 +51,9 @@ function extractInstallMethod(command: string): string {
 
 /**
  * Extract the full package spec from an install command.
- * e.g. "brew install stripe/stripe-cli/stripe" �?"stripe/stripe-cli/stripe"
- *      "npm install -g @elevenlabs/cli" �?"@elevenlabs/cli"
- *      "pip install yt-dlp" �?"yt-dlp"
+ * e.g. "brew install stripe/stripe-cli/stripe" → "stripe/stripe-cli/stripe"
+ *      "npm install -g @elevenlabs/cli" → "@elevenlabs/cli"
+ *      "pip install yt-dlp" → "yt-dlp"
  */
 function extractPackageSpec(command: string): string | null {
   const parts = command.trim().split(/\s+/);
@@ -131,7 +131,7 @@ export function createCliToolsTools() {
           const { catalog, extra } = await detectAllCliTools();
           const allCustom = getAllCustomCliTools();
           const descriptions = getAllCliToolDescriptions();
-          // Build a lookup from binPath �?shadow custom row (for install metadata)
+          // Build a lookup from binPath → shadow custom row (for install metadata)
           const catalogBinPaths = new Set(catalog.filter(c => c.binPath).map(c => c.binPath!));
           const shadowByBinPath = new Map(
             allCustom.filter(ct => catalogBinPaths.has(ct.binPath)).map(ct => [ct.binPath, ct])
@@ -270,11 +270,11 @@ export function createCliToolsTools() {
           const output = (stdout + '\n' + stderr).trim();
 
           // Build a list of binary name candidates to try with `which`.
-          // Package spec �?binary name, so we try multiple candidates:
-          //   "brew install ffmpeg" �?["ffmpeg"]
-          //   "npm install -g @elevenlabs/cli" �?catalog binNames ["elevenlabs"], then ["cli"]
-          //   "brew install stripe/stripe-cli/stripe" �?["stripe"]
-          //   "npm install -g @music163/ncm-cli" �?catalog binNames ["ncm-cli"]
+          // Package spec ≠ binary name, so we try multiple candidates:
+          //   "brew install ffmpeg" → ["ffmpeg"]
+          //   "npm install -g @elevenlabs/cli" → catalog binNames ["elevenlabs"], then ["cli"]
+          //   "brew install stripe/stripe-cli/stripe" → ["stripe"]
+          //   "npm install -g @music163/ncm-cli" → catalog binNames ["ncm-cli"]
           const cmdParts = command.trim().split(/\s+/);
           const binCandidates: string[] = [];
           let rawPkgArg: string | null = null;
@@ -288,7 +288,7 @@ export function createCliToolsTools() {
             }
           }
 
-          // Priority 1: check if a catalog tool matches this package �?use its declared binNames
+          // Priority 1: check if a catalog tool matches this package — use its declared binNames
           if (rawPkgArg) {
             const matchingCatalog = CLI_TOOLS_CATALOG.find(c =>
               c.installMethods.some(m => m.command.includes(rawPkgArg!))
@@ -477,7 +477,7 @@ export function createCliToolsTools() {
           if (descriptionZh) {
             resultParts.push('Description saved.');
           } else {
-            // No description provided �?include help output so model can generate one
+            // No description provided — include help output so model can generate one
             const helpOutput = await getHelpOutput(binPath);
             if (helpOutput) {
               resultParts.push('');
@@ -497,7 +497,7 @@ export function createCliToolsTools() {
 
     // ── REMOVE ───────────────────────────────────────────────────
     codepilot_cli_tools_remove: tool({
-      description: 'Remove a custom (user-added) CLI tool from the library. Only custom tools can be removed �?catalog and system-detected tools cannot be removed.',
+      description: 'Remove a custom (user-added) CLI tool from the library. Only custom tools can be removed — catalog and system-detected tools cannot be removed.',
       inputSchema: z.object({
         toolId: z.string().describe('The tool ID to remove, e.g. "custom-mytool"'),
       }),
@@ -671,7 +671,7 @@ export function createCliToolsTools() {
                 updateMethod = shadowRow.installMethod;
                 packageName = shadowRow.installPackage || shadowRow.binName;
               } else {
-                // No tracked install metadata �?use catalog default but flag as guessed
+                // No tracked install metadata — use catalog default but flag as guessed
                 const primaryInstall = catalogTool.installMethods[0];
                 updateMethod = primaryInstall?.method ?? null;
                 packageName = primaryInstall ? (extractPackageSpec(primaryInstall.command) ?? catalogTool.id) : catalogTool.id;

@@ -1,5 +1,5 @@
 /**
- * agent-loop-anthropic-wire.ts â€?build the Anthropic `providerOptions` wire
+ * agent-loop-anthropic-wire.ts â€” build the Anthropic `providerOptions` wire
  * object for the native Agent Loop.
  *
  * Extracted from agent-loop.ts's inline step loop (model plan Phase 2 / s05,
@@ -7,7 +7,7 @@
  * agent-loop-tool-error.ts: the wire-shaping logic lives in its own dependency-
  * free module so it is unit-testable directly (no DB / provider imports pulled
  * in). The object returned here is the SAME one assigned to `providerOptions`
- * and handed to `streamText({ providerOptions })` â€?asserting on it is asserting
+ * and handed to `streamText({ providerOptions })` â€” asserting on it is asserting
  * on the real request shape, not a source-text grep.
  */
 
@@ -35,7 +35,7 @@ export interface AnthropicWireOptions {
   effortDroppedForProxyRequested?: string;
   /** True when a user-picked effort was NOT sent on the OFFICIAL Anthropic
    *  path because the resolved model isn't on Anthropic's effort-capable list
-   *  (`anthropicApiSupportsEffort`) â€?e.g. Haiku 4.5 or an unknown model.
+   *  (`anthropicApiSupportsEffort`) â€” e.g. Haiku 4.5 or an unknown model.
    *  Callers MUST surface this once (RUNTIME_EFFORT_IGNORED); the composer
    *  still offers an Effort picker for models whose catalog entry declares
    *  SDK-level effort, so an unannounced omission would silently misrepresent
@@ -54,12 +54,12 @@ export interface AnthropicWireOptions {
  * Effort policy on the official Anthropic path is PER MODEL + LEVEL:
  * @ai-sdk/anthropic 4.0.5 ships effort via GA `output_config.effort` with no
  * effort beta header, so the old "drop effort for the whole adaptive family"
- * workaround is dead â€?but the API only accepts the field for the models on
+ * workaround is dead â€” but the API only accepts the field for the models on
  * Anthropic's effort list (`anthropicApiSupportsEffort`). Supported models
  * (Sonnet 5 / Fable 5 / Opus 4.7 / 4.8 / 5) get the composer's pick on the wire
  * (the plan's "four-way consistency" gate) with no toast, since that matches
  * real behavior. Unsupported or unknown models (e.g. Haiku 4.5) omit effort and
- * set `effortDroppedUnsupportedModel` so the caller notifies once â€?sending it
+ * set `effortDroppedUnsupportedModel` so the caller notifies once â€” sending it
  * anyway is an unsupported request shape (Codex review P1, 2026-07-18:
  * haiku 4.5 + max was reaching the wire as {"effort":"max"}).
  *
@@ -70,7 +70,7 @@ export interface AnthropicWireOptions {
 export function buildAnthropicProviderOptions(args: {
   isThirdPartyProxy: boolean;
   /** Resolved upstream model ID (e.g. 'claude-sonnet-5'). Aliases like 'sonnet'
-   *  are not on the effort list and fail closed to "unsupported" â€?callers
+   *  are not on the effort list and fail closed to "unsupported" â€” callers
    *  should resolve to upstream before building the wire. */
   model: string | undefined;
   sanitized: Pick<

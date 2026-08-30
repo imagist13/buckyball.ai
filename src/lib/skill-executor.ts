@@ -1,5 +1,5 @@
 /**
- * skill-executor.ts â€?Execute skills in the Native Runtime.
+ * skill-executor.ts â€” Execute skills in the Native Runtime.
  *
  * Inline mode: Inject the skill's prompt body into the conversation.
  * Fork mode: Start a sub-agent with restricted tools (requires Phase 7 AgentTool).
@@ -45,7 +45,7 @@ export function prepareSkillExecution(
 
 function getSkillDir(filePath: string): string {
   // If SKILL.md is in a subdirectory, return that directory
-  // e.g. .claude/skills/my-skill/SKILL.md â†?.claude/skills/my-skill/
+  // e.g. .claude/skills/my-skill/SKILL.md â†’ .claude/skills/my-skill/
   const dir = filePath.replace(/[/\\][^/\\]+$/, '');
   return dir;
 }

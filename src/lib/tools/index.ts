@@ -1,5 +1,5 @@
 /**
- * tools/index.ts â€?Tool registry for the Native Runtime.
+ * tools/index.ts â€” Tool registry for the Native Runtime.
  *
  * Exports all built-in tools as a ToolSet ready for streamText().
  * Each tool is a factory function that takes ToolContext and returns a Tool.
@@ -31,7 +31,7 @@ export interface ToolContext {
   permissionMode?: string;
   /** Parent session explicitly selected the full-access profile. */
   bypassPermissions?: boolean;
-  /** SSE emitter callback â€?passed to sub-agents for permission forwarding */
+  /** SSE emitter callback â€” passed to sub-agents for permission forwarding */
   emitSSE?: (event: { type: string; data: string }) => void;
   /** Abort signal from parent */
   abortSignal?: AbortSignal;

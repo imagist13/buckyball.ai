@@ -3,7 +3,7 @@
  *
  * `serverErrorResponse` logs the full error (stack included) to the server
  * console for diagnosis, but returns ONLY the human-readable message to the
- * client â€?never the stack trace, which leaks absolute file paths and internal
+ * client â€” never the stack trace, which leaks absolute file paths and internal
  * structure. Introduced for audit task A1 (see
  * docs/exec-plans/active/codebase-health-audit-2026-06.md); intended as the
  * single 500-response exit point that future routes adopt (audit task D5).

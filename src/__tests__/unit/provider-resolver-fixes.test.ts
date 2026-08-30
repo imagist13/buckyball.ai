@@ -3,18 +3,19 @@
  *
  * Pins two pieces of behavior so they don't silently regress:
  *
- * 1. settingSources for DB-backed providers is `['user']` only �? *    'project' and 'local' are dropped to prevent cwd .claude/settings.json
+ * 1. settingSources for DB-backed providers is `['user']` only —
+ *    'project' and 'local' are dropped to prevent cwd .claude/settings.json
  *    or .claude/settings.local.json from overriding the selected DB
  *    provider's auth via the SDK's qZq() env loader. The user layer is
  *    safe because per-request shadow HOME (claude-home-shadow.ts) writes
  *    a stripped settings.json; the project/local layers can't be shadowed
  *    the same way without breaking file-creation tools (Edit/Write
  *    relative paths), so we exclude them from settingSources entirely.
- *    Project CLAUDE.md and `.mcp.json` are still loaded �?by CodePilot's
- *    context-assembler and mcp-loader respectively �?independent of
+ *    Project CLAUDE.md and `.mcp.json` are still loaded — by CodePilot's
+ *    context-assembler and mcp-loader respectively — independent of
  *    settingSources. Env mode keeps all 3 sources.
  *
- * 2. Short-alias fallback (sonnet/opus/haiku �?upstream model) only fires
+ * 2. Short-alias fallback (sonnet/opus/haiku → upstream model) only fires
  *    when the provider has EXACTLY ONE model in its catalog.
  *    Why: Multi-model providers (e.g. OpenRouter with dozens) must NOT
  *    silently rewrite the user's "haiku" choice to "first-in-list", because
@@ -65,13 +66,13 @@ function writeUserSettingsJson(creds: Record<string, string>) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// Fix #1: settingSources is ['user'] for DB providers �?drop 'project' and
+// Fix #1: settingSources is ['user'] for DB providers — drop 'project' and
 // 'local' to prevent cwd-level settings env from bleeding into the
 // explicitly selected provider's auth. Env mode keeps all 3.
 // ────────────────────────────────────────────────────────────────
 
 describe('settingSources by provider group', () => {
-  it('DB-backed provider gets settingSources=["user"] only �?drops project/local', async () => {
+  it('DB-backed provider gets settingSources=["user"] only — drops project/local', async () => {
     writeUserSettingsJson({
       ANTHROPIC_BASE_URL: 'https://leak-source.example.com',
       ANTHROPIC_AUTH_TOKEN: 'sk-cc-switch-present',
@@ -93,9 +94,9 @@ describe('settingSources by provider group', () => {
       resolved.settingSources,
       ['user'],
       [
-        'DB-backed provider must include "user" �?needed for user-level MCP/plugins/hooks discovery',
+        'DB-backed provider must include "user" — needed for user-level MCP/plugins/hooks discovery',
         '(env-bleed at user layer is handled by per-request shadow HOME, see claude-home-shadow.ts).',
-        'But MUST drop "project" and "local" �?the SDK qZq() env loader applies env from EVERY',
+        'But MUST drop "project" and "local" — the SDK qZq() env loader applies env from EVERY',
         'enabled settingSource layer, and project/local layers cannot be shadowed without breaking',
         'file-creation tools (relative paths). Project CLAUDE.md / .mcp.json are loaded',
         "independently by CodePilot, so they don't need 'project' settingSource.",
@@ -113,12 +114,12 @@ describe('settingSources by provider group', () => {
     assert.deepEqual(
       resolved.settingSources,
       ['user', 'project', 'local'],
-      'env mode (Claude Code group) keeps all sources �?full Claude Code config experience including project hooks/permissions',
+      'env mode (Claude Code group) keeps all sources — full Claude Code config experience including project hooks/permissions',
     );
     assert.equal(resolved.hasCredentials, true);
   });
 
-  it('DB provider �?project/local cwd settings can never be exposed to SDK (defense-in-depth)', async () => {
+  it('DB provider — project/local cwd settings can never be exposed to SDK (defense-in-depth)', async () => {
     // Regression test for the P2 review finding: even if a user has
     // <cwd>/.claude/settings.json with ANTHROPIC_BASE_URL, the SDK must
     // never see it for a DB-provider request, because we drop 'project'
@@ -137,9 +138,9 @@ describe('settingSources by provider group', () => {
     const resolved = resolveProvider({ providerId: provider.id });
 
     assert.ok(!resolved.settingSources.includes('project'),
-      'DB provider settingSources must not include "project" �?that would expose <cwd>/.claude/settings.json env to SDK qZq()');
+      'DB provider settingSources must not include "project" — that would expose <cwd>/.claude/settings.json env to SDK qZq()');
     assert.ok(!resolved.settingSources.includes('local'),
-      'DB provider settingSources must not include "local" �?that would expose <cwd>/.claude/settings.local.json env to SDK qZq()');
+      'DB provider settingSources must not include "local" — that would expose <cwd>/.claude/settings.local.json env to SDK qZq()');
   });
 });
 
@@ -189,7 +190,7 @@ describe('short-alias fallback narrowed to single-model providers', () => {
   it('single-model provider does fall back (alias was just a placeholder)', async () => {
     const { toAiSdkConfig } = await import('../../lib/provider-resolver');
 
-    // Single-model "套餐�? provider: only one upstream model in catalog
+    // Single-model "套餐型" provider: only one upstream model in catalog
     const resolved = {
       provider: {
         id: 'p1', name: 'PackyCode-Sonnet', preset_key: '', provider_type: 'anthropic', protocol: 'anthropic',
@@ -214,7 +215,7 @@ describe('short-alias fallback narrowed to single-model providers', () => {
     };
 
     const config = toAiSdkConfig(resolved, 'sonnet');
-    // OK to map the alias to the only available model �?that's what the user
+    // OK to map the alias to the only available model — that's what the user
     // signed up for and there's no ambiguity.
     assert.equal(
       config.modelId, 'claude-sonnet-4-5-20250929',
@@ -225,7 +226,7 @@ describe('short-alias fallback narrowed to single-model providers', () => {
   it('role mapping still works regardless of catalog size', async () => {
     const { toAiSdkConfig } = await import('../../lib/provider-resolver');
 
-    // Multi-model provider WITH explicit role mapping �?must use the mapping
+    // Multi-model provider WITH explicit role mapping — must use the mapping
     const resolved = {
       provider: {
         id: 'p2', name: 'GLM', preset_key: 'glm-cn', provider_type: 'anthropic', protocol: 'anthropic',

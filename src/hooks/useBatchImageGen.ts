@@ -399,7 +399,7 @@ export function useBatchImageGenState(): BatchImageGenContextValue {
 
   const retryFailed = useCallback(async () => {
     if (!state.currentJob) return;
-    // Resume the job â€?the executor will pick up failed items that haven't exhausted retries
+    // Resume the job â€” the executor will pick up failed items that haven't exhausted retries
     try {
       await fetch(`/api/media/jobs/${state.currentJob.id}/resume`, { method: 'POST' });
       setState(prev => ({

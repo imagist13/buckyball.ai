@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     // never touch it.
     const session = createSession(
       title,
-      undefined, // model â?will use default
+      undefined, // model — will use default
       undefined, // system prompt
       info.cwd || info.projectPath,
       'code',
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Import all messages
     for (const msg of messages) {
       // For assistant messages with tool blocks, store as structured JSON
-      // For text-only messages, store as plain text (consistent with buckyball.ai's convention)
+      // For text-only messages, store as plain text (consistent with CodePilot's convention)
       const content = msg.hasToolBlocks
         ? JSON.stringify(msg.contentBlocks)
         : msg.content;

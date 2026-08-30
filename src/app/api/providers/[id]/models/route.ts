@@ -14,6 +14,7 @@ import {
   isCatalogOnlyPlanProviderRecord,
 } from '@/lib/provider-catalog';
 import type { ErrorResponse } from '@/types';
+import { classifyCatalogModelPresence } from '@/lib/catalog-model-identity';
 
 /**
  * GET /api/providers/[id]/models
@@ -104,6 +105,16 @@ export async function POST(
   }
 
   const models = getAllModelsForProvider(id);
+  if (catalogModel) {
+    const presence = classifyCatalogModelPresence(models, catalogModel);
+    if (presence.state !== 'current_enabled' && presence.state !== 'current_hidden') {
+      return NextResponse.json({
+        error: 'Model identity conflict requires review in Settings > Models',
+        code: 'MODEL_IDENTITY_CONFLICT',
+        conflictModelIds: presence.conflictModelIds ?? [],
+      }, { status: 409 });
+    }
+  }
   return NextResponse.json({ models });
 }
 

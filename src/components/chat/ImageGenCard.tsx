@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -141,7 +141,7 @@ export function ImageGenCard({
         <div className="flex items-center gap-1.5 flex-wrap">
           {model && (
             <Badge variant="secondary" className="text-[10px] gap-1">
-              <BuckyballIcon name="appearance" size={12} aria-hidden />
+              <CodePilotIcon name="appearance" size={12} aria-hidden />
               {model}
             </Badge>
           )}
@@ -164,7 +164,7 @@ export function ImageGenCard({
             onClick={() => handleDownload(images[0], 0)}
             title={t('imageGen.download' as TranslationKey)}
           >
-            <BuckyballIcon name="download" size="sm" aria-hidden />
+            <CodePilotIcon name="download" size="sm" aria-hidden />
           </Button>
           {onRegenerate && (
             <Button
@@ -173,7 +173,7 @@ export function ImageGenCard({
               onClick={onRegenerate}
               title={t('imageGen.regenerate' as TranslationKey)}
             >
-              <BuckyballIcon name="refresh" size="sm" aria-hidden />
+              <CodePilotIcon name="refresh" size="sm" aria-hidden />
             </Button>
           )}
         </div>

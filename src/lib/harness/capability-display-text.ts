@@ -1,5 +1,5 @@
 /**
- * Capability display text â?Phase 5e Phase 3 review round 7 fix
+ * Capability display text — Phase 5e Phase 3 review round 7 fix
  * (2026-05-18 user feedback).
  *
  * **User-facing layer.** Settings UI MUST read from here, NOT from
@@ -12,7 +12,7 @@
  * Rules baked in:
  *
  *   1. Two-language strings (zh + en). UI picks via the active i18n
- *      locale. No template interpolation server-side â?keeps the
+ *      locale. No template interpolation server-side — keeps the
  *      strings server-rendered + browser-safe.
  *
  *   2. **Capability ids exactly mirror `capability-contract.ts`.**
@@ -21,8 +21,9 @@
  *      `HARNESS_CAPABILITIES` and asserts every id has display text.
  *      Adding a new capability is a two-file change.
  *
- *   3. **Reasons describe outcomes, not architecture.** "å½åå¼æä¸? *      è½ç´æ¥è°ç?CodePilot ççæ¿å·¥å·ï¼è¯·åå?CodePilot ä½¿ç¨"
- *      â?that's the shape. NOT "Codex bridge not yet implemented",
+ *   3. **Reasons describe outcomes, not architecture.** "当前引擎不
+ *      能直接调用 CodePilot 的看板工具，请切到 CodePilot 使用"
+ *      — that's the shape. NOT "Codex bridge not yet implemented",
  *      NOT "permission contract pending". The user doesn't care
  *      about our wire layering; they care whether the button works.
  *
@@ -41,7 +42,7 @@ export interface BilingualText {
 
 export interface CapabilityDisplay {
   /** Short label shown next to the status icon. Action-oriented when
-   *  natural (e.g. "çæ Widget" not "Widget System"). */
+   *  natural (e.g. "生成 Widget" not "Widget System"). */
   readonly label: BilingualText;
   /** Optional one-liner shown under the label inside the Dialog. */
   readonly description?: BilingualText;
@@ -53,58 +54,58 @@ function runtimeLabel(runtimeId: RuntimeId, lang: 'zh' | 'en'): string {
 
 const CAPABILITY_DISPLAY: Readonly<Record<string, CapabilityDisplay>> = {
   widget: {
-    label: { zh: 'çæ Widget', en: 'Generate Widget' },
+    label: { zh: '生成 Widget', en: 'Generate Widget' },
     description: {
-      zh: 'è®©æ¨¡åçæäº¤äºå¡çæå¾è¡¨ï¼ç´æ¥å¨å¯¹è¯éå±ç¤ºã?,
+      zh: '让模型生成交互卡片或图表，直接在对话里展示。',
       en: 'Generates interactive cards or charts inline in chat.',
     },
   },
   memory: {
-    label: { zh: 'è¯»åå©ç Memory', en: 'Read assistant memory' },
+    label: { zh: '读取助理 Memory', en: 'Read assistant memory' },
     description: {
-      zh: 'æç´¢ / è¯»åå©çå·¥ä½åºçå¤å¿å½ä¸åå²ç¬è®°ã?,
+      zh: '搜索 / 读取助理工作区的备忘录与历史笔记。',
       en: 'Search and read assistant workspace memo files.',
     },
   },
   tasks_and_notify: {
-    label: { zh: 'å®æ¶ä»»å¡ä¸æé?, en: 'Scheduled tasks & notifications' },
+    label: { zh: '定时任务与提醒', en: 'Scheduled tasks & notifications' },
     description: {
-      zh: 'åå»ºå®æ¶ä»»å¡ãåéç³»ç»éç¥ / Telegram æéã?,
+      zh: '创建定时任务、发送系统通知 / Telegram 提醒。',
       en: 'Schedule tasks, send system notifications / Telegram alerts.',
     },
   },
   assistant_buddy: {
-    label: { zh: 'å©çä¼ä¼´', en: 'Assistant buddy' },
+    label: { zh: '助理伙伴', en: 'Assistant buddy' },
     description: {
-      zh: 'å­µåæå½åä½ çå©çä¼ä¼´ã?,
+      zh: '孵化或命名你的助理伙伴。',
       en: 'Hatch or name your assistant buddy.',
     },
   },
   image_generation: {
-    label: { zh: 'çæåªä½', en: 'Generate media' },
+    label: { zh: '生成媒体', en: 'Generate media' },
     description: {
-      zh: 'è°ç¨å¾åæè§é¢çææ¨¡åï¼çæç»æç´æ¥åºç°å¨èå¤©éã?,
+      zh: '调用图像或视频生成模型，生成结果直接出现在聊天里。',
       en: 'Calls an image or video generation model; results appear inline in chat.',
     },
   },
   media_import: {
-    label: { zh: 'å¯¼å¥åªä½', en: 'Import media' },
+    label: { zh: '导入媒体', en: 'Import media' },
     description: {
-      zh: 'ææ¬å°å¾ç?/ è§é¢ / é³é¢å¯¼å¥åªä½åºï¼åç»­å¯å¼ç¨ã?,
+      zh: '把本地图片 / 视频 / 音频导入媒体库，后续可引用。',
       en: 'Import a local image / video / audio file into the media library.',
     },
   },
   dashboard: {
-    label: { zh: 'çæ¿æä½', en: 'Dashboard operations' },
+    label: { zh: '看板操作', en: 'Dashboard operations' },
     description: {
-      zh: 'æ?Widget åºå®å°çæ¿ãåå?/ å·æ° / ç§»é¤å·²åºå®é¡¹ã?,
+      zh: '把 Widget 固定到看板、列出 / 刷新 / 移除已固定项。',
       en: 'Pin widgets to dashboard, list / refresh / remove pinned items.',
     },
   },
   cli_tools: {
-    label: { zh: 'CLI å·¥å·ç®¡ç', en: 'CLI tools management' },
+    label: { zh: 'CLI 工具管理', en: 'CLI tools management' },
     description: {
-      zh: 'æ¥çãå®è£ãæ´æ°æå¸è½½æ¬æº CLI å·¥å·ã?,
+      zh: '查看、安装、更新或卸载本机 CLI 工具。',
       en: 'List, install, update, or remove local CLI tools.',
     },
   },
@@ -118,7 +119,7 @@ export function getCapabilityDisplay(capabilityId: string): CapabilityDisplay | 
   return CAPABILITY_DISPLAY[capabilityId];
 }
 
-/** Iterate all known capability ids â?used by the coverage test. */
+/** Iterate all known capability ids — used by the coverage test. */
 export function knownCapabilityIds(): readonly string[] {
   return Object.keys(CAPABILITY_DISPLAY);
 }
@@ -126,18 +127,18 @@ export function knownCapabilityIds(): readonly string[] {
 /**
  * Build the user-facing reason string for a capability that is NOT
  * executable on the current Runtime. The output is plain user
- * language â?no MCP / bridge / phase references.
+ * language — no MCP / bridge / phase references.
  *
  * Examples (zh):
- *   "å½åå¼æ (Codex) æä¸æ¯æãçæ¿æä½ããå¦éä½¿ç¨ï¼è¯·åå° CodePilot æ?Claude Codeã?
- *   "å½åå¼æä¸æ¯æãå©çä¼ä¼´ããå¦éä½¿ç¨ï¼è¯·åå° Claude Codeã?
- *   "å½åå¼ææä¸æ¯æãCLI å·¥å·ç®¡çãã?
+ *   "当前引擎 (Codex) 暂不支持「看板操作」。如需使用，请切到 CodePilot 或 Claude Code。"
+ *   "当前引擎不支持「助理伙伴」。如需使用，请切到 Claude Code。"
+ *   "当前引擎暂不支持「CLI 工具管理」。"
  */
 export function buildUserReason(args: {
   readonly capabilityId: string;
   readonly currentRuntime: RuntimeId;
   /** Suggested Runtime that CAN execute the capability. `undefined`
-   *  means no Runtime supports it (rare â?most "unsupported" cells
+   *  means no Runtime supports it (rare — most "unsupported" cells
    *  are perception-only somewhere). */
   readonly suggestedRuntimes: readonly RuntimeId[];
   readonly lang: 'zh' | 'en';
@@ -148,61 +149,61 @@ export function buildUserReason(args: {
   if (args.lang === 'zh') {
     const current = runtimeLabel(args.currentRuntime, 'zh');
     if (args.suggestedRuntimes.length === 0) {
-      return `å½åå¼æï¼?{current}ï¼æä¸æ¯æã?{labelText}ãã`;
+      return `当前引擎（${current}）暂不支持「${labelText}」。`;
     }
     const list = args.suggestedRuntimes
       .map((r) => runtimeLabel(r, 'zh'))
-      .join(' æ?');
-    return `å½åå¼æï¼?{current}ï¼ä¸è½ç´æ¥è°ç¨ã?{labelText}ããå¦éä½¿ç¨ï¼è¯·åå° ${list}ã`;
+      .join(' 或 ');
+    return `当前引擎（${current}）不能直接调用「${labelText}」。如需使用，请切到 ${list}。`;
   }
   const current = runtimeLabel(args.currentRuntime, 'en');
   if (args.suggestedRuntimes.length === 0) {
-    return `â?{labelText}â?isnât available in the current engine (${current}).`;
+    return `“${labelText}” isn’t available in the current engine (${current}).`;
   }
   const list = args.suggestedRuntimes
     .map((r) => runtimeLabel(r, 'en'))
     .join(' or ');
-  return `The current engine (${current}) cannot call â?{labelText}â?directly. Switch to ${list} to use it.`;
+  return `The current engine (${current}) cannot call “${labelText}” directly. Switch to ${list} to use it.`;
 }
 
-/** Standard "callable" status line â?kept here so the matrix
+/** Standard "callable" status line — kept here so the matrix
  *  derivation doesn't need to know about bilingual strings. */
 export const CALLABLE_STATUS_LINE: BilingualText = {
-  zh: 'å¯è°ç?,
+  zh: '可调用',
   en: 'Callable',
 };
 
 /**
- * Codex Account override note for the dialog header â?explains that
+ * Codex Account override note for the dialog header — explains that
  * the Codex side has its OWN native plugins / Skills (managed by
  * Codex itself), and the list below ONLY describes whether CodePilot
  * Harness capabilities can be injected.
  */
 export const CODEX_ACCOUNT_HEADER_NOTE: BilingualText = {
   zh:
-    'Codex èªå¸¦çæä»?/ Skills ç?Codex èªå·±ç®¡çï¼ä¸æ¹æ¸åä»å±ç¤º CodePilot è¿ä¸ä¾§çåç½®è½åæ¯å¦è½è¢«æ³¨å¥æè°ç¨ãå½åé»è®¤æå¡åæ?Codex Accountï¼CodePilot å·¥å·æ¡¥å¨è¿æ¡è·¯å¾ä¸ä¸å¯ç¨ã?,
+    'Codex 自带的插件 / Skills 由 Codex 自己管理，下方清单仅展示 CodePilot 这一侧的内置能力是否能被注入或调用。当前默认服务商是 Codex Account，CodePilot 工具桥在这条路径上不可用。',
   en:
-    'Codexâs own plugins / Skills are managed by Codex itself. The list below only describes whether CodePilotâs built-in Harness can be injected or called. Codex Account is your current default provider, so the CodePilot tool bridge is not active on this path.',
+    'Codex’s own plugins / Skills are managed by Codex itself. The list below only describes whether CodePilot’s built-in Harness can be injected or called. Codex Account is your current default provider, so the CodePilot tool bridge is not active on this path.',
 };
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Phase 5e round 8 (2026-05-18) â?user-extensions section.
+// ─────────────────────────────────────────────────────────────────────
+// Phase 5e round 8 (2026-05-18) — user-extensions section.
 //
-// The built-in capability matrix above describes buckyball.ai's first-
+// The built-in capability matrix above describes CodePilot's first-
 // party capabilities (widget / memory / tasks / image / media /
 // dashboard / cli_tools / assistant_buddy). User-defined extensions
 // (MCP servers configured in CodePilot Settings or project .mcp.json,
 // .claude/skills, .claude/commands slash commands, project CLAUDE.md
-// workspace rules) are a SEPARATE concern â?their executability per
-// Runtime is summarized here for the Settings â?Runtime dialog.
+// workspace rules) are a SEPARATE concern — their executability per
+// Runtime is summarized here for the Settings → Runtime dialog.
 //
 // We intentionally do NOT inject these into HARNESS_CAPABILITIES /
 // the capability matrix: those structures are the engineering source
-// of truth for tool-name â?MCP/SDK exposure for the built-in tools,
+// of truth for tool-name → MCP/SDK exposure for the built-in tools,
 // and a synthetic "extensions" row there would break the
 // capability-matrix derivation contract test ("every cell references
 // a real capability in HARNESS_CAPABILITIES").
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export type UserExtensionsStatus = 'executable' | 'partial' | 'perception_only';
 
@@ -216,52 +217,52 @@ export interface UserExtensionsSummary {
 /**
  * Per-Runtime user-extensions executability summary. The runtime-
  * specific copy mirrors `user-codepilot-extensions.ts:executableForKind`
- * (which is the engineering source of truth) â?both must agree.
+ * (which is the engineering source of truth) — both must agree.
  *
  * Tests pin that:
- *   - claude_code â?executable (mcp_server + skill + slash_command + workspace_rule all wire)
- *   - bbagent â?partial (mcp_server + workspace_rule wire; skill + slash are CC-only)
- *   - codex_runtime â?perception_only (workspace_rule cross-runtime as text; mcp/skill/slash not on this path)
+ *   - claude_code → executable (mcp_server + skill + slash_command + workspace_rule all wire)
+ *   - codepilot_runtime → partial (mcp_server + workspace_rule wire; skill + slash are CC-only)
+ *   - codex_runtime → perception_only (workspace_rule cross-runtime as text; mcp/skill/slash not on this path)
  */
 export const USER_EXTENSIONS_SUMMARY: Record<RuntimeId, UserExtensionsSummary> = {
   claude_code: {
     runtimeId: 'claude_code',
     status: 'executable',
-    label: { zh: 'ç¨æ·èªå®ä¹?MCP / Skills', en: 'User MCP / Skills' },
+    label: { zh: '用户自定义 MCP / Skills', en: 'User MCP / Skills' },
     description: {
-      zh: 'Settings ééç½®ç MCP / é¡¹ç® .mcp.json / .claude/skills / .claude/commands ææ å½ä»¤ / é¡¹ç® CLAUDE.md é½å¯è¢«è°ç¨æè¯»åã?,
+      zh: 'Settings 里配置的 MCP / 项目 .mcp.json / .claude/skills / .claude/commands 斜杠命令 / 项目 CLAUDE.md 都可被调用或读取。',
       en: 'Settings-configured MCP, project .mcp.json, .claude/skills, .claude/commands slash commands, and project CLAUDE.md are all available.',
     },
   },
-  bbagent: {
-    runtimeId: 'bbagent',
+  codepilot_runtime: {
+    runtimeId: 'codepilot_runtime',
     status: 'partial',
-    label: { zh: 'ç¨æ·èªå®ä¹?MCP / Skills', en: 'User MCP / Skills' },
+    label: { zh: '用户自定义 MCP / Skills', en: 'User MCP / Skills' },
     description: {
-      zh: 'Settings / é¡¹ç® .mcp.json ç?MCP æå¡å¨ä¸é¡¹ç® CLAUDE.md å¯ç¨ï¼?claude/skills ä¸?.claude/commands ææ å½ä»¤æ?Claude Code ä¸å±ï¼å¦éä½¿ç¨è¯·åå?Claude Codeã?,
-      en: 'Settings / project .mcp.json MCP servers and project CLAUDE.md are wired; .claude/skills and .claude/commands slash commands are Claude Code-only â?switch to Claude Code to use them.',
+      zh: 'Settings / 项目 .mcp.json 的 MCP 服务器与项目 CLAUDE.md 可用；.claude/skills 与 .claude/commands 斜杠命令是 Claude Code 专属，如需使用请切到 Claude Code。',
+      en: 'Settings / project .mcp.json MCP servers and project CLAUDE.md are wired; .claude/skills and .claude/commands slash commands are Claude Code-only — switch to Claude Code to use them.',
     },
   },
   codex_runtime: {
     runtimeId: 'codex_runtime',
     status: 'perception_only',
-    label: { zh: 'ç¨æ·èªå®ä¹?MCP / Skills', en: 'User MCP / Skills' },
+    label: { zh: '用户自定义 MCP / Skills', en: 'User MCP / Skills' },
     description: {
-      zh: 'é¡¹ç® CLAUDE.md ä½ä¸ºææ¬æç¤ºå¯¹æ¨¡åä»å¯è§ï¼ä½ç¨æ·èªå®ä¹?MCP / Skills / ææ å½ä»¤å?Codex è¿æ¡è·¯å¾ä¸æ æ³è°ç¨ãå¦éä½¿ç¨ï¼è¯·åå° Claude Code æ?CodePilotã?,
+      zh: '项目 CLAUDE.md 作为文本提示对模型仍可见；但用户自定义 MCP / Skills / 斜杠命令在 Codex 这条路径上无法调用。如需使用，请切到 Claude Code 或 CodePilot。',
       en: 'Project CLAUDE.md is still visible to the model as a text prompt, but user-defined MCP servers / Skills / slash commands cannot be called on the Codex path. Switch to Claude Code or CodePilot to use them.',
     },
   },
 };
 
-/** Convenience lookup with a defensive default â?returns the codex
+/** Convenience lookup with a defensive default — returns the codex
  *  variant as the conservative fallback if an unknown runtime id is
  *  passed (better to say "limited" than to overclaim). */
 export function getUserExtensionsSummary(runtimeId: RuntimeId): UserExtensionsSummary {
   return USER_EXTENSIONS_SUMMARY[runtimeId] ?? USER_EXTENSIONS_SUMMARY.codex_runtime;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Phase 5e round 8 (2026-05-18) â?inline tool-blocked hint.
+// ─────────────────────────────────────────────────────────────────────
+// Phase 5e round 8 (2026-05-18) — inline tool-blocked hint.
 //
 // When the model tries to call a `codepilot_*` built-in tool that
 // isn't available on the active Runtime (e.g. dashboard / cli_tools
@@ -271,16 +272,18 @@ export function getUserExtensionsSummary(runtimeId: RuntimeId): UserExtensionsSu
 // tool isn't there or HOW to use it. This helper produces a one-line
 // hint to attach below the tool result.
 //
-// Per user direction (round 8): "å¨èå¤©åå®¹çä¸æ¹ç¨ä¸ä¸ªå°å­å»æéã?// ä¸è¦éä¾¿ä¸ä¸ªæéé½ç¨ä¸ä¸ªéå¸¸å¤§çå¼¹çª? â?small inline text, never a
+// Per user direction (round 8): "在聊天内容的下方用一个小字去提醒。
+// 不要随便一个提醒都用一个非常大的弹窗" — small inline text, never a
 // modal.
 //
-// Static map (NOT derived from HARNESS_CAPABILITIES at runtime â?// capability-contract.ts pulls server-only MCP factory imports and
+// Static map (NOT derived from HARNESS_CAPABILITIES at runtime —
+// capability-contract.ts pulls server-only MCP factory imports and
 // can't load in the browser). A coverage test pins this map against
 // HARNESS_CAPABILITIES.toolNames at unit-test time, so adding a new
 // tool fails CI without a display-text update.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-/** Map of every `codepilot_*` built-in tool name â?its owning
+/** Map of every `codepilot_*` built-in tool name → its owning
  *  capability id. Coverage test pins this against
  *  `HARNESS_CAPABILITIES.toolNames`. */
 export const TOOL_NAME_TO_CAPABILITY_ID: Readonly<Record<string, string>> = {
@@ -302,13 +305,13 @@ export const TOOL_NAME_TO_CAPABILITY_ID: Readonly<Record<string, string>> = {
   codepilot_generate_video: 'image_generation',
   // media_import
   codepilot_import_media: 'media_import',
-  // dashboard (claude_code + bbagent only)
+  // dashboard (claude_code + codepilot_runtime only)
   codepilot_dashboard_pin: 'dashboard',
   codepilot_dashboard_list: 'dashboard',
   codepilot_dashboard_refresh: 'dashboard',
   codepilot_dashboard_update: 'dashboard',
   codepilot_dashboard_remove: 'dashboard',
-  // cli_tools (claude_code + bbagent only)
+  // cli_tools (claude_code + codepilot_runtime only)
   codepilot_cli_tools_list: 'cli_tools',
   codepilot_cli_tools_install: 'cli_tools',
   codepilot_cli_tools_add: 'cli_tools',
@@ -322,49 +325,49 @@ export const TOOL_NAME_TO_CAPABILITY_ID: Readonly<Record<string, string>> = {
  *  `capability-contract.ts:exposure.kind`). A coverage test pins
  *  this against the runtime matrix. */
 export const CAPABILITY_EXECUTABLE_RUNTIMES: Readonly<Record<string, readonly RuntimeId[]>> = {
-  widget: ['claude_code', 'bbagent', 'codex_runtime'],
-  memory: ['claude_code', 'bbagent', 'codex_runtime'],
-  tasks_and_notify: ['claude_code', 'bbagent', 'codex_runtime'],
-  image_generation: ['claude_code', 'bbagent', 'codex_runtime'],
-  media_import: ['claude_code', 'bbagent', 'codex_runtime'],
-  // Phase 5e round 8 follow-up (2026-05-18) â?Native parity shipped;
-  // assistant_buddy now executable on Claude Code + buckyball.ai Native.
+  widget: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  memory: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  tasks_and_notify: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  image_generation: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  media_import: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  // Phase 5e round 8 follow-up (2026-05-18) — Native parity shipped;
+  // assistant_buddy now executable on Claude Code + CodePilot Native.
   // Codex Runtime proxy still doesn't bridge the hatch flow.
-  assistant_buddy: ['claude_code', 'bbagent'],
-  // Codex review P1 (2026-05-28) â?dashboard + cli_tools now reach
+  assistant_buddy: ['claude_code', 'codepilot_runtime'],
+  // Codex review P1 (2026-05-28) — dashboard + cli_tools now reach
   // codex_runtime via the mutation-level MCP split (read auto / write
   // approval). The capability-matrix layer promotes the cells; the static
   // map mirrors that so the cross-check coverage test stays green.
-  dashboard: ['claude_code', 'bbagent', 'codex_runtime'],
-  cli_tools: ['claude_code', 'bbagent', 'codex_runtime'],
+  dashboard: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
+  cli_tools: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
 };
 
 /**
- * Phase 8 Phase 4 (2026-05-27) â?optional bilingual caveats shown under a
+ * Phase 8 Phase 4 (2026-05-27) — optional bilingual caveats shown under a
  * capability REGARDLESS of status (keyed by `CapabilityMatrixCell.noteKey`).
  * Used when a capability is executable at the Runtime layer but carries an
- * honest behavioral caveat. Outcome-oriented per this file's rules â?no
+ * honest behavioral caveat. Outcome-oriented per this file's rules — no
  * internal wire vocabulary (no "MCP injection" / phase numbers in copy).
  */
 export const CAPABILITY_NOTES: Readonly<Record<string, BilingualText>> = {
   memory_codex_native: {
-    zh: 'Memory å·²æ¥å?Codexï¼æ¨¡åå¯å¨éè¦æ¶è°ç¨ã?,
+    zh: 'Memory 已接入 Codex，模型可在需要时调用。',
     en: 'Memory is wired into Codex; the model can call it when needed.',
   },
   widget_codex_native: {
-    zh: 'Widget å·²æ¥å?Codexï¼æ¨¡åå¯çæå¯æ¸²æç Widgetï¼æ¯æåºå®ãå¯¼å?PNGãæ¥çä»£ç ï¼ã?,
+    zh: 'Widget 已接入 Codex，模型可生成可渲染的 Widget（支持固定、导出 PNG、查看代码）。',
     en: 'Widget is wired into Codex; the model can generate renderable widgets (pin, export PNG, view code).',
   },
   tasks_codex_native: {
-    zh: 'ä»»å¡ä¸éç¥å·²æ¥å?Codexï¼æ¨¡åå¯å¨éè¦æ¶è°ç¨ï¼è°ç¨åä¼è¯·ä½ ç¡®è®¤ï¼æç»åä¸ä¼æ§è¡ã?,
-    en: 'Tasks & notifications are wired into Codex; the model can use them when needed. It asks for your confirmation first â?if you decline, nothing runs.',
+    zh: '任务与通知已接入 Codex，模型可在需要时调用；调用前会请你确认，拒绝则不会执行。',
+    en: 'Tasks & notifications are wired into Codex; the model can use them when needed. It asks for your confirmation first — if you decline, nothing runs.',
   },
   dashboard_codex_native: {
-    zh: 'ä»ªè¡¨çå·²æ¥å¥ Codexï¼æ¥çä¸å·æ°èªå¨å¯ç¨ï¼éãä¿®æ¹ãç§»é¤ä¼è¯·ä½ ç¡®è®¤ã?,
+    zh: '仪表盘已接入 Codex：查看与刷新自动可用；钉、修改、移除会请你确认。',
     en: 'Dashboard is wired into Codex: viewing and refreshing run automatically; pinning, updating, and removing ask for your confirmation first.',
   },
   cli_tools_codex_native: {
-    zh: 'CLI å·¥å·ç®¡çå·²æ¥å?Codexï¼æ¥çä¸æ£æ¥æ´æ°èªå¨å¯ç¨ï¼å®è£ãæ·»å ãå¸è½½ãæ´æ°ä¼è¯·ä½ ç¡®è®¤ã?,
+    zh: 'CLI 工具管理已接入 Codex：查看与检查更新自动可用；安装、添加、卸载、更新会请你确认。',
     en: 'CLI tools management is wired into Codex: listing and checking updates run automatically; install, add, remove, and update ask for your confirmation first.',
   },
 };
@@ -374,7 +377,8 @@ export function getCapabilityNote(noteKey: string, lang: 'zh' | 'en'): string | 
 }
 
 /** Error-content patterns that the runtime layer emits when the
- *  model called a tool not in its toolset. Narrow on purpose â? *  legitimate runtime errors (API key invalid, rate limit, etc.)
+ *  model called a tool not in its toolset. Narrow on purpose —
+ *  legitimate runtime errors (API key invalid, rate limit, etc.)
  *  should NOT trigger a "switch runtime" hint, so we only fire on
  *  patterns that genuinely mean "this tool isn't here". Each
  *  runtime emits slightly different copy; pattern keeps regex
@@ -393,7 +397,7 @@ export function isToolUnsupportedError(args: {
 }): boolean {
   if (!args.isError) return false;
   if (!args.toolName || !args.errorContent) return false;
-  // Only fire for our `codepilot_*` tools â?the only ones whose
+  // Only fire for our `codepilot_*` tools — the only ones whose
   // availability the matrix can speak to. Third-party MCP tool
   // errors are passed through unchanged.
   if (!TOOL_NAME_TO_CAPABILITY_ID[args.toolName]) return false;
@@ -409,7 +413,7 @@ export interface ToolUnsupportedHint {
 
 /** Build the inline hint shown below a tool result that errored
  *  because the tool isn't supported on the active Runtime. Returns
- *  `null` if the tool name isn't in our catalog (defensive â?UI
+ *  `null` if the tool name isn't in our catalog (defensive — UI
  *  falls back to just the raw error). */
 export function buildToolUnsupportedHint(toolName: string): ToolUnsupportedHint | null {
   const capabilityId = TOOL_NAME_TO_CAPABILITY_ID[toolName];
@@ -418,15 +422,15 @@ export function buildToolUnsupportedHint(toolName: string): ToolUnsupportedHint 
   if (!display) return null;
   const runtimes = CAPABILITY_EXECUTABLE_RUNTIMES[capabilityId] ?? [];
 
-  const runtimeLabelsZh = runtimes.map((r) => runtimeLabel(r, 'zh')).join(' æ?');
+  const runtimeLabelsZh = runtimes.map((r) => runtimeLabel(r, 'zh')).join(' 或 ');
   const runtimeLabelsEn = runtimes.map((r) => runtimeLabel(r, 'en')).join(' or ');
 
   const hintZh = runtimes.length
-    ? `è¿ä¸ªå·¥å·å±äºã?{display.label.zh}ãï¼éè¦å¨ ${runtimeLabelsZh} ä¸æè½è°ç¨ã`
-    : `è¿ä¸ªå·¥å·å±äºã?{display.label.zh}ãï¼å½åææå¼æé½æä¸æ¯æã`;
+    ? `这个工具属于「${display.label.zh}」，需要在 ${runtimeLabelsZh} 上才能调用。`
+    : `这个工具属于「${display.label.zh}」，当前所有引擎都暂不支持。`;
   const hintEn = runtimes.length
-    ? `This tool is part of â?{display.label.en}â?â?switch to ${runtimeLabelsEn} to use it.`
-    : `This tool is part of â?{display.label.en}â?and is not callable on any engine right now.`;
+    ? `This tool is part of “${display.label.en}” — switch to ${runtimeLabelsEn} to use it.`
+    : `This tool is part of “${display.label.en}” and is not callable on any engine right now.`;
 
   return {
     capabilityId,

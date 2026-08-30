@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const homeDir = os.homedir();
 
   // Use baseDir (the session's working directory) as the trust boundary.
-  // baseDir is the project root the user explicitly chose â€?it may be on
+  // baseDir is the project root the user explicitly chose â€” it may be on
   // a different drive than the home directory on Windows (e.g., D:\projects).
   // We only reject root paths (/, C:\) as baseDir to prevent full-disk scans.
   // If no baseDir is provided, fall back to the user's home directory.

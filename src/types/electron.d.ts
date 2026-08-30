@@ -2,6 +2,12 @@
  * Global type declarations for the Electron preload API.
  * Exposed via contextBridge.exposeInMainWorld('electronAPI', ...) in electron/preload.ts.
  */
+import type { UpdaterInstallResult, UpdaterSnapshot } from '@/lib/updater-contract';
+import type {
+  CliMaintenanceSnapshot,
+  CliMaintenanceSnapshots,
+  CliProvider,
+} from '@/lib/cli-maintenance-contract';
 
 interface ClaudeInstallDetection {
   path: string;
@@ -27,28 +33,20 @@ interface ElectronInstallAPI {
   onProgress: (callback: (data: any) => void) => () => void;
 }
 
-interface UpdateStatusEvent {
-  status: 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error';
-  info?: {
-    version: string;
-    releaseNotes?: string | { version: string; note: string }[] | null;
-    releaseName?: string | null;
-    releaseDate?: string;
-  };
-  progress?: {
-    percent: number;
-    bytesPerSecond: number;
-    transferred: number;
-    total: number;
-  };
-  error?: string;
+interface ElectronUpdaterAPI {
+  getStatus: () => Promise<UpdaterSnapshot | null>;
+  checkForUpdates: () => Promise<UpdaterSnapshot>;
+  downloadUpdate: () => Promise<UpdaterSnapshot>;
+  quitAndInstall: () => Promise<UpdaterInstallResult>;
+  onStatus: (callback: (data: UpdaterSnapshot) => void) => () => void;
 }
 
-interface ElectronUpdaterAPI {
-  checkForUpdates: () => Promise<unknown>;
-  downloadUpdate: () => Promise<unknown>;
-  quitAndInstall: () => Promise<void>;
-  onStatus: (callback: (data: UpdateStatusEvent) => void) => () => void;
+interface ElectronCliMaintenanceAPI {
+  getStatus: () => Promise<CliMaintenanceSnapshots | null>;
+  check: (provider?: CliProvider) => Promise<CliMaintenanceSnapshots>;
+  update: (provider: CliProvider) => Promise<CliMaintenanceSnapshot | null>;
+  cancel: (provider: CliProvider) => Promise<boolean>;
+  onStatus: (callback: (data: CliMaintenanceSnapshots) => void) => () => void;
 }
 
 interface ElectronTerminalAPI {
@@ -73,6 +71,23 @@ interface ElectronAssetAPI {
   }>;
 }
 
+interface ElectronBrowserAPI {
+  getConfig: (workspaceId: string) => Promise<{
+    partition: string;
+    webPreferences: string;
+  } | null>;
+  openExternal: (url: string) => Promise<boolean>;
+  onNavigationBlocked: (
+    callback: (data: { webContentsId: number; reason: string }) => void,
+  ) => () => void;
+  onOpenUrlRequested: (
+    callback: (data: { webContentsId: number; url: string }) => void,
+  ) => () => void;
+  onDownloadBlocked: (
+    callback: (data: { webContentsId: number }) => void,
+  ) => () => void;
+}
+
 interface ElectronAPI {
   versions: {
     electron: string;
@@ -87,6 +102,14 @@ interface ElectronAPI {
     restartApp: () => Promise<boolean>;
     /** Blocked state only: plain quit, never relaunch (registry is per-Main). */
     quitApp: () => Promise<boolean>;
+    /** Database recovery state only; target path is fixed by Main. */
+    openDatabaseBackups: () => Promise<boolean>;
+    /** Database recovery state only; Main requires a native confirmation. */
+    startFreshDatabase: () => Promise<boolean>;
+    /** Fresh-start conflict only: preserve the restored DB and cancel the old intent. */
+    keepRestoredDatabase: () => Promise<boolean>;
+    /** Fresh-start conflict only: reverify the old backup before deleting current files. */
+    continueFreshDatabase: () => Promise<boolean>;
   };
   shell: {
     revealPath: (request: {
@@ -96,6 +119,7 @@ interface ElectronAPI {
     }) => Promise<string>;
     openHtmlFile: (request: { path: string; sessionId: string }) => Promise<string>;
   };
+  browser?: ElectronBrowserAPI;
   app?: {
     /** Resolve the persistent log directory used by main process logging.
      *  Returns null when Electron can't surface a path (e.g. permission
@@ -131,6 +155,7 @@ interface ElectronAPI {
   };
   install: ElectronInstallAPI;
   updater?: ElectronUpdaterAPI;
+  cliMaintenance?: ElectronCliMaintenanceAPI;
   bridge?: {
     isActive: () => Promise<boolean>;
   };

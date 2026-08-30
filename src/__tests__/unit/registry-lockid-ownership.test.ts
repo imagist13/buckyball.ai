@@ -1,12 +1,12 @@
 /**
- * Session ownership â€?lockId ownership gate.
+ * Session ownership â€” lockId ownership gate.
  *
  * Behavioral (DI) tests, not source-pins. Two seams that Phase 3's I1
  * invariant depends on:
  *
  *   1. conversation-registry: unregister must be gated on the SAME lockId that
  *      registered the Query. A late unregister carrying a SUPERSEDED turn's old
- *      lockId must be a no-op â€?otherwise it evicts the Query registered by the
+ *      lockId must be a no-op â€” otherwise it evicts the Query registered by the
  *      turn that took over, and interrupt()/getConversation stops finding the
  *      live stream (violates I1).
  *
@@ -33,8 +33,8 @@ import {
   createSession,
 } from '../../lib/db';
 
-// Two distinct sentinel Query handles. We only need reference identity â€?the
-// registry never calls into them â€?so a bare cast is enough (no real SDK).
+// Two distinct sentinel Query handles. We only need reference identity â€” the
+// registry never calls into them â€” so a bare cast is enough (no real SDK).
 function makeSentinelQuery(tag: string): Query {
   return { __tag: tag } as unknown as Query;
 }
@@ -52,7 +52,7 @@ describe('conversation-registry lockId ownership gate', () => {
     assert.equal(getConversation(sid), qB, 'B should own the slot after takeover');
 
     // Turn A's teardown fires LATE carrying its OLD lockId. It must NOT evict
-    // qB â€?the whole point of the gate.
+    // qB â€” the whole point of the gate.
     unregisterConversation(sid, 'lockA');
     assert.equal(
       getConversation(sid),
@@ -60,7 +60,7 @@ describe('conversation-registry lockId ownership gate', () => {
       'stale unregister (lockA) must not evict the new owner qB',
     );
 
-    // The true owner (lockB) unregisters â†?slot clears.
+    // The true owner (lockB) unregisters â†’ slot clears.
     unregisterConversation(sid, 'lockB');
     assert.equal(
       getConversation(sid),
@@ -103,17 +103,17 @@ describe('conversation-registry lockId ownership gate', () => {
 
 describe('db.isLockOwner ownership round-trip', () => {
   it('reports ownership only while THIS lockId holds the row', () => {
-    // Real session row â€?session_runtime_locks.session_id FK-references
+    // Real session row â€” session_runtime_locks.session_id FK-references
     // chat_sessions(id) with foreign_keys=ON, so acquire needs a live session.
     const sid = createSession('islockowner-roundtrip').id;
     const lockId = 'owner-token-abc';
 
     // Not held yet.
-    assert.equal(isLockOwner(sid, lockId), false, 'no row â†?not owner');
+    assert.equal(isLockOwner(sid, lockId), false, 'no row â†’ not owner');
 
     const acquired = acquireSessionLock(sid, lockId, 'test-owner', 600);
     assert.equal(acquired, true, 'acquire should succeed on a free session');
-    assert.equal(isLockOwner(sid, lockId), true, 'after acquire â†?owner');
+    assert.equal(isLockOwner(sid, lockId), true, 'after acquire â†’ owner');
 
     // A different token never owned it.
     assert.equal(
@@ -124,6 +124,6 @@ describe('db.isLockOwner ownership round-trip', () => {
 
     const released = releaseSessionLock(sid, lockId);
     assert.equal(released, true, 'release should delete our row');
-    assert.equal(isLockOwner(sid, lockId), false, 'after release â†?not owner');
+    assert.equal(isLockOwner(sid, lockId), false, 'after release â†’ not owner');
   });
 });

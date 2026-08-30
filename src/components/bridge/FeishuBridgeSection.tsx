@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { SpinnerGap, CheckCircle, Warning } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { SaveButton } from "@/components/ui/save-button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { SettingsCard } from "@/components/patterns/SettingsCard";
@@ -44,7 +44,7 @@ const DEFAULT_SETTINGS: FeishuBridgeSettings = {
 };
 
 export function FeishuBridgeSection() {
-  // ââ Credentials state ââ
+  // ── Credentials state ──
   const [appId, setAppId] = useState("");
   const [appSecret, setAppSecret] = useState("");
   const [domain, setDomain] = useState("feishu");
@@ -52,7 +52,7 @@ export function FeishuBridgeSection() {
   const [credentialsDirty, setCredentialsDirty] = useState(false);
   const savedCredentials = useRef({ appId: "", appSecret: "", domain: "feishu" });
 
-  // ââ Access & Behavior state ââ
+  // ── Access & Behavior state ──
   const [allowFrom, setAllowFrom] = useState("");
   const [dmPolicy, setDmPolicy] = useState("open");
   const [threadSession, setThreadSession] = useState(false);
@@ -66,7 +66,7 @@ export function FeishuBridgeSection() {
     groupPolicy: "open", groupAllowFrom: "", requireMention: false,
   });
 
-  // ââ Verify state ââ
+  // ── Verify state ──
   const [verifying, setVerifying] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{
     ok: boolean;
@@ -74,7 +74,7 @@ export function FeishuBridgeSection() {
   } | null>(null);
   const { t } = useTranslation();
 
-  // ââ Quick Create state ââ
+  // ── Quick Create state ──
   const [registering, setRegistering] = useState(false);
   const [regStatus, setRegStatus] = useState<{ variant: 'success' | 'warning' | 'error'; message: string } | null>(null);
   const regPollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,7 +90,7 @@ export function FeishuBridgeSection() {
     regRunIdRef.current += 1;
   }, []);
 
-  // ââ Dirty tracking ââ
+  // ── Dirty tracking ──
   useEffect(() => {
     const s = savedCredentials.current;
     setCredentialsDirty(
@@ -110,7 +110,7 @@ export function FeishuBridgeSection() {
     );
   }, [allowFrom, dmPolicy, threadSession, groupPolicy, groupAllowFrom, requireMention]);
 
-  // ââ Fetch ââ
+  // ── Fetch ──
   const fetchSettings = useCallback(async () => {
     try {
       const res = await fetch("/api/settings/feishu");
@@ -153,7 +153,7 @@ export function FeishuBridgeSection() {
     fetchSettings();
   }, [fetchSettings]);
 
-  // ââ Quick Create handlers (must be after fetchSettings) ââ
+  // ── Quick Create handlers (must be after fetchSettings) ──
   const handleQuickCreate = useCallback(async () => {
     setRegistering(true);
     setRegStatus(null);
@@ -174,7 +174,7 @@ export function FeishuBridgeSection() {
       regAbortRef.current = abortCtrl;
       window.open(data.verification_url, '_blank');
 
-      // Adaptive polling â?respects slow_down from server
+      // Adaptive polling — respects slow_down from server
       let pollInterval = 5000;
       const isStale = () => myRunId !== regRunIdRef.current || abortCtrl.signal.aborted;
       const schedulePoll = () => {
@@ -193,7 +193,7 @@ export function FeishuBridgeSection() {
           // If the user cancelled while we were awaiting, bail out without mutating state.
           if (isStale()) return;
           // Non-2xx: server error (including "Session not found" after cancel).
-          // Do NOT fall through to schedulePoll â?treat as terminal for this run.
+          // Do NOT fall through to schedulePoll — treat as terminal for this run.
           if (!pr.ok) {
             if (isStale()) return;
             stopPolling();
@@ -240,16 +240,16 @@ export function FeishuBridgeSection() {
             if (pd.interval_ms) pollInterval = pd.interval_ms;
             schedulePoll();
           } else {
-            // Unknown status â?treat as terminal error to avoid a hidden retry loop
+            // Unknown status — treat as terminal error to avoid a hidden retry loop
             stopPolling();
             regSessionIdRef.current = null;
             setRegistering(false);
             setRegStatus({ variant: 'error', message: t('feishu.createFailed') });
           }
         } catch (err) {
-          // AbortError from user cancel â?bail silently
+          // AbortError from user cancel — bail silently
           if ((err as { name?: string })?.name === 'AbortError' || isStale()) return;
-          // True network error â?retry with current interval
+          // True network error — retry with current interval
           schedulePoll();
         }
       };
@@ -279,7 +279,7 @@ export function FeishuBridgeSection() {
 
   useEffect(() => () => stopPolling(), [stopPolling]);
 
-  // ââ Save helpers ââ
+  // ── Save helpers ──
   const saveToApi = async (updates: Partial<FeishuBridgeSettings>) => {
     const res = await fetch("/api/settings/feishu", {
       method: "PUT",
@@ -386,13 +386,13 @@ export function FeishuBridgeSection() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* ââ Feishu App Binding ââ */}
+      {/* ── Feishu App Binding ── */}
       <SettingsCard
         title={t("feishu.quickCreate")}
         description={appId ? undefined : t("feishu.quickCreateDesc")}
       >
         {appId ? (
-          /* ââ Bound state: show app info + rebind option ââ */
+          /* ── Bound state: show app info + rebind option ── */
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <CheckCircle size={18} className="shrink-0 text-status-success-foreground" />
@@ -424,12 +424,12 @@ export function FeishuBridgeSection() {
             )}
           </div>
         ) : (
-          /* ââ Unbound state: show create button ââ */
+          /* ── Unbound state: show create button ── */
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               {!registering ? (
                 <Button size="sm" onClick={handleQuickCreate}>
-                  <BuckyballIcon name="plus" size="sm" aria-hidden />
+                  <CodePilotIcon name="plus" size="sm" aria-hidden />
                   {t("feishu.quickCreateBtn")}
                 </Button>
               ) : (
@@ -458,7 +458,7 @@ export function FeishuBridgeSection() {
         )}
       </SettingsCard>
 
-      {/* ââ Manual Config (collapsed) ââ */}
+      {/* ── Manual Config (collapsed) ── */}
       <details className="group">
         <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
           {t("feishu.manualConfig")}
@@ -535,7 +535,7 @@ export function FeishuBridgeSection() {
         </div>
       </details>
 
-      {/* ââ Access & Behavior ââ */}
+      {/* ── Access & Behavior ── */}
       <SettingsCard
         title={t("feishu.accessBehavior")}
         description={t("feishu.accessBehaviorDesc")}
@@ -653,7 +653,7 @@ export function FeishuBridgeSection() {
         />
       </SettingsCard>
 
-      {/* ââ Setup Guide ââ */}
+      {/* ── Setup Guide ── */}
       <SettingsCard title={t("feishu.setupGuide")}>
         <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal pl-4">
           <li>{t("feishu.step1")}</li>

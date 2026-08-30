@@ -106,6 +106,25 @@ function sentryEvents(envelopes: unknown[]): Array<Record<string, unknown>> {
   });
 }
 
+async function waitForCapturedEvents(
+  sentry: typeof import('@sentry/node'),
+  envelopes: unknown[],
+  expected: number,
+): Promise<void> {
+  const deadline = Date.now() + 2_000;
+  while (Date.now() < deadline) {
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    await sentry.flush(5_000);
+    if (sentryEvents(envelopes).length === expected) {
+      // captureProviderFailure imports Sentry asynchronously. Give any duplicate
+      // terminal callback one more turn before the exact-once assertion.
+      await new Promise<void>((resolve) => setTimeout(resolve, 25));
+      await sentry.flush(5_000);
+      return;
+    }
+  }
+}
+
 describe('native loops capture provider stream failures', () => {
   let workingDirectory: string;
   let originalNodeEnv: string | undefined;
@@ -162,8 +181,7 @@ describe('native loops capture provider stream failures', () => {
           workingDirectory,
           () => providerErrorStream('overloaded_error', text),
         );
-        await new Promise<void>((resolve) => setImmediate(resolve));
-        await sentry.flush(5_000);
+        await waitForCapturedEvents(sentry, envelopes, 1);
 
         if (text !== undefined) assert.match(raw, /partial answer/);
         const events = sentryEvents(envelopes);
@@ -210,8 +228,7 @@ describe('native loops capture provider stream failures', () => {
         workingDirectory,
         () => providerHttpError(503, 'api_error'),
       );
-      await new Promise<void>((resolve) => setImmediate(resolve));
-      await sentry.flush(5_000);
+      await waitForCapturedEvents(sentry, envelopes, 1);
 
       const events = sentryEvents(envelopes);
       assert.equal(events.length, 1, `${label}/initial-503 must capture exactly once`);

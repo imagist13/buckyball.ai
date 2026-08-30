@@ -86,7 +86,7 @@ Format it with these sections:
 (Things the user wants remembered)
 
 ## Candidate Long-Term Memory
-(Facts that seem stable enough to promote to long-term memory â€?only include genuinely persistent facts, not transient updates)
+(Facts that seem stable enough to promote to long-term memory â€” only include genuinely persistent facts, not transient updates)
 
 Keep under 2000 characters.
 

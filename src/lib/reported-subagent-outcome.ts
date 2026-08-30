@@ -85,7 +85,7 @@ export function parseReportedSubagentOutcome(text: string): ReportedSubagentOutc
 }
 
 export function explicitlyReportsSubagentTaskFailure(text: string): boolean {
-  return /(?:^|\n)\s*(?:\*{0,2}(?:无法完成(?:此|该|这个)?任务|不能完成(?:此|该|这个)?任务|任务无法完成|命令未能执行|工具调用(?:被|�?.*拒绝|unable to complete (?:this|the) task|cannot complete (?:this|the) task|could not complete (?:this|the) task|the command (?:could not|was not) (?:be )?executed|permission denied)\*{0,2})(?:\s|[:：]|$)/im.test(text)
+  return /(?:^|\n)\s*(?:\*{0,2}(?:无法完成(?:此|该|这个)?任务|不能完成(?:此|该|这个)?任务|任务无法完成|命令未能执行|工具调用(?:被|遭).*拒绝|unable to complete (?:this|the) task|cannot complete (?:this|the) task|could not complete (?:this|the) task|the command (?:could not|was not) (?:be )?executed|permission denied)\*{0,2})(?:\s|[:：]|$)/im.test(text)
     || /\bSUBAGENT_(?:CAPABILITY_UNAVAILABLE|CANNOT_COMPLETE)\b/i.test(text);
 }
 

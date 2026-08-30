@@ -1,7 +1,7 @@
 /**
- * builtin-tools/widget-guidelines.ts â€?Widget design guidelines tool (Native Runtime).
+ * builtin-tools/widget-guidelines.ts â€” Widget design guidelines tool (Native Runtime).
  *
- * Phase 5c slice 7 (2026-05-16) â€?system prompt is now re-exported
+ * Phase 5c slice 7 (2026-05-16) â€” system prompt is now re-exported
  * from the canonical source in `src/lib/widget-guidelines.ts`
  * instead of carrying a separate (drifted) copy. Pre-fix this file
  * had a 14-line abridged prompt that didn't mention the
@@ -10,7 +10,7 @@
  * path on what a valid widget looks like. The Harness Capability
  * Contract (`src/lib/harness/capability-contract.ts`) declares
  * `src/lib/widget-guidelines.ts` as the authoritative prompt
- * source â€?this file consumes it.
+ * source â€” this file consumes it.
  */
 
 import { tool } from 'ai';

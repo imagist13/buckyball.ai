@@ -1,5 +1,5 @@
 /**
- * Markdown â†?HTML presentation templates â€?Phase 4.C.
+ * Markdown â†’ HTML presentation templates â€” Phase 4.C.
  *
  * The Markdown file is the source of truth; this module produces
  * derived HTML in one of four visual templates the user can pick.
@@ -7,7 +7,8 @@
  * inline CSS so the output works as a standalone artifact even when
  * exported / saved / shared.
  *
- * Why inline CSS: the produced HTML can land in three places â€? *   1. `inline-html` PreviewSource (rendered inside the strict-sandbox
+ * Why inline CSS: the produced HTML can land in three places â€”
+ *   1. `inline-html` PreviewSource (rendered inside the strict-sandbox
  *      iframe in PreviewPanel),
  *   2. `.codepilot/artifacts/<slug>.html` on disk (workspace, opened
  *      later through the html-preview route),
@@ -15,12 +16,12 @@
  * Inline CSS sidesteps every relative-stylesheet edge case across
  * those three surfaces.
  *
- * The renderer is deliberately tiny â€?it converts a subset of Markdown
+ * The renderer is deliberately tiny â€” it converts a subset of Markdown
  * (headings, paragraphs, lists, blockquotes, inline code, code fences,
  * bold/italic, links, images) to HTML. Streamdown in the live preview
  * does the heavy lifting; this is the "we need a stable, dependency-
  * free serializer for the artifact pipeline" copy. It's NOT meant to
- * replace streamdown â€?only to produce a portable HTML snapshot.
+ * replace streamdown â€” only to produce a portable HTML snapshot.
  */
 
 import type { ParsedFrontmatter } from "./frontmatter";
@@ -61,7 +62,7 @@ export const PRESENTATION_TEMPLATES: ReadonlyArray<TemplateDescriptor> = [
   {
     id: "article",
     label: "Article",
-    description: "Long-form reading layout â€?wide line height, serif body.",
+    description: "Long-form reading layout â€” wide line height, serif body.",
     accent: "#1e3a8a",
     fontFamily:
       "'Georgia', 'Times New Roman', 'Songti SC', 'STSong', serif",
@@ -69,7 +70,7 @@ export const PRESENTATION_TEMPLATES: ReadonlyArray<TemplateDescriptor> = [
   {
     id: "report",
     label: "Report",
-    description: "Dense structured layout â€?sans body, callout-friendly.",
+    description: "Dense structured layout â€” sans body, callout-friendly.",
     accent: "#0f766e",
     fontFamily:
       "system-ui, -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif",
@@ -77,7 +78,7 @@ export const PRESENTATION_TEMPLATES: ReadonlyArray<TemplateDescriptor> = [
   {
     id: "brief",
     label: "Brief",
-    description: "Single-screen summary â€?tight spacing, prominent intro.",
+    description: "Single-screen summary â€” tight spacing, prominent intro.",
     accent: "#b45309",
     fontFamily:
       "system-ui, -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif",
@@ -85,7 +86,7 @@ export const PRESENTATION_TEMPLATES: ReadonlyArray<TemplateDescriptor> = [
   {
     id: "pitch",
     label: "Pitch",
-    description: "Slide-flavored cards â€?accent banner, big headings.",
+    description: "Slide-flavored cards â€” accent banner, big headings.",
     accent: "#7c3aed",
     fontFamily:
       "system-ui, -apple-system, 'Helvetica Neue', 'PingFang SC', sans-serif",
@@ -108,7 +109,7 @@ export interface RenderPresentationOptions {
 
 /**
  * Produce a self-contained HTML document from a Markdown body and a
- * chosen template. The output is a string â€?caller decides whether
+ * chosen template. The output is a string â€” caller decides whether
  * to drop it into `inline-html`, write to disk, or feed the long-shot
  * exporter.
  *
@@ -209,7 +210,7 @@ body { margin: 0; padding: 0; background: #f9fafb; color: #111827; font-family: 
 }
 
 /**
- * Tiny Markdown â†?HTML serializer. Handles the subset needed for the
+ * Tiny Markdown â†’ HTML serializer. Handles the subset needed for the
  * presentation artifact: headings, paragraphs, ordered/unordered
  * lists, blockquotes, fenced code, inline code, bold, italic, links,
  * images. Anything more exotic (tables, footnotes, MDX) falls through

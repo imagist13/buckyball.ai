@@ -1,5 +1,5 @@
 /**
- * toolloop-poc-parity.test.ts â€?AI SDK 7 Phase 3: ToolLoopAgent side-by-side
+ * toolloop-poc-parity.test.ts â€” AI SDK 7 Phase 3: ToolLoopAgent side-by-side
  * AI SDK 7 ToolLoop parity evidence.
  *
  * What this pins: `runToolLoopAgentPoc()` (src/lib/experimental/
@@ -7,16 +7,16 @@
  * the SAME externally observable behavior as the production `runAgentLoop()`
  * (src/lib/agent-loop.ts, manual while-loop) across three parity classes:
  *
- *   1. SSE parity â€?event-by-event: status init, rewind_point, text delta,
+ *   1. SSE parity â€” event-by-event: status init, rewind_point, text delta,
  *      thinking, tool_use, tool_call result, step_complete (finish reason),
  *      permission_request, error, result, done. Compared as full normalized
  *      sequences, plus a committed golden snapshot for the tool-call turn.
- *   2. DB history parity â€?both streams are fed through a faithful replica of
+ *   2. DB history parity â€” both streams are fed through a faithful replica of
  *      the chat route's SSEâ†’contentBlocks consumer (collectStreamResponse in
  *      src/lib/chat-collect-stream-response.ts) and
  *      must persist byte-identical assistant message content + token_usage,
  *      and rebuild byte-identical next-turn model messages from DB.
- *   3. Permission parity â€?approve / deny / abort-while-pending run through
+ *   3. Permission parity â€” approve / deny / abort-while-pending run through
  *      the REAL assembleTools permission wrapper on both loops (the wrapper
  *      and permission-registry are shared code, so timeout semantics are
  *      additionally covered by permission-registry-finalize.test.ts).
@@ -24,9 +24,10 @@
  * Method: both loops run against the SAME isolated DB (db-isolation.setup),
  * the SAME working directory, and a scripted global fetch that replays
  * identical canned Anthropic Messages streaming responses (env-mode provider
- * via ANTHROPIC_API_KEY=fake, official base URL â†?non-proxy code path). The
+ * via ANTHROPIC_API_KEY=fake, official base URL â†’ non-proxy code path). The
  * scripted fetch also CAPTURES outbound request bodies so the test asserts
- * wire parity (system prompt, messages, tools, tool_choice, max_tokens) â€? * the strongest form of "the two loops drive the provider identically".
+ * wire parity (system prompt, messages, tools, tool_choice, max_tokens) â€”
+ * the strongest form of "the two loops drive the provider identically".
  *
  * Anything that fails equality here is a Phase 3 parity gap and must be
  * recorded in the AI SDK 7 ToolLoop parity notes, not papered
@@ -45,7 +46,8 @@ import path from 'node:path';
 import os from 'node:os';
 
 // Env-mode Anthropic provider (no DB provider rows needed). Must be set
-// before the loops resolve a provider; the key never leaves the process â€?// the scripted fetch intercepts every request.
+// before the loops resolve a provider; the key never leaves the process â€”
+// the scripted fetch intercepts every request.
 process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
 
 import { runAgentLoop, type AgentLoopOptions } from '@/lib/agent-loop';
@@ -114,7 +116,7 @@ function hangingStepResponse(signal: AbortSignal | null | undefined): Response {
   const prelude: AnthropicSseEvent[] = [
     messageStart(),
     ['content_block_start', { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } }],
-    ['content_block_delta', { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'partialâ€? } }],
+    ['content_block_delta', { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'partialâ€¦' } }],
   ];
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -162,7 +164,7 @@ function installScriptedFetch(script: FetchScript): { calls: CapturedCall[]; res
   return { calls, restore: () => { globalThis.fetch = original; } };
 }
 
-/** Step-aware script: first request (no tool_result in messages) â†?tool step, follow-up â†?final text. */
+/** Step-aware script: first request (no tool_result in messages) â†’ tool step, follow-up â†’ final text. */
 function toolTurnScript(toolName: string, toolInput: Record<string, unknown>, finalText: string): FetchScript {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (body: any) => {
@@ -198,11 +200,11 @@ async function collectStream(
 /**
  * Normalize per-run volatile values so two runs are comparable:
  *   - drop keep_alive (timer-based)
- *   - session ids â†?<SID>
- *   - rewind userMessageId (DB message id) â†?<MID>
- *   - permissionRequestId â†?<PERM-n> in order of first appearance
- *   - approvalToken (HMAC over per-run id+expiry, Phase 4 â‘? â†?<TOKEN-n>
- *   - working directory absolute path â†?<WD>
+ *   - session ids â†’ <SID>
+ *   - rewind userMessageId (DB message id) â†’ <MID>
+ *   - permissionRequestId â†’ <PERM-n> in order of first appearance
+ *   - approvalToken (HMAC over per-run id+expiry, Phase 4 â‘¡) â†’ <TOKEN-n>
+ *   - working directory absolute path â†’ <WD>
  */
 function normalizeEvents(
   events: SSEEvent[],
@@ -222,7 +224,7 @@ function normalizeEvents(
             const id = parsed.permissionRequestId;
             if (id && !permIds.has(id)) permIds.set(id, `<PERM-${permIds.size + 1}>`);
             // The token is volatile (HMAC of per-run id + expiry) but must be
-            // PRESENT on both loops â€?map it to a stable marker rather than
+            // PRESENT on both loops â€” map it to a stable marker rather than
             // dropping it, so a loop that stops emitting it fails parity.
             const token = parsed.approvalToken;
             if (token && !permIds.has(token)) permIds.set(token, `<TOKEN-${permIds.size + 1}>`);
@@ -449,7 +451,7 @@ after(() => {
   fs.rmSync(wd, { recursive: true, force: true });
 });
 
-describe('SSE parity â€?text-only turn', () => {
+describe('SSE parity â€” text-only turn', () => {
   it('emits an identical normalized event sequence and identical wire requests', async () => {
     const { prod, poc } = await runSideBySide({
       prompt: 'parity: say ok',
@@ -471,7 +473,7 @@ describe('SSE parity â€?text-only turn', () => {
   });
 });
 
-describe('SSE parity â€?tool call turn (Read, permission-safe)', () => {
+describe('SSE parity â€” tool call turn (Read, permission-safe)', () => {
   it('matches event-by-event across tool_use/tool_result/step_complete/finish and on the wire', async () => {
     const notePath = path.join(wd, 'note.txt');
     const { prod, poc } = await runSideBySide({
@@ -488,7 +490,7 @@ describe('SSE parity â€?tool call turn (Read, permission-safe)', () => {
     const types = prod.normalized.map((e) => e.type);
     assert.ok(types.includes('tool_use'), 'tool_use present');
     assert.ok(types.includes('tool_result'), 'tool_result present');
-    // Two steps â†?two step_complete status events with tool-calls â†?stop.
+    // Two steps â†’ two step_complete status events with tool-calls â†’ stop.
     const stepEvents = prod.normalized.filter(
       (e) => e.type === 'status' && (e.data as { subtype?: string })?.subtype === 'step_complete',
     ) as Array<{ data: { finishReason: string } }>;
@@ -498,7 +500,7 @@ describe('SSE parity â€?tool call turn (Read, permission-safe)', () => {
     );
     assertWireParity(prod, poc);
 
-    // Golden snapshot â€?reviewable committed evidence of the exact contract.
+    // Golden snapshot â€” reviewable committed evidence of the exact contract.
     const goldenPath = path.join(FIXTURE_DIR, 'sse-golden-tool-turn.json');
     const golden = prod.normalized.map((e) => ({
       ...e,
@@ -516,7 +518,7 @@ describe('SSE parity â€?tool call turn (Read, permission-safe)', () => {
   });
 });
 
-describe('DB history parity â€?text-only turn', () => {
+describe('DB history parity â€” text-only turn', () => {
   it('persists identical content/token_usage and rebuilds identical next-turn history', async () => {
     const { prod, poc } = await runSideBySide({
       prompt: 'parity: db round trip',
@@ -527,7 +529,7 @@ describe('DB history parity â€?text-only turn', () => {
   });
 });
 
-describe('Permission parity â€?Bash requires approval in normal mode', () => {
+describe('Permission parity â€” Bash requires approval in normal mode', () => {
   function bashScenario(onPermission: (permId: string) => void): ScenarioOptions {
     return {
       prompt: 'parity: run a command',
@@ -537,7 +539,7 @@ describe('Permission parity â€?Bash requires approval in normal mode', () => {
       onEvent: (event) => {
         if (event.type === 'permission_request') {
           const { permissionRequestId } = JSON.parse(event.data) as { permissionRequestId: string };
-          // Resolve on the next tick â€?the loop is awaiting the registry.
+          // Resolve on the next tick â€” the loop is awaiting the registry.
           setImmediate(() => onPermission(permissionRequestId));
         }
       },
@@ -610,20 +612,20 @@ describe('Permission parity â€?Bash requires approval in normal mode', () => {
       poc.normalized, prod.normalized,
       'abort-while-pending flow: POC SSE sequence must equal production agent-loop sequence',
     );
-    assert.equal(prod.normalized[prod.normalized.length - 1].type, 'done', 'stream closes â†?composer returns to sendable state');
+    assert.equal(prod.normalized[prod.normalized.length - 1].type, 'done', 'stream closes â†’ composer returns to sendable state');
     assert.ok(!prod.normalized.some((e) => e.type === 'error'), 'user abort must not surface an error bubble');
     // Registry persisted aborted for both loops' requests.
     assert.equal(getPermissionRequest(seen[0])?.status, 'aborted');
     assert.equal(getPermissionRequest(seen[1])?.status, 'aborted');
-    // NOTE: timeout auto-deny parity is covered by construction â€?both loops
+    // NOTE: timeout auto-deny parity is covered by construction â€” both loops
     // share wrapWithPermissions + registerPendingPermission, whose 5-minute
     // timeout / permission_resolved contract is pinned in
     // permission-registry-finalize.test.ts.
   });
 });
 
-describe('SSE parity â€?provider error turn', () => {
-  it('non-retryable 401 â†?identical error surface and both terminate with done', async () => {
+describe('SSE parity â€” provider error turn', () => {
+  it('non-retryable 401 â†’ identical error surface and both terminate with done', async () => {
     const { prod, poc } = await runSideBySide({
       prompt: 'parity: error path',
       workingDirectory: wd,
@@ -642,8 +644,8 @@ describe('SSE parity â€?provider error turn', () => {
   });
 });
 
-describe('SSE parity â€?abort mid-stream', () => {
-  it('user abort during text streaming â†?identical teardown, done, no error bubble', async () => {
+describe('SSE parity â€” abort mid-stream', () => {
+  it('user abort during text streaming â†’ identical teardown, done, no error bubble', async () => {
     const scenario: ScenarioOptions = {
       prompt: 'parity: abort mid stream',
       workingDirectory: wd,

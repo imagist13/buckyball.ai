@@ -1,30 +1,30 @@
 /**
- * Phase 5 Phase 3 â€?Codex notification â†?canonical event mapping.
+ * Phase 5 Phase 3 â€” Codex notification â†’ canonical event mapping.
  *
- * Phase 5 review round 1 (2026-05-13) â€?payloads in this file are
+ * Phase 5 review round 1 (2026-05-13) â€” payloads in this file are
  * SCHEMA-CORRECT per `èµ„æ–™/codex/codex-rs/app-server-protocol/schema/typescript/`.
  * Earlier revision invented payload shapes (params.itemId,
- * params.command as string[], flat token usage) â€?that's what Codex
+ * params.command as string[], flat token usage) â€” that's what Codex
  * caught.
  *
  * Pins:
  *
  *   - assistant deltas + reasoning deltas (item/reasoning/textDelta,
- *     item/reasoning/summaryTextDelta) â†?`assistant_delta`
- *   - ItemStartedNotification = { item: ThreadItem, â€?} where the
+ *     item/reasoning/summaryTextDelta) â†’ `assistant_delta`
+ *   - ItemStartedNotification = { item: ThreadItem, â€¦ } where the
  *     id / type / command (string!) live inside `item`. commandExecution
- *     â†?`command_started`; mcpToolCall / dynamicToolCall / fileChange /
- *     webSearch â†?`tool_started`.
+ *     â†’ `command_started`; mcpToolCall / dynamicToolCall / fileChange /
+ *     webSearch â†’ `tool_started`.
  *   - ItemCompletedNotification mirrors ItemStarted; commandExecution
  *     reads `aggregatedOutput` + `exitCode`.
- *   - thread/tokenUsage/updated â†?params.tokenUsage.last.{inputTokens,
+ *   - thread/tokenUsage/updated â†’ params.tokenUsage.last.{inputTokens,
  *     outputTokens} + params.tokenUsage.modelContextWindow.
- *   - turn/completed â†?run_completed; top-level `error` notification
- *     â†?run_failed (Codex doesn't have a separate turn/failed).
- *   - fs/changed â†?file_changed.
- *   - account/login/completed (slash-namespaced) etc. â†?null
+ *   - turn/completed â†’ run_completed; top-level `error` notification
+ *     â†’ run_failed (Codex doesn't have a separate turn/failed).
+ *   - fs/changed â†’ file_changed.
+ *   - account/login/completed (slash-namespaced) etc. â†’ null
  *     (transport-only / different channel).
- *   - Unknown method â†?`unknown_item` with `codex.<method>` sourceType.
+ *   - Unknown method â†’ `unknown_item` with `codex.<method>` sourceType.
  *
  * Approval translator covers both the canonical
  * `item/commandExecution/requestApproval` (command as string) and the
@@ -44,8 +44,8 @@ import { diagnoseCodexNetworkError } from '@/lib/codex/error-diagnostics';
 
 const ctx = { sessionId: 's1' };
 
-describe('translateCodexNotification â€?streaming text', () => {
-  it('item/agentMessage/delta â†?assistant_delta with the text', () => {
+describe('translateCodexNotification â€” streaming text', () => {
+  it('item/agentMessage/delta â†’ assistant_delta with the text', () => {
     const event = translateCodexNotification(
       'item/agentMessage/delta',
       { threadId: 't', turnId: 'u', itemId: 'i', delta: 'hello' },
@@ -66,7 +66,7 @@ describe('translateCodexNotification â€?streaming text', () => {
   it('item/reasoning/textDelta maps to assistant_delta (slash-namespaced per schema)', () => {
     const event = translateCodexNotification(
       'item/reasoning/textDelta',
-      { delta: 'thinkingâ€? },
+      { delta: 'thinkingâ€¦' },
       ctx,
     );
     assert.equal(event?.type, 'assistant_delta');
@@ -82,8 +82,8 @@ describe('translateCodexNotification â€?streaming text', () => {
   });
 });
 
-describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => {
-  it('item/started commandExecution â†?command_started (item.id + item.command string)', () => {
+describe('translateCodexNotification â€” item lifecycle (schema-correct)', () => {
+  it('item/started commandExecution â†’ command_started (item.id + item.command string)', () => {
     // Per ThreadItem.commandExecution: { type, id, command: string, cwd, ... }
     const event = translateCodexNotification(
       'item/started',
@@ -114,7 +114,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
     assert.equal(event.cwd, '/tmp');
   });
 
-  it('item/started mcpToolCall â†?tool_started with server.tool name', () => {
+  it('item/started mcpToolCall â†’ tool_started with server.tool name', () => {
     const event = translateCodexNotification(
       'item/started',
       {
@@ -139,7 +139,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
     assert.deepEqual(event.input, { foo: 1 });
   });
 
-  it('item/started dynamicToolCall (with namespace) â†?tool_started with namespace.tool name', () => {
+  it('item/started dynamicToolCall (with namespace) â†’ tool_started with namespace.tool name', () => {
     const event = translateCodexNotification(
       'item/started',
       {
@@ -161,7 +161,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
     assert.equal(event.name, 'codepilot.open_preview');
   });
 
-  it('item/started fileChange / webSearch â†?tool_started', () => {
+  it('item/started fileChange / webSearch â†’ tool_started', () => {
     const file = translateCodexNotification(
       'item/started',
       { item: { type: 'fileChange', id: 'fc-1', changes: [] } },
@@ -179,7 +179,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
     assert.equal(search.name, 'web_search');
   });
 
-  it('item/completed commandExecution â†?tool_completed with aggregatedOutput + exit error', () => {
+  it('item/completed commandExecution â†’ tool_completed with aggregatedOutput + exit error', () => {
     const ok = translateCodexNotification(
       'item/completed',
       {
@@ -226,7 +226,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
     assert.equal(fail.error, 'exit 139');
   });
 
-  it('item/started with unknown type â†?unknown_item fallback (never dropped)', () => {
+  it('item/started with unknown type â†’ unknown_item fallback (never dropped)', () => {
     const event = translateCodexNotification(
       'item/started',
       { item: { type: 'futureCodexExtensionItem', id: 'x-1' } },
@@ -236,7 +236,7 @@ describe('translateCodexNotification â€?item lifecycle (schema-correct)', () => 
   });
 });
 
-describe('translateCodexNotification â€?turn lifecycle (nested status per schema)', () => {
+describe('translateCodexNotification â€” turn lifecycle (nested status per schema)', () => {
   // TurnCompletedNotification = { threadId, turn: Turn }
   // Turn.status = 'completed' | 'interrupted' | 'failed' | 'inProgress'
   function turnCompleted(status: string, error?: { message: string }) {
@@ -255,21 +255,21 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     };
   }
 
-  it('turn/completed with status=completed â†?run_completed (preserves real finishReason)', () => {
+  it('turn/completed with status=completed â†’ run_completed (preserves real finishReason)', () => {
     const event = translateCodexNotification('turn/completed', turnCompleted('completed'), ctx);
     if (event?.type !== 'run_completed') throw new Error('unreachable');
     assert.equal(event.finishReason, 'completed');
   });
 
-  it('turn/completed with status=interrupted â†?run_completed with interrupted finishReason', () => {
+  it('turn/completed with status=interrupted â†’ run_completed with interrupted finishReason', () => {
     // User-interrupted turns must surface as interrupted, NOT as
-    // successful end_turn â€?review round 2 fix (2026-05-13).
+    // successful end_turn â€” review round 2 fix (2026-05-13).
     const event = translateCodexNotification('turn/completed', turnCompleted('interrupted'), ctx);
     if (event?.type !== 'run_completed') throw new Error('unreachable');
     assert.equal(event.finishReason, 'interrupted');
   });
 
-  it('turn/completed with status=failed â†?run_failed (NOT run_completed)', () => {
+  it('turn/completed with status=failed â†’ run_failed (NOT run_completed)', () => {
     // Earlier revision swallowed turn failures as successful end_turn.
     const event = translateCodexNotification(
       'turn/completed',
@@ -281,7 +281,7 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     assert.equal(event.message, 'context exhausted');
   });
 
-  it('turn/completed with status=failed and missing error.message â†?falls back to default text', () => {
+  it('turn/completed with status=failed and missing error.message â†’ falls back to default text', () => {
     const event = translateCodexNotification(
       'turn/completed',
       turnCompleted('failed', { message: '' }),
@@ -307,7 +307,7 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     assert.match(event.message, /url: http:\/\/127\.0\.0\.1:47823/);
   });
 
-  it('turn/completed with status=inProgress â†?run_completed (conservative, with the real status as reason)', () => {
+  it('turn/completed with status=inProgress â†’ run_completed (conservative, with the real status as reason)', () => {
     // Codex doesn't typically emit inProgress here, but the schema
     // allows it. Surface the real status so downstream can distinguish.
     const event = translateCodexNotification('turn/completed', turnCompleted('inProgress'), ctx);
@@ -315,7 +315,7 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     assert.equal(event.finishReason, 'inProgress');
   });
 
-  it('error notification â†?run_failed with full TurnError surface (Phase 5b smoke fix 2026-05-15)', () => {
+  it('error notification â†’ run_failed with full TurnError surface (Phase 5b smoke fix 2026-05-15)', () => {
     // Pre-5b the mapper read `params.code` / `params.message` at the
     // top level, which never matched Codex's actual ErrorNotification
     // schema `{ error: TurnError, willRetry, threadId, turnId }`. After
@@ -362,13 +362,13 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     assert.match(event.message, /url: http:\/\/127\.0\.0\.1:47823/);
   });
 
-  it('error notification with willRetry=true â†?unknown_item (NOT run_failed) so the stream stays open', () => {
-    // Phase 5b smoke round 6 (2026-05-18) â€?willRetry is non-terminal.
+  it('error notification with willRetry=true â†’ unknown_item (NOT run_failed) so the stream stays open', () => {
+    // Phase 5b smoke round 6 (2026-05-18) â€” willRetry is non-terminal.
     // Real Codex behaviour: app-server keeps retrying up to 5 times
-    // ("stream disconnected â€?retrying sampling request (n/5)") after
+    // ("stream disconnected â€” retrying sampling request (n/5)") after
     // emitting `error willRetry=true`. Pre-fix the mapper returned
     // `run_failed` and the runtime closed the stream on the first
-    // retry signal â€?user saw error + done while Codex was still
+    // retry signal â€” user saw error + done while Codex was still
     // working. Fix: map willRetry=true to canonical `unknown_item`
     // (sourceType='codex_retry') which the runtime wildcard handler
     // does NOT close on. Only the eventual `turn/completed
@@ -422,9 +422,9 @@ describe('translateCodexNotification â€?turn lifecycle (nested status per schema
     assert.equal(event.code, 'unauthorized');
   });
 
-  it('error notification with willRetry undefined â†?run_failed (defensive default)', () => {
+  it('error notification with willRetry undefined â†’ run_failed (defensive default)', () => {
     // Codex schema technically allows the field to be absent. When
-    // we can't prove non-terminal, we treat it as terminal â€?never
+    // we can't prove non-terminal, we treat it as terminal â€” never
     // assume the upstream is going to recover on its own.
     const event = translateCodexNotification(
       'error',
@@ -481,10 +481,10 @@ describe('Codex loopback proxy error diagnosis', () => {
   });
 });
 
-describe('translateCodexNotification â€?chat-only item types return null (P2.1 fix)', () => {
-  // Phase 5 review round 2 fix (2026-05-13) â€?agentMessage / userMessage
+describe('translateCodexNotification â€” chat-only item types return null (P2.1 fix)', () => {
+  // Phase 5 review round 2 fix (2026-05-13) â€” agentMessage / userMessage
   // / plan / reasoning lifecycle previously fell through to unknown_item,
-  // which the runtime surfaces as a `status` SSE â†?useSSEStream renders
+  // which the runtime surfaces as a `status` SSE â†’ useSSEStream renders
   // raw JSON as chat status. That's noise; the actual content streams
   // through dedicated delta methods.
   const chatOnly = [
@@ -497,13 +497,13 @@ describe('translateCodexNotification â€?chat-only item types return null (P2.1 f
     'exitedReviewMode',
     'contextCompaction',
     // Phase 5b smoke round 7 (2026-05-16): imageView / imageGeneration
-    // are NOT chat-only â€?they have no delta channel and their final
+    // are NOT chat-only â€” they have no delta channel and their final
     // item is the only surface where the result reaches the user. See
     // the dedicated visibility describe block below.
   ];
 
   for (const type of chatOnly) {
-    it(`item/started type=${type} â†?null (no chat noise)`, () => {
+    it(`item/started type=${type} â†’ null (no chat noise)`, () => {
       const event = translateCodexNotification(
         'item/started',
         { item: { type, id: 'x-1' }, threadId: 't', turnId: 'u', startedAtMs: 0 },
@@ -511,7 +511,7 @@ describe('translateCodexNotification â€?chat-only item types return null (P2.1 f
       );
       assert.equal(event, null);
     });
-    it(`item/completed type=${type} â†?null`, () => {
+    it(`item/completed type=${type} â†’ null`, () => {
       const event = translateCodexNotification(
         'item/completed',
         { item: { type, id: 'x-1' }, threadId: 't', turnId: 'u', completedAtMs: 0 },
@@ -522,7 +522,7 @@ describe('translateCodexNotification â€?chat-only item types return null (P2.1 f
   }
 });
 
-describe('translateCodexNotification â€?collabAgentToolCall visibility', () => {
+describe('translateCodexNotification â€” collabAgentToolCall visibility', () => {
   it('keeps an anonymous wait as ordinary collaboration activity, not a child capsule', () => {
     const event = translateCodexNotification(
       'item/started',
@@ -675,16 +675,16 @@ describe('translateCodexNotification â€?collabAgentToolCall visibility', () => {
   });
 });
 
-describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (Phase 5b smoke round 7)', () => {
+describe('translateCodexNotification â€” imageGeneration / imageView lifecycle (Phase 5b smoke round 7)', () => {
   // Pre-fix these item types lived in CHAT_ONLY_ITEM_TYPES alongside
   // agentMessage/plan/reasoning. That was wrong: those have streaming
   // delta channels (item/agentMessage/delta etc.) so chat-only is
   // correct, but imageGeneration / imageView have NO delta channel
-  // â€?their final item is the only surface where the user sees the
+  // â€” their final item is the only surface where the user sees the
   // image or saved path. Silently returning null on item/completed
-  // produced "tool ran but no result visible" â€?exactly the
+  // produced "tool ran but no result visible" â€” exactly the
   // GPT-Image-2.0 silent-failure report.
-  it('imageGeneration item/started â†?tool_started with image_generation toolName + revisedPrompt input', () => {
+  it('imageGeneration item/started â†’ tool_started with image_generation toolName + revisedPrompt input', () => {
     const event = translateCodexNotification(
       'item/started',
       {
@@ -701,8 +701,8 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
     assert.equal(event.name, 'image_generation');
   });
 
-  it('imageGeneration item/completed â†?tool_completed carrying the FULL result/savedPath payload', () => {
-    // result is what we want â€?the base64 / image data â€?and savedPath
+  it('imageGeneration item/completed â†’ tool_completed carrying the FULL result/savedPath payload', () => {
+    // result is what we want â€” the base64 / image data â€” and savedPath
     // is what makes it renderable in the chat UI. The generic
     // TOOL_LIKE_ITEM_TYPES branch packs the whole item into output,
     // which preserves both fields for downstream rendering.
@@ -732,7 +732,7 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
     assert.equal(output.result, '<base64-data>', 'image_generation completion must expose the generated image data');
     assert.equal(output.savedPath, '/tmp/codex-img-1.png');
     assert.equal(output.revisedPrompt, 'a cat sitting on a chair');
-    // Phase 5b smoke round 8 â€?also emit MediaBlock so the chat-side
+    // Phase 5b smoke round 8 â€” also emit MediaBlock so the chat-side
     // MediaPreview renders the image inline. The completed event is
     // the only surface where the image data reaches the UI; without
     // a media field the renderer would only get the JSON payload.
@@ -767,14 +767,14 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
     const media = event.media?.[0];
     assert.ok(media, 'inline-result variant must still emit a MediaBlock');
     assert.equal(media!.type, 'image');
-    assert.equal(media!.mimeType, 'image/png', 'no savedPath â†?fall back to image/png default');
+    assert.equal(media!.mimeType, 'image/png', 'no savedPath â†’ fall back to image/png default');
     assert.equal(media!.data, 'iVBORw0KGgo...');
-    assert.equal(media!.localPath, undefined, 'no path â†?omit localPath');
+    assert.equal(media!.localPath, undefined, 'no path â†’ omit localPath');
   });
 
   it('imageGeneration with neither savedPath NOR result emits no media (degraded but visible)', () => {
     // Failed mid-flight or status='error' generations. Don't pretend
-    // we have a renderable image â€?let the chat surface the
+    // we have a renderable image â€” let the chat surface the
     // structured output JSON instead.
     const event = translateCodexNotification(
       'item/completed',
@@ -793,10 +793,10 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
       ctx,
     );
     if (event?.type !== 'tool_completed') throw new Error('unreachable');
-    assert.equal(event.media, undefined, 'no usable image data â†?omit media so MediaPreview skips this row');
+    assert.equal(event.media, undefined, 'no usable image data â†’ omit media so MediaPreview skips this row');
   });
 
-  it('imageView item/started â†?tool_started with image_view toolName + path input', () => {
+  it('imageView item/started â†’ tool_started with image_view toolName + path input', () => {
     const event = translateCodexNotification(
       'item/started',
       {
@@ -814,7 +814,7 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
     assert.equal(input.path, '/Users/me/photos/x.png');
   });
 
-  it('imageView item/completed â†?tool_completed with MediaBlock(localPath, mimeType from extension)', () => {
+  it('imageView item/completed â†’ tool_completed with MediaBlock(localPath, mimeType from extension)', () => {
     const event = translateCodexNotification(
       'item/completed',
       {
@@ -829,7 +829,7 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
     if (event!.type !== 'tool_completed') throw new Error(`expected tool_completed, got ${event!.type}`);
     const output = event.output as { path: string };
     assert.equal(output.path, '/Users/me/photos/x.jpeg');
-    // Phase 5b smoke round 8 â€?also emit MediaBlock for the renderer.
+    // Phase 5b smoke round 8 â€” also emit MediaBlock for the renderer.
     assert.ok(event.media && event.media.length === 1);
     const media = event.media![0];
     assert.equal(media.type, 'image');
@@ -854,7 +854,7 @@ describe('translateCodexNotification â€?imageGeneration / imageView lifecycle (P
   });
 });
 
-describe('translateCodexNotification â€?token usage (layered shape)', () => {
+describe('translateCodexNotification â€” token usage (layered shape)', () => {
   it('reads params.tokenUsage.last.{inputTokens,outputTokens} + params.tokenUsage.modelContextWindow', () => {
     const event = translateCodexNotification(
       'thread/tokenUsage/updated',
@@ -888,7 +888,7 @@ describe('translateCodexNotification â€?token usage (layered shape)', () => {
     assert.equal(event.contextWindow, 200_000);
   });
 
-  it('handles null modelContextWindow â†?undefined (don\'t falsely advertise capacity)', () => {
+  it('handles null modelContextWindow â†’ undefined (don\'t falsely advertise capacity)', () => {
     const event = translateCodexNotification(
       'thread/tokenUsage/updated',
       {
@@ -904,7 +904,7 @@ describe('translateCodexNotification â€?token usage (layered shape)', () => {
     assert.equal(event.contextWindow, undefined);
   });
 
-  it('missing tokenUsage â†?null (no event)', () => {
+  it('missing tokenUsage â†’ null (no event)', () => {
     const event = translateCodexNotification(
       'thread/tokenUsage/updated',
       { threadId: 't', turnId: 'u' },
@@ -914,8 +914,8 @@ describe('translateCodexNotification â€?token usage (layered shape)', () => {
   });
 });
 
-describe('translateCodexNotification â€?fs changes', () => {
-  it('fs/changed â†?file_changed with paths array', () => {
+describe('translateCodexNotification â€” fs changes', () => {
+  it('fs/changed â†’ file_changed with paths array', () => {
     const event = translateCodexNotification(
       'fs/changed',
       { watchId: 'w1', changedPaths: ['/tmp/a.md', '/tmp/b.md'] },
@@ -925,13 +925,13 @@ describe('translateCodexNotification â€?fs changes', () => {
     assert.deepEqual([...event.paths], ['/tmp/a.md', '/tmp/b.md']);
   });
 
-  it('fs/changed with empty paths â†?null', () => {
+  it('fs/changed with empty paths â†’ null', () => {
     const event = translateCodexNotification('fs/changed', { changedPaths: [] }, ctx);
     assert.equal(event, null);
   });
 });
 
-describe('translateCodexNotification â€?transport-only (schema-correct names)', () => {
+describe('translateCodexNotification â€” transport-only (schema-correct names)', () => {
   // Codex uses slash-separated namespaces. The legacy camelCase names
   // (account/loginCompleted, thread/statusChanged) do NOT exist in
   // ServerNotification.
@@ -959,8 +959,8 @@ describe('translateCodexNotification â€?transport-only (schema-correct names)', 
   }
 });
 
-describe('translateCodexNotification â€?unknown fallback', () => {
-  it('unknown method â†?unknown_item with codex.<method> sourceType', () => {
+describe('translateCodexNotification â€” unknown fallback', () => {
+  it('unknown method â†’ unknown_item with codex.<method> sourceType', () => {
     const event = translateCodexNotification(
       'someBrandNewCodexNotification',
       { foo: 1 },
@@ -972,10 +972,10 @@ describe('translateCodexNotification â€?unknown fallback', () => {
   });
 });
 
-describe('translateCodexApproval â€?server-to-client request â†?canonical permission_request', () => {
+describe('translateCodexApproval â€” server-to-client request â†’ canonical permission_request', () => {
   const baseArgs = { sessionId: 's1', requestId: 'r1' };
 
-  it('item/commandExecution/requestApproval â†?Bash subject with command (string per schema)', () => {
+  it('item/commandExecution/requestApproval â†’ Bash subject with command (string per schema)', () => {
     // Per CommandExecutionRequestApprovalParams: command is a string,
     // not array. This is the canonical (current) approval method.
     const event = translateCodexApproval({
@@ -998,7 +998,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
     assert.match(event.details ?? '', /destructive/);
   });
 
-  it('legacy execCommandApproval (command: string[]) â†?joined for display', () => {
+  it('legacy execCommandApproval (command: string[]) â†’ joined for display', () => {
     // ExecCommandApprovalParams (legacy) has command: Array<string>.
     const event = translateCodexApproval({
       ...baseArgs,
@@ -1009,7 +1009,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
     assert.equal(event.subject, 'Bash Â· rm -rf /tmp/foo');
   });
 
-  it('item/fileChange/requestApproval â†?Patch (reason carried through details)', () => {
+  it('item/fileChange/requestApproval â†’ Patch (reason carried through details)', () => {
     const event = translateCodexApproval({
       ...baseArgs,
       method: 'item/fileChange/requestApproval',
@@ -1027,7 +1027,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
     assert.match(event.details ?? '', /patch 3 files/);
   });
 
-  it('legacy applyPatchApproval (has fileChanges map) â†?"Patch Â· N files"', () => {
+  it('legacy applyPatchApproval (has fileChanges map) â†’ "Patch Â· N files"', () => {
     const event = translateCodexApproval({
       ...baseArgs,
       method: 'applyPatchApproval',
@@ -1040,7 +1040,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
     assert.equal(event.subject, 'Patch Â· 3 files');
   });
 
-  it('item/permissions/requestApproval â†?Permissions request', () => {
+  it('item/permissions/requestApproval â†’ Permissions request', () => {
     const event = translateCodexApproval({
       ...baseArgs,
       method: 'item/permissions/requestApproval',
@@ -1065,7 +1065,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
     }]);
   });
 
-  it('unknown approval kind â†?permission_unavailable (conservative default)', () => {
+  it('unknown approval kind â†’ permission_unavailable (conservative default)', () => {
     const event = translateCodexApproval({
       ...baseArgs,
       method: 'codex.brandNewApproval',
@@ -1079,7 +1079,7 @@ describe('translateCodexApproval â€?server-to-client request â†?canonical permis
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Guardrail: every method name the mapper recognises must exist in the
 // upstream `ServerNotification.ts` union. Tests load the schema file at
-// boot â€?when Codex renames a method, this test fires before the
+// boot â€” when Codex renames a method, this test fires before the
 // mapper hits a real session.
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -1103,7 +1103,7 @@ describe('Codex method-name guardrail vs upstream ServerNotification', () => {
     const schema = loadSchemaMethods();
     if (!schema) {
       // Schema not present (codex repo not cloned into èµ„æ–™/codex).
-      // Don't fail the unit harness â€?Phase 5 plan calls out the
+      // Don't fail the unit harness â€” Phase 5 plan calls out the
       // clone as a developer prerequisite. The guardrail still pins
       // method-name correctness for any environment that does have
       // the schema (CI, local dev with codex installed).

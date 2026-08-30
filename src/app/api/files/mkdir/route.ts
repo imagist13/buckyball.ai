@@ -11,7 +11,7 @@ import {
 import type { ErrorResponse } from '@/types';
 
 /*
- * POST /api/files/mkdir â€?create a directory. Mirrors write's path-safety
+ * POST /api/files/mkdir â€” create a directory. Mirrors write's path-safety
  * contract; `recursive` lets callers emulate `mkdir -p`.
  *
  * Body:

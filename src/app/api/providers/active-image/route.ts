@@ -37,7 +37,7 @@ function resolveModelForProvider(provider: ApiProvider): { model: string; modelL
     if (typeof env[envKey] === 'string' && env[envKey]) configuredModel = env[envKey];
   } catch { /* fall through to default */ }
 
-  // Walk every preset under this protocol â€?covers both the official preset
+  // Walk every preset under this protocol â€” covers both the official preset
   // and the *-thirdparty variant (same defaultModels list, different baseUrl).
   const presetKeys = isOpenAI
     ? ['openai-image', 'openai-image-thirdparty']

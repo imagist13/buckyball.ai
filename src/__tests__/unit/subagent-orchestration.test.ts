@@ -137,7 +137,7 @@ describe('same-provider sub-agent model resolution', () => {
 describe('Runtime-independent Sub-agent workflow contract', () => {
   it('rejects undeclared wait-only placeholders and validates explicit workflow edges', () => {
     const placeholder = validateSubagentDispatchSpec({
-      prompt: '等待新闻搜集 Agent 提供内容，目前处于等待状态�?,
+      prompt: '等待新闻搜集 Agent 提供内容，目前处于等待状态。',
     });
     assert.equal(placeholder.ok, false);
     if (!placeholder.ok) {
@@ -145,7 +145,7 @@ describe('Runtime-independent Sub-agent workflow contract', () => {
     }
 
     const realLongRunningCommand = validateSubagentDispatchSpec({
-      prompt: '必须先使�?Bash 执行 sleep 180，等待命令结束后才输�?STOP_SMOKE_UPSTREAM_DONE；除此之外不要输出其他内容�?,
+      prompt: '必须先使用 Bash 执行 sleep 180，等待命令结束后才输出 STOP_SMOKE_UPSTREAM_DONE；除此之外不要输出其他内容。',
       workflowId: 'release-smoke-stop',
       taskKey: 'upstream',
       dependsOn: [],
@@ -279,7 +279,7 @@ describe('CodePilot/Codex managed cross-provider routes', () => {
   it('publishes descriptive selectors instead of presenting sonnet as the effective model', () => {
     assert.equal(subagentRouteSelector(routes[0]), 'glm-5.2');
     assert.equal(subagentRouteSelector(routes[1]), 'kimi-for-coding');
-    const guidance = getSubagentRoutingGuidance('bbagent', routes);
+    const guidance = getSubagentRoutingGuidance('codepilot_runtime', routes);
     assert.match(guidance, /provider_id="glm-provider", model="glm-5\.2"/);
     assert.match(guidance, /Never substitute the parent model/);
   });
@@ -303,7 +303,7 @@ describe('CodePilot/Codex managed cross-provider routes', () => {
     const source = fs.readFileSync(path.join(process.cwd(), 'src/lib/tools/agent.ts'), 'utf8');
     assert.match(source, /providerId: route\.providerId/);
     assert.match(source, /sessionProviderId: route\.providerId/);
-    assert.match(source, /startSubagentRun\(\{[\s\S]{0,400}runtime: 'bbagent'/);
+    assert.match(source, /startSubagentRun\(\{[\s\S]{0,400}runtime: 'codepilot_runtime'/);
     assert.match(source, /settleSubagentRun\(agentRunId/);
     assert.doesNotMatch(source, /Available same-provider models/);
   });
@@ -333,7 +333,7 @@ describe('CodePilot/Codex managed cross-provider routes', () => {
   it('uses one shared task-outcome contract instead of treating a denied Native tool run as completed', () => {
     const failed = parseReportedSubagentOutcome([
       '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"failed","error":{"code":"CAPABILITY_UNAVAILABLE","retryable":true}}',
-      '命令未能执行：Bash 调用被权限策略拒绝�?,
+      '命令未能执行：Bash 调用被权限策略拒绝。',
     ].join('\n'));
     assert.equal(failed.status, 'failed');
     assert.equal(failed.error?.code, 'CAPABILITY_UNAVAILABLE');
@@ -341,7 +341,7 @@ describe('CodePilot/Codex managed cross-provider routes', () => {
 
     const contradictory = parseReportedSubagentOutcome([
       '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"completed"}',
-      '命令未能执行：permission denied�?,
+      '命令未能执行：permission denied。',
     ].join('\n'));
     assert.equal(contradictory.status, 'completed');
     assert.equal(explicitlyReportsSubagentTaskFailure(contradictory.text), true);
@@ -415,12 +415,12 @@ describe('Codex managed Sub Agent lifecycle', () => {
       items: [{
         type: 'agentMessage',
         phase: 'final_answer',
-        text: '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"failed","error":{"code":"CAPABILITY_UNAVAILABLE","retryable":true}}\n无法完成此任务：网络搜索工具不可用�?,
+        text: '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"failed","error":{"code":"CAPABILITY_UNAVAILABLE","retryable":true}}\n无法完成此任务：网络搜索工具不可用。',
       }],
     });
     assert.deepEqual(failed, {
       status: 'failed',
-      text: '无法完成此任务：网络搜索工具不可用�?,
+      text: '无法完成此任务：网络搜索工具不可用。',
       error: { code: 'CAPABILITY_UNAVAILABLE', retryable: true },
     });
 
@@ -429,7 +429,7 @@ describe('Codex managed Sub Agent lifecycle', () => {
       items: [{
         type: 'agentMessage',
         phase: 'final_answer',
-        text: '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"completed"}\n无法完成此任务：DNS 网络被阻断�?,
+        text: '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"completed"}\n无法完成此任务：DNS 网络被阻断。',
       }],
     });
     assert.equal(contradictory.status, 'failed');
@@ -467,7 +467,7 @@ describe('Codex managed Sub Agent lifecycle', () => {
       items: [{
         type: 'agentMessage',
         phase: 'final_answer',
-        text: '**无法完成此任�?*\n\n网络完全不可用，DNS 解析被沙箱阻断�?,
+        text: '**无法完成此任务**\n\n网络完全不可用，DNS 解析被沙箱阻断。',
       }],
     });
     assert.equal(outcome.status, 'failed');
@@ -483,7 +483,7 @@ describe('Codex managed Sub Agent lifecycle', () => {
         text: [
           'I will search the latest sources now.',
           '__CODEPILOT_SUBAGENT_OUTCOME__{"status":"failed","error":{"code":"CAPABILITY_UNAVAILABLE","retryable":true}}',
-          '我无法完成这个任务：没有可用的联网检索工具�?,
+          '我无法完成这个任务：没有可用的联网检索工具。',
         ].join(''),
       }],
     });
@@ -1108,7 +1108,7 @@ describe('sub-agent transcript view and workspace tab', () => {
     });
     assert.equal(view.requestedModel, 'deepseek-v3.2');
     assert.equal(view.effectiveModel, 'deepseek-v3.2');
-    assert.equal(view.runtime, 'bbagent');
+    assert.equal(view.runtime, 'codepilot_runtime');
     assert.equal(view.result, 'Found it.');
     assert.equal(view.status, 'completed');
     assert.equal(view.icon, 'search');
@@ -1313,7 +1313,7 @@ describe('sub-agent transcript view and workspace tab', () => {
         logicalRunId: 'logical-research',
         attemptId: 'tool-call-1',
         attemptNumber: 1,
-        runtime: 'bbagent',
+        runtime: 'codepilot_runtime',
         error: { code: 'RATE_LIMITED', retryable: true },
       }),
     });
@@ -1331,7 +1331,7 @@ describe('sub-agent transcript view and workspace tab', () => {
         logicalRunId: 'logical-research',
         attemptId: 'tool-call-2',
         attemptNumber: 2,
-        runtime: 'bbagent',
+        runtime: 'codepilot_runtime',
       }, 'Done'),
     });
     const collapsed = collapseLogicalSubagentRuns([first, second]);
@@ -1513,7 +1513,7 @@ describe('runtime adapter safety contracts', () => {
     };
     assert.deepEqual(validateClaudeSubagentToolInput('Agent', {
       subagent_type: glmAgentName,
-      prompt: '你是 GLM 专家，请审查这个方案�?,
+      prompt: '你是 GLM 专家，请审查这个方案。',
     }, multiAgents, multiModelContext), { ok: true });
     assert.deepEqual(validateClaudeSubagentToolInput('Agent', {
       model: 'opus',
@@ -1530,7 +1530,7 @@ describe('runtime adapter safety contracts', () => {
     };
     const rejected = validateClaudeSubagentToolInput('Agent', {
       subagent_type: 'codepilot-readonly',
-      prompt: '你是 Grok 专家。请检索昨�?Twitter 上最热门�?AI 信息�?,
+      prompt: '你是 Grok 专家。请检索昨天 Twitter 上最热门的 AI 信息。',
     }, agents, multiModelContext);
     assert.equal(rejected.ok, false);
     if (!rejected.ok) {

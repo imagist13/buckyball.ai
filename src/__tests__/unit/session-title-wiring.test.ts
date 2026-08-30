@@ -48,18 +48,18 @@ describe('the three legacy truncation sites are collapsed into the pure function
   it('each of the three routes calls deriveConversationTitle', () => {
     assert.match(chatRoute, /deriveConversationTitle\(/);
     assert.match(importRoute, /deriveConversationTitle\(/);
-    // page.tsx no longer titles at all â€?it creates a placeholder and lets the
+    // page.tsx no longer titles at all â€” it creates a placeholder and lets the
     // server decide, which is the point.
     assert.doesNotMatch(chatPage, /title: content/);
   });
 });
 
-describe('chat route â€?fallback trigger conditions', () => {
+describe('chat route â€” fallback trigger conditions', () => {
   it('titles on displayOverride || content, never on raw content alone', () => {
     assert.match(
       chatRoute,
       /deriveConversationTitle\(displayOverride \|\| content\)/,
-      'raw `content` carries the hidden [Referenced Directories] expansion â€?titling on it leaks attachment paths',
+      'raw `content` carries the hidden [Referenced Directories] expansion â€” titling on it leaks attachment paths',
     );
   });
 
@@ -87,7 +87,7 @@ describe('chat route â€?fallback trigger conditions', () => {
   });
 });
 
-describe('import route â€?origin', () => {
+describe('import route â€” origin', () => {
   it('records import origin so semantic generation never renames a foreign transcript', () => {
     assert.match(importRoute, /'import',\s*\n\s*\);/);
   });
@@ -112,7 +112,7 @@ describe('PATCH rename validation', () => {
   });
 });
 
-describe('session create â€?placeholder by default', () => {
+describe('session create â€” placeholder by default', () => {
   it('the composer no longer names the session at create time', () => {
     assert.doesNotMatch(chatPage, /title: content\.slice/);
   });
@@ -128,7 +128,7 @@ describe('UI title sync (t04)', () => {
     assert.match(
       chatIdPage,
       /subscribeSessionTitle\(id, \(title\) => setPanelSessionTitle\(title\)\)/,
-      '/chat/[id] read the title once on mount â€?the fallback never reached the top bar',
+      '/chat/[id] read the title once on mount â€” the fallback never reached the top bar',
     );
   });
 
@@ -157,7 +157,7 @@ describe('UI title sync (t04)', () => {
       assert.doesNotMatch(
         src,
         /body: JSON\.stringify\(\{\s*title:/,
-        `${name} must not hand-roll a title PATCH â€?that is how it drifted from the server's canonical title`,
+        `${name} must not hand-roll a title PATCH â€” that is how it drifted from the server's canonical title`,
       );
     }
   });

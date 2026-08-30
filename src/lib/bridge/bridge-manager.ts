@@ -1,5 +1,5 @@
 /**
- * Bridge Manager ‚Ä?singleton orchestrator for the multi-IM bridge system.
+ * Bridge Manager ‚Äî singleton orchestrator for the multi-IM bridge system.
  *
  * Manages adapter lifecycles, routes inbound messages through the
  * conversation engine, and coordinates permission handling.
@@ -89,9 +89,9 @@ function flushPreview(
 
   adapter.sendPreview(state.chatId, text, state.draftId).then(result => {
     if (result === 'degrade') state.degraded = true;
-    // 'skip' ‚Ä?transient failure, next flush will retry naturally
+    // 'skip' ‚Äî transient failure, next flush will retry naturally
   }).catch(() => {
-    // Network error ‚Ä?transient, don't degrade
+    // Network error ‚Äî transient, don't degrade
   });
 }
 
@@ -101,7 +101,7 @@ import type { ChannelAddress, SendResult } from './types';
 
 /**
  * Render response text and deliver via the appropriate channel format.
- * Telegram: Markdown ‚Ü?HTML chunks via deliverRendered.
+ * Telegram: Markdown ‚Üí HTML chunks via deliverRendered.
  * Other channels: plain text via deliver (no HTML).
  */
 async function deliverResponse(
@@ -318,7 +318,7 @@ export async function start(): Promise<StartResult> {
     return { started: false, reason };
   }
 
-  // Mark running BEFORE starting consumer loops ‚Ä?runAdapterLoop checks
+  // Mark running BEFORE starting consumer loops ‚Äî runAdapterLoop checks
   // state.running in its while-condition, so it must be true first.
   state.running = true;
   state.startedAt = new Date().toISOString();
@@ -471,13 +471,13 @@ function runAdapterLoop(adapter: BaseChannelAdapter): void {
         const msg = await adapter.consumeOne();
         if (!msg) continue; // Adapter stopped
 
-        // Callback queries and commands are lightweight ‚Ä?process inline.
+        // Callback queries and commands are lightweight ‚Äî process inline.
         // Regular messages use per-session locking for concurrency.
         if (msg.callbackData || msg.text.trim().startsWith('/')) {
           await handleMessage(adapter, msg);
         } else {
           const binding = router.resolve(msg.address);
-          // Fire-and-forget into session lock ‚Ä?loop continues to accept
+          // Fire-and-forget into session lock ‚Äî loop continues to accept
           // messages for other sessions immediately.
           processWithSessionLock(binding.codepilotSessionId, () =>
             handleMessage(adapter, msg),
@@ -559,7 +559,7 @@ async function handleMessage(
     // AskUserQuestion option button (#282)
     if (msg.callbackData.startsWith('ask:')) {
       broker.handleAskUserQuestionCallback(msg.callbackData, msg.address.chatId, msg.callbackMessageId);
-      // No confirmation ‚Ä?the model will respond to the chosen answer naturally.
+      // No confirmation ‚Äî the model will respond to the chosen answer naturally.
       ack();
       return;
     }
@@ -583,7 +583,7 @@ async function handleMessage(
   const hasAttachments = msg.attachments && msg.attachments.length > 0;
   if (!rawText && !hasAttachments) { ack(); return; }
 
-  // Check for IM commands (before sanitization ‚Ä?commands are validated individually)
+  // Check for IM commands (before sanitization ‚Äî commands are validated individually)
   if (rawText.startsWith('/')) {
     await handleCommand(adapter, msg, rawText, msg.messageId);
     ack();
@@ -605,7 +605,7 @@ async function handleMessage(
 
   if (!text && !hasAttachments) { ack(); return; }
 
-  // Regular message ‚Ä?route to conversation engine
+  // Regular message ‚Äî route to conversation engine
   const binding = router.resolve(msg.address);
 
   // Notify adapter that message processing is starting (e.g., typing indicator)
@@ -637,7 +637,7 @@ async function handleMessage(
   let cardCreating = false;
   let cardBufferedText = '';
   let cardFinalized = false;
-  /** Promise that resolves when card creation completes ‚Ä?await before finalize. */
+  /** Promise that resolves when card creation completes ‚Äî await before finalize. */
   let cardCreatePromise: Promise<void> | null = null;
   /** Track tool calls for card progress display */
   const cardToolCalls: import('../channels/types').ToolCallInfo[] = [];
@@ -649,7 +649,7 @@ async function handleMessage(
 
   const streamCfg = previewState ? getStreamConfig(adapter.channelType) : null;
 
-  // Build the onPartialText callback ‚Ä?preview streaming OR card streaming
+  // Build the onPartialText callback ‚Äî preview streaming OR card streaming
   let onPartialText: ((fullText: string) => void) | undefined;
 
   if (previewState && streamCfg) {
@@ -701,7 +701,7 @@ async function handleMessage(
       }
 
       if (!cardMessageId) {
-        // First call ‚Ä?create the card
+        // First call ‚Äî create the card
         cardCreating = true;
         cardBufferedText = fullText;
         cardCreatePromise = cardController!.create(msg.address.chatId, fullText, msg.messageId).then((msgId) => {
@@ -767,7 +767,7 @@ async function handleMessage(
   try {
     // Pass permission callback so requests are forwarded to IM immediately
     // during streaming (the stream blocks until permission is resolved).
-    // Type-aware fallback prompt for attachment-only turns ‚Ä?"Describe this image"
+    // Type-aware fallback prompt for attachment-only turns ‚Äî "Describe this image"
     // was misleading when audio/video/file types were added (#291).
     let promptText = text;
     if (!promptText && hasAttachments) {
@@ -803,7 +803,7 @@ async function handleMessage(
       await cardCreatePromise;
     }
 
-    // Send response text ‚Ä?render via channel-appropriate format
+    // Send response text ‚Äî render via channel-appropriate format
     if (result.responseText) {
       if (cardController && cardMessageId) {
         // Finalize streaming card with final content
@@ -815,7 +815,7 @@ async function handleMessage(
       }
     } else if (result.hasError) {
       if (cardController && cardMessageId) {
-        await cardController.finalize(cardMessageId, `‚ù?Error: ${result.errorMessage}`, 'error');
+        await cardController.finalize(cardMessageId, `‚ùå Error: ${result.errorMessage}`, 'error');
         cardFinalized = true;
       } else {
         const errorResponse: OutboundMessage = {
@@ -829,7 +829,7 @@ async function handleMessage(
     }
 
     // Persist the actual SDK session ID for future resume.
-    // On error, ALWAYS clear ‚Ä?the SDK may emit a session_id before crashing,
+    // On error, ALWAYS clear ‚Äî the SDK may emit a session_id before crashing,
     // and saving that broken ID would cause all subsequent messages to fail
     // by repeatedly trying to resume a corrupted session.
     if (binding.id) {
@@ -849,7 +849,7 @@ async function handleMessage(
     console.error(`[bridge-manager] handleMessage threw:`, err);
     try {
       if (cardController && cardMessageId) {
-        await cardController.finalize(cardMessageId, `‚ù?Error: ${escapeHtml(errMsg)}`, 'error');
+        await cardController.finalize(cardMessageId, `‚ùå Error: ${escapeHtml(errMsg)}`, 'error');
         cardFinalized = true;
       } else {
         const errorResponse: OutboundMessage = {
@@ -877,7 +877,7 @@ async function handleMessage(
       adapter.endPreview?.(msg.address.chatId, previewState.draftId);
     }
 
-    // Clean up card streaming state ‚Ä?await creation if still in flight
+    // Clean up card streaming state ‚Äî await creation if still in flight
     if (cardController && !cardFinalized) {
       const pending = cardCreatePromise as Promise<void> | null;
       if (pending) await pending.catch(() => {});
@@ -950,7 +950,7 @@ async function handleCommand(
         }
         workDir = validated;
       } else {
-        // No path specified ‚Ä?inherit CWD from current binding
+        // No path specified ‚Äî inherit CWD from current binding
         const current = router.resolve(msg.address);
         if (current.workingDirectory) {
           workDir = current.workingDirectory;
@@ -989,11 +989,11 @@ async function handleCommand(
         }
         const binding = router.resolve(msg.address);
         router.updateBinding(binding.id, { workingDirectory: validatedPath, sdkSessionId: '' });
-        response = `Working directory set to <code>${escapeHtml(validatedPath)}</code>\n(SDK session reset ‚Ä?next message starts fresh context)`;
+        response = `Working directory set to <code>${escapeHtml(validatedPath)}</code>\n(SDK session reset ‚Äî next message starts fresh context)`;
         break;
       }
 
-      // No args ‚Ä?show project selector card with buttons.
+      // No args ‚Äî show project selector card with buttons.
       // Design decision: /cwd picker is a "recent projects quick-switch" for
       // a single-operator desktop app. It intentionally shows all active
       // directories across this channel type (not isolated per chat).
@@ -1034,7 +1034,7 @@ async function handleCommand(
         inlineButtons,
       };
       await deliver(adapter, cardMsg);
-      return; // Don't send response ‚Ä?card is already sent
+      return; // Don't send response ‚Äî card is already sent
     }
 
     case '/mode': {
@@ -1168,7 +1168,7 @@ async function handleCommand(
     }
 
     case '/search': {
-      // Simplified local search ‚Ä?lists recent messages and filters client-side.
+      // Simplified local search ‚Äî lists recent messages and filters client-side.
       // This is NOT equivalent to OpenClaw's server-side search (search.message.create API
       // with user_access_token). Results are limited to recent messages in the current chat.
       if (!args) {
@@ -1226,22 +1226,22 @@ async function handleCommand(
           const plugin = adapter.getPlugin();
           const config = (plugin as FeishuChannelPlugin).getConfig?.();
           if (!config) {
-            response = '‚ù?Feishu plugin not configured.\n\nPlease set App ID and App Secret in CodePilot settings, or use /feishu auth.';
+            response = '‚ùå Feishu plugin not configured.\n\nPlease set App ID and App Secret in CodePilot settings, or use /feishu auth.';
             break;
           }
           const validationError = plugin.validateConfig();
           if (validationError) {
-            response = `‚ù?Configuration error: ${validationError}`;
+            response = `‚ùå Configuration error: ${validationError}`;
             break;
           }
           const capabilities = plugin.getCapabilities();
           const lines = [
-            '‚ú?Feishu Bridge is running',
+            '‚úÖ Feishu Bridge is running',
             '',
-            `Streaming: ${capabilities.streaming ? '‚ú?Enabled' : '‚ù?Disabled'}`,
-            `Thread Reply: ${capabilities.threadReply ? '‚ú? : '‚ù?}`,
-            `Search: ${capabilities.search ? '‚ú? : '‚ù?}`,
-            `History: ${capabilities.history ? '‚ú? : '‚ù?}`,
+            `Streaming: ${capabilities.streaming ? '‚úÖ Enabled' : '‚ùå Disabled'}`,
+            `Thread Reply: ${capabilities.threadReply ? '‚úÖ' : '‚ùå'}`,
+            `Search: ${capabilities.search ? '‚úÖ' : '‚ùå'}`,
+            `History: ${capabilities.history ? '‚úÖ' : '‚ùå'}`,
           ];
           response = lines.join('\n');
           break;
@@ -1256,7 +1256,7 @@ async function handleCommand(
           const plugin = adapter.getPlugin();
           const config = (plugin as FeishuChannelPlugin).getConfig?.();
           if (!config) {
-            response = '‚ù?App credentials not configured.\n\nPlease configure App ID and App Secret in CodePilot Settings ‚Ü?Bridge ‚Ü?Feishu.';
+            response = '‚ùå App credentials not configured.\n\nPlease configure App ID and App Secret in CodePilot Settings ‚Üí Bridge ‚Üí Feishu.';
             break;
           }
           // Note: CodePilot currently uses app-level bot tokens (no user OAuth)
@@ -1287,9 +1287,9 @@ async function handleCommand(
 
           // Config check
           if (!config) {
-            lines.push('‚ù?Configuration: Not configured');
+            lines.push('‚ùå Configuration: Not configured');
           } else {
-            lines.push('‚ú?Configuration: OK');
+            lines.push('‚úÖ Configuration: OK');
             lines.push(`   App ID: ${config.appId}`);
             lines.push(`   DM Policy: ${config.dmPolicy}`);
             lines.push(`   Thread Session: ${config.threadSession ? 'Yes' : 'No'}`);
@@ -1298,27 +1298,27 @@ async function handleCommand(
 
           // Connection check
           if (plugin.isRunning()) {
-            lines.push('‚ú?Connection: WebSocket connected');
+            lines.push('‚úÖ Connection: WebSocket connected');
           } else {
-            lines.push('‚ù?Connection: Not running');
+            lines.push('‚ùå Connection: Not running');
           }
 
           // Capabilities
           const caps = plugin.getCapabilities();
           lines.push('');
           lines.push('Capabilities:');
-          lines.push(`   Streaming Cards: ${caps.streaming ? '‚ú? : '‚ù?}`);
-          lines.push(`   Thread Reply: ${caps.threadReply ? '‚ú? : '‚ù?}`);
-          lines.push(`   Message Search: ${caps.search ? '‚ú? : '‚ù?(requires user_access_token)'}`);
-          lines.push(`   Message History: ${caps.history ? '‚ú? : '‚ù?}`);
+          lines.push(`   Streaming Cards: ${caps.streaming ? '‚úÖ' : '‚ùå'}`);
+          lines.push(`   Thread Reply: ${caps.threadReply ? '‚úÖ' : '‚ùå'}`);
+          lines.push(`   Message Search: ${caps.search ? '‚úÖ' : '‚ùå (requires user_access_token)'}`);
+          lines.push(`   Message History: ${caps.history ? '‚úÖ' : '‚ùå'}`);
 
           // Known limitations
           lines.push('');
           lines.push('Known Limitations (CodePilot vs OpenClaw):');
-          lines.push('   ‚Ä?No user_access_token / OAuth Device Flow');
-          lines.push('   ‚Ä?No cross-chat search (search.message.create requires UAT)');
-          lines.push('   ‚Ä?No "send as user" capability');
-          lines.push('   ‚Ä?Simplified card streaming (no reasoning phase display)');
+          lines.push('   ‚Ä¢ No user_access_token / OAuth Device Flow');
+          lines.push('   ‚Ä¢ No cross-chat search (search.message.create requires UAT)');
+          lines.push('   ‚Ä¢ No "send as user" capability');
+          lines.push('   ‚Ä¢ Simplified card streaming (no reasoning phase display)');
 
           response = lines.join('\n');
           break;
@@ -1329,10 +1329,10 @@ async function handleCommand(
           response = [
             'Feishu Bridge Commands',
             '',
-            '/feishu start ‚Ä?Check plugin status and configuration',
-            '/feishu auth ‚Ä?View auth status and guidance',
-            '/feishu doctor ‚Ä?Run diagnostics',
-            '/feishu help ‚Ä?Show this help',
+            '/feishu start ‚Äî Check plugin status and configuration',
+            '/feishu auth ‚Äî View auth status and guidance',
+            '/feishu doctor ‚Äî Run diagnostics',
+            '/feishu help ‚Äî Show this help',
           ].join('\n');
           break;
         }

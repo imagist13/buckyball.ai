@@ -1,5 +1,5 @@
 /**
- * runtime/sdk-runtime.ts â€?Claude Code SDK Agent Runtime.
+ * runtime/sdk-runtime.ts â€” Claude Code SDK Agent Runtime.
  *
  * Wraps the existing SDK path in claude-client.ts behind the AgentRuntime interface.
  * Delegates to streamClaudeSdk() which contains the original SDK query() logic.
@@ -31,7 +31,7 @@ export const sdkRuntime: AgentRuntime = {
 
   stream(options: RuntimeStreamOptions): ReadableStream<string> {
 
-    // Convert RuntimeStreamOptions â†?ClaudeStreamOptions
+    // Convert RuntimeStreamOptions â†’ ClaudeStreamOptions
     const ro = options.runtimeOptions || {};
     const sdkOptions: ClaudeStreamOptions = {
       prompt: options.prompt,
@@ -89,7 +89,7 @@ export const sdkRuntime: AgentRuntime = {
     //
     // Previous approach tried to check credentials in isAvailable(), but
     // this couldn't cover all auth paths (CLI OAuth, ~/.claude session, etc.)
-    // and caused false negatives â€?users with valid CLI auth were routed
+    // and caused false negatives â€” users with valid CLI auth were routed
     // to native runtime unexpectedly.
     return !!findClaudeBinary();
   },

@@ -1,9 +1,9 @@
 /**
- * mcp-connection-manager.ts â€?MCP server connection pool for the Native Runtime.
+ * mcp-connection-manager.ts â€” MCP server connection pool for the Native Runtime.
  *
  * Manages connections to external MCP servers (stdio/sse/http).
  * Discovers their tools via listTools() and exposes them as callable.
- * The SDK Runtime doesn't use this â€?it passes mcpServers to the SDK Options.
+ * The SDK Runtime doesn't use this â€” it passes mcpServers to the SDK Options.
  */
 
 import type { MCPServerConfig } from '@/types';

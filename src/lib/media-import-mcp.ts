@@ -1,5 +1,5 @@
 /**
- * codepilot-media MCP â€?in-process MCP server for media library import.
+ * codepilot-media MCP â€” in-process MCP server for media library import.
  *
  * Replaces the CLI curl approach (POST /api/media/import) with a native MCP
  * tool that Claude can call directly. Keyword-gated: only registered when
@@ -66,7 +66,7 @@ export function createMediaImportMcpServer(sessionId?: string, workingDirectory?
               '.flac': 'audio/flac', '.aac': 'audio/aac',
             };
             const mimeType = mimeMap[ext] || 'application/octet-stream';
-            // Derive media type from MIME â€?reliable and consistent with mimeMap
+            // Derive media type from MIME â€” reliable and consistent with mimeMap
             const mediaType = mimeType.startsWith('video/') ? 'video'
               : mimeType.startsWith('audio/') ? 'audio'
               : 'image';

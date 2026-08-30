@@ -1,5 +1,5 @@
 /**
- * Phase 4 Phase 1 â€?codepilot:file-changed event channel.
+ * Phase 4 Phase 1 â€” codepilot:file-changed event channel.
  *
  * The channel has two producers (stream-session-manager on AI writes,
  * PreviewPanel on user save) and one consumer (PreviewPanel listener).
@@ -171,7 +171,7 @@ describe('dispatchFileChanged + isFileChangedDetail', () => {
     const prev = g.window;
     g.window = undefined;
     try {
-      // Should not throw â€?exercised under SSR / unit tests without jsdom.
+      // Should not throw â€” exercised under SSR / unit tests without jsdom.
       assert.doesNotThrow(() => {
         dispatchFileChanged({ paths: ['/x'], source: 'ai-tool' });
       });

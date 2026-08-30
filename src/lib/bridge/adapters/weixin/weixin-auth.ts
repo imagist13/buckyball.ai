@@ -151,11 +151,11 @@ export async function pollQrLoginStatus(sessionId: string): Promise<QrLoginSessi
         break;
 
       default:
-        // Unknown status â€?keep waiting
+        // Unknown status â€” keep waiting
         break;
     }
   } catch (err) {
-    // Timeout on poll is normal â€?just return current status
+    // Timeout on poll is normal â€” just return current status
     if (err instanceof Error && err.name === 'TimeoutError') {
       return session;
     }

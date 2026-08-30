@@ -1,5 +1,5 @@
 /**
- * tools/skill.ts â€?SkillTool: lets the model discover and invoke skills.
+ * tools/skill.ts â€” SkillTool: lets the model discover and invoke skills.
  */
 
 import { tool } from 'ai';
@@ -49,12 +49,12 @@ export function createSkillTool(workingDirectory: string) {
       const result = prepareSkillExecution(skill, args);
 
       if (result.fork) {
-        // Fork mode â€?return the prompt for the agent loop to spawn a sub-agent
+        // Fork mode â€” return the prompt for the agent loop to spawn a sub-agent
         // The agent-loop should detect this and route to the AgentTool
         return `[SKILL_FORK]\nPrompt: ${result.prompt}\nAllowed tools: ${result.allowedTools?.join(', ') || 'all'}`;
       }
 
-      // Inline mode â€?return the prompt for injection into the conversation
+      // Inline mode â€” return the prompt for injection into the conversation
       return result.prompt;
     },
   });

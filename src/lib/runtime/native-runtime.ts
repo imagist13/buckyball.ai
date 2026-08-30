@@ -1,5 +1,5 @@
 /**
- * runtime/native-runtime.ts â€?Native Agent Runtime (no Claude Code CLI).
+ * runtime/native-runtime.ts â€” Native Agent Runtime (no Claude Code CLI).
  *
  * Uses Vercel AI SDK streamText() internally via agent-loop.ts.
  * This is the default runtime when Claude Code CLI is not installed.
@@ -78,7 +78,7 @@ export const nativeRuntime: AgentRuntime = {
             const { done, value } = await reader.read();
             if (done) break;
             controller.enqueue(value);
-            if (controller.closed) break; // consumer aborted â€?stop pulling
+            if (controller.closed) break; // consumer aborted â€” stop pulling
           }
         } finally {
           unregisterNativeTurnController(options.sessionId, abortController);
@@ -96,14 +96,14 @@ export const nativeRuntime: AgentRuntime = {
 
   isAvailable(): boolean {
     // Native runtime is available whenever any provider has credentials.
-    // A lightweight check â€?don't resolve the full provider, just check if
+    // A lightweight check â€” don't resolve the full provider, just check if
     // there's any configured provider, env-based credentials, or OpenAI OAuth.
     try {
       const resolved = resolveProvider({ callScene: 'connection_test' });
       if (resolved.hasCredentials || !!resolved.provider) return true;
     } catch { /* fall through */ }
 
-    // Also check OpenAI OAuth â€?it's a virtual provider not in the DB
+    // Also check OpenAI OAuth â€” it's a virtual provider not in the DB
     try {
       if (isOAuthUsable()) return true;
     } catch { /* module not available */ }

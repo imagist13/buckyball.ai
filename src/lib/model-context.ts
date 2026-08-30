@@ -17,23 +17,23 @@ export const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   'claude-opus-4-20250514': 200000,
   'claude-opus-4-7': 1_000_000,
   'claude-opus-4-8': 1_000_000,
-  // Opus 5 ‚Ä?1M context (default and ceiling) / 128K max output.
+  // Opus 5 ‚Äî 1M context (default and ceiling) / 128K max output.
   // https://platform.claude.com/docs/en/about-claude/models/overview
   'claude-opus-5': 1_000_000,
-  // Fable 5 ‚Ä?1M context / 128K max output per official model docs
+  // Fable 5 ‚Äî 1M context / 128K max output per official model docs
   // https://platform.claude.com/docs/en/about-claude/models/overview
   'claude-fable-5': 1_000_000,
-  // Sonnet 5 ‚Ä?1M context (default AND ceiling) / 128K max output per the
+  // Sonnet 5 ‚Äî 1M context (default AND ceiling) / 128K max output per the
   // official migration guide (whats-new-sonnet-5, verified 2026-07-17).
   // Same window semantics as the fable-5 entry above. NOTE: Sonnet 5 ships
-  // a new tokenizer ‚Ä?the SAME text counts ‚â?+30% tokens vs Sonnet 4.6, so
+  // a new tokenizer ‚Äî the SAME text counts ‚âà +30% tokens vs Sonnet 4.6, so
   // this catalog window is an UNTRUSTED fallback (like all entries here):
   // the SDK / upstream-reported window still wins for the user-visible %,
   // and token-budget estimates that key off char-count will under-count on
   // Sonnet 5. Prefer real usage reporting over char heuristics for it.
   'claude-sonnet-5': 1_000_000,
   'claude-haiku-4-5-20251001': 200000,
-  // Third-party chat models ‚Ä?Native runtime fallback (Vercel AI SDK
+  // Third-party chat models ‚Äî Native runtime fallback (Vercel AI SDK
   // doesn't expose modelContextWindow; ClaudeCode SDK's reported window
   // and Codex ThreadTokenUsage.modelContextWindow still win when present).
   //
@@ -43,28 +43,33 @@ export const MODEL_CONTEXT_WINDOWS: Record<string, number> = {
   //     ¬∑ DB chat_sessions.model (historical sessions)
   //   - Each entry MUST be web-verified against vendor's official docs
   //     and cite source URL in a leading comment
-  //   - DO NOT guess from training memory ‚Ä?2026-05-20 first attempt
+  //   - DO NOT guess from training memory ‚Äî 2026-05-20 first attempt
   //     shipped several wrong / non-existent entries before fact-check
-  //   - Unverified modelIds: leave absent ‚Ü?useContextUsage reports
+  //   - Unverified modelIds: leave absent ‚Üí useContextUsage reports
   //     "capacity unknown"; the trigger mini-bar then distributes by
   //     used+pending composition (#632 removed the old 200K fallback
-  //     denominator ‚Ä?no fabricated capacity, no misleading 100% fill)
+  //     denominator ‚Äî no fabricated capacity, no misleading 100% fill)
   //   - NOTE (#632): this catalog is now an UNTRUSTED fallback. RunCockpit
   //     shows a % only against an SDK / upstream-reported window; a value
   //     here drives composition, never a trusted percentage.
   //
-  // GLM-5-Turbo (Z.ai) ‚Ä?heaviest usage in DB (44 sessions)
+  // GLM-5-Turbo (Z.ai) ‚Äî heaviest usage in DB (44 sessions)
   // ‚ö†Ô∏è provenance under review (#632): the Z.ai GLM-5-Turbo page states
-  // Context 200K / Max Output 128K, NOT 202,752 ‚Ä?this "202752" citation
+  // Context 200K / Max Output 128K, NOT 202,752 ‚Äî this "202752" citation
   // does not match the vendor page. Kept as-is pending a verified source;
   // it only feeds composition now (untrusted fallback, see above), so the
   // exact figure no longer drives a user-visible percentage.
   'glm-5-turbo': 202752,
-  // GPT-5.5 (OpenAI) ‚Ä?16 sessions in DB
-  // https://openai.com/index/introducing-gpt-5-5/ ‚Ä?1M API context
+  // GLM-5.3-Flash ‚Äî official docs state 1M and configure it as 1,000,000.
+  // The `[1m]` Claude Coding Plan wire variant substring-matches this bare
+  // key; Codex Responses uses the bare ID. Do not reinterpret decimal 1M as Mi.
+  // https://docs.bigmodel.cn/cn/guide/models/vlm/glm-5.3-flash
+  'glm-5.3-flash': 1_000_000,
+  // GPT-5.5 (OpenAI) ‚Äî 16 sessions in DB
+  // https://openai.com/index/introducing-gpt-5-5/ ‚Äî 1M API context
   'gpt-5.5': 1_000_000,
-  // GPT-5.4 (OpenAI) ‚Ä?11 sessions in DB
-  // https://openai.com/index/introducing-gpt-5-4/ ‚Ä?1M API context
+  // GPT-5.4 (OpenAI) ‚Äî 11 sessions in DB
+  // https://openai.com/index/introducing-gpt-5-4/ ‚Äî 1M API context
   'gpt-5.4': 1_000_000,
 };
 
@@ -93,7 +98,7 @@ export function getContextWindow(
   model: string,
   options?: { context1m?: boolean; upstream?: string },
 ): number | null {
-  // Prefer the upstream model ID when known ‚Ä?it unambiguously selects
+  // Prefer the upstream model ID when known ‚Äî it unambiguously selects
   // between alias variants (e.g. `opus` on first-party Anthropic is
   // claude-opus-4-7 but on Bedrock/Vertex it's Opus 4.6). Fall through
   // to the model alias when upstream is absent OR when it resolves

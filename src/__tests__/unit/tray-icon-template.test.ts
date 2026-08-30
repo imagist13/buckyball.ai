@@ -1,10 +1,10 @@
 /**
- * P1 (2026-06-01) â€?macOS packaged menubar Tray icon.
+ * P1 (2026-06-01) â€” macOS packaged menubar Tray icon.
  *
  * Root cause: packaged macOS reused the full-color app icon (icon.icns,
  * resized to 16x16) for the menubar Tray. `.icns` resized to menubar size
  * rendered as a blurry / unbranded blob and ignored the light/dark menubar
- * template-icon convention â€?on the user's other Mac the top-bar icon looked
+ * template-icon convention â€” on the user's other Mac the top-bar icon looked
  * missing / wrong. Fix: a dedicated monochrome template PNG + setTemplateImage.
  *
  * Source/asset pins (visual acceptance is deferred to the next packaged build
@@ -12,7 +12,7 @@
  *   - darwin Tray path must NOT resolve to icon.icns.
  *   - the darwin tray image must be marked setTemplateImage(true).
  *   - electron-builder must ship the tray template asset into Resources.
- *   - Dock/app icon (mac.icon) stays on icon.icns â€?only the tray changed.
+ *   - Dock/app icon (mac.icon) stays on icon.icns â€” only the tray changed.
  *   - Windows/Linux tray behavior is untouched.
  */
 
@@ -27,7 +27,7 @@ const builderYml = readFileSync(path.join(root, 'electron-builder.yml'), 'utf8')
 const ensureTrayBlock = mainSrc.match(/function ensureTray\(\)[\s\S]*?\n\}/)?.[0] ?? '';
 
 describe('macOS Tray uses a dedicated template image, not the .icns app icon', () => {
-  it('getTrayIconPath points at trayTemplate.png â€?NOT icon.icns', () => {
+  it('getTrayIconPath points at trayTemplate.png â€” NOT icon.icns', () => {
     const block = mainSrc.match(/function getTrayIconPath\(\)[\s\S]*?\n\}/)?.[0] ?? '';
     assert.ok(block, 'getTrayIconPath() must exist');
     assert.match(block, /trayTemplate\.png/);
@@ -50,7 +50,7 @@ describe('macOS Tray uses a dedicated template image, not the .icns app icon', (
     );
   });
 
-  it('exactly one setTemplateImage call â€?Windows/Linux tray behavior unchanged', () => {
+  it('exactly one setTemplateImage call â€” Windows/Linux tray behavior unchanged', () => {
     const calls = ensureTrayBlock.match(/setTemplateImage/g) ?? [];
     assert.equal(calls.length, 1, 'setTemplateImage must be darwin-only (no template marking off darwin)');
   });
@@ -60,7 +60,7 @@ describe('macOS Tray uses a dedicated template image, not the .icns app icon', (
   });
 
   it('Dock/app icon stays on icon.icns (mac.icon unchanged)', () => {
-    assert.match(builderYml, /icon:\s*build\/icon\.icns/, 'mac.icon must remain build/icon.icns â€?only the tray changed');
+    assert.match(builderYml, /icon:\s*build\/icon\.icns/, 'mac.icon must remain build/icon.icns â€” only the tray changed');
   });
 
   it('the tray template assets exist in build/ so the dev + packaged paths resolve', () => {

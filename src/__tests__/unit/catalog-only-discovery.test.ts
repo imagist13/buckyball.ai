@@ -1,20 +1,20 @@
 /**
- * Catalog-only discovery gateways â?ClinePass + OpenCode Go.
+ * Catalog-only discovery gateways — ClinePass + OpenCode Go.
  *
  * These three presets are `billingModel: 'coding_plan'` but deliberately NOT
  * `sdkProxyOnly` (ClinePass / OpenCode Go OpenAI are OpenAI-compatible; OpenCode
  * Go Anthropic is standard Anthropic Messages). They therefore escape the
  * existing `sdkProxyOnly && coding_plan` plan gate, so a new explicit flag
  * `meta.modelDiscoveryMode: 'catalog_only'` drives their discovery posture:
- *   - classifyProvider â?unsupported (no probe / no auto-write)
- *   - canReliablyFetchModels â?false (no refresh button)
- *   - canSearchUpstreamModels â?false (no search-and-add in Phase 1)
+ *   - classifyProvider → unsupported (no probe / no auto-write)
+ *   - canReliablyFetchModels → false (no refresh button)
+ *   - canSearchUpstreamModels → false (no search-and-add in Phase 1)
  *
  * URL contract (regression guard for the double-/v1 bug, verified 2026-06-30):
  * the Claude Code SDK ALWAYS appends `/v1/messages` to an anthropic base (the
  * native compat adapter resolves a non-/v1 base the same way), so OpenCode Go's
- * Anthropic half is stored as `.../zen/go` (NOT `.../zen/go/v1`) â?otherwise the
- * SDK POSTs to `.../zen/go/v1/v1/messages` (404 â?"model doesn't exist"). The
+ * Anthropic half is stored as `.../zen/go` (NOT `.../zen/go/v1`) — otherwise the
+ * SDK POSTs to `.../zen/go/v1/v1/messages` (404 → "model doesn't exist"). The
  * OpenAI half stays `.../zen/go/v1` because the OpenAI SDK appends
  * `/chat/completions`. The two bases are therefore distinct (no preset
  * collision).
@@ -55,7 +55,7 @@ const canSearchUpstreamModels = (record: LegacyRecord) => canSearchUpstreamModel
 const findMatchingPresetForRecord = (record: LegacyRecord) => findMatchingPresetForRecordResolved(identity(record));
 const getProviderCompat = (record: LegacyRecord) => getProviderCompatResolved(identity(record));
 
-describe('catalog-only presets â?shape', () => {
+describe('catalog-only presets — shape', () => {
   for (const key of NEW_KEYS) {
     it(`${key} passes PresetSchema`, () => {
       const preset = getPreset(key);
@@ -113,17 +113,17 @@ describe('catalog-only presets â?shape', () => {
     assert.equal(p.protocol, 'anthropic');
     assert.equal(p.baseUrl, OPENCODE_ANTHROPIC_URL);
     // Regression: SDK + ClaudeCodeCompatModel append /v1/messages. A /v1-ending
-    // base would POST to .../zen/go/v1/v1/messages â?404. Keep base sans /v1.
+    // base would POST to .../zen/go/v1/v1/messages → 404. Keep base sans /v1.
     assert.ok(!p.baseUrl.endsWith('/v1'), 'anthropic base must NOT end in /v1');
     assert.equal(`${p.baseUrl}/v1/messages`, 'https://opencode.ai/zen/go/v1/messages',
       'base + /v1/messages must resolve to the real endpoint');
     assert.equal(p.defaultModels.length, 6);
-    // Must NOT claim verified before a real-key smoke â?drives the experimental
+    // Must NOT claim verified before a real-key smoke — drives the experimental
     // (warning) tone rather than the verified tone.
     assert.notEqual(p.meta?.claudeCodeVerified, true);
   });
 
-  it('the two OpenCode Go bases are distinct â?no preset collision', () => {
+  it('the two OpenCode Go bases are distinct → no preset collision', () => {
     assert.notEqual(getPreset('opencode-go-openai')!.baseUrl, getPreset('opencode-go-anthropic')!.baseUrl);
   });
 
@@ -138,17 +138,17 @@ describe('catalog-only presets â?shape', () => {
   });
 });
 
-describe('isCatalogOnlyDiscoveryProvider â?by key', () => {
+describe('isCatalogOnlyDiscoveryProvider — by key', () => {
   for (const key of NEW_KEYS) {
-    it(`${key} â?true`, () => assert.equal(isCatalogOnlyDiscoveryProvider(key), true));
+    it(`${key} → true`, () => assert.equal(isCatalogOnlyDiscoveryProvider(key), true));
   }
-  it('plan provider (glm-cn) â?false (catalog_only is distinct from the plan gate)', () => {
+  it('plan provider (glm-cn) → false (catalog_only is distinct from the plan gate)', () => {
     assert.equal(isCatalogOnlyDiscoveryProvider('glm-cn'), false);
   });
-  it('generic openai-compatible â?false', () => {
+  it('generic openai-compatible → false', () => {
     assert.equal(isCatalogOnlyDiscoveryProvider('openai-compatible'), false);
   });
-  it('null / undefined / unknown â?false', () => {
+  it('null / undefined / unknown → false', () => {
     assert.equal(isCatalogOnlyDiscoveryProvider(null), false);
     assert.equal(isCatalogOnlyDiscoveryProvider(undefined), false);
     assert.equal(isCatalogOnlyDiscoveryProvider('not-a-key'), false);
@@ -160,28 +160,28 @@ describe('isCatalogOnlyDiscoveryProvider â?by key', () => {
   });
 });
 
-describe('classifyProvider â?catalog_only gateways â?unsupported', () => {
-  it('cline-pass (openai-compatible) â?unsupported', () => {
+describe('classifyProvider — catalog_only gateways → unsupported', () => {
+  it('cline-pass (openai-compatible) → unsupported', () => {
     const r = classifyProvider({ protocol: 'openai-compatible', presetKey: 'cline-pass' });
     assert.equal(r.classification, 'unsupported');
     assert.match(r.notes, /catalog_only|whitelist|key-gated/i);
   });
-  it('opencode-go-openai â?unsupported', () => {
+  it('opencode-go-openai → unsupported', () => {
     const r = classifyProvider({ protocol: 'openai-compatible', presetKey: 'opencode-go-openai' });
     assert.equal(r.classification, 'unsupported');
   });
-  it('opencode-go-anthropic â?unsupported', () => {
+  it('opencode-go-anthropic → unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'opencode-go-anthropic' });
     assert.equal(r.classification, 'unsupported');
   });
-  // åä¾: a generic openai-compatible gateway WITHOUT the flag still probes.
-  it('generic openai-compatible (no flag) â?api (regression guard)', () => {
+  // 反例: a generic openai-compatible gateway WITHOUT the flag still probes.
+  it('generic openai-compatible (no flag) → api (regression guard)', () => {
     const r = classifyProvider({ protocol: 'openai-compatible', presetKey: 'openai-compatible' });
     assert.equal(r.classification, 'api');
   });
 });
 
-describe('discovery gates â?refresh + search both off', () => {
+describe('discovery gates — refresh + search both off', () => {
   const records = {
     'cline-pass': { provider_type: 'openai-compatible', base_url: CLINE_PASS_URL },
     'opencode-go-openai': { provider_type: 'openai-compatible', base_url: OPENCODE_OPENAI_URL },
@@ -189,20 +189,20 @@ describe('discovery gates â?refresh + search both off', () => {
   };
 
   for (const [key, record] of Object.entries(records)) {
-    it(`${key}: isCatalogOnlyDiscoveryRecord â?true`, () => {
+    it(`${key}: isCatalogOnlyDiscoveryRecord → true`, () => {
       assert.equal(isCatalogOnlyDiscoveryRecord(record), true);
     });
-    it(`${key}: canReliablyFetchModels â?false`, () => {
+    it(`${key}: canReliablyFetchModels → false`, () => {
       assert.equal(canReliablyFetchModels(record).reliable, false);
     });
-    it(`${key}: canSearchUpstreamModels â?false`, () => {
+    it(`${key}: canSearchUpstreamModels → false`, () => {
       assert.equal(canSearchUpstreamModels(record).reliable, false);
     });
   }
 
-  // åä¾: plan providers (GLM) keep search-and-add ON â?their /v1/models is a
+  // 反例: plan providers (GLM) keep search-and-add ON — their /v1/models is a
   // clean per-vendor list. Proves catalog_only is stricter, not a rename.
-  it('GLM plan provider keeps canSearchUpstreamModels â?true', () => {
+  it('GLM plan provider keeps canSearchUpstreamModels → true', () => {
     const glm = getPreset('glm-cn')!;
     assert.equal(
       canSearchUpstreamModels({ provider_type: 'anthropic', base_url: glm.baseUrl }).reliable,
@@ -211,37 +211,37 @@ describe('discovery gates â?refresh + search both off', () => {
   });
 });
 
-describe('preset resolution + runtime-compat â?both halves resolve correctly', () => {
-  it('anthropic base â?opencode-go-anthropic preset', () => {
+describe('preset resolution + runtime-compat — both halves resolve correctly', () => {
+  it('anthropic base → opencode-go-anthropic preset', () => {
     const p = findMatchingPresetForRecord({ provider_type: 'anthropic', base_url: OPENCODE_ANTHROPIC_URL });
     assert.equal(p?.key, 'opencode-go-anthropic');
   });
-  it('openai base â?opencode-go-openai preset', () => {
+  it('openai base → opencode-go-openai preset', () => {
     const p = findMatchingPresetForRecord({ provider_type: 'openai-compatible', base_url: OPENCODE_OPENAI_URL });
     assert.equal(p?.key, 'opencode-go-openai');
   });
 
-  it('OpenAI half badge â?bbagent_only (CodePilot + Codex, not Claude Code)', () => {
+  it('OpenAI half badge → codepilot_only (CodePilot + Codex, not Claude Code)', () => {
     assert.equal(
       getProviderCompat({ provider_type: 'openai-compatible', base_url: OPENCODE_OPENAI_URL }),
-      'bbagent_only',
+      'codepilot_only',
     );
   });
-  it('Anthropic half badge â?claude_code_experimental (unverified)', () => {
+  it('Anthropic half badge → claude_code_experimental (unverified)', () => {
     assert.equal(
       getProviderCompat({ provider_type: 'anthropic', base_url: OPENCODE_ANTHROPIC_URL }),
       'claude_code_experimental',
     );
   });
-  it('ClinePass badge â?bbagent_only', () => {
+  it('ClinePass badge → codepilot_only', () => {
     assert.equal(
       getProviderCompat({ provider_type: 'openai-compatible', base_url: CLINE_PASS_URL }),
-      'bbagent_only',
+      'codepilot_only',
     );
   });
 
   // Seeding path (getDefaultModelsForProvider) keys on protocol + base_url, so a
-  // newly-saved provider gets only its own half â?never the other protocol's.
+  // newly-saved provider gets only its own half — never the other protocol's.
   it('getDefaultModelsForProvider seeds only the OpenAI half (9 bare ids)', () => {
     const models = getDefaultModelsForProvider('openai-compatible', OPENCODE_OPENAI_URL);
     assert.equal(models.length, 9);
@@ -259,7 +259,7 @@ describe('preset resolution + runtime-compat â?both halves resolve correctly'
 
 describe('legacy OpenCode Go Anthropic record (pre-de-/v1) is not mis-bucketed', () => {
   // Before the Anthropic base was de-/v1'd, a saved Anthropic provider carried
-  // base https://opencode.ai/zen/go/v1 â?which is NOW the OpenAI half's base.
+  // base https://opencode.ai/zen/go/v1 — which is NOW the OpenAI half's base.
   // The protocol-aware matcher must not resolve such a record to the OpenAI
   // half (wrong bucket / runtime badge / discovery class).
   const legacy = { provider_type: 'anthropic', base_url: OPENCODE_OPENAI_URL };
@@ -270,11 +270,11 @@ describe('legacy OpenCode Go Anthropic record (pre-de-/v1) is not mis-bucketed',
   it('falls through to anthropic-thirdparty (correct protocol family)', () => {
     assert.equal(findMatchingPresetForRecord(legacy)?.key, 'anthropic-thirdparty');
   });
-  it('runtime badge â?claude_code_experimental, NOT bbagent_only', () => {
+  it('runtime badge → claude_code_experimental, NOT codepilot_only', () => {
     assert.equal(getProviderCompat(legacy), 'claude_code_experimental');
   });
   // Regression: a correct OpenAI record at the same base still resolves right.
-  it('current openai record at the same base still â?opencode-go-openai', () => {
+  it('current openai record at the same base still → opencode-go-openai', () => {
     assert.equal(
       findMatchingPresetForRecord({ provider_type: 'openai-compatible', base_url: OPENCODE_OPENAI_URL })?.key,
       'opencode-go-openai',
@@ -282,7 +282,7 @@ describe('legacy OpenCode Go Anthropic record (pre-de-/v1) is not mis-bucketed',
   });
 });
 
-describe('discoverModels â?catalog_only gate prevents any network probe', () => {
+describe('discoverModels — catalog_only gate prevents any network probe', () => {
   it('opencode-go-openai never fires a probe (no fetch call)', async () => {
     let fetchCalls = 0;
     const original = global.fetch;

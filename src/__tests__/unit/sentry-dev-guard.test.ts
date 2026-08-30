@@ -1,11 +1,11 @@
 /**
- * Repo-wide `@sentry/node` dev-init contract â€?dev-server memory guardrail.
+ * Repo-wide `@sentry/node` dev-init contract â€” dev-server memory guardrail.
  *
  * `instrumentation.ts` was the obvious entry, but ANY src file that touches
  * `@sentry/node` is a leak: in dev, the moment Turbopack resolves the
  * import (eagerly at compile, or lazily on first error), it pulls the
  * full `@opentelemetry/*` instrumentation chain (HTTP / fs / dns /
- * undici / â€? into the dev compile graph and inflates RSS by 100+ MB.
+ * undici / â€¦) into the dev compile graph and inflates RSS by 100+ MB.
  *
  * The contract: every `@sentry/node` reference in src/ MUST sit inside
  * an `if (process.env.NODE_ENV !== 'development') { ... }` block. The
@@ -14,7 +14,7 @@
  * appears inside that union.
  *
  * Comments / JSDoc that mention `@sentry/node` to explain *why* the
- * guard exists are tolerated â€?we strip comments before scanning, the
+ * guard exists are tolerated â€” we strip comments before scanning, the
  * same way `instrumentation-shape.test.ts` does.
  *
  * Why a wrapping `if (... !== 'development') { body }` and not an early
@@ -60,7 +60,7 @@ function stripComments(src: string): string {
 }
 
 /**
- * Find every `if (process.env.NODE_ENV !== 'development') { â€?}` block
+ * Find every `if (process.env.NODE_ENV !== 'development') { â€¦ }` block
  * in `src` and return their bodies. Brace-balanced extraction handles
  * nested braces inside the body (object literals, nested ifs, etc.).
  */
@@ -112,7 +112,8 @@ describe('@sentry/node repo-wide dev-guard contract', () => {
   const scans = scanRepo();
 
   it('the two known callers (instrumentation.ts + error-classifier.ts) are present', () => {
-    // Sanity check that the test machinery actually finds the files â€?    // a regression that turns the regex stale would make every per-file
+    // Sanity check that the test machinery actually finds the files â€”
+    // a regression that turns the regex stale would make every per-file
     // test pass vacuously by skipping. Pin the expected callers.
     const rels = new Set(scans.map((s) => s.rel));
     assert.ok(
@@ -130,7 +131,7 @@ describe('@sentry/node repo-wide dev-guard contract', () => {
       assert.ok(
         s.blocks.length > 0,
         `${s.rel} mentions @sentry/node but has no ` +
-          `\`if (process.env.NODE_ENV !== 'development') { â€?}\` guard. ` +
+          `\`if (process.env.NODE_ENV !== 'development') { â€¦ }\` guard. ` +
           `In dev this leaks the @opentelemetry/* graph into Turbopack's ` +
           `compile (~100+ MB RSS regression).`,
       );
@@ -150,7 +151,7 @@ describe('@sentry/node repo-wide dev-guard contract', () => {
         SENTRY_NODE_RE,
         `${s.rel} has a reference to @sentry/node OUTSIDE the dev guard. ` +
           `Move every import / usage inside the ` +
-          `\`if (process.env.NODE_ENV !== 'development') { â€?}\` block. ` +
+          `\`if (process.env.NODE_ENV !== 'development') { â€¦ }\` block. ` +
           `One unguarded path on the error / lazy-init flow is enough to ` +
           `pull @opentelemetry/* into dev memory.`,
       );
@@ -162,7 +163,7 @@ describe('@sentry/node repo-wide dev-guard contract', () => {
       assert.ok(
         insideAnyGuard,
         `${s.rel} declares a dev guard but no @sentry/node reference is ` +
-          `inside it â€?verify the guard wraps the right code`,
+          `inside it â€” verify the guard wraps the right code`,
       );
     }
   });

@@ -38,7 +38,7 @@ interface UsageStatsResponse {
   }>;
 }
 
-// Recharts v3 Payload ‚Ä?only the fields we actually read
+// Recharts v3 Payload ‚Äî only the fields we actually read
 interface RechartsPayloadItem {
   name?: string | number;
   dataKey?: string | number;
@@ -54,13 +54,13 @@ interface RechartsPayloadItem {
 
 /**
  * Format a token count for display.
- *   0          ‚Ü?"0"
- *   999        ‚Ü?"999"
- *   1_234      ‚Ü?"1,234"
- *   9_999      ‚Ü?"9,999"
- *   10_000     ‚Ü?"10.0K"
- *   1_234_567  ‚Ü?"1.23M"
- *   1_200_000_000 ‚Ü?"1.20B"
+ *   0          ‚Üí "0"
+ *   999        ‚Üí "999"
+ *   1_234      ‚Üí "1,234"
+ *   9_999      ‚Üí "9,999"
+ *   10_000     ‚Üí "10.0K"
+ *   1_234_567  ‚Üí "1.23M"
+ *   1_200_000_000 ‚Üí "1.20B"
  */
 function formatTokens(n: number): string {
   if (n === 0) return "0";
@@ -74,12 +74,12 @@ function formatTokens(n: number): string {
 
 /**
  * Format a USD cost for display.
- *   0         ‚Ü?"$0.00"
- *   0.00015   ‚Ü?"$0.0002"
- *   0.0052    ‚Ü?"$0.0052"
- *   0.12      ‚Ü?"$0.12"
- *   1.5       ‚Ü?"$1.50"
- *   1234.5    ‚Ü?"$1,234.50"
+ *   0         ‚Üí "$0.00"
+ *   0.00015   ‚Üí "$0.0002"
+ *   0.0052    ‚Üí "$0.0052"
+ *   0.12      ‚Üí "$0.12"
+ *   1.5       ‚Üí "$1.50"
+ *   1234.5    ‚Üí "$1,234.50"
  */
 function formatCost(n: number): string {
   if (n === 0) return "$0.00";
@@ -90,11 +90,11 @@ function formatCost(n: number): string {
 
 /**
  * Format a percentage.
- *   NaN / undefined ‚Ü?"N/A"
- *   0              ‚Ü?"0%"
- *   0.456          ‚Ü?"0.5%"
- *   12.345         ‚Ü?"12.3%"
- *   100            ‚Ü?"100%"
+ *   NaN / undefined ‚Üí "N/A"
+ *   0              ‚Üí "0%"
+ *   0.456          ‚Üí "0.5%"
+ *   12.345         ‚Üí "12.3%"
+ *   100            ‚Üí "100%"
  */
 function formatPercent(n: number | undefined): string {
   if (n === undefined || isNaN(n)) return "N/A";
@@ -110,7 +110,7 @@ function shortDate(dateStr: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Stable model ‚Ü?color mapping
+// Stable model ‚Üí color mapping
 // ---------------------------------------------------------------------------
 
 const COLOR_PALETTE = [
@@ -221,7 +221,7 @@ export function UsageStatsSection() {
 
   // Derive chart data: pivot daily rows into { date, model1: N, model2: N, ... }
   const { chartData, models } = deriveChartData(data?.daily ?? [], days);
-  // Derive cost-by-day series ‚Ä?same date scaffold as the bar chart so
+  // Derive cost-by-day series ‚Äî same date scaffold as the bar chart so
   // the two share the same x-axis tick density.
   const costData = deriveCostData(data?.daily ?? [], days);
   const isZh = t('nav.chats') === 'ÂØπËØù';
@@ -239,7 +239,7 @@ export function UsageStatsSection() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Page title ‚Ä?matches other Settings sub-pages. */}
+      {/* Page title ‚Äî matches other Settings sub-pages. */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">{t('settings.usage')}</h2>
       </div>
@@ -264,7 +264,7 @@ export function UsageStatsSection() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard
           label={t('usage.totalTokens')}
-          value={loading ? "‚Ä? : formatTokens(totalTokens)}
+          value={loading ? "‚Äì" : formatTokens(totalTokens)}
           sub={
             summary
               ? `${t('usage.input')} ${formatTokens(summary.total_input_tokens)} ¬∑ ${t('usage.output')} ${formatTokens(summary.total_output_tokens)}`
@@ -273,15 +273,15 @@ export function UsageStatsSection() {
         />
         <StatCard
           label={t('usage.totalCost')}
-          value={loading ? "‚Ä? : formatCost(summary?.total_cost ?? 0)}
+          value={loading ? "‚Äì" : formatCost(summary?.total_cost ?? 0)}
         />
         <StatCard
           label={t('usage.sessions')}
-          value={loading ? "‚Ä? : String(summary?.total_sessions ?? 0)}
+          value={loading ? "‚Äì" : String(summary?.total_sessions ?? 0)}
         />
         <StatCard
           label={t('usage.cacheHitRate')}
-          value={loading ? "‚Ä? : formatPercent(cacheRate)}
+          value={loading ? "‚Äì" : formatPercent(cacheRate)}
           sub={
             summary && summary.cache_read_tokens > 0
               ? `${formatTokens(summary.cache_read_tokens)} ${t('usage.cached')}`
@@ -290,7 +290,7 @@ export function UsageStatsSection() {
         />
       </div>
 
-      {/* Bar chart ‚Ä?daily token usage by model */}
+      {/* Bar chart ‚Äî daily token usage by model */}
       <div className="rounded-lg border border-border/50 bg-card p-5">
         <h3 className="mb-4 text-sm font-medium">{t('usage.dailyChart')}</h3>
 
@@ -376,7 +376,7 @@ export function UsageStatsSection() {
         )}
       </div>
 
-      {/* Daily cost chart ‚Ä?fed by the same range selector. Useful to
+      {/* Daily cost chart ‚Äî fed by the same range selector. Useful to
           spot expensive days quickly without doing the math from token
           counts √ó per-model price. */}
       <div className="rounded-lg border border-border/50 bg-card p-5">
@@ -440,7 +440,7 @@ export function UsageStatsSection() {
         )}
       </div>
 
-      {/* 365-day activity heatmap ‚Ä?same component the Overview page
+      {/* 365-day activity heatmap ‚Äî same component the Overview page
           uses; here we hide the "View details" link since this IS the
           details page. */}
       <OverviewHeatmap isZh={isZh} hideViewDetails />
@@ -471,7 +471,7 @@ function StatCard({
 }
 
 // ---------------------------------------------------------------------------
-// Cost derive ‚Ä?sum cost per day, fill missing dates with zeros.
+// Cost derive ‚Äî sum cost per day, fill missing dates with zeros.
 // ---------------------------------------------------------------------------
 
 function deriveCostData(
@@ -505,7 +505,7 @@ function deriveChartData(daily: UsageStatsResponse["daily"], days: number): {
 } {
   if (daily.length === 0) return { chartData: [], models: [] };
 
-  // Normalise model names: empty string ‚Ü?"unknown"
+  // Normalise model names: empty string ‚Üí "unknown"
   const normalised = daily.map((row) => ({
     ...row,
     model: row.model || "unknown",

@@ -1,6 +1,6 @@
 'use client';
 
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 import type { CliToolItem } from '@/types';
@@ -16,7 +16,7 @@ export type { CliToolItem } from '@/types';
 
 // Codex-style attached card matching the slash-command popover (April
 // 2026 feedback). No in-popover search bar, no "manage CLI" footer
-// shortcut, full input width â?keyboard nav is driven from the
+// shortcut, full input width — keyboard nav is driven from the
 // composer textarea.
 interface CliToolsPopoverProps {
   popoverRef: React.RefObject<HTMLDivElement | null>;
@@ -50,7 +50,7 @@ export function CliToolsPopover({
                 onClick={() => onCliSelect(tool)}
                 onMouseEnter={() => onSetSelectedIndex(idx)}
               >
-                <BuckyballIcon name="cli" size="md" className="shrink-0 text-muted-foreground" />
+                <CodePilotIcon name="cli" size="md" className="shrink-0 text-muted-foreground" />
                 <span className="font-medium text-xs truncate">{tool.name}</span>
                 {tool.version && (
                   <span className="text-[10px] text-muted-foreground shrink-0">v{tool.version}</span>

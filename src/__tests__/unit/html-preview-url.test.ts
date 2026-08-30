@@ -1,5 +1,5 @@
 /**
- * Phase 4 Phase 1.5 â€?HTML preview URL builder + parser.
+ * Phase 4 Phase 1.5 â€” HTML preview URL builder + parser.
  *
  * The route + the helper are paired: any encoding change here must be
  * reversible on the route side, and any change to the route's segment
@@ -21,13 +21,13 @@ import {
   HTML_DEP_EXTENSIONS,
 } from '../../lib/html-preview-url';
 
-describe('buildHtmlPreviewUrl â€?workspace scope', () => {
+describe('buildHtmlPreviewUrl â€” workspace scope', () => {
   it('emits /api/files/html-preview/<ws.base64>/<abs-path>', () => {
     const url = buildHtmlPreviewUrl('/Users/me/proj/index.html', {
       kind: 'workspace',
       baseDir: '/Users/me/proj',
     });
-    // Hard-coded base64url shape â€?pinned so the route's decoder stays in sync
+    // Hard-coded base64url shape â€” pinned so the route's decoder stays in sync
     assert.ok(url.startsWith('/api/files/html-preview/ws.'), url);
     assert.ok(url.endsWith('/Users/me/proj/index.html'), url);
   });
@@ -136,7 +136,7 @@ describe('buildHtmlPreviewUrl â€?workspace scope', () => {
   });
 });
 
-describe('buildHtmlPreviewUrl â€?home scope', () => {
+describe('buildHtmlPreviewUrl â€” home scope', () => {
   it('emits /api/files/html-preview/home/<abs-path>', () => {
     const url = buildHtmlPreviewUrl('/Users/me/Desktop/note.html', { kind: 'home' });
     assert.equal(
@@ -154,7 +154,7 @@ describe('buildHtmlPreviewUrl â€?home scope', () => {
   });
 });
 
-describe('parseHtmlPreviewSegments â€?malformed input', () => {
+describe('parseHtmlPreviewSegments â€” malformed input', () => {
   it('rejects empty / undefined segments', () => {
     assert.throws(() => parseHtmlPreviewSegments(undefined as unknown as string[]), /at least/);
     assert.throws(() => parseHtmlPreviewSegments([]), /at least/);
@@ -162,7 +162,7 @@ describe('parseHtmlPreviewSegments â€?malformed input', () => {
   });
 
   it('rejects unknown scope tokens', () => {
-    // Not 'home', not 'ws.<...>' â€?must be rejected so a 404-or-traversal
+    // Not 'home', not 'ws.<...>' â€” must be rejected so a 404-or-traversal
     // attempt with the wrong scope hint can't fall through to a default.
     assert.throws(
       () => parseHtmlPreviewSegments(['notascope', 'Users', 'me', 'x.html']),
@@ -192,7 +192,7 @@ describe('parseHtmlPreviewSegments â€?malformed input', () => {
     );
   });
 
-  it('does not collapse .. â€?the route handler is responsible for traversal checks', () => {
+  it('does not collapse .. â€” the route handler is responsible for traversal checks', () => {
     // We deliberately let `..` segments through so the route can run
     // them through `assertRealPathInBase`, which uses fs.realpath and
     // catches symlink escapes too. Collapsing here would hide intent
@@ -208,7 +208,7 @@ describe('parseHtmlPreviewSegments â€?malformed input', () => {
   });
 });
 
-describe('buildHtmlPreviewUrl â€?interactive flag + reload nonce', () => {
+describe('buildHtmlPreviewUrl â€” interactive flag + reload nonce', () => {
   it('appends ?interactive=1 only when the option is set', () => {
     const off = buildHtmlPreviewUrl('/a/b.html', { kind: 'home' });
     assert.equal(off.includes('?interactive'), false);
@@ -232,7 +232,7 @@ describe('buildHtmlPreviewUrl â€?interactive flag + reload nonce', () => {
   });
 });
 
-describe('shouldReloadHtmlForPath â€?HTML sibling-dep reload predicate', () => {
+describe('shouldReloadHtmlForPath â€” HTML sibling-dep reload predicate', () => {
   const activeHtml = '/Users/me/proj/site/index.html';
   const baseDir = '/Users/me/proj';
 
@@ -269,14 +269,14 @@ describe('shouldReloadHtmlForPath â€?HTML sibling-dep reload predicate', () => {
   });
 
   it('returns false for non-static-resource extensions', () => {
-    // Markdown / JSON / random text â€?these aren't HTML dependencies,
+    // Markdown / JSON / random text â€” these aren't HTML dependencies,
     // even if they live under the workspace.
     assert.equal(shouldReloadHtmlForPath('/Users/me/proj/notes.md', activeHtml, baseDir), false);
     assert.equal(shouldReloadHtmlForPath('/Users/me/proj/data.json', activeHtml, baseDir), false);
     assert.equal(shouldReloadHtmlForPath('/Users/me/proj/README', activeHtml, baseDir), false);
   });
 
-  it('returns false when scopeBaseDir is missing â€?refuse to broaden by default', () => {
+  it('returns false when scopeBaseDir is missing â€” refuse to broaden by default', () => {
     // Defensive: a caller that loses scopeBaseDir shouldn't suddenly
     // make every static-resource edit anywhere on disk trigger reloads.
     assert.equal(shouldReloadHtmlForPath('/some/style.css', activeHtml, null), false);
@@ -296,7 +296,7 @@ describe('shouldReloadHtmlForPath â€?HTML sibling-dep reload predicate', () => {
   });
 
   it('HTML_DEP_EXTENSIONS sanity: covers the resource families HTML pages actually reference', () => {
-    // Spot checks â€?not exhaustive, just a guard against future
+    // Spot checks â€” not exhaustive, just a guard against future
     // accidental removal of the formats the policy claims to support.
     for (const ext of ['.css', '.js', '.png', '.svg', '.woff2', '.html']) {
       assert.ok(HTML_DEP_EXTENSIONS.has(ext), `expected ${ext} in HTML_DEP_EXTENSIONS`);
@@ -304,7 +304,7 @@ describe('shouldReloadHtmlForPath â€?HTML sibling-dep reload predicate', () => {
   });
 });
 
-describe('htmlPreviewDirname â€?POSIX-style dirname for HTML reload scoping', () => {
+describe('htmlPreviewDirname â€” POSIX-style dirname for HTML reload scoping', () => {
   it('returns the parent directory for a top-level absolute file', () => {
     assert.equal(htmlPreviewDirname('/Users/me/Desktop/page.html'), '/Users/me/Desktop');
   });
@@ -334,22 +334,22 @@ describe('htmlPreviewDirname â€?POSIX-style dirname for HTML reload scoping', ()
     assert.equal(
       shouldReloadHtmlForPath('/Users/me/Desktop/style.css', externalHtml, scope),
       true,
-      'sibling CSS in same dir â†?reload',
+      'sibling CSS in same dir â†’ reload',
     );
     assert.equal(
       shouldReloadHtmlForPath('/Users/me/Desktop/assets/logo.svg', externalHtml, scope),
       true,
-      'nested asset under same dir â†?reload',
+      'nested asset under same dir â†’ reload',
     );
     assert.equal(
       shouldReloadHtmlForPath('/Users/me/Documents/x.css', externalHtml, scope),
       false,
-      'sibling of the dir (not under it) â†?skip',
+      'sibling of the dir (not under it) â†’ skip',
     );
     assert.equal(
       shouldReloadHtmlForPath('/Users/me/Desktop/notes.md', externalHtml, scope),
       false,
-      'wrong extension under same dir â†?skip',
+      'wrong extension under same dir â†’ skip',
     );
   });
 });

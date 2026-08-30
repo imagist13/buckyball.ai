@@ -1,12 +1,12 @@
 /**
- * Update-check version comparison â€?preview builds must rank BELOW the matching
+ * Update-check version comparison â€” preview builds must rank BELOW the matching
  * stable release. Guards `compareSemver` (extracted to `src/lib/compare-semver.ts`)
  * which `src/app/api/app/updates/route.ts` uses as:
  *   updateAvailable = compareSemver(latestVersion, currentVersion) > 0
  *
  * Bug it locks: the old impl split on '.' + Number()-coerced the first three
  * segments, dropping the `-preview.N` suffix (and `NaN || 0` collapsed patch to
- * 0), so `0.55.0` compared EQUAL to `0.55.0-preview.5` â†?preview testers never
+ * 0), so `0.55.0` compared EQUAL to `0.55.0-preview.5` â†’ preview testers never
  * saw the stable v0.55.0 update.
  */
 import { describe, it } from 'node:test';
@@ -18,8 +18,8 @@ import { compareSemver } from '@/lib/compare-semver';
 // `updateAvailable` in the route is exactly `compareSemver(latest, current) > 0`.
 const updateAvailable = (latest: string, current: string) => compareSemver(latest, current) > 0;
 
-describe('compareSemver â€?stable outranks same-version prerelease (update check)', () => {
-  it('stable > same-version preview â€?the reported bug: preview.5 must see v0.55.0', () => {
+describe('compareSemver â€” stable outranks same-version prerelease (update check)', () => {
+  it('stable > same-version preview â€” the reported bug: preview.5 must see v0.55.0', () => {
     assert.equal(compareSemver('0.55.0', '0.55.0-preview.5'), 1);
     assert.equal(updateAvailable('0.55.0', '0.55.0-preview.5'), true);
   });
@@ -57,7 +57,7 @@ describe('compareSemver â€?stable outranks same-version prerelease (update check
     assert.equal(compareSemver('v0.55.0', '0.55.0-preview.5'), 1);
   });
 
-  it('unparseable versions are conservative â†?0, never a false update', () => {
+  it('unparseable versions are conservative â†’ 0, never a false update', () => {
     assert.equal(compareSemver('garbage', '0.55.0'), 0);
     assert.equal(compareSemver('0.55.0', ''), 0);
     assert.equal(compareSemver('0.55', '0.55.0'), 0); // incomplete MAJOR.MINOR
@@ -66,7 +66,7 @@ describe('compareSemver â€?stable outranks same-version prerelease (update check
   });
 });
 
-describe('updates route source â€?uses the shared comparator, not a re-inlined one', () => {
+describe('updates route source â€” uses the shared comparator, not a re-inlined one', () => {
   const src = readFileSync(
     path.resolve(__dirname, '../../app/api/app/updates/route.ts'),
     'utf8',

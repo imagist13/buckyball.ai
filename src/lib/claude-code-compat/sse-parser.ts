@@ -1,5 +1,5 @@
 /**
- * sse-parser.ts â€?Parse Anthropic SSE stream into typed events.
+ * sse-parser.ts â€” Parse Anthropic SSE stream into typed events.
  *
  * Handles standard SSE format: events separated by \n\n,
  * each with optional `event:` and `data:` fields.
@@ -62,7 +62,7 @@ function parseSSEEvent(block: string): AnthropicSSEEvent | null {
       // Multi-line data: concatenate all data: lines (standard SSE spec)
       dataLines.push(line.slice(5).trim());
     } else if (line.startsWith(':')) {
-      // Comment line â€?ignore (used for keep-alive)
+      // Comment line â€” ignore (used for keep-alive)
       continue;
     }
   }
@@ -78,7 +78,7 @@ function parseSSEEvent(block: string): AnthropicSSEEvent | null {
     if (eventType) return { ...parsed, type: eventType } as AnthropicSSEEvent;
     return null;
   } catch {
-    // Non-JSON data â€?ignore (e.g. "[DONE]")
+    // Non-JSON data â€” ignore (e.g. "[DONE]")
     return null;
   }
 }

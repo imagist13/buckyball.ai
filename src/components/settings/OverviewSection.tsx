@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * Settings â?Overview â?the dashboard of the Settings shell.
+ * Settings → Overview — the dashboard of the Settings shell.
  *
  * Three layers, top to bottom:
  *
- *   1. Getting Started checklist â?4 items (provider / models / runtime
+ *   1. Getting Started checklist — 4 items (provider / models / runtime
  *      / workspace). Hidden once 4/4 done. Each pending item carries its
  *      own jump button so the user can pick whichever step they want.
  *   2. 6 status cards in a 2-col grid: Runtime, Providers, Models,
  *      Assistant Workspace, Update / About, Setup / Diagnostics. Cards
  *      that need attention pick up an accent (`status-warning-muted`),
- *      already-configured cards stay flat â?so the page no longer reads
+ *      already-configured cards stay flat — so the page no longer reads
  *      as "all uniform black tiles".
- *   3. Token usage heatmap â?GitHub-style 7ÃN grid + summary stats over
+ *   3. Token usage heatmap — GitHub-style 7×N grid + summary stats over
  *      the chosen 30 / 90 / 365 day window. Reuses `/api/usage/stats`.
  *
  * Resolution helpers (`computeEffectiveRuntime`, `resolveNewChatDefault`)
  * are reused from `src/lib/runtime/effective.ts` so this surface and
- * Settings â?Runtime always agree on which runtime is currently in
+ * Settings → Runtime always agree on which runtime is currently in
  * effect and what the next chat would resolve to.
  */
 
@@ -29,7 +29,7 @@ import { useAccountInfo } from "@/hooks/useAccountInfo";
 import { useUpdate } from "@/hooks/useUpdate";
 import { useClaudeStatus } from "@/hooks/useClaudeStatus";
 import { Button } from "@/components/ui/button";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   Plug,
   UserCircle,
@@ -44,6 +44,7 @@ import {
   type AgentRuntime,
 } from "@/lib/runtime/effective";
 import type { TranslationKey } from "@/i18n";
+import { releasePlatformLabel } from "@/lib/update-release";
 import { OverviewHeatmap } from "./OverviewHeatmap";
 import { OverviewCard } from "./OverviewCard";
 import {
@@ -58,11 +59,14 @@ import { useOverviewData } from "./useOverviewData";
 
 export function OverviewSection() {
   const { t } = useTranslation();
-  const isZh = t("nav.chats") === "å¯¹è¯";
+  const isZh = t("nav.chats") === "对话";
   const state = useOverviewData();
   const { accountInfo } = useAccountInfo();
   const { updateInfo, checking, checkForUpdates } = useUpdate();
   const { status: claudeStatus } = useClaudeStatus();
+  const nativeUpdateBusy = updateInfo?.nativePhase === "downloading"
+    || updateInfo?.nativePhase === "downloaded"
+    || updateInfo?.nativePhase === "installing";
 
   // Settings is a route-level split now (one page per /settings/<section>),
   // so cross-section jumps must go through the router or they only mutate
@@ -85,7 +89,7 @@ export function OverviewSection() {
   const claudeWarnings = !!(claudeStatus?.warnings && claudeStatus.warnings.length > 0);
 
   // Build the checklist. Tasks resolve once per render; once a task is
-  // done it stays "done" until the underlying state changes â?no stuck-
+  // done it stays "done" until the underlying state changes — no stuck-
   // checked rows.
   const checklist: ChecklistItem[] = useMemo(() => [
     {
@@ -142,7 +146,7 @@ export function OverviewSection() {
           </p>
         </div>
         <div className="rounded-lg border border-dashed border-border/50 bg-card/50 p-10 text-center">
-          <p className="text-xs text-muted-foreground">{isZh ? "å è½½ä¸­â? : "Loadingâ?}</p>
+          <p className="text-xs text-muted-foreground">{isZh ? "加载中…" : "Loading…"}</p>
         </div>
       </div>
     );
@@ -157,98 +161,98 @@ export function OverviewSection() {
         </p>
       </div>
 
-      {/* Top â?Getting Started checklist (hidden once everything done) */}
+      {/* Top — Getting Started checklist (hidden once everything done) */}
       {!allDone && (
         <OverviewGettingStartedBar items={checklist} isZh={isZh} t={t} />
       )}
 
-      {/* Middle â?6 status cards in a 2-col grid.
+      {/* Middle — 6 status cards in a 2-col grid.
           `md:` breakpoint kicks in at 768px so the dashboard shape lands at
           typical settings widths (in-app browser sidebar already eats ~240px,
-          so the lg breakpoint was too late â?content area never got there). */}
+          so the lg breakpoint was too late — content area never got there). */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Card 1 â?Runtime status */}
+        {/* Card 1 — Runtime status */}
         <OverviewCard
-          icon={<BuckyballIcon name="runtime" size="md" strokeWidth={runtimeIsFallback ? undefined : 2} />}
-          title={isZh ? "è¿è¡ç¯å¢" : "Runtime"}
+          icon={<CodePilotIcon name="runtime" size="md" strokeWidth={runtimeIsFallback ? undefined : 2} />}
+          title={isZh ? "运行环境" : "Runtime"}
           tone={runtimeIsFallback ? "warning" : "success"}
           primaryActionLabel={
             runtimeIsFallback
-              ? isZh ? "å»æ§è¡å¼æä¿®å¤? : "Fix in Runtime"
-              : isZh ? "ç®¡çæ§è¡å¼æ" : "Manage Runtime"
+              ? isZh ? "去执行引擎修复" : "Fix in Runtime"
+              : isZh ? "管理执行引擎" : "Manage Runtime"
           }
           onPrimaryAction={() => navToSection("runtime")}
         >
           <p>
             <span className="text-muted-foreground">
-              {isZh ? "å½åé»è®¤ï¼? : "Current default: "}
+              {isZh ? "当前默认：" : "Current default: "}
             </span>
             <span className="font-medium">{runtimeLabel}</span>
             {runtimeIsFallback && (
               <span className="ml-1 text-status-warning-foreground">
                 {!state.cliEnabled
-                  ? (isZh ? "ï¼CLI å·²ç¦ç¨ï¼èªå¨éçº§ï¼? : "(CLI disabled, fallback)")
-                  : (isZh ? "ï¼Claude Code ä¸å¯ç¨ï¼èªå¨éçº§ï¼? : "(Claude Code unavailable, fallback)")}
+                  ? (isZh ? "（CLI 已禁用，自动降级）" : "(CLI disabled, fallback)")
+                  : (isZh ? "（Claude Code 不可用，自动降级）" : "(Claude Code unavailable, fallback)")}
               </span>
             )}
           </p>
           {claudeWarnings && (
             <p className="text-status-warning-foreground flex items-start gap-1">
               <Warning size={12} weight="fill" className="mt-0.5 shrink-0" />
-              <span>{isZh ? "Claude Code æå¼å®¹æ§æç¤? : "Claude Code reports compatibility warnings"}</span>
+              <span>{isZh ? "Claude Code 有兼容性提示" : "Claude Code reports compatibility warnings"}</span>
             </p>
           )}
         </OverviewCard>
 
-        {/* Card 2 â?Providers (provider count + new-chat default) */}
+        {/* Card 2 — Providers (provider count + new-chat default) */}
         <OverviewCard
           icon={<Plug size={16} />}
-          title={isZh ? "æå¡å? : "Providers"}
+          title={isZh ? "服务商" : "Providers"}
           tone={state.noCompatibleProvider ? "warning" : "muted"}
-          primaryActionLabel={isZh ? "ç®¡çæå¡å? : "Manage providers"}
+          primaryActionLabel={isZh ? "管理服务商" : "Manage providers"}
           onPrimaryAction={() => navToSection("providers")}
         >
           <p>
             <span className="text-muted-foreground">
-              {isZh ? "å·²æ¥å¥ï¼" : "Configured: "}
+              {isZh ? "已接入：" : "Configured: "}
             </span>
             <span className="font-medium">{state.providersConfigured}</span>
           </p>
           {state.noCompatibleProvider ? (
             <p className="text-status-warning-foreground">
               {isZh
-                ? `å½åæ§è¡å¼æï¼?{runtimeLabel}ï¼ä¸æ²¡æå¯ç¨ç?provider/modelã`
+                ? `当前执行引擎（${runtimeLabel}）下没有可用的 provider/model。`
                 : `No provider / model is compatible with the current runtime (${runtimeLabel}).`}
             </p>
           ) : (
             <>
               <p>
-                <span className="text-muted-foreground">{isZh ? "é»è®¤æå¡åï¼" : "Default provider: "}</span>
+                <span className="text-muted-foreground">{isZh ? "默认服务商：" : "Default provider: "}</span>
                 <span className="font-medium">
-                  {state.defaultProviderName ?? (isZh ? "æªéç½? : "Not configured")}
+                  {state.defaultProviderName ?? (isZh ? "未配置" : "Not configured")}
                 </span>
               </p>
               <p>
-                <span className="text-muted-foreground">{isZh ? "é»è®¤æ¨¡åï¼? : "Default model: "}</span>
+                <span className="text-muted-foreground">{isZh ? "默认模型：" : "Default model: "}</span>
                 <span className="font-medium">
-                  {state.defaultModelLabel ?? (isZh ? "æªéç½? : "Not configured")}
+                  {state.defaultModelLabel ?? (isZh ? "未配置" : "Not configured")}
                 </span>
               </p>
             </>
           )}
         </OverviewCard>
 
-        {/* Card 3 â?Models exposure */}
+        {/* Card 3 — Models exposure */}
         <OverviewCard
-          icon={<BuckyballIcon name="model" size="md" />}
-          title={isZh ? "æ¨¡åæ´é²" : "Models exposure"}
+          icon={<CodePilotIcon name="model" size="md" />}
+          title={isZh ? "模型暴露" : "Models exposure"}
           tone={state.modelsEnabled === 0 && state.providersConfigured > 0 ? "warning" : "muted"}
-          primaryActionLabel={isZh ? "ç®¡çæ¨¡å" : "Manage models"}
+          primaryActionLabel={isZh ? "管理模型" : "Manage models"}
           onPrimaryAction={() => navToSection("models")}
         >
           <p>
             <span className="text-muted-foreground">
-              {isZh ? "å¯è§ / å¨é¨ï¼? : "Visible / total: "}
+              {isZh ? "可见 / 全部：" : "Visible / total: "}
             </span>
             <span className="font-medium">
               {state.modelsEnabled} / {state.modelsTotal}
@@ -257,27 +261,27 @@ export function OverviewSection() {
           {state.modelsEnabled === 0 && state.providersConfigured > 0 ? (
             <p className="text-status-warning-foreground">
               {isZh
-                ? "ä½ å·²ç»æ¥å¥äºæå¡åï¼ä½æ²¡æä»»ä½æ¨¡åå¯¹ picker å¯è§ã?
+                ? "你已经接入了服务商，但没有任何模型对 picker 可见。"
                 : "You've connected a provider, but no models are visible to the picker."}
             </p>
           ) : (state.modelsManualEnabled > 0 || state.modelsManualHidden > 0) ? (
             <p className="text-muted-foreground">
               {isZh
-                ? `æå¨å¯ç¨ ${state.modelsManualEnabled} Â· æå¨éè ${state.modelsManualHidden}ï¼å·æ°ä¸ä¼è¦çï¼`
-                : `${state.modelsManualEnabled} manually enabled Â· ${state.modelsManualHidden} manually hidden (preserved on refresh)`}
+                ? `手动启用 ${state.modelsManualEnabled} · 手动隐藏 ${state.modelsManualHidden}（刷新不会覆盖）`
+                : `${state.modelsManualEnabled} manually enabled · ${state.modelsManualHidden} manually hidden (preserved on refresh)`}
             </p>
           ) : null}
         </OverviewCard>
 
-        {/* Card 4 â?Assistant Workspace */}
+        {/* Card 4 — Assistant Workspace */}
         <OverviewCard
           icon={<UserCircle size={16} />}
-          title={isZh ? "å©çå·¥ä½ç©ºé´" : "Assistant Workspace"}
+          title={isZh ? "助理工作空间" : "Assistant Workspace"}
           tone={state.workspaceConfigured ? "success" : "warning"}
           primaryActionLabel={
             state.workspaceConfigured
-              ? isZh ? "ç®¡çå©ç" : "Manage assistant"
-              : isZh ? "å»éç½? : "Configure"
+              ? isZh ? "管理助理" : "Manage assistant"
+              : isZh ? "去配置" : "Configure"
           }
           onPrimaryAction={() => navToSection("assistant")}
         >
@@ -289,24 +293,24 @@ export function OverviewSection() {
                 className="inline-block text-status-success-foreground mr-1 -mt-0.5"
               />
               {state.workspaceName
-                ? (isZh ? `å·²éç½®ï¼${state.workspaceName}` : `Configured: ${state.workspaceName}`)
-                : (isZh ? "å·²éç½®å·¥ä½ç©ºé? : "Workspace configured")}
+                ? (isZh ? `已配置：${state.workspaceName}` : `Configured: ${state.workspaceName}`)
+                : (isZh ? "已配置工作空间" : "Workspace configured")}
             </p>
           ) : (
             <p className="text-muted-foreground">
               {isZh
-                ? "å°æªéç½® â?è®¾å®ä¸ä¸ªæ¬å°å·¥ä½ç®å½å¼å§ä½¿ç¨å©ç?
-                : "Not yet configured â?pick a local working directory to start"}
+                ? "尚未配置 — 设定一个本地工作目录开始使用助理"
+                : "Not yet configured — pick a local working directory to start"}
             </p>
           )}
         </OverviewCard>
 
-        {/* Card 5 â?Update / About */}
+        {/* Card 5 — Update / About */}
         <OverviewCard
           icon={<Info size={16} />}
-          title={isZh ? "çæ¬ä¸è´¦æ? : "Update & About"}
+          title={isZh ? "版本与账户" : "Update & About"}
           tone={updateInfo?.updateAvailable ? "warning" : "success"}
-          primaryActionLabel={isZh ? "æ¥çå³äº" : "View About"}
+          primaryActionLabel={isZh ? "查看关于" : "View About"}
           onPrimaryAction={() => navToSection("about")}
           footer={
             <Button
@@ -314,10 +318,14 @@ export function OverviewSection() {
               size="sm"
               className="-ml-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
               onClick={checkForUpdates}
-              disabled={checking}
+              disabled={checking || nativeUpdateBusy}
             >
               <ArrowsClockwise size={12} className={checking ? "animate-spin" : undefined} />
-              {checking ? (isZh ? "æ£æ¥ä¸­â? : "Checkingâ?) : (isZh ? "æ£æ¥æ´æ? : "Check updates")}
+              {checking
+                ? t("settings.checking")
+                : nativeUpdateBusy
+                  ? t("update.checkUnavailableDuringUpdate")
+                  : t("settings.checkForUpdates")}
             </Button>
           }
         >
@@ -325,27 +333,32 @@ export function OverviewSection() {
             <p className="text-status-warning-foreground flex items-start gap-1">
               <Warning size={12} weight="fill" className="mt-0.5 shrink-0" />
               <span>
-                {isZh
-                  ? `ææ°çæ¬ v${updateInfo.latestVersion} å¯ç¨`
-                  : `Update available: v${updateInfo.latestVersion}`}
+                {updateInfo.platformAssetMissing
+                  ? t("update.platformAssetMissing", {
+                      version: updateInfo.latestVersion,
+                      platform: releasePlatformLabel(updateInfo.detectedPlatform),
+                    })
+                  : isZh
+                    ? `有新版本 v${updateInfo.latestVersion} 可用`
+                    : `Update available: v${updateInfo.latestVersion}`}
               </span>
             </p>
           ) : (
             <p className="text-muted-foreground">
               {checking
-                ? (isZh ? "æ­£å¨æ£æ¥æ´æ°â? : "Checking for updatesâ?)
-                : (isZh ? "å·²æ¯ææ°çæ? : "Up to date")}
+                ? (isZh ? "正在检查更新…" : "Checking for updates…")
+                : (isZh ? "已是最新版本" : "Up to date")}
             </p>
           )}
           {accountInfo?.email && (
             <p className="text-muted-foreground">
-              {isZh ? "è´¦æ·ï¼? : "Account: "}
+              {isZh ? "账户：" : "Account: "}
               <span className="text-foreground/85">{accountInfo.email}</span>
             </p>
           )}
         </OverviewCard>
 
-        {/* Card 6 â?Health entry. Phase 2C.5 redirects this card from
+        {/* Card 6 — Health entry. Phase 2C.5 redirects this card from
             Setup Center to the new Health page, which is now the single
             "is anything wrong?" surface. Setup Center is still the
             wizard / repair flow but reaches it via Health, not directly
@@ -353,16 +366,17 @@ export function OverviewSection() {
             answer for "where do I check status?". */}
         <OverviewCard
           // Swapped from Phosphor `<Heart weight="fill">` to the
-          // BuckyballIcon `health` glyph (HugeIcons HeartCheck â?          // stroked). The other Overview cards already use stroked
-          // BuckyballIcon glyphs (runtime / model / provider); the
+          // CodePilotIcon `health` glyph (HugeIcons HeartCheck —
+          // stroked). The other Overview cards already use stroked
+          // CodePilotIcon glyphs (runtime / model / provider); the
           // filled Phosphor heart visually broke the row. The
           // health-vs-warning state is already conveyed by `tone` +
           // the warning copy below the card, so we don't need the
           // icon weight to carry that signal too.
-          icon={<BuckyballIcon name="health" size="md" />}
-          title={isZh ? "å¥åº·æ£æ? : "Health"}
+          icon={<CodePilotIcon name="health" size="md" />}
+          title={isZh ? "健康检查" : "Health"}
           tone={claudeWarnings ? "warning" : "muted"}
-          primaryActionLabel={isZh ? "å»å¥åº·æ£æ? : "Open Health"}
+          primaryActionLabel={isZh ? "去健康检查" : "Open Health"}
           onPrimaryAction={() => navToSection("health")}
         >
           {claudeWarnings ? (
@@ -370,21 +384,21 @@ export function OverviewSection() {
               <Warning size={12} weight="fill" className="mt-0.5 shrink-0" />
               <span>
                 {isZh
-                  ? "æ£æµå° Claude Code å¼å®¹æ§æç¤ºï¼å»ºè®®å¨å¥åº·æ£æ¥é¡µæ¥ç"
-                  : "Claude Code compatibility warnings detected â?see Health"}
+                  ? "检测到 Claude Code 兼容性提示，建议在健康检查页查看"
+                  : "Claude Code compatibility warnings detected — see Health"}
               </span>
             </p>
           ) : (
             <p className="text-muted-foreground">
               {isZh
-                ? "æå¡åè¿æ¥ãRuntimeãé»è®¤æ¨¡åãæ¨¡åæ´é²ãå·¥ä½ç©ºé´ç¶æä¸ç«å¼æ»è§"
+                ? "服务商连接、Runtime、默认模型、模型暴露、工作空间状态一站式总览"
                 : "One-page overview of provider connectivity, runtime, default model, exposure, and workspace"}
             </p>
           )}
         </OverviewCard>
       </div>
 
-      {/* Bottom â?Token usage activity heatmap */}
+      {/* Bottom — Token usage activity heatmap */}
       <OverviewHeatmap isZh={isZh} onJumpToDetails={() => navToSection("usage")} />
     </div>
   );

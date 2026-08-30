@@ -1,5 +1,5 @@
 /**
- * FeishuChannelPlugin ‚Ä?implements ChannelPlugin for Feishu/Lark.
+ * FeishuChannelPlugin ‚Äî implements ChannelPlugin for Feishu/Lark.
  *
  * Composes: gateway (WS), inbound (parsing), outbound (sending),
  * identity (bot info), policy (access control), card-controller (streaming).
@@ -95,7 +95,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
 
     this.gateway = new FeishuGateway(this.config);
 
-    // Register message handler ‚Ä?pushes to internal queue.
+    // Register message handler ‚Äî pushes to internal queue.
     // Reads this.botOpenId at call time so mention checks activate
     // once resolveBotIdentity() completes after gateway.start().
     //
@@ -108,7 +108,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
 
       // Access control gate: enforce dmPolicy / groupPolicy / allowFrom /
       // groupAllowFrom before enqueuing. Without this check these settings
-      // were dead config on Feishu ‚Ä?unlike Telegram/Discord/QQ adapters.
+      // were dead config on Feishu ‚Äî unlike Telegram/Discord/QQ adapters.
       //
       // Must use the RAW chat_id (before thread-session wrapping). When
       // threadSession is enabled, parseMessageWithResources encodes
@@ -127,7 +127,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
         this.enqueueMessage(parsed.message);
         return;
       }
-      // Download resources then enqueue. Fire-and-forget ‚Ä?the gateway handler
+      // Download resources then enqueue. Fire-and-forget ‚Äî the gateway handler
       // must not block long-running downloads.
       this.downloadAndEnqueue(parsed.message, parsed.resources).catch((err) => {
         console.warn('[feishu/plugin]', 'Resource download failed:', err);
@@ -136,11 +136,11 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
       });
     });
 
-    // Register card action handler ‚Ä?converts button clicks to callback messages.
+    // Register card action handler ‚Äî converts button clicks to callback messages.
     // Gateway guarantees 3-second response; this handler should stay lightweight.
     // Supports two button value formats:
-    //   1. { callback_data: "perm:allow:xxx" }  ‚Ä?CodePilot permission buttons
-    //   2. { action: "app_auth_done", operation_id: "xxx" }  ‚Ä?OpenClaw-style buttons
+    //   1. { callback_data: "perm:allow:xxx" }  ‚Äî CodePilot permission buttons
+    //   2. { action: "app_auth_done", operation_id: "xxx" }  ‚Äî OpenClaw-style buttons
     this.gateway.registerCardActionHandler(async (data: unknown) => {
       const event = data as CardActionEvent;
       console.log('[feishu/plugin]', 'Card action raw event:', JSON.stringify(event).slice(0, 500));
@@ -149,7 +149,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
       //   event.operator.open_id, event.context.open_chat_id, event.context.open_message_id
       // SDK InteractiveCardActionEvent (older type) flattens to:
       //   event.open_id, event.open_message_id
-      // WSClient monkey-patch may deliver either format ‚Ä?try both paths.
+      // WSClient monkey-patch may deliver either format ‚Äî try both paths.
       // Additionally, we embed chatId in button value as ultimate fallback.
       const chatId = event?.context?.open_chat_id || value.chatId || '';
       const messageId = event?.context?.open_message_id || event?.open_message_id || '';
@@ -161,7 +161,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
       if (chatId && !isUserAuthorized(this.config!, userId, chatId)) {
         console.log('[feishu/plugin]', 'Rejecting card action from unauthorized user',
           userId, 'in', chatId);
-        return { toast: { type: 'warning' as const, content: 'Êó†ÊùÉÈôêÊìç‰Ω? } };
+        return { toast: { type: 'warning' as const, content: 'Êó†ÊùÉÈôêÊìç‰Ωú' } };
       }
 
       // Format 1: callback_data (permission buttons)
@@ -214,20 +214,20 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
         };
       }
 
-      // Unknown button format ‚Ä?still return a valid toast to prevent 200340
+      // Unknown button format ‚Äî still return a valid toast to prevent 200340
       console.warn('[feishu/plugin]', 'Unknown card action value:', JSON.stringify(value).slice(0, 200));
       return {
-        toast: { type: 'info' as const, content: 'Â∑≤Êî∂Âà? },
+        toast: { type: 'info' as const, content: 'Â∑≤Êî∂Âà∞' },
       };
     });
 
     await this.gateway.start();
 
     // Resolve bot identity so mention filtering works (#384).
-    // Fire-and-forget with retries ‚Ä?if it fails, mention detection simply no-ops
+    // Fire-and-forget with retries ‚Äî if it fails, mention detection simply no-ops
     // but the bot still functions normally for DMs and un-gated groups.
     //
-    // Capture the current generation so stop() ‚Ü?new start() cycles can cancel
+    // Capture the current generation so stop() ‚Üí new start() cycles can cancel
     // any in-flight probe from the previous run (prevents a stale probe from
     // writing botOpenId on a stopped plugin or scheduling a new retry timer).
     this.identityGeneration += 1;
@@ -258,7 +258,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
     const client = this.gateway?.getRestClient();
     if (!client) return;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      if (this.identityGeneration !== generation) return; // stale ‚Ä?bail
+      if (this.identityGeneration !== generation) return; // stale ‚Äî bail
       const info = await getBotInfo(client);
       if (this.identityGeneration !== generation) return; // stopped during await
       if (info?.openId) {
@@ -275,7 +275,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
     if (this.identityGeneration !== generation) return; // don't schedule stale retries
     console.warn(
       '[feishu/plugin]',
-      'Could not resolve bot identity ‚Ä?mention detection disabled; will retry every 60s'
+      'Could not resolve bot identity ‚Äî mention detection disabled; will retry every 60s'
     );
     this.startIdentityRetryTimer(generation);
   }
@@ -300,7 +300,8 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
     let myTimer: ReturnType<typeof setInterval>;
     const clearSelf = () => {
       clearInterval(myTimer);
-      // Only detach the shared field if it still points at our timer ‚Ä?      // otherwise we'd clear a newer generation's recovery timer.
+      // Only detach the shared field if it still points at our timer ‚Äî
+      // otherwise we'd clear a newer generation's recovery timer.
       if (this.identityRetryTimer === myTimer) {
         this.identityRetryTimer = null;
       }
@@ -355,7 +356,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
   /**
    * Download resources then enqueue the message with populated attachments (#291).
    * Called from the message handler when non-text messages arrive. Partial
-   * failures (some downloads fail) still enqueue ‚Ä?the LLM can see what succeeded.
+   * failures (some downloads fail) still enqueue ‚Äî the LLM can see what succeeded.
    */
   private async downloadAndEnqueue(
     base: InboundMessage,
@@ -418,7 +419,7 @@ export class FeishuChannelPlugin implements ChannelPlugin<FeishuConfig> {
     const client = this.gateway?.getRestClient();
     const messageId = this.lastMessageIdByChat.get(chatId);
     if (!client || !messageId) return;
-    // Fire-and-forget ‚Ä?don't block message processing
+    // Fire-and-forget ‚Äî don't block message processing
     addReaction(client, messageId, 'Typing').then((reactionId) => {
       if (reactionId) {
         this.activeReactions.set(chatId, { messageId, reactionId });

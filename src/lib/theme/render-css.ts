@@ -1,9 +1,9 @@
 import type { ThemeFamily, ThemeColors } from './types';
 
-/** Convert camelCase key to CSS variable name: cardForeground â†?--card-foreground */
+/** Convert camelCase key to CSS variable name: cardForeground â†’ --card-foreground */
 export function colorKeyToCssVar(key: string): string {
   // Insert hyphens before uppercase letters, then lowercase
-  // Special handling for numbered keys like chart1 â†?--chart-1
+  // Special handling for numbered keys like chart1 â†’ --chart-1
   const kebab = key
     .replace(/([A-Z])/g, '-$1')
     .replace(/(\d+)/g, '-$1')
@@ -23,8 +23,8 @@ function renderColorBlock(colors: ThemeColors): string {
  * Generate CSS for all theme families.
  *
  * Specificity:
- *   html[data-theme-family="x"]       â†?(0,1,0) â€?beats :root (0,0,1)
- *   html.dark[data-theme-family="x"]  â†?(0,2,0) â€?beats .dark (0,1,0)
+ *   html[data-theme-family="x"]       â†’ (0,1,0) â€” beats :root (0,0,1)
+ *   html.dark[data-theme-family="x"]  â†’ (0,2,0) â€” beats .dark (0,1,0)
  *
  * The globals.css :root/.dark blocks remain as fallback when data-theme-family is absent.
  */

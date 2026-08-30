@@ -53,9 +53,8 @@ export async function GET(request: NextRequest) {
   // Security: only allow files within the canonical .codepilot-media directory.
   // Use path.resolve to canonicalize, then verify it starts with the real media dir.
   const resolved = path.resolve(filePath);
-  const os = await import('os');
-  const dataDir = process.env.CLAUDE_GUI_DATA_DIR || path.join(os.homedir(), '.codepilot');
-  const canonicalMediaDir = path.resolve(dataDir, '.codepilot-media');
+  const { resolveCodePilotDataDir } = await import('@/lib/codepilot-data-dir');
+  const canonicalMediaDir = path.resolve(resolveCodePilotDataDir(), '.codepilot-media');
   if (!resolved.startsWith(canonicalMediaDir + path.sep) && resolved !== canonicalMediaDir) {
     return new Response(JSON.stringify({ error: 'Access denied' }), {
       status: 403,

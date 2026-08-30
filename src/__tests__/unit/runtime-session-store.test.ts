@@ -1,5 +1,5 @@
 /**
- * Phase 0.5 Slice C â€?Runtime session store abstraction.
+ * Phase 0.5 Slice C â€” Runtime session store abstraction.
  *
  * Asserts:
  *   1. The abstraction file exists and exports the three lifecycle
@@ -7,10 +7,10 @@
  *      `clearRuntimeSessionRef`).
  *   2. The helpers cover every `RuntimeId` exhaustively at the type
  *      level (the switch's `default: never` block guards drift when
- *      a new runtime is added â€?TS will fail compilation if the
+ *      a new runtime is added â€” TS will fail compilation if the
  *      implementer forgets to extend the switch).
- *   3. The /api/chat/sessions/[id] PATCH handler â€?the canonical
- *      consumer of the clearing path â€?calls `clearRuntimeSessionRef`
+ *   3. The /api/chat/sessions/[id] PATCH handler â€” the canonical
+ *      consumer of the clearing path â€” calls `clearRuntimeSessionRef`
  *      instead of poking `updateSdkSessionId(id, '')` directly.
  *      Future Codex Runtime adds its clearing branch inside the store
  *      helper without splaying through the API route.
@@ -62,8 +62,9 @@ describe('Runtime session store abstraction', () => {
 
   it('codepilot_runtime branch is an explicit no-op (no external state)', () => {
     // Native runtime keeps state in-memory; no persistent ref.
-    // Codifying this branch â€?instead of letting it fall through â€?    // forces the implementer to think about persistence intentionally.
-    assert.match(storeSrc, /case\s+'bbagent'/);
+    // Codifying this branch â€” instead of letting it fall through â€”
+    // forces the implementer to think about persistence intentionally.
+    assert.match(storeSrc, /case\s+'codepilot_runtime'/);
   });
 
   it('/api/chat/sessions/[id] clears via the abstraction, not the raw column setter', () => {

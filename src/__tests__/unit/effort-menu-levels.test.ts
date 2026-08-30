@@ -1,12 +1,12 @@
 /**
- * Phase 0 (2026-07-17) �?the effort menu may only offer SOURCED tiers.
+ * Phase 0 (2026-07-17) — the effort menu may only offer SOURCED tiers.
  *
  * EffortSelectorDropdown.tsx:36 used to read:
  *   const baseLevels = supportedEffortLevels || ['low','medium','high','xhigh','max'];
  * so any model whose capability discovery returned nothing got a full
  * five-tier ladder invented for it. Picking `xhigh` there was a user-visible
  * lie: the tier had no source and the request didn't carry it. The fallback
- * itself was the bug �?absence must hide the control, not fabricate it.
+ * itself was the bug — absence must hide the control, not fabricate it.
  *
  * `resolveEffortMenuLevels` is the real function the component calls (not a
  * replica), plus a source pin below proving the fallback can't come back.
@@ -25,7 +25,7 @@ import {
 } from '@/lib/effort-levels';
 import { VENDOR_PRESETS } from '@/lib/provider-catalog';
 
-describe('resolveEffortMenuLevels �?no capability source �?no menu', () => {
+describe('resolveEffortMenuLevels — no capability source → no menu', () => {
   it('returns null for undefined levels (discovery produced nothing)', () => {
     assert.equal(resolveEffortMenuLevels(undefined), null);
   });
@@ -57,8 +57,8 @@ describe('resolveEffortMenuLevels �?no capability source �?no menu', () => {
   });
 });
 
-describe('toWireEffort �?Auto must never reach a provider', () => {
-  it('auto �?undefined (omit the parameter, use the model default)', () => {
+describe('toWireEffort — Auto must never reach a provider', () => {
+  it('auto → undefined (omit the parameter, use the model default)', () => {
     assert.equal(toWireEffort('auto'), undefined);
   });
 
@@ -67,14 +67,14 @@ describe('toWireEffort �?Auto must never reach a provider', () => {
     assert.equal(toWireEffort('high'), 'high');
   });
 
-  it('empty / missing selection �?undefined, not an empty effort', () => {
+  it('empty / missing selection → undefined, not an empty effort', () => {
     for (const input of [undefined, null, '', '   ']) {
       assert.equal(toWireEffort(input), undefined, `expected omit for ${JSON.stringify(input)}`);
     }
   });
 });
 
-describe('Kimi for Coding �?the Auto/Low/High/Max contract end to end (Phase 1)', () => {
+describe('Kimi for Coding — the Auto/Low/High/Max contract end to end (Phase 1)', () => {
   const kimiLevels = VENDOR_PRESETS.find(p => p.key === 'kimi')
     ?.defaultModels[0].capabilities?.supportedEffortLevels;
 
@@ -82,7 +82,7 @@ describe('Kimi for Coding �?the Auto/Low/High/Max contract end to end (Phase 1)
     assert.deepEqual(resolveEffortMenuLevels(kimiLevels), ['auto', 'low', 'high', 'max']);
   });
 
-  it('picking Auto sends no effort at all �?Kimi applies its own default', () => {
+  it('picking Auto sends no effort at all — Kimi applies its own default', () => {
     // `auto` is not a vendor tier; sending it would invent a wire value.
     assert.equal(toWireEffort('auto'), undefined);
   });
@@ -102,7 +102,7 @@ describe('Kimi for Coding �?the Auto/Low/High/Max contract end to end (Phase 1)
 describe('send sites route effort through toWireEffort (no inline auto filter)', () => {
   // Phase 1 (2026-07-17): both send paths used to re-spell
   // `x && x !== 'auto' ? x : undefined` inline. Pinned here because a third
-  // call site copying the old shape �?or dropping the check �?is exactly how
+  // call site copying the old shape — or dropping the check — is exactly how
   // `effort=auto` would reach a provider.
   const sendSites = [
     'src/components/chat/ChatView.tsx',
@@ -122,7 +122,7 @@ describe('send sites route effort through toWireEffort (no inline auto filter)',
   }
 });
 
-describe('resolveEffortMenuLevels �?sourced levels render with auto first', () => {
+describe('resolveEffortMenuLevels — sourced levels render with auto first', () => {
   it('prepends auto to real levels', () => {
     assert.deepEqual(resolveEffortMenuLevels(['low', 'medium', 'high']), [
       'auto',
@@ -132,7 +132,7 @@ describe('resolveEffortMenuLevels �?sourced levels render with auto first', () 
     ]);
   });
 
-  it('passes xhigh / max through �?real tiers are not filtered', () => {
+  it('passes xhigh / max through — real tiers are not filtered', () => {
     assert.deepEqual(resolveEffortMenuLevels(['xhigh', 'max']), ['auto', 'xhigh', 'max']);
   });
 
@@ -153,21 +153,21 @@ describe('resolveEffortMenuLevels �?sourced levels render with auto first', () 
   });
 });
 
-describe('resolveEffortAfterModelSwitch �?drop an unsupported tier back to Auto (s07)', () => {
+describe('resolveEffortAfterModelSwitch — drop an unsupported tier back to Auto (s07)', () => {
   const SONNET_46 = ['low', 'medium', 'high', 'max'];        // no xhigh
   const SONNET_5 = ['low', 'medium', 'high', 'xhigh', 'max']; // has xhigh
 
-  it('resets to Auto when the new model drops the selected tier (xhigh �?sonnet 4.6)', () => {
+  it('resets to Auto when the new model drops the selected tier (xhigh → sonnet 4.6)', () => {
     const r = resolveEffortAfterModelSwitch('xhigh', SONNET_46);
     assert.deepEqual(r, { effort: undefined, didReset: true });
   });
 
-  it('keeps the tier when the new model still supports it (xhigh �?sonnet 5)', () => {
+  it('keeps the tier when the new model still supports it (xhigh → sonnet 5)', () => {
     const r = resolveEffortAfterModelSwitch('xhigh', SONNET_5);
     assert.deepEqual(r, { effort: 'xhigh', didReset: false });
   });
 
-  it('a plain shared tier survives the switch (high �?sonnet 4.6)', () => {
+  it('a plain shared tier survives the switch (high → sonnet 4.6)', () => {
     const r = resolveEffortAfterModelSwitch('high', SONNET_46);
     assert.deepEqual(r, { effort: 'high', didReset: false });
   });
@@ -202,21 +202,22 @@ describe('resolveEffortAfterModelSwitch �?drop an unsupported tier back to Auto
   });
 });
 
-describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on ANY switch (s07, reviewer fix i31)', () => {
+describe('resolveModelSwitchEffortEffect — clear an illegal transient tier on ANY switch (s07, reviewer fix i31)', () => {
   // Executable equivalent of the effort block BOTH composer entries now apply
   // (ChatView.handleProviderModelChange AND the new-chat page). The reviewer's
-  // ruling: clearing an unsupported tier is INDEPENDENT of manual-vs-auto �?  // isAuto only gates the session-pin persist at the call site, never the effort
+  // ruling: clearing an unsupported tier is INDEPENDENT of manual-vs-auto —
+  // isAuto only gates the session-pin persist at the call site, never the effort
   // effect. So the same inputs must behave the same whether the switch was a
   // user pick or a silent auto-correct.
   const SONNET_46 = ['low', 'medium', 'high', 'max'];        // no xhigh
   const SONNET_5 = ['low', 'medium', 'high', 'xhigh', 'max']; // has xhigh
 
-  it('(1) switch to a model without the tier �?reset + toast', () => {
+  it('(1) switch to a model without the tier → reset + toast', () => {
     const e = resolveModelSwitchEffortEffect('xhigh', SONNET_46);
     assert.deepEqual(e, { resetEffort: true, showResetToast: true });
   });
 
-  it('(2) switch keeping a compatible tier �?no reset, no toast', () => {
+  it('(2) switch keeping a compatible tier → no reset, no toast', () => {
     assert.deepEqual(
       resolveModelSwitchEffortEffect('xhigh', SONNET_5),
       { resetEffort: false, showResetToast: false });
@@ -226,7 +227,7 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
       { resetEffort: false, showResetToast: false });
   });
 
-  it('(3) reset and toast are always in lockstep �?never one without the other', () => {
+  it('(3) reset and toast are always in lockstep — never one without the other', () => {
     const cases: Array<[string | undefined | null, string[] | undefined | null]> = [
       ['xhigh', SONNET_46], ['xhigh', SONNET_5],
       ['max', null], ['auto', SONNET_46], [undefined, SONNET_46],
@@ -238,12 +239,12 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
     }
   });
 
-  it('(4) auto-correct �?manual: an unsupported tier is cleared the SAME either way', () => {
+  it('(4) auto-correct ⇔ manual: an unsupported tier is cleared the SAME either way', () => {
     // The old design made isAuto inert here, which let an auto-correct leave an
-    // illegal transient tier selected and sendable �?the exact inconsistency the
+    // illegal transient tier selected and sendable — the exact inconsistency the
     // reviewer flagged. The effort effect no longer takes isAuto: the same inputs
     // that reset on a manual pick MUST reset on an auto-correct too. (The caller
-    // still skips the session-pin persist for isAuto �?that's separate.)
+    // still skips the session-pin persist for isAuto — that's separate.)
     assert.deepEqual(
       resolveModelSwitchEffortEffect('xhigh', SONNET_46),
       { resetEffort: true, showResetToast: true },
@@ -254,7 +255,7 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
       'a concrete tier on a no-menu model must clear');
   });
 
-  it('(5) the cleared tier never reaches the wire �?send omits effort after a reset', () => {
+  it('(5) the cleared tier never reaches the wire — send omits effort after a reset', () => {
     // The whole point: after resetEffort, the composer selection is undefined, so
     // the send path (toWireEffort) omits the parameter. Assert the end-to-end
     // consequence, not just the flag.
@@ -278,7 +279,7 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// s07 reviewer fix (run i31, 2026-07-18) �?the FULL composer effort state
+// s07 reviewer fix (run i31, 2026-07-18) — the FULL composer effort state
 // chain, driven through the REAL functions the component + both parents call.
 //
 // The prior round only tested `resolveModelSwitchEffortEffect` (the reset
@@ -289,12 +290,12 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
 // `resolveComposerEffortDisplay`, so the display is testable as real code.
 //
 // There is no React renderer in this node:test suite (no jsdom / testing-
-// library �?see card-primitives.test.ts for the same constraint), so this
+// library — see card-primitives.test.ts for the same constraint), so this
 // harness models the composer + its parent as a tiny state machine whose every
 // decision is a REAL exported helper: the button label comes from
 // `resolveComposerEffortDisplay`, the reset from `resolveModelSwitchEffortEffect`,
 // the wire from `toWireEffort`. The only modeled glue is React state storage
-// (a variable) and a toast counter �?not logic. Both composer entries (ChatView
+// (a variable) and a toast counter — not logic. Both composer entries (ChatView
 // + new-chat page) route through the identical shared helpers, so one harness
 // covers both; the source pins below additionally prove each .tsx wires them.
 // ─────────────────────────────────────────────────────────────────────
@@ -302,9 +303,9 @@ describe('resolveModelSwitchEffortEffect �?clear an illegal transient tier on A
 /**
  * A faithful model of the composer effort loop. `pickEffort` mirrors
  * MessageInput.setSelectedEffort (updates localEffort AND calls onEffortChange,
- * exactly as the component does �?so a stale localEffort is present to catch a
+ * exactly as the component does — so a stale localEffort is present to catch a
  * display regression). `switchModel` mirrors the shared parent handler used by
- * BOTH ChatView and the new-chat page (resolveModelSwitchEffortEffect �?clear +
+ * BOTH ChatView and the new-chat page (resolveModelSwitchEffortEffect → clear +
  * one-shot toast, independent of isAuto). `displayed`/`wire` read through the
  * same real resolvers the component + send path use.
  */
@@ -323,7 +324,7 @@ function makeComposerHarness() {
       const effect = resolveModelSwitchEffortEffect(parentEffort, levels);
       if (effect.resetEffort) parentEffort = undefined; // setSelectedEffort(undefined)
       if (effect.showResetToast) toastCount += 1;
-      // isAuto gates only the session-pin persist (not observable here) �?the
+      // isAuto gates only the session-pin persist (not observable here) — the
       // effort effect above runs regardless, which is the whole point of s07.
     },
     displayed() {
@@ -338,13 +339,13 @@ function makeComposerHarness() {
   };
 }
 
-describe('composer effort state chain �?reset is observable as Auto (s07 behavior, i31)', () => {
+describe('composer effort state chain — reset is observable as Auto (s07 behavior, i31)', () => {
   const SONNET_5_LEVELS = ['low', 'medium', 'high', 'xhigh', 'max'];
   const SONNET_46_LEVELS = ['low', 'medium', 'high', 'max']; // no xhigh
 
   // Both real entries share the same helpers; parametrize to document intent.
   for (const entry of ['ChatView (existing session)', 'new-chat page']) {
-    it(`${entry}: manual pick xhigh �?switch to Sonnet 4.6 �?button shows Auto, wire omits effort, toast once`, () => {
+    it(`${entry}: manual pick xhigh → switch to Sonnet 4.6 → button shows Auto, wire omits effort, toast once`, () => {
       const h = makeComposerHarness();
       h.pickEffort('xhigh');
       assert.equal(h.displayed(), 'xhigh', 'button reflects the manual pick');
@@ -382,7 +383,7 @@ describe('composer effort state chain �?reset is observable as Auto (s07 behavi
   it('the notice never double-fires: a second unsupported switch after a reset is silent', () => {
     const h = makeComposerHarness();
     h.pickEffort('xhigh');
-    h.switchModel(SONNET_46_LEVELS); // reset #1 �?toast
+    h.switchModel(SONNET_46_LEVELS); // reset #1 → toast
     h.switchModel(null); // now Auto; a no-menu model can't reset Auto again
     assert.equal(h.displayed(), 'auto');
     assert.equal(h.wire(), undefined);
@@ -407,7 +408,7 @@ describe('composer effort state chain �?reset is observable as Auto (s07 behavi
 describe('both composer entries wire the s07 effect helper + a sourced notice (source pins)', () => {
   // The helper tests above prove the LOGIC; these pins prove BOTH .tsx entries
   // actually route through it (no JSX transform in this node:test suite, so the
-  // wiring is asserted on source �?same convention as the codex runtime pins).
+  // wiring is asserted on source — same convention as the codex runtime pins).
   // The reviewer's core gap was that the new-chat page skipped the check
   // entirely, so it is pinned alongside ChatView.
   const entries: Array<[string, string]> = [
@@ -472,12 +473,12 @@ describe('MessageInput feeds the SAME picker capability data to every switch con
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Source pin �?the helper tests above can't prove the COMPONENT uses it.
+// Source pin — the helper tests above can't prove the COMPONENT uses it.
 // The component is .tsx (no JSX transform in this node:test suite), so we
 // pin at the source level, same convention as the codex runtime wiring pins.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('EffortSelectorDropdown �?hardcoded-fallback regression pin', () => {
+describe('EffortSelectorDropdown — hardcoded-fallback regression pin', () => {
   const src = fs.readFileSync(
     path.resolve(__dirname, '../../components/chat/EffortSelectorDropdown.tsx'),
     'utf8',

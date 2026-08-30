@@ -1,5 +1,5 @@
 /**
- * Command metadata â€?shared constants for slash commands and their expansion prompts.
+ * Command metadata â€” shared constants for slash commands and their expansion prompts.
  *
  * Lives in lib/constants/ to avoid circular dependencies between hooks and logic modules.
  * Icon assignments live in command-icons.ts to keep this module presentation-free.
@@ -14,7 +14,7 @@ export const COMMAND_PROMPTS: Record<string, string> = {
   '/memory': 'Show the current CLAUDE.md project memory file and help me review or edit it.',
 };
 
-/** Built-in slash commands shown in the popover (without icons â€?see command-icons.ts). */
+/** Built-in slash commands shown in the popover (without icons â€” see command-icons.ts). */
 export const BUILT_IN_COMMANDS: PopoverItem[] = [
   { label: 'help', value: '/help', description: 'Show available commands and tips', descriptionKey: 'messageInput.helpDesc', builtIn: true, immediate: true },
   { label: 'clear', value: '/clear', description: 'Clear conversation history', descriptionKey: 'messageInput.clearDesc', builtIn: true, immediate: true },

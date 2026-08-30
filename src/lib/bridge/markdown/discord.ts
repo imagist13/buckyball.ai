@@ -1,6 +1,6 @@
 /**
- * Discord markdown chunking â€?splits long markdown text into Discord-safe
- * chunks (â‰?000 chars) with code fence balancing.
+ * Discord markdown chunking â€” splits long markdown text into Discord-safe
+ * chunks (â‰¤2000 chars) with code fence balancing.
  *
  * Discord supports native markdown, so no IRâ†’HTML conversion is needed.
  * The only concern is the 2000-char message limit.
@@ -10,7 +10,7 @@ export interface DiscordChunk {
   text: string;
 }
 
-/** Soft limit â€?leave room for fence repair overhead. */
+/** Soft limit â€” leave room for fence repair overhead. */
 const SOFT_LIMIT = 1900;
 
 /**
@@ -53,7 +53,7 @@ export function markdownToDiscordChunks(
 
       chunks.push({ text: chunkText });
 
-      // Start new chunk â€?if we were inside a fence, reopen it
+      // Start new chunk â€” if we were inside a fence, reopen it
       currentLines = [];
       currentLen = 0;
 
@@ -72,7 +72,7 @@ export function markdownToDiscordChunks(
         // Closing fence
         openFence = null;
       } else {
-        // Opening fence â€?remember the full opening line for re-opening
+        // Opening fence â€” remember the full opening line for re-opening
         openFence = fenceMatch[0];
       }
     }

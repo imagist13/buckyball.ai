@@ -1,5 +1,5 @@
 /**
- * Route-level regression for `/api/providers/options` â€?Phase 2C
+ * Route-level regression for `/api/providers/options` â€” Phase 2C
  * default-mode contract at the API boundary.
  *
  * Why this exists separately from `default-mode-atomic-write.test.ts`:
@@ -13,8 +13,8 @@
  *     means the API contract lies: write succeeded with cleared keys,
  *     but the response still shows a pinned pair.
  *   - Some clients refetch via `provider-changed` events and recover.
- *     A future client that trusts the PUT response â€?or a test like
- *     ModelsSection's optimistic state â€?would silently re-pin.
+ *     A future client that trusts the PUT response â€” or a test like
+ *     ModelsSection's optimistic state â€” would silently re-pin.
  *
  * The contract this test locks in: PUT response always reflects the
  * post-write DB state, not the pre-write merged input. If a future
@@ -39,7 +39,7 @@ function getReq(providerId: string): NextRequest {
   return new NextRequest(`http://localhost/api/providers/options?providerId=${providerId}`);
 }
 
-describe("/api/providers/options PUT â€?default-mode response shape", () => {
+describe("/api/providers/options PUT â€” default-mode response shape", () => {
   let snapMode: string;
   let snapProvider: string;
   let snapModel: string;
@@ -59,7 +59,7 @@ describe("/api/providers/options PUT â€?default-mode response shape", () => {
     setSetting("default_provider_id", snapLegacy);
   });
 
-  it("Pinned â†?Auto: response.options has empty pinned keys (no stale leak)", async () => {
+  it("Pinned â†’ Auto: response.options has empty pinned keys (no stale leak)", async () => {
     // Prior Pinned state.
     setSetting("global_default_mode", "pinned");
     setSetting("global_default_model_provider", "stale-pid");
@@ -97,7 +97,7 @@ describe("/api/providers/options PUT â€?default-mode response shape", () => {
     assert.equal(getBody.options.default_model ?? "", "");
   });
 
-  it("Auto â†?Pinned: response.options reflects the new pinned bundle", async () => {
+  it("Auto â†’ Pinned: response.options reflects the new pinned bundle", async () => {
     setSetting("global_default_mode", "auto");
     setSetting("global_default_model_provider", "");
     setSetting("global_default_model", "");
@@ -119,7 +119,7 @@ describe("/api/providers/options PUT â€?default-mode response shape", () => {
     assert.equal(body.options.default_model, "fresh-model");
   });
 
-  it("Pinned â†?Pinned (different model): response replaces all three", async () => {
+  it("Pinned â†’ Pinned (different model): response replaces all three", async () => {
     setSetting("global_default_mode", "pinned");
     setSetting("global_default_model_provider", "old-pid");
     setSetting("global_default_model", "old-model");

@@ -1,13 +1,13 @@
 /**
- * Phase 5b �?Translation layer pins for the Codex Responses proxy.
+ * Phase 5b — Translation layer pins for the Codex Responses proxy.
  *
- * Locks the Responses �?ai-sdk conversions: input items / tools /
+ * Locks the Responses ↔ ai-sdk conversions: input items / tools /
  * stream events / non-stream response. These are the load-bearing
  * shape contracts the unified adapter relies on; a regression here
  * lands at the wire boundary and Codex sees malformed events.
  *
  * The adapter itself (createUnifiedAdapter) is exercised separately
- * through smoke / live-credential paths �?its job is glue, not
+ * through smoke / live-credential paths — its job is glue, not
  * translation. The unit tests here keep the format-correctness pin
  * fast (~ms) and independent of any real provider call.
  */
@@ -30,7 +30,7 @@ import type {
 // translateResponsesInput
 // ─────────────────────────────────────────────────────────────────────
 
-describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', () => {
+describe('translateResponsesInput — Responses items → ai-sdk ModelMessage[]', () => {
   it('translates a single user message with input_text', () => {
     const input: ResponsesInputItem[] = [
       {
@@ -59,7 +59,7 @@ describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', 
   });
 
   it('merges function_call into the preceding assistant message', () => {
-    // Codex's typical shape: assistant text �?function_call �?...
+    // Codex's typical shape: assistant text → function_call → ...
     const input: ResponsesInputItem[] = [
       {
         type: 'message',
@@ -125,7 +125,7 @@ describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', 
     // tool-result.toolName to look up the tool definition and route
     // the result back to the model; the sentinel broke that and
     // produced "tool ran but no continuation" (GPT-Image-2.0 skill
-    // completed silently). The fix builds a call_id �?toolName map
+    // completed silently). The fix builds a call_id → toolName map
     // from the input's function_call items.
     const input: ResponsesInputItem[] = [
       {
@@ -159,7 +159,7 @@ describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', 
     assert.equal(
       content[0].toolName,
       'gpt_image_2',
-      'tool-result.toolName must round-trip from the matching function_call �?pre-fix the sentinel broke provider routing and silenced GPT-Image-2.0',
+      'tool-result.toolName must round-trip from the matching function_call — pre-fix the sentinel broke provider routing and silenced GPT-Image-2.0',
     );
     assert.equal(content[0].toolCallId, 'call_1');
   });
@@ -187,7 +187,7 @@ describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', 
 
   it('orphan function_call_output (no matching function_call in this request) falls back to a named sentinel + warns', () => {
     // The sentinel must NOT be the silent '__from_responses_proxy__'
-    // anymore �?make orphans loud so debugging is possible. console.warn
+    // anymore — make orphans loud so debugging is possible. console.warn
     // is the load-bearing side effect; intercept it.
     const originalWarn = console.warn;
     const warnings: string[] = [];
@@ -250,7 +250,7 @@ describe('translateResponsesInput �?Responses items �?ai-sdk ModelMessage[]', 
 // translateResponsesTools
 // ─────────────────────────────────────────────────────────────────────
 
-describe('translateResponsesTools �?Responses tools[] �?ai-sdk ToolSet (no execute)', () => {
+describe('translateResponsesTools — Responses tools[] → ai-sdk ToolSet (no execute)', () => {
   it('returns undefined for empty / missing input', () => {
     assert.equal(translateResponsesTools(undefined), undefined);
     assert.equal(translateResponsesTools([]), undefined);
@@ -272,7 +272,7 @@ describe('translateResponsesTools �?Responses tools[] �?ai-sdk ToolSet (no exe
     const t = out!.lookup as unknown as { description?: string; inputSchema: unknown; execute?: unknown };
     assert.equal(t.description, 'Search the web');
     assert.ok(t.inputSchema, 'inputSchema must be set so ai-sdk accepts the tool');
-    assert.equal(t.execute, undefined, 'execute must be absent �?Codex runs the tool itself');
+    assert.equal(t.execute, undefined, 'execute must be absent — Codex runs the tool itself');
   });
 
   it('synthesises empty-object schema when parameters is missing', () => {
@@ -318,7 +318,7 @@ function source<T>(parts: T[]): AsyncIterable<T> {
   })();
 }
 
-describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixture contract, 2026-05-16)', () => {
+describe('translateStream — ai-sdk fullStream → Codex Responses SSE (SDK fixture contract, 2026-05-16)', () => {
   // Reference contract: 资料/codex/sdk/typescript/tests/responsesProxy.ts
   // (assistantMessage / shell_call / responseCompleted / responseFailed).
   // Pre-fix smoke saw GLM/Kimi "completed but blank" because the
@@ -433,17 +433,17 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
     assert.equal(done.item.type, 'message', 'final item must be message');
     assert.equal(done.item.role, 'assistant');
     assert.equal(done.item.content[0].type, 'output_text', 'output content must be output_text per Codex schema');
-    assert.equal(done.item.content[0].text, 'Hello world', 'output_item.done(message) must carry the FULL accumulated text �?this is what Codex records');
+    assert.equal(done.item.content[0].text, 'Hello world', 'output_item.done(message) must carry the FULL accumulated text — this is what Codex records');
   });
 
   it('text-delta WITHOUT a preceding text-start synthesizes output_item.added + delta (OpenRouter Anthropic-skin fix)', async () => {
-    // Phase 5b smoke round 6 (2026-05-18) �?real-credential smoke
+    // Phase 5b smoke round 6 (2026-05-18) — real-credential smoke
     // showed OpenRouter Anthropic-skin (`anthropic/*` models via
     // OpenRouter's OpenAI-compatible /v1/chat/completions endpoint)
     // emitting `text-delta` chunks without a preceding `text-start`.
     // Pre-fix the translator's `if (idx === undefined) break;`
     // silently dropped every delta and the SSE only ever carried
-    // context_usage + result + done �?Codex saw a "completed but
+    // context_usage + result + done — Codex saw a "completed but
     // blank" assistant message. Fix: first text-delta self-allocates
     // textIndices + emits the output_item.added preamble. This pin
     // captures that contract so a refactor can't quietly drop the
@@ -457,7 +457,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
           // intentionally NO text-start
           { type: 'text-delta', id: 't1', text: 'Hello' } as never,
           { type: 'text-delta', id: 't1', text: ' world' } as never,
-          // intentionally NO text-end either �?finish flushes (existing fix)
+          // intentionally NO text-end either — finish flushes (existing fix)
           { type: 'finish', finishReason: 'stop', rawFinishReason: 'stop', totalUsage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 } } as never,
         ]),
       }),
@@ -483,7 +483,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
   });
 
   it('text-end WITHOUT a preceding text-start or text-delta still emits a canonical output_item.done', async () => {
-    // Belt: the third unusual upstream shape �?a cheap synthesizer
+    // Belt: the third unusual upstream shape — a cheap synthesizer
     // that emits ONLY text-end (no start, no delta) before finish.
     // The Codex reader still needs to see an output_item.done; we
     // emit an empty-content message rather than dropping silently.
@@ -530,7 +530,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
     const types = events.map(e => (e as { type: string }).type);
     assert.ok(
       types.includes('response.output_item.done'),
-      `finish must flush a pending message as output_item.done �?pre-fix this missed and Codex rendered blank. Saw: ${types.join(',')}`,
+      `finish must flush a pending message as output_item.done — pre-fix this missed and Codex rendered blank. Saw: ${types.join(',')}`,
     );
     const done = events.find(e => (e as { type: string }).type === 'response.output_item.done') as { item: { content: Array<{ text: string }> } };
     assert.equal(done.item.content[0].text, 'partial', 'flushed message must carry the accumulated delta text');
@@ -538,7 +538,8 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
 
   it('function_call lands wholesale via output_item.done(function_call) (SDK contract)', async () => {
     // Per SDK responsesProxy.ts `shell_call()`, function_call is a
-    // single output_item.done event with call_id/name/arguments �?    // no separate function_call.delta/done events.
+    // single output_item.done event with call_id/name/arguments —
+    // no separate function_call.delta/done events.
     const events = await collectStream(
       translateStream({
         responseId: 'resp_x',
@@ -553,7 +554,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
       }),
     );
     const types = events.map(e => (e as { type: string }).type);
-    // tool-input-* doesn't emit Responses events anymore �?only the
+    // tool-input-* doesn't emit Responses events anymore — only the
     // final tool-call lands as output_item.done. No deltas on the wire.
     assert.deepEqual(types, [
       'response.created',
@@ -568,7 +569,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
   });
 
   it('maps error to response.failed { response: { id, error: { code, message } } } per Codex app-server parser', async () => {
-    // Phase 5b smoke round 6 (2026-05-16) �?Codex's app-server SSE
+    // Phase 5b smoke round 6 (2026-05-16) — Codex's app-server SSE
     // parser only handles `response.failed` for stream errors. The
     // SDK fixture's `{type: 'error'}` form is unhandled and surfaces
     // as "stream closed before response.completed" silent failure.
@@ -666,7 +667,7 @@ describe('translateStream �?ai-sdk fullStream �?Codex Responses SSE (SDK fixtu
 // translateNonStreamResponse
 // ─────────────────────────────────────────────────────────────────────
 
-describe('translateNonStreamResponse �?ai-sdk result �?Responses JSON body', () => {
+describe('translateNonStreamResponse — ai-sdk result → Responses JSON body', () => {
   it('builds a complete Responses object with assistant text', () => {
     const body = translateNonStreamResponse({
       responseId: 'resp_x',
@@ -732,10 +733,10 @@ describe('translateNonStreamResponse �?ai-sdk result �?Responses JSON body', (
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// buildProviderOptions �?forwarded fields for openai-oauth path
+// buildProviderOptions — forwarded fields for openai-oauth path
 // ─────────────────────────────────────────────────────────────────────
 
-describe('buildProviderOptions �?forwards instructions + store for the Codex /responses endpoint', () => {
+describe('buildProviderOptions — forwards instructions + store for the Codex /responses endpoint', () => {
   it('always sets providerOptions.openai.store=false (Codex /responses rejects store:true)', () => {
     // Phase 5b smoke fix (2026-05-15). The openai-oauth Codex endpoint
     // (chatgpt.com/backend-api/codex/responses) returns HTTP 400
@@ -755,7 +756,7 @@ describe('buildProviderOptions �?forwards instructions + store for the Codex /r
 
   it('honours an explicit body.store:true (the proxy doesn\'t silently override it)', () => {
     // Codex's Codex Account path never sends true, but the parser
-    // accepts it. The adapter just trusts the body �?if a caller
+    // accepts it. The adapter just trusts the body — if a caller
     // really wants store:true (e.g. against public OpenAI / OpenRouter
     // through codepilot_proxy), that's their call.
     const opts = buildProviderOptions({ model: 'x', input: [], store: true });
@@ -782,7 +783,7 @@ describe('buildProviderOptions �?forwards instructions + store for the Codex /r
     assert.equal((whitespace!.openai as Record<string, unknown>).instructions, undefined);
   });
 
-  it('still forwards effort �?anthropic.thinking + openai.reasoningEffort on the same options object', () => {
+  it('still forwards effort → anthropic.thinking + openai.reasoningEffort on the same options object', () => {
     // Regression guard: store/instructions sharing the same
     // out.openai bag must not clobber the existing reasoning effort
     // pass-through that powered the Anthropic / OpenAI reasoning
@@ -900,8 +901,12 @@ describe('buildProviderOptions �?forwards instructions + store for the Codex /r
   });
 });
 
-// ai@7 迁移回归�?026-07-03 用户实测抓到）：ai@7 禁止 messages 里出�?// role:'system'�?Use the instructions option instead"），�?buildMessages �?// body.instructions prepend �?system message，Codex Runtime �?你好"即抛错�?// buildPrompt 必须把一�?system 文本抽到 instructions 选项�?describe('buildPrompt �?ai@7 system-in-messages regression', () => {
-  it('instructions + 用户消息：system 文本�?instructions，messages �?system（“你好”回归）', () => {
+// ai@7 迁移回归（2026-07-03 用户实测抓到）：ai@7 禁止 messages 里出现
+// role:'system'（"Use the instructions option instead"），旧 buildMessages 把
+// body.instructions prepend 成 system message，Codex Runtime 发"你好"即抛错。
+// buildPrompt 必须把一切 system 文本抽到 instructions 选项。
+describe('buildPrompt — ai@7 system-in-messages regression', () => {
+  it('instructions + 用户消息：system 文本走 instructions，messages 零 system（“你好”回归）', () => {
     const { instructions, messages } = buildPrompt({
       model: 'gpt-5.5-codex',
       instructions: 'You are Codex.',
@@ -913,7 +918,7 @@ describe('buildProviderOptions �?forwards instructions + store for the Codex /r
     assert.equal(messages[0].role, 'user');
   });
 
-  it('input 里的 system/developer 项也被抽出合并进 instructions（body.instructions 在前�?, () => {
+  it('input 里的 system/developer 项也被抽出合并进 instructions（body.instructions 在前）', () => {
     const { instructions, messages } = buildPrompt({
       model: 'gpt-5.5-codex',
       instructions: 'top-level',
@@ -928,7 +933,7 @@ describe('buildProviderOptions �?forwards instructions + store for the Codex /r
     assert.equal(messages.length, 1);
   });
 
-  it('无任�?system 来源�?instructions �?undefined', () => {
+  it('无任何 system 来源时 instructions 为 undefined', () => {
     const { instructions, messages } = buildPrompt({
       model: 'gpt-5.5-codex',
       input: [{ type: 'message', role: 'user', content: [{ type: 'input_text', text: 'hi' }] }],

@@ -1,18 +1,18 @@
 /**
- * Buckyball semantic icon layer (Phase 7).
+ * CodePilot semantic icon layer (Phase 7).
  *
- * Business code MUST use `<BuckyballIcon name="model" />` rather than
+ * Business code MUST use `<CodePilotIcon name="model" />` rather than
  * importing vendor icon names directly. This layer:
  *   1. Decouples user-facing semantics from vendor library identity
  *      (HugeIcons free / Phosphor fallback / future libraries).
  *   2. Pins ONE icon per concept so the same concept renders the same
  *      glyph everywhere.
  *   3. Forces conflict resolution at this map (Brain / Lightning /
- *      Terminal were overloaded â?see docs/handover/icon-system.md
+ *      Terminal were overloaded — see docs/handover/icon-system.md
  *      Section III for the historical decision log).
  *
  * Adding a new semantic alias:
- *   - Add the alias to BuckyballIconName + SEMANTIC_MAP.
+ *   - Add the alias to CodePilotIconName + SEMANTIC_MAP.
  *   - Confirm the HugeIcons candidate exists in
  *     `@hugeicons/core-free-icons` (some names diverge from training
  *     intuition, e.g. CommandLineIcon exists, Code02Icon doesn't).
@@ -20,7 +20,8 @@
  *     same alias + candidate so the doc and code don't drift.
  *
  * Do NOT:
- *   - Introduce a third icon vendor (Lucide, Tabler, Hero, etc.) â? *     if HugeIcons free lacks a glyph, fall back to Phosphor here.
+ *   - Introduce a third icon vendor (Lucide, Tabler, Hero, etc.) —
+ *     if HugeIcons free lacks a glyph, fall back to Phosphor here.
  *   - Use this layer for brand icons (Anthropic / OpenAI / Kimi / ...).
  *     Those continue to use `@lobehub/icons` directly in the 3 brand
  *     surfaces (provider-presets / RuntimePanel / RuntimeSelector).
@@ -73,7 +74,7 @@ import {
   // Workspace
   GitBranchIcon,
   GitCommitIcon,
-  // Generic UI (Phase 2 broadened â?visible refresh across NavRail /
+  // Generic UI (Phase 2 broadened — visible refresh across NavRail /
   // ChatListPanel / FileTree / WorkspaceSidebar / Settings / Chat)
   Chat01Icon,
   Search01Icon,
@@ -125,11 +126,11 @@ import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Semantic alias enum â?the single source of truth for what icons
+ * Semantic alias enum — the single source of truth for what icons
  * CodePilot business code is allowed to ask for. Adding values here is
  * the only way to introduce a new product concept into the icon layer.
  */
-export type BuckyballIconName =
+export type CodePilotIconName =
   // Navigation
   | 'overview'
   | 'settings'
@@ -176,7 +177,7 @@ export type BuckyballIconName =
   // Git / Workspace
   | 'git'
   | 'git_commit'
-  // Generic UI primitives (Phase 2 broader â?visible refresh)
+  // Generic UI primitives (Phase 2 broader — visible refresh)
   | 'chat'
   | 'search'
   | 'plus'
@@ -229,19 +230,19 @@ export type BuckyballIconName =
 type HugeiconsSvg = ComponentProps<typeof HugeiconsIcon>['icon'];
 
 /**
- * Phase 0 â?Phase 1 semantic map.
+ * Phase 0 → Phase 1 semantic map.
  *
  * Each entry is the canonical glyph for one product concept. Conflict
  * resolutions enshrined here:
  *   - `model` uses CubeIcon (Brain handed to `memory`).
  *   - `runtime` uses ChipIcon (Lightning retired as the overloaded
  *     vendor symbol).
- *   - `cli` uses CommandLineIcon, `terminal` uses TerminalIcon â?they
+ *   - `cli` uses CommandLineIcon, `terminal` uses TerminalIcon — they
  *     are explicitly NOT the same glyph anymore.
  *
  * See docs/handover/icon-system.md Section III for the decision log.
  */
-const SEMANTIC_MAP: Record<BuckyballIconName, HugeiconsSvg> = {
+const SEMANTIC_MAP: Record<CodePilotIconName, HugeiconsSvg> = {
   // Navigation
   overview: DashboardCircleEditIcon,
   settings: Settings02Icon,
@@ -250,7 +251,7 @@ const SEMANTIC_MAP: Record<BuckyballIconName, HugeiconsSvg> = {
   usage: Analytics02Icon,
   about: InformationCircleIcon,
   help: HelpCircleIcon,
-  // Provider / Model / Runtime â?the three-layer mental model
+  // Provider / Model / Runtime — the three-layer mental model
   provider: Plug02Icon,
   model: CubeIcon,
   runtime: ChipIcon,
@@ -354,16 +355,16 @@ export const CODEPILOT_ICON_SIZE = {
   xl: 24,
 } as const;
 
-export type BuckyballIconSize = keyof typeof CODEPILOT_ICON_SIZE | number;
+export type CodePilotIconSize = keyof typeof CODEPILOT_ICON_SIZE | number;
 
-export interface BuckyballIconProps {
-  /** Semantic alias â?see BuckyballIconName for the full list. */
-  name: BuckyballIconName;
+export interface CodePilotIconProps {
+  /** Semantic alias — see CodePilotIconName for the full list. */
+  name: CodePilotIconName;
   /**
    * Either a size token (`'sm' | 'md' | 'lg' | 'xl'`) or a raw pixel
    * number. Prefer tokens; raw numbers are an escape hatch only.
    */
-  size?: BuckyballIconSize;
+  size?: CodePilotIconSize;
   className?: string;
   /**
    * Accessibility label. Required for icon-only buttons; optional when
@@ -379,25 +380,25 @@ export interface BuckyballIconProps {
   strokeWidth?: number;
 }
 
-function resolveSize(size: BuckyballIconSize | undefined): number {
+function resolveSize(size: CodePilotIconSize | undefined): number {
   if (size === undefined) return CODEPILOT_ICON_SIZE.md;
   if (typeof size === 'number') return size;
   return CODEPILOT_ICON_SIZE[size];
 }
 
-export function BuckyballIcon({
+export function CodePilotIcon({
   name,
   size,
   className,
   'aria-label': ariaLabel,
   'aria-hidden': ariaHidden,
   strokeWidth,
-}: BuckyballIconProps) {
+}: CodePilotIconProps) {
   const iconDef = SEMANTIC_MAP[name];
   const pixelSize = resolveSize(size);
   // Default = `text-muted-foreground` (light/secondary tone). Phase 7
   // (2026-05-21) color semantic:
-  //   - Most icons are "secondary affordance" â?they sit next to text
+  //   - Most icons are "secondary affordance" — they sit next to text
   //     labels and shouldn't compete with the label for attention.
   //     Default light gives the label primacy.
   //   - Anchor icons (left rail / sidebar quick actions / Settings
@@ -415,7 +416,7 @@ export function BuckyballIcon({
   //
   // tailwind-merge in `cn` ensures the consumer's className (e.g.
   // 'text-inherit' or 'text-status-success-foreground') replaces the
-  // default 'text-muted-foreground' â?both are in the text-color
+  // default 'text-muted-foreground' — both are in the text-color
   // group so the later wins.
   return (
     <HugeiconsIcon

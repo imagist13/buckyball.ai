@@ -1,8 +1,8 @@
 /**
- * Phase 5d Phase 2 slice 2a (2026-05-17) �?Context Compiler contract tests.
+ * Phase 5d Phase 2 slice 2a (2026-05-17) — Context Compiler contract tests.
  *
  * The compiler is a pure function. Tests don't need fixtures of real
- * model traffic �?they construct CompilerInput literals and check
+ * model traffic — they construct CompilerInput literals and check
  * the CompiledContext shape, ordering, dedup, budget, and runtime
  * hints.
  *
@@ -68,7 +68,7 @@ function input(overrides: Partial<CompilerInput> = {}): CompilerInput {
 // Catalog hygiene + status filtering
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?catalog hygiene', () => {
+describe('compileContext — catalog hygiene', () => {
   it('default enabledCapabilities (null) includes every live capability with a non-unsupported exposure', () => {
     const out = compileContext(input({ runtimeId: 'codex_runtime' }));
     const liveIds = HARNESS_CAPABILITIES.filter((c) => c.status === 'live').map(
@@ -93,14 +93,14 @@ describe('compileContext �?catalog hygiene', () => {
   it('capabilities unsupported on a runtime are excluded with a status= or unsupported= reason', () => {
     // Phase 5e round 8 follow-up: top-level `assistant_buddy.status`
     // stays `'deferred'` (Codex proxy is still unsupported so the
-    // strict catalog-hygiene invariant "status=live �?no unsupported
+    // strict catalog-hygiene invariant "status=live ⇒ no unsupported
     // exposures" wouldn't allow flipping to live yet). The Native
     // parity patch only flipped `exposure.native.kind` to
-    // `'ai_sdk_tool'` �?per-runtime executability is what callers
+    // `'ai_sdk_tool'` — per-runtime executability is what callers
     // (matrix derivation, Settings dialog, Native adapter) actually
     // read post-round-7. The compiler's exclusion reason regex below
     // accepts EITHER `status=deferred` (the default-enabled-set path)
-    // OR `unsupported (...)` (the per-runtime exposure path) �?both
+    // OR `unsupported (...)` (the per-runtime exposure path) — both
     // are legitimate exclusion mechanics.
     const out = compileContext(input({ runtimeId: 'codex_runtime' }));
     const buddy = out.diagnostics.capabilityDecisions.find(
@@ -124,7 +124,7 @@ describe('compileContext �?catalog hygiene', () => {
 // Widget wire-format single source (regression test #10)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?widget wire-format single source', () => {
+describe('compileContext — widget wire-format single source', () => {
   it('CANONICAL_SHOW_WIDGET_JSON appears EXACTLY once in the compiled system prompt', () => {
     const out = compileContext(
       input({ enabledCapabilities: new Set(['widget']) }),
@@ -140,13 +140,13 @@ describe('compileContext �?widget wire-format single source', () => {
     );
   });
 
-  it('"FINAL OUTPUT FORMAT �?non-negotiable" title appears EXACTLY once', () => {
+  it('"FINAL OUTPUT FORMAT — non-negotiable" title appears EXACTLY once', () => {
     const out = compileContext(
       input({ enabledCapabilities: new Set(['widget']) }),
     );
     const occurrences = countOccurrences(
       out.systemPromptText,
-      'FINAL OUTPUT FORMAT �?non-negotiable',
+      'FINAL OUTPUT FORMAT — non-negotiable',
     );
     assert.equal(occurrences, 1);
   });
@@ -169,7 +169,7 @@ describe('compileContext �?widget wire-format single source', () => {
     const parsed = JSON.parse(widget!.canonicalJson) as Record<string, unknown>;
     assert.ok(parsed.title);
     assert.ok(parsed.widget_code);
-    // Renderer round-trip �?must come back as a `widget` segment.
+    // Renderer round-trip — must come back as a `widget` segment.
     const fence = '```show-widget\n' + widget!.canonicalJson + '\n```';
     const segs = parseAllShowWidgets(fence);
     const seg = segs.find((s) => s.type === 'widget');
@@ -198,7 +198,7 @@ describe('compileContext �?widget wire-format single source', () => {
 // Ordering (artifact contracts before capability fragments)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?ordering', () => {
+describe('compileContext — ordering', () => {
   it('artifactContract appears BEFORE the capability fragment in the assembled system prompt', () => {
     const out = compileContext(
       input({ enabledCapabilities: new Set(['widget']) }),
@@ -230,7 +230,7 @@ describe('compileContext �?ordering', () => {
 // Budget enforcement
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?budget', () => {
+describe('compileContext — budget', () => {
   it('throws when load-bearing fragments alone exceed systemPromptMax (no silent trim)', () => {
     assert.throws(
       () =>
@@ -259,10 +259,10 @@ describe('compileContext �?budget', () => {
 // Cross-runtime fragment text identity (regression test #9)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?cross-runtime fragment identity', () => {
+describe('compileContext — cross-runtime fragment identity', () => {
   it('same capability emits identical fragment text across all three RuntimeIds', () => {
     const claudecode = compileContext(input({ runtimeId: 'claude_code' }));
-    const native = compileContext(input({ runtimeId: 'bbagent' }));
+    const native = compileContext(input({ runtimeId: 'codepilot_runtime' }));
     const codex = compileContext(input({ runtimeId: 'codex_runtime' }));
     // Compare each capability's text across runtimes.
     const claudeMap = new Map(
@@ -296,7 +296,7 @@ describe('compileContext �?cross-runtime fragment identity', () => {
 // Tool descriptors
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?tool descriptors', () => {
+describe('compileContext — tool descriptors', () => {
   it('every live capability\'s tool names appear in toolDescriptors for Codex Runtime', () => {
     const out = compileContext(input({ runtimeId: 'codex_runtime' }));
     const names = new Set(out.toolDescriptors.map((t) => t.name));
@@ -319,7 +319,8 @@ describe('compileContext �?tool descriptors', () => {
     // flow). Native exposure flipped to `'ai_sdk_tool'`, but that
     // affects per-runtime executability only, not the catalog's
     // top-level status. Either way the compiler MUST exclude
-    // `codepilot_hatch_buddy` from the Codex tool descriptors �?    // status='deferred' takes the default-enabled-set path; an
+    // `codepilot_hatch_buddy` from the Codex tool descriptors —
+    // status='deferred' takes the default-enabled-set path; an
     // explicit enabledCapabilities set would still hit the
     // per-runtime exposure check at the next layer. Pin both
     // pathways.
@@ -337,7 +338,7 @@ describe('compileContext �?tool descriptors', () => {
 // runtimeHints boundary (regression test #11)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('compileContext �?runtimeHints boundary', () => {
+describe('compileContext — runtimeHints boundary', () => {
   it('CodexProxyHints.builtinToolNames is a real Set + every entry mounts in createCodePilotBuiltinTools', async () => {
     const { createCodePilotBuiltinTools } = await import('@/lib/codex/proxy/builtin-bridge');
     const bridge = createCodePilotBuiltinTools({
@@ -381,7 +382,7 @@ describe('compileContext �?runtimeHints boundary', () => {
     );
   });
 
-  it('runtimeHints fields contain no prose (no newline, no Markdown markers, �?64 chars each string)', () => {
+  it('runtimeHints fields contain no prose (no newline, no Markdown markers, ≤ 64 chars each string)', () => {
     const out = compileContext(input({ runtimeId: 'codex_runtime' }));
     const hints = out.runtimeHints.codex_proxy;
     assert.ok(hints);
@@ -422,7 +423,7 @@ describe('compileContext �?runtimeHints boundary', () => {
 // Expected Differences Ledger consistency (regression test #12)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Expected Differences Ledger �?internal consistency', () => {
+describe('Expected Differences Ledger — internal consistency', () => {
   it('every ledger entry references a real capability id', () => {
     const ids = new Set(HARNESS_CAPABILITIES.map((c) => c.id));
     for (const entry of EXPECTED_DIFFERENCES) {
@@ -462,7 +463,7 @@ describe('Expected Differences Ledger �?internal consistency', () => {
   });
 
   it('codepilot_runtime ledger is empty after Phase 5e P1 (image_generation MediaBlock follow_up resolved)', () => {
-    // Phase 5d Phase 2 slice 2d (2026-05-17) �?Native runtime
+    // Phase 5d Phase 2 slice 2d (2026-05-17) — Native runtime
     // re-exports the canonical MCP-side prompts for memory /
     // tasks_and_notify / media_import.
     //
@@ -471,7 +472,7 @@ describe('Expected Differences Ledger �?internal consistency', () => {
     // MediaBlock[] via the harness side-channel (see
     // `src/lib/builtin-tools/media.ts` + `src/lib/agent-loop.ts`
     // splice).
-    const native = expectedDifferencesFor('bbagent');
+    const native = expectedDifferencesFor('codepilot_runtime');
     assert.deepEqual(
       native.map((e) => e.capability).sort(),
       [],

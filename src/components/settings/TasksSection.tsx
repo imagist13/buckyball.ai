@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * Settings â?å®æ¶ä»»å¡ / Tasks â?global task center (Phase 3 Step 3,
+ * Settings → 定时任务 / Tasks — global task center (Phase 3 Step 3,
  * v6 review-fix product redesign).
  *
  * Owns the user-facing task management surface. Per the v6 product
  * direction: the page is **list-only**. Creation flows through the AI
- * tool (`codepilot_schedule_task`) â?clicking "New Task" opens a chat
+ * tool (`codepilot_schedule_task`) — clicking "New Task" opens a chat
  * with a prefilled prompt that nudges the model to call the tool. The
  * UI does not duplicate the create logic; `/api/tasks/schedule` is the
  * server-side persistence path used by tools, not a primary user-facing
@@ -21,8 +21,8 @@
  *   - URL: `?focus=<taskId>` highlights and scrolls to the matching
  *     row (driven by Electron notification clicks)
  *
- * Heartbeat config is intentionally NOT here â?that lives in
- * Settings â?Assistant. Tasks page is the global / per-task view.
+ * Heartbeat config is intentionally NOT here — that lives in
+ * Settings → Assistant. Tasks page is the global / per-task view.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -30,7 +30,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
 import { Button } from "@/components/ui/button";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 
 interface TaskRow {
@@ -47,7 +47,7 @@ interface TaskRow {
   last_result?: string;
   status: "active" | "paused" | "completed" | "disabled";
   priority: "low" | "normal" | "urgent";
-  /** Phase 3 Step 4 â?task-bound chat session id (set on first run). */
+  /** Phase 3 Step 4 — task-bound chat session id (set on first run). */
   session_id?: string | null;
   created_at: string;
 }
@@ -78,10 +78,10 @@ interface RunRow {
 }
 
 const NEW_TASK_PREFILL =
-  "è¯·å¸®æåå»ºä¸ä¸ªå®æ¶ä»»å¡ãåé®æä¸ä¸¤ä¸ªé®é¢ç¡®è®¤æå¾ï¼æéè¿æ?AI ä»»å¡ãä½æ¶è§¦åãæéææ?/ AI æä»¤æ¯ä»ä¹ï¼ï¼ç¶åè°ç?codepilot_schedule_task å·¥å·åå»ºã?;
+  "请帮我创建一个定时任务。先问我一两个问题确认意图（提醒还是 AI 任务、何时触发、提醒文本 / AI 指令是什么），然后调用 codepilot_schedule_task 工具创建。";
 
 function formatRelative(iso: string | undefined, isZh: boolean): string {
-  if (!iso) return "â?;
+  if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString(isZh ? "zh-CN" : undefined);
@@ -105,7 +105,7 @@ function deliveryStatusToTone(status: string): string {
 
 export function TasksSection() {
   const { t } = useTranslation();
-  const isZh = t("nav.chats") === "å¯¹è¯";
+  const isZh = t("nav.chats") === "对话";
   const router = useRouter();
   const searchParams = useSearchParams();
   const focusId = searchParams.get("focus");
@@ -234,20 +234,20 @@ export function TasksSection() {
         </p>
       </div>
 
-      {/* Single button row â?left-align since there's no sibling on the
+      {/* Single button row — left-align since there's no sibling on the
           left. Earlier `justify-end` made the button float over to the
           right corner alone, which felt detached from the page title /
           description. */}
       <div className="flex items-center justify-start">
         <Button size="sm" onClick={handleNewTaskInChat}>
-          <BuckyballIcon name="plus" size="sm" aria-hidden />
+          <CodePilotIcon name="plus" size="sm" aria-hidden />
           {t("tasks.create" as TranslationKey)}
         </Button>
       </div>
 
       {loading ? (
         <div className="rounded-lg border border-dashed border-border/50 bg-card/50 p-10 text-center">
-          <p className="text-xs text-muted-foreground">{isZh ? "å è½½ä¸­â? : "Loadingâ?}</p>
+          <p className="text-xs text-muted-foreground">{isZh ? "加载中…" : "Loading…"}</p>
         </div>
       ) : sortedTasks.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border/50 bg-card/50 p-10 text-center space-y-2">
@@ -373,7 +373,7 @@ export function TasksSection() {
                     </p>
                     {runs.length === 0 ? (
                       <p className="text-[11px] text-muted-foreground/70">
-                        {isZh ? "ææ æ§è¡è®°å½" : "No execution history yet"}
+                        {isZh ? "暂无执行记录" : "No execution history yet"}
                       </p>
                     ) : (
                       <div className="space-y-2">
@@ -384,7 +384,7 @@ export function TasksSection() {
                           >
                             <div className="flex items-center gap-2 text-muted-foreground flex-wrap">
                               <span>{formatRelative(run.created_at, isZh)}</span>
-                              {/* Phase 3 Step 4 â?5-state status display, with
+                              {/* Phase 3 Step 4 — 5-state status display, with
                                   legacy `'success'` / `'error'` mapped to the
                                   same colors as the new `'succeeded'` /
                                   `'failed'` so historical rows look consistent. */}
@@ -407,7 +407,7 @@ export function TasksSection() {
                               {typeof run.duration_ms === "number" && (
                                 <span>{run.duration_ms}ms</span>
                               )}
-                              {/* Phase 3 Step 4 â?link into the task-bound
+                              {/* Phase 3 Step 4 — link into the task-bound
                                   chat session this run wrote to. Hidden for
                                   reminder runs (no session) and rows where
                                   task.session_id wasn't populated yet. */}
@@ -416,7 +416,7 @@ export function TasksSection() {
                                   href={`/chat/${task.session_id}`}
                                   className="ml-auto text-foreground/70 hover:text-foreground hover:underline"
                                 >
-                                  {isZh ? "æå¼æ§è¡ä¼è¯" : "Open session"}
+                                  {isZh ? "打开执行会话" : "Open session"}
                                 </a>
                               )}
                             </div>
@@ -432,7 +432,7 @@ export function TasksSection() {
                                     </span>
                                     {d.error && (
                                       <span className="truncate text-muted-foreground/70">
-                                        â?{d.error}
+                                        — {d.error}
                                       </span>
                                     )}
                                   </li>
@@ -440,7 +440,7 @@ export function TasksSection() {
                               </ul>
                             ) : (
                               <p className="mt-1 text-muted-foreground/70">
-                                {isZh ? "æ éç¥ééè®°å½" : "No delivery rows"}
+                                {isZh ? "无通知通道记录" : "No delivery rows"}
                               </p>
                             )}
                             {run.error && (

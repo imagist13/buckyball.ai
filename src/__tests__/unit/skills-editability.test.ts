@@ -54,7 +54,7 @@ after(() => {
   fs.rmSync(tmpRoot, { recursive: true, force: true });
 });
 
-describe('deriveSkillEditability â€?SDK', () => {
+describe('deriveSkillEditability â€” SDK', () => {
   it('SDK source is always read-only with reason="sdk"', () => {
     const r = deriveSkillEditability({ source: 'sdk', filePath: '' });
     assert.deepEqual(r, { editable: false, readOnlyReason: 'sdk' });
@@ -65,10 +65,10 @@ describe('deriveSkillEditability â€?SDK', () => {
   });
 });
 
-describe('deriveSkillEditability â€?project', () => {
+describe('deriveSkillEditability â€” project', () => {
   const cwd = () => path.join(tmpRoot, 'workspace');
 
-  it('project + writable + inside cwd â†?editable', () => {
+  it('project + writable + inside cwd â†’ editable', () => {
     const r = deriveSkillEditability(
       { source: 'project', filePath: writableFile },
       cwd(),
@@ -76,7 +76,7 @@ describe('deriveSkillEditability â€?project', () => {
     assert.deepEqual(r, { editable: true });
   });
 
-  it('project + outside cwd â†?out_of_cwd', () => {
+  it('project + outside cwd â†’ out_of_cwd', () => {
     const r = deriveSkillEditability(
       { source: 'project', filePath: outsideFile },
       cwd(),
@@ -84,7 +84,7 @@ describe('deriveSkillEditability â€?project', () => {
     assert.deepEqual(r, { editable: false, readOnlyReason: 'out_of_cwd' });
   });
 
-  it('project + no cwd context â†?out_of_cwd (we do not guess)', () => {
+  it('project + no cwd context â†’ out_of_cwd (we do not guess)', () => {
     const r = deriveSkillEditability(
       { source: 'project', filePath: writableFile },
       undefined,
@@ -92,7 +92,7 @@ describe('deriveSkillEditability â€?project', () => {
     assert.deepEqual(r, { editable: false, readOnlyReason: 'out_of_cwd' });
   });
 
-  it('project + inside cwd but read-only file â†?file_not_writable', () => {
+  it('project + inside cwd but read-only file â†’ file_not_writable', () => {
     const r = deriveSkillEditability(
       { source: 'project', filePath: readOnlyFile },
       cwd(),
@@ -101,25 +101,25 @@ describe('deriveSkillEditability â€?project', () => {
   });
 });
 
-describe('deriveSkillEditability â€?file-backed sources (global / installed / plugin)', () => {
+describe('deriveSkillEditability â€” file-backed sources (global / installed / plugin)', () => {
   for (const source of ['global', 'installed', 'plugin'] as const) {
-    it(`${source} + writable file â†?editable`, () => {
+    it(`${source} + writable file â†’ editable`, () => {
       const r = deriveSkillEditability({ source, filePath: writableFile });
       assert.deepEqual(r, { editable: true });
     });
 
-    it(`${source} + read-only file â†?file_not_writable`, () => {
+    it(`${source} + read-only file â†’ file_not_writable`, () => {
       const r = deriveSkillEditability({ source, filePath: readOnlyFile });
       assert.deepEqual(r, { editable: false, readOnlyReason: 'file_not_writable' });
     });
 
-    it(`${source} + missing file â†?file_not_writable (W_OK rejects)`, () => {
+    it(`${source} + missing file â†’ file_not_writable (W_OK rejects)`, () => {
       const ghost = path.join(tmpRoot, 'workspace', '.claude', 'commands', 'ghost.md');
       const r = deriveSkillEditability({ source, filePath: ghost });
       assert.deepEqual(r, { editable: false, readOnlyReason: 'file_not_writable' });
     });
 
-    it(`${source} + empty filePath â†?file_not_writable`, () => {
+    it(`${source} + empty filePath â†’ file_not_writable`, () => {
       const r = deriveSkillEditability({ source, filePath: '' });
       assert.deepEqual(r, { editable: false, readOnlyReason: 'file_not_writable' });
     });
@@ -127,7 +127,7 @@ describe('deriveSkillEditability â€?file-backed sources (global / installed / pl
 
   it('cwd argument is ignored for non-project sources', () => {
     // Even though `outsideFile` is "outside" the cwd, a plugin skill
-    // backed by a writable file is still editable â€?cwd is only enforced
+    // backed by a writable file is still editable â€” cwd is only enforced
     // for source === "project".
     const r = deriveSkillEditability(
       { source: 'plugin', filePath: outsideFile },

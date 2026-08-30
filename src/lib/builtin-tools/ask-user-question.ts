@@ -1,5 +1,5 @@
 /**
- * builtin-tools/ask-user-question.ts â€?Native Runtime AskUserQuestion tool.
+ * builtin-tools/ask-user-question.ts â€” Native Runtime AskUserQuestion tool.
  *
  * Allows the model to ask the user structured multiple-choice questions.
  * Bridges the gap between the SDK Runtime (which has AskUserQuestion built in)
@@ -11,7 +11,7 @@
  *      ALWAYS_ASK_TOOLS, so even trust mode shows the UI)
  *   3. Frontend PermissionPrompt.tsx renders AskUserQuestionUI when
  *      pendingPermission.toolName === 'AskUserQuestion'
- *   4. User picks options â†?frontend responds with updatedInput containing
+ *   4. User picks options â†’ frontend responds with updatedInput containing
  *      { questions, answers: Record<string, string> }
  *   5. Permission wrapper replaces `input` with `updatedInput`
  *   6. This tool's execute receives the enriched input and formats the
@@ -19,15 +19,15 @@
  *
  * The Zod schema only covers the MODEL's input (questions). The `answers`
  * field is injected by the permission flow and accessed via a runtime cast
- * in execute â€?this matches the SDK's behavior.
+ * in execute â€” this matches the SDK's behavior.
  *
- * Known limitation â€?IM/bridge sessions:
+ * Known limitation â€” IM/bridge sessions:
  * The bridge permission broker (permission-broker.ts) only supports
  * Allow/Deny responses, not structured updatedInput with answers.
  * Bridge users see a generic permission card and can approve/deny but
  * cannot pick options. Full bridge support requires interactive IM card
  * UIs per platform (Telegram inline keyboard, Feishu interactive card,
- * etc.) â€?tracked as a separate follow-up.
+ * etc.) â€” tracked as a separate follow-up.
  */
 
 import { tool } from 'ai';

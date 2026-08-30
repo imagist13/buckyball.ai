@@ -5,14 +5,14 @@
  * client can't know it from the request it just made. Before this, nothing
  * told the UI: the sidebar happened to catch up via its 5-second poll, and
  * the top bar didn't catch up at all (`/chat/[id]` reads the title once on
- * mount and never subscribes) â€?so a fresh chat sat on "New Chat" up there
+ * mount and never subscribes) â€” so a fresh chat sat on "New Chat" up there
  * until a navigation.
  *
  * Why a targeted re-fetch and not an SSE frame: the title is committed
  * synchronously in the route handler BEFORE the streaming Response is
  * returned, so by the time `fetch('/api/chat')` resolves ok the row is
  * already final. That makes a single GET race-free and keeps the SSE frame
- * grammar (parsed in two places â€?`stream-session-manager` and `page.tsx`)
+ * grammar (parsed in two places â€” `stream-session-manager` and `page.tsx`)
  * untouched.
  *
  * Reuses the existing `session-updated` event that manual rename already
@@ -32,7 +32,8 @@ export interface SessionUpdatedDetail {
  * Only ever pass a title read out of a response body. A rename PATCH
  * canonicalizes what it was sent (clamped to 50 graphemes, single-lined), so
  * broadcasting the request text instead would park the top bar and split view
- * on the raw input while the sidebar's re-fetch showed the canonical form â€? * three views, two titles.
+ * on the raw input while the sidebar's re-fetch showed the canonical form â€”
+ * three views, two titles.
  */
 export function broadcastSessionTitle(sessionId: string, title: string): void {
   if (typeof window === 'undefined' || !sessionId || !title) return;
@@ -61,7 +62,7 @@ export function canonicalTitleFromResponse(data: unknown): string {
  * different titles for the same session after a long or multi-line rename.
  *
  * @returns the canonical title, or `''` if the rename didn't take (the caller
- *          then leaves its own state alone â€?fail-soft, as both call sites were).
+ *          then leaves its own state alone â€” fail-soft, as both call sites were).
  */
 export async function renameSession(sessionId: string, title: string): Promise<string> {
   if (typeof window === 'undefined' || !sessionId) return '';
@@ -83,7 +84,7 @@ export async function renameSession(sessionId: string, title: string): Promise<s
 
 /**
  * Re-read a session's title and broadcast it. Fire-and-forget: a failure here
- * must never disturb a send that already succeeded â€?the sidebar poll remains
+ * must never disturb a send that already succeeded â€” the sidebar poll remains
  * as the backstop.
  */
 export async function refreshSessionTitle(sessionId: string): Promise<void> {
@@ -103,7 +104,7 @@ export async function refreshSessionTitle(sessionId: string): Promise<void> {
  * Subscribe to title changes for one session.
  *
  * `session-updated` is also emitted WITHOUT a detail (delete, list refresh),
- * which is why `onTitle` only fires for a detail naming this session â€?a
+ * which is why `onTitle` only fires for a detail naming this session â€” a
  * detail-less event means "something changed, re-read if you care", and
  * callers that care pass `onUnknown`.
  *

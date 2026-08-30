@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // AI SDK 7 Phase 4 â‘?â€?HMAC approval-token hardening. The token was
+    // AI SDK 7 Phase 4 â‘¡ â€” HMAC approval-token hardening. The token was
     // issued at request-creation time and delivered only via the
     // `permission_request` SSE event, so a caller that merely knows/guessed
     // the id cannot resolve it. Checked BEFORE status/expiry so probing with
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enforce the persisted expires_at. Previously only the in-memory
-    // registry timer expired requests â€?after a process restart (timer gone)
+    // registry timer expired requests â€” after a process restart (timer gone)
     // a stale-but-pending row could still be approved. The token signs
     // expires_at, so this window cannot be extended by the client.
     if (isPermissionRequestExpired(dbRecord.expires_at)) {

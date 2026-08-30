@@ -1,5 +1,5 @@
 /**
- * Adapter catalog â€?side-effect imports that trigger self-registration
+ * Adapter catalog â€” side-effect imports that trigger self-registration
  * of all available channel adapters.
  *
  * To add a new adapter:

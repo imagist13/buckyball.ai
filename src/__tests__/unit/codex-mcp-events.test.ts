@@ -1,10 +1,10 @@
 /**
- * Phase 8 Phase 3 �?Codex MCP event bridge.
+ * Phase 8 Phase 3 — Codex MCP event bridge.
  *
  * Run: npx tsx --test src/__tests__/unit/codex-mcp-events.test.ts
  *
  * Covers: MCP server startup success/failure surfacing (no longer silent),
- * MCP tool start + completed(success/error) �?canonical tool events, and a
+ * MCP tool start + completed(success/error) → canonical tool events, and a
  * source pin on the runtime's safe-decline elicitation handler.
  */
 
@@ -27,8 +27,8 @@ import { setActiveLocale } from '../../i18n';
 
 const ctx = { sessionId: 'sess-1' } as const;
 
-describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () => {
-  it('failed �?structured diagnostic plus localized human copy', () => {
+describe('mcpServer/startupStatus/updated — user-safe lifecycle display', () => {
+  it('failed → structured diagnostic plus localized human copy', () => {
     const ev = translateCodexNotification(
       'mcpServer/startupStatus/updated',
       { name: 'codepilot_memory', status: 'failed', error: 'handshake failed' },
@@ -45,14 +45,14 @@ describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () =>
     try {
       const display = resolveInternalRuntimeStatus({ kind: e.sourceType, payload: e.payload });
       assert.equal(display.handled, true);
-      assert.equal(display.text, '一个工具连接失败，部分功能可能暂时不可用�?);
+      assert.equal(display.text, '一个工具连接失败，部分功能可能暂时不可用。');
       assert.doesNotMatch(display.text ?? '', /codepilot_memory|handshake|\{|\}/);
     } finally {
       setActiveLocale('en');
     }
   });
 
-  it('ready �?silent, including defensive handling of an older server envelope', () => {
+  it('ready → silent, including defensive handling of an older server envelope', () => {
     const ev = translateCodexNotification(
       'mcpServer/startupStatus/updated',
       { name: 'codepilot_memory', status: 'ready', error: null },
@@ -68,7 +68,7 @@ describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () =>
     );
   });
 
-  it('starting (transient) �?no event (avoid noise)', () => {
+  it('starting (transient) → no event (avoid noise)', () => {
     const ev = translateCodexNotification(
       'mcpServer/startupStatus/updated',
       { name: 'codepilot_memory', status: 'starting', error: null },
@@ -89,7 +89,7 @@ describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () =>
     try {
       assert.deepEqual(
         resolveInternalRuntimeStatus({ kind: 'codex.futureLifecycle', payload: { raw: true } }),
-        { handled: true, text: '运行状态已更新�? },
+        { handled: true, text: '运行状态已更新。' },
       );
       assert.deepEqual(
         resolveInternalRuntimeStatus({ kind: 'codex_retry', payload: { willRetry: true } }),
@@ -146,8 +146,8 @@ describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () =>
     }
 
     assert.deepEqual(statusTexts, [
-      '运行状态已更新�?,
-      '运行状态已更新�?,
+      '运行状态已更新。',
+      '运行状态已更新。',
       'Indexing workspace...',
       undefined,
     ]);
@@ -158,8 +158,8 @@ describe('mcpServer/startupStatus/updated �?user-safe lifecycle display', () =>
   });
 });
 
-describe('mcpToolCall �?canonical tool events', () => {
-  it('item/started mcpToolCall �?tool_started named server.tool', () => {
+describe('mcpToolCall → canonical tool events', () => {
+  it('item/started mcpToolCall → tool_started named server.tool', () => {
     const ev = translateCodexNotification(
       'item/started',
       { item: { id: 'i1', type: 'mcpToolCall', server: 'codepilot_memory', tool: 'memory_search', arguments: { query: 'x' } } },
@@ -171,7 +171,7 @@ describe('mcpToolCall �?canonical tool events', () => {
     assert.equal(e.toolId, 'i1');
   });
 
-  it('item/completed mcpToolCall failed �?tool_completed WITH canonical error', () => {
+  it('item/completed mcpToolCall failed → tool_completed WITH canonical error', () => {
     const ev = translateCodexNotification(
       'item/completed',
       { item: { id: 'i1', type: 'mcpToolCall', status: 'failed', error: { message: 'tool blew up' } } },
@@ -182,7 +182,7 @@ describe('mcpToolCall �?canonical tool events', () => {
     assert.equal(e.error, 'tool blew up');
   });
 
-  it('item/completed mcpToolCall success �?tool_completed, no error', () => {
+  it('item/completed mcpToolCall success → tool_completed, no error', () => {
     const ev = translateCodexNotification(
       'item/completed',
       { item: { id: 'i1', type: 'mcpToolCall', status: 'completed', result: { content: [] } } },
@@ -204,17 +204,17 @@ describe('runtime elicitation handler (source pin)', () => {
   });
 });
 
-describe('codexElicitationPolicy �?built-in MCP tool-call approval classification', () => {
-  it('safe-read built-ins (memory, widget) �?auto_accept', () => {
+describe('codexElicitationPolicy — built-in MCP tool-call approval classification', () => {
+  it('safe-read built-ins (memory, widget) → auto_accept', () => {
     assert.equal(codexElicitationPolicy('codepilot_memory'), 'auto_accept');
     assert.equal(codexElicitationPolicy('codepilot_widget'), 'auto_accept');
   });
 
-  it('mutating / side-effecting built-ins (tasks) �?user_approval (never auto-accepted)', () => {
+  it('mutating / side-effecting built-ins (tasks) → user_approval (never auto-accepted)', () => {
     assert.equal(codexElicitationPolicy('codepilot_tasks'), 'user_approval');
   });
 
-  it('mutation-level split �?read MCPs (dashboard_read / cli_tools_read) �?auto_accept', () => {
+  it('mutation-level split — read MCPs (dashboard_read / cli_tools_read) → auto_accept', () => {
     // Codex review next slice (2026-05-28): read-only halves of the
     // Dashboard / CLI split. list / refresh / check_updates are safe-read,
     // so their elicitation auto-accepts.
@@ -222,7 +222,7 @@ describe('codexElicitationPolicy �?built-in MCP tool-call approval classificati
     assert.equal(codexElicitationPolicy('codepilot_cli_tools_read'), 'auto_accept');
   });
 
-  it('mutation-level split �?write MCPs (dashboard_write / cli_tools_write) �?user_approval', () => {
+  it('mutation-level split — write MCPs (dashboard_write / cli_tools_write) → user_approval', () => {
     // Mutating halves: pin / update / remove (dashboard) and install / add /
     // remove / update (cli). The model's call MUST hit the user's approval
     // card before anything runs; never auto-accepted.
@@ -230,7 +230,7 @@ describe('codexElicitationPolicy �?built-in MCP tool-call approval classificati
     assert.equal(codexElicitationPolicy('codepilot_cli_tools_write'), 'user_approval');
   });
 
-  it('unknown server / null / undefined �?decline (never blanket-accept)', () => {
+  it('unknown server / null / undefined → decline (never blanket-accept)', () => {
     for (const s of ['user_weather', 'chrome-devtools', 'some_mutating_server']) {
       assert.equal(codexElicitationPolicy(s), 'decline', `${s} must decline`);
     }
@@ -239,7 +239,7 @@ describe('codexElicitationPolicy �?built-in MCP tool-call approval classificati
   });
 });
 
-describe('handleCodexMcpElicitationApproval �?user-approval round-trip', () => {
+describe('handleCodexMcpElicitationApproval — user-approval round-trip', () => {
   it('emits a permission_request SSE (with mode + schema for judgeability) and ACCEPTS iff the user approves', async () => {
     const lines: string[] = [];
     const sessionId = 'sess-approval';
@@ -262,7 +262,7 @@ describe('handleCodexMcpElicitationApproval �?user-approval round-trip', () => 
     assert.match(emitted!, /tool_call/, 'prompt must carry the elicitation mode');
     assert.match(emitted!, /requestedSchema/, 'prompt must carry the requested schema');
     assert.match(emitted!, /confirm/, 'requested schema fields must survive into the prompt');
-    // sessionId-scoped id �?resolving an unscoped id must NOT match.
+    // sessionId-scoped id — resolving an unscoped id must NOT match.
     assert.equal(resolvePendingPermission(`codex-mcp-elicit:${jsonRpcId}`, { behavior: 'allow' }), false);
     assert.equal(resolvePendingPermission(`codex-mcp-elicit:${sessionId}:${jsonRpcId}`, { behavior: 'allow' }), true);
     const res = await pending;

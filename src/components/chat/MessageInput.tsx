@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, useMemo, type KeyboardEvent, type FormEvent } from 'react';
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { useRef, useState, useCallback, useEffect, useMemo, type KeyboardEvent, type FormEvent, type ReactNode } from 'react';
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 import {
@@ -21,7 +21,7 @@ import type { FileAttachment, MentionRef } from '@/types';
 import { SlashCommandPopover } from './SlashCommandPopover';
 import { CliToolsPopover } from './CliToolsPopover';
 import { ModelSelectorDropdown } from './ModelSelectorDropdown';
-import { EffortSelectorDropdown } from './EffortSelectorDropdown';
+import { ModelCapabilityDropdown } from './ModelCapabilityDropdown';
 import { FileAwareSubmitButton, FileTreeAttachmentBridge, FileAttachmentsCapsules, CliBadge, ComposerBadgeRow, DirectoryRefsCapsules, AttachmentPendingTracker } from './MessageInputParts';
 import { useMentionTokenEstimate } from '@/hooks/useMentionTokenEstimate';
 import { dataUrlToFileAttachment } from '@/lib/file-utils';
@@ -29,12 +29,17 @@ import { usePopoverState } from '@/hooks/usePopoverState';
 import { useProviderModels, isComposerProviderLoading } from '@/hooks/useProviderModels';
 import { resolveComposerModelAutoCorrect, findModelOption } from '@/lib/model-option-match';
 import { resolveComposerEffortDisplay } from '@/lib/effort-levels';
+import {
+  buildComposerModelCapabilityDescriptor,
+  normalizeContext1mSelection,
+} from '@/lib/model-option-support';
 // Import from `chat-runtime-shared` (client-safe). See ChatView import
 // note + `src/lib/chat-runtime-shared.ts` doc-block. Even type-only
 // imports from `chat-runtime.ts` are risky if the build leans on
 // runtime resolution paths; the shared module is the future-proof
 // choice for any client bundle.
 import type { ChatRuntimeParam } from '@/lib/chat-runtime-shared';
+import type { RuntimeId } from '@/lib/runtime/runtime-id';
 import { useCommandBadge } from '@/hooks/useCommandBadge';
 import { useCliToolsFetch } from '@/hooks/useCliToolsFetch';
 import { useSlashCommands } from '@/hooks/useSlashCommands';
@@ -62,7 +67,7 @@ const MAX_DIRECTORY_PREVIEW_ITEMS = 30;
  * Abort a composer submit WITHOUT delivering it, preserving the user's text and
  * attachments. PromptInput's submit pipeline clears text/files only when the
  * onSubmit Promise RESOLVES; throwing routes into its rejection branch, which
- * keeps everything â?so a blocked / provider-not-ready / gated submit never eats
+ * keeps everything — so a blocked / provider-not-ready / gated submit never eats
  * the user's screenshot (#615). Every no-send branch must go through here (or
  * the same throw) instead of a bare `return`, which would resolve and clear.
  */
@@ -74,10 +79,10 @@ function abortComposerSubmit(reason: string): never {
  * sessionStorage key for the per-session composer draft. Exported so the
  * first-message page (page.tsx) can clear it at send-accept: that flow flips
  * the layout (isStreaming) which REMOUNTS the composer, and the remounted
- * MessageInput re-seeds `inputValue` from this draft â?so the persisted draft is
+ * MessageInput re-seeds `inputValue` from this draft — so the persisted draft is
  * the one piece of composer state that survives the remount. Clearing it at
  * accept makes the remounted composer come up empty (#4/#5). A new chat has no
- * sessionId â?the 'new' bucket.
+ * sessionId → the 'new' bucket.
  */
 export const composerDraftKey = (sessionId?: string): string =>
   `codepilot:draft:${sessionId || 'new'}`;
@@ -85,8 +90,8 @@ export const composerDraftKey = (sessionId?: string): string =>
 interface MessageInputProps {
   // Returns false when the submit was NOT accepted for delivery (provider still
   // loading / no compatible provider / runtime-incompatible). The composer then
-  // preserves the user's text + attachments. true / void means accepted â?either
-  // sent or queued â?so the composer clears. (#615 screenshot-eaten fix)
+  // preserves the user's text + attachments. true / void means accepted — either
+  // sent or queued — so the composer clears. (#615 screenshot-eaten fix)
   onSend: (content: string, files?: FileAttachment[], systemPromptAppend?: string, displayOverride?: string, mentions?: MentionRef[], selectedSkills?: readonly string[]) => boolean | void | Promise<boolean | void>;
   onCommand?: (command: string) => void;
   onStop?: () => void;
@@ -97,8 +102,8 @@ interface MessageInputProps {
   onModelChange?: (model: string) => void;
   providerId?: string;
   /**
-   * Phase 6 P0 (2026-05-15) â?`opts.isAuto` differentiates the
-   * MessageInput auto-correct fallback (modelâfirstCompatibleModel
+   * Phase 6 P0 (2026-05-15) — `opts.isAuto` differentiates the
+   * MessageInput auto-correct fallback (model→firstCompatibleModel
    * when the user's saved model isn't reachable under the active
    * runtime) from a manual user pick in the dropdown. Manual picks
    * are the only path that should clear `invalidDefault` /
@@ -116,7 +121,7 @@ interface MessageInputProps {
   /** Effort selection lifted to parent for inclusion in the stream chain */
   effort?: string;
   onEffortChange?: (effort: string | undefined) => void;
-  /** SDK init metadata â?when available, used to validate command/skill availability */
+  /** SDK init metadata — when available, used to validate command/skill availability */
   sdkInitMeta?: { tools?: unknown; slash_commands?: unknown; skills?: unknown } | null;
   /** Initial value to prefill in the input */
   initialValue?: string;
@@ -125,17 +130,17 @@ interface MessageInputProps {
   /** Whether the session already has messages */
   hasMessages?: boolean;
   /** Notify parent when the total estimated tokens of currently
-   *  attached @ mention chips changes. Used to surface "+10K å¾å "
+   *  attached @ mention chips changes. Used to surface "+10K 待加"
    *  in the Run status panel before the message is sent. */
   onPendingContextTokensChange?: (tokens: number) => void;
-  /** Phase 6 Phase 3 â?per-source split of the same number. When wired
+  /** Phase 6 Phase 3 — per-source split of the same number. When wired
    *  on the parent, flows through to useContextUsage so the popover's
    *  pending kinds (files_attachments) render real per-source breakdowns.
-   *  Independent from onPendingContextTokensChange â?parents may listen
+   *  Independent from onPendingContextTokensChange — parents may listen
    *  to either or both. */
   onPendingContextSubTotalsChange?: (subTotals: PendingContextSubTotals) => void;
   /**
-   * Round 2 â?Run Checkpoint blocking. When non-empty, handleSubmit
+   * Round 2 — Run Checkpoint blocking. When non-empty, handleSubmit
    * silently no-ops (the active banner already explains why and
    * carries the confirm-and-send button). Bypassed by the
    * `run-checkpoint-confirm-send` window event so the page can
@@ -143,15 +148,29 @@ interface MessageInputProps {
    */
   blockingReasonIds?: ReadonlyArray<string>;
   /**
-   * Phase 2 Step 3b â?runtime gate for the picker feed.
+   * Phase 2 Step 3b — runtime gate for the picker feed.
    *   - `'auto'`: new chat, follow global `agent_runtime`.
-   *   - `'claude_code'` / `'bbagent'`: existing session with
-   *     a `runtime_pin` â?picker shows only what THIS session can
+   *   - `'claude_code'` / `'codepilot_runtime'` / `'codex_runtime'`: existing session with
+   *     a `runtime_pin` — picker shows only what THIS session can
    *     reach, immune to global flips.
    * Required (no default) so a new caller can't silently inherit the
    * old "auto = follow global, drift on flip" behavior.
    */
   runtime: ChatRuntimeParam;
+  /** Model picker left lane. Selecting a Runtime changes the effective
+   * session runtime before the matching model route is chosen. */
+  onRuntimeChange?: (runtime: RuntimeId) => void;
+  /** Controls consolidated into the input shell by the parent-owned session
+   * flows. Slots keep New Chat and ChatView autonomous while sharing layout. */
+  permissionControl?: ReactNode;
+  runStatusControl?: ReactNode;
+  /** Current provider option. Fixed-1M models are represented by the sourced
+   * model capacity and never call this setter. */
+  context1m?: boolean;
+  onContext1mChange?: (enabled: boolean) => void;
+  /** Per-route effective value. Normalization must never write the shared
+   * provider option; parents use this local signal for the current send/UI. */
+  onContext1mEffectiveChange?: (enabled: boolean) => void;
 }
 
 function joinPath(base: string, rel: string): string {
@@ -185,7 +204,7 @@ async function fileResponseToAttachment(
     type: mimeType,
     size: buffer.byteLength,
     data: arrayBufferToBase64(buffer),
-    // #628 â?preserve the real in-tree path for @-mentions so the chat route can
+    // #628 — preserve the real in-tree path for @-mentions so the chat route can
     // reference the user's actual file instead of a `.codepilot-uploads` copy.
     ...(originPath ? { originPath } : {}),
   };
@@ -214,10 +233,16 @@ export function MessageInput({
   onPendingContextTokensChange,
   onPendingContextSubTotalsChange,
   blockingReasonIds,
+  onRuntimeChange,
+  permissionControl,
+  runStatusControl,
+  context1m = false,
+  onContext1mChange,
+  onContext1mEffectiveChange,
 }: MessageInputProps) {
   const { t, locale } = useTranslation();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  // Run Checkpoint bypass â?Round 2 (2026-04-30). When the banner's
+  // Run Checkpoint bypass — Round 2 (2026-04-30). When the banner's
   // confirm action fires (via the `run-checkpoint-confirm-send` window
   // event), we set this ref true synchronously, then programmatically
   // re-trigger the submit button. handleSubmit reads + clears the ref
@@ -233,7 +258,7 @@ export function MessageInput({
   // Track the last `initialValue` we've reconciled so the warm-navigation
   // sync below fires only when the prop ACTUALLY transitions (not on every
   // render where it's stable). State (not a ref) so the reconcile can run
-  // during render â?reading a ref during render is itself a React Compiler
+  // during render — reading a ref during render is itself a React Compiler
   // bailout. Initialised to the mount-time `initialValue`, so the first
   // render is a no-op and we don't double-set inputValue.
   const [seenInitialValue, setSeenInitialValue] = useState(initialValue);
@@ -255,15 +280,15 @@ export function MessageInput({
   }, [draftKey]);
 
   // Warm-navigation prefill sync. The `useState` initialiser above only
-  // runs at mount â?if `initialValue` arrives later (e.g. /chat is already
-  // mounted and the URL changes to /chat?prefill=â? or the parent reads URL
+  // runs at mount — if `initialValue` arrives later (e.g. /chat is already
+  // mounted and the URL changes to /chat?prefill=…, or the parent reads URL
   // via `useSearchParams` after first paint), the textarea would otherwise
   // stay empty. React's "adjust state when a prop changes" pattern (render
-  // time, not an effect â?https://react.dev/learn/you-might-not-need-an-effect):
+  // time, not an effect — https://react.dev/learn/you-might-not-need-an-effect):
   // when `initialValue` transitions to a new value we adopt it; when it goes
   // back to empty we just record the transition so a later re-arrival of the
   // same prefill text counts as fresh. `setInputValueRaw` (not setInputValue)
-  // because we're mid-render â?the persisted-draft write happens on the next
+  // because we're mid-render — the persisted-draft write happens on the next
   // user keystroke, and a URL prefill is re-derivable from the URL anyway.
   if (initialValue !== seenInitialValue) {
     setSeenInitialValue(initialValue);
@@ -272,11 +297,11 @@ export function MessageInput({
     }
   }
 
-  // Phase 4 â?`codepilot:add-to-chat` listener. Selection from
+  // Phase 4 — `codepilot:add-to-chat` listener. Selection from
   // PreviewPanel dispatches a window event with the selected text +
   // source metadata; we wrap the quote in a markdown blockquote and
   // append a provenance line so the AI sees both content and source.
-  // The composer treats it as a normal prefill â?the user can still
+  // The composer treats it as a normal prefill — the user can still
   // edit before sending, and badge / mention parsing kicks in
   // naturally because the appended content is plain text.
   useEffect(() => {
@@ -286,10 +311,10 @@ export function MessageInput({
       const d = detail as { text?: unknown; sourcePath?: unknown; sourceAnchor?: unknown; sourceLabel?: unknown };
       if (typeof d.text !== 'string' || typeof d.sourcePath !== 'string') return;
       const provenance =
-        '> [æ¥æº] ' +
+        '> [来源] ' +
         d.sourcePath +
         (typeof d.sourceAnchor === 'string' ? d.sourceAnchor : '') +
-        (typeof d.sourceLabel === 'string' ? ' â?' + d.sourceLabel : '');
+        (typeof d.sourceLabel === 'string' ? ' — ' + d.sourceLabel : '');
       const quote = d.text
         .split(/\r?\n/)
         .map((l) => '> ' + l)
@@ -328,19 +353,19 @@ export function MessageInput({
   // --- Extracted hooks ---
   const popover = usePopoverState(modelName);
   const { providerGroups, runtimeApplied, currentProviderIdValue, modelOptions, currentModelOption, globalDefaultModel, globalDefaultProvider, fetchState } = useProviderModels(providerId, modelName, runtime);
-  // P0.4 â?only show "æ­£å¨åå¤è¿è¡ç¯å¢â? during the genuine first load, not
+  // P0.4 — only show "正在准备运行环境…" during the genuine first load, not
   // on a background refetch when a sendable model is already resolved.
   const isProviderLoading = isComposerProviderLoading(fetchState, !!currentModelOption);
 
   // Auto-correct model when it doesn't exist in the current provider's model list.
   // This prevents sending an unsupported model name (e.g. 'opus' to MiniMax which only has 'sonnet').
-  // IMPORTANT: Only fall back to first model â?never use globalDefaultModel here.
+  // IMPORTANT: Only fall back to first model — never use globalDefaultModel here.
   // Global default model is only for NEW conversations (chat/page.tsx).
   // Existing sessions must keep their own selected model; if that model becomes
   // invalid (provider changed), fall back to the provider's first model, not the
   // global default, to avoid overwriting the session's model choice.
   //
-  // Phase 6 P0 (2026-05-15) â?pass `{ isAuto: true }` so the parent's
+  // Phase 6 P0 (2026-05-15) — pass `{ isAuto: true }` so the parent's
   // handler doesn't treat this as a manual user pick. A silent
   // auto-correct must NOT clear `invalidDefault` /
   // `noCompatibleProvider`, write `codepilot:last-model` /
@@ -348,7 +373,7 @@ export function MessageInput({
   // used", or PATCH the session row. It just synchronises display
   // state so the picker label and the runtime-compatible fallback
   // pair (provider, model) agree.
-  // s07 reviewer fix (run i31, 2026-07-18) â?enrich every model-change with the
+  // s07 reviewer fix (run i31, 2026-07-18) — enrich every model-change with the
   // NEW model's sourced effort tiers, resolved from the SAME `providerGroups` /
   // `modelOptions` feed the picker renders. This is the single capability feed
   // both effort-reset consumers (ChatView's session handler and the new-chat
@@ -406,7 +431,7 @@ export function MessageInput({
   // reads the CURRENT value and never clobbers a badge the user picked during an
   // async failure window (Codex P3). Text + dirs use functional updaters for the
   // same guard; cliBadge/badges have no functional-update setter, so a ref is the
-  // equivalent. Synced in an effect (not during render â?react-hooks/refs); the
+  // equivalent. Synced in an effect (not during render — react-hooks/refs); the
   // effect flushes before the next user event, so the send handler reads latest.
   const cliBadgeRef = useRef(cliBadge);
   const badgesRef = useRef(badges);
@@ -554,10 +579,10 @@ export function MessageInput({
 
   const handleSubmit = useCallback(async (msg: { text: string; files: Array<{ type: string; url: string; filename?: string; mediaType?: string }> }, e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Run Checkpoint blocking â?Round 2. When the page reports any
+    // Run Checkpoint blocking — Round 2. When the page reports any
     // active reason that requires confirmation, the send is silently
     // dropped here. The visible RunCheckpoint banner above the
-    // composer carries the "ç¡®è®¤å¹¶åé? action; clicking it sets
+    // composer carries the "确认并发送" action; clicking it sets
     // `bypassBlockingRef` and re-triggers this submit, so the same
     // user-edited content + attachments flow through unchanged.
     if (!bypassBlockingRef.current && blockingReasonIds && blockingReasonIds.length > 0) {
@@ -624,7 +649,8 @@ export function MessageInput({
         if (limitNote) limitNotes.push(limitNote);
       }
 
-      // Merge in directories the user attached via the file-tree "+" â?      // they don't appear in `dedupedMentions` because they're tracked
+      // Merge in directories the user attached via the file-tree "+" —
+      // they don't appear in `dedupedMentions` because they're tracked
       // outside the textarea. Same MAX_DIRECTORY_MENTION_COUNT cap
       // applies across both sources combined.
       for (const path of directoryRefs) {
@@ -641,7 +667,7 @@ export function MessageInput({
     };
 
     // If one or more badges are active, dispatch by kind (multi-skill combines).
-    // Block during streaming â?badges carry slash/skill semantics, not safe to queue.
+    // Block during streaming — badges carry slash/skill semantics, not safe to queue.
     if (badges.length > 0) {
       // No-send: badges carry slash/skill semantics, not safe to queue during
       // streaming. Preserve the composer (text + badges + attachments) instead
@@ -650,13 +676,13 @@ export function MessageInput({
       const uploadedFiles = await convertFiles();
       const mentionPayload = await resolveMentionPayload();
       const { prompt, displayLabel } = dispatchBadge(badges, content);
-      // Codex review v3 P1 fix (2026-05-20) â?extract agent_skill badge
+      // Codex review v3 P1 fix (2026-05-20) — extract agent_skill badge
       // labels as a structured channel for Context Accounting Phase 2.
-      // Codex v5 P1 fix (2026-05-20) â?canonicalize before passing.
+      // Codex v5 P1 fix (2026-05-20) — canonicalize before passing.
       // Inline (NOT importing canonicalizeSkillName from
       // claude-code-context-accounting): that module pulls
-      // discoverSkills â?`node:fs`, which Next.js Turbopack drags into
-      // the client bundle through this import â?produced "Module not
+      // discoverSkills → `node:fs`, which Next.js Turbopack drags into
+      // the client bundle through this import — produced "Module not
       // found: 'fs'" 500 on /chat. Keeping canonicalize inline here is
       // client-safe; the producer module has its own copy defensively
       // (intentional duplication for boundary safety).
@@ -682,7 +708,7 @@ export function MessageInput({
       // normal path below): the first-message send doesn't resolve until the
       // stream ends and the composer no longer remounts (#615), so a post-await
       // clear left the sent text + skill/slash badges sitting in the box for the
-      // whole turn (Codex P2 â?the badge path had the same lingering bug).
+      // whole turn (Codex P2 — the badge path had the same lingering bug).
       const restoreInput = inputValue;
       const restoreDirs = [...directoryRefs];
       const restoreBadges = [...badges];
@@ -698,7 +724,7 @@ export function MessageInput({
         selectedSkills.length > 0 ? selectedSkills : undefined,
       );
       if (delivered === false) {
-        // Gated/no-op send â?restore, guarded so a new message the user started
+        // Gated/no-op send — restore, guarded so a new message the user started
         // during the failure window isn't clobbered (Codex P2/P3). Re-add the
         // cleared badges only if the user hasn't picked a new one since (the live
         // ref reads the CURRENT badges, not this stale send-closure).
@@ -726,7 +752,7 @@ export function MessageInput({
     const { files, finalContent } = payload;
     const hasFiles = files.length > 0;
 
-    // Empty submit: nothing to send and nothing to lose â?clear silently.
+    // Empty submit: nothing to send and nothing to lose — clear silently.
     if (!finalContent && !hasFiles) return;
     // Disabled while content/attachments are present: preserve the composer
     // (a bare return here would let PromptInput clear the screenshot) (#615).
@@ -736,7 +762,8 @@ export function MessageInput({
     if (!hasFiles) {
       const slashResult = resolveDirectSlash(finalContent);
       if (slashResult.action === 'immediate_command' || slashResult.action === 'set_badge' || slashResult.action === 'unknown_slash_badge') {
-        // Slash commands must NOT execute or queue during streaming â?        // destructive commands (e.g. /clear) would race with the active stream.
+        // Slash commands must NOT execute or queue during streaming —
+        // destructive commands (e.g. /clear) would race with the active stream.
         if (isStreaming) return;
         if (slashResult.action === 'immediate_command') {
           if (onCommand) {
@@ -753,17 +780,17 @@ export function MessageInput({
     }
 
     // If CLI badge is active, inject systemPromptAppend to guide model.
-    // (Don't clear cliBadge yet â?only after the send is confirmed delivered.)
+    // (Don't clear cliBadge yet — only after the send is confirmed delivered.)
     const cliAppend = buildCliAppend(cliBadge);
 
-    // displayOverride keeps the bubble's text clean â?when the user
+    // displayOverride keeps the bubble's text clean — when the user
     // attached @ mentions OR + directory chips, hide the inflated
     // `[Referenced Directories]\n...` LLM-context section from the UI
     // (the chips above the bubble already carry that information).
     // Clear the composer text OPTIMISTICALLY, before awaiting delivery. The
     // first-message send (page.tsx `sendFirstMessage`) doesn't resolve until the
     // WHOLE stream finishes, and the composer is now a single stable-keyed
-    // instance that no longer remounts at the isStreaming flip (#615) â?so a
+    // instance that no longer remounts at the isStreaming flip (#615) — so a
     // post-await clear left the just-sent text in the box for the entire turn
     // (the lingering-text bug). ChatView's `sendMessage` returns at accept (its
     // stream is fire-and-forget), which is why it cleared fine; clearing up-front
@@ -782,7 +809,7 @@ export function MessageInput({
       payload.mentions ? [...payload.mentions] : undefined,
     );
     if (delivered === false) {
-      // Gated/no-op send â?restore, but ONLY if the user hasn't started a new
+      // Gated/no-op send — restore, but ONLY if the user hasn't started a new
       // message during the (possibly async) failure window, or we'd clobber
       // their new input (Codex P3). Functional updaters / live refs read the
       // CURRENT value, not this stale send-closure.
@@ -791,7 +818,7 @@ export function MessageInput({
       if (restoreCli && !cliBadgeRef.current) setCliBadge(restoreCli);
       abortComposerSubmit('composer-send-not-delivered');
     }
-    // Note: nothing to clear post-await â?text, dirs, and cliBadge were all
+    // Note: nothing to clear post-await — text, dirs, and cliBadge were all
     // cleared optimistically above, and we must NOT re-clear (the user may have
     // typed the next message while the turn streamed, and that must survive).
   }, [inputValue, mentionNodeTypes, directoryRefs, onSend, onCommand, disabled, isStreaming, popover, badges, cliBadge, addBadgeWithOrder, clearBadgesWithOrder, setCliBadge, setInputValue, fetchDirectorySummary, fetchMentionFileAttachment, blockingReasonIds]);
@@ -886,7 +913,7 @@ export function MessageInput({
 
       // CLI popover keyboard navigation. Filtering was removed when the
       // in-popover search bar went away, so the list always shows the full
-      // set of detected tools â?drive selection straight off cliTools.
+      // set of detected tools — drive selection straight off cliTools.
       if (popover.popoverMode === 'cli' && cliToolsFetch.cliTools.length > 0) {
         const tools = cliToolsFetch.cliTools;
         if (e.key === 'ArrowDown') {
@@ -924,12 +951,12 @@ export function MessageInput({
     [directoryRefs],
   );
   const directoryRefEstimates = useMentionTokenEstimate(directoryRefMentions, { sessionId, workingDirectory });
-  // Attachment pending tokens â?summed inside an embedded child of
+  // Attachment pending tokens — summed inside an embedded child of
   // PromptInput (where `usePromptInputAttachments` resolves) and
   // reported up via callback. See `<AttachmentPendingTracker>` below.
   const [attachmentPendingTokens, setAttachmentPendingTokens] = useState(0);
   // Total context tokens that will be added by the current chip
-  // selection â?shown as a "+pending" annotation in the Run status
+  // selection — shown as a "+pending" annotation in the Run status
   // panel so the user can preview the cost before sending. Includes
   // typed @ mentions, file-tree-attached directories, and PromptInput
   // file attachments alike.
@@ -947,7 +974,7 @@ export function MessageInput({
     onPendingContextTokensChange?.(pendingContextTokens);
   }, [pendingContextTokens, onPendingContextTokensChange]);
 
-  // Phase 6 Phase 3 â?per-source split of the same pending pool. Mirrors
+  // Phase 6 Phase 3 — per-source split of the same pending pool. Mirrors
   // computePendingContextTokens so the displayed total never disagrees
   // with the per-source rows in the Context popover breakdown.
   const pendingContextSubTotals = useMemo(
@@ -984,7 +1011,7 @@ export function MessageInput({
     return () => window.removeEventListener('attach-directory-to-chat', handler);
   }, []);
 
-  // Run Checkpoint Round 2 â?when the banner's confirm action fires,
+  // Run Checkpoint Round 2 — when the banner's confirm action fires,
   // we set the bypass flag and programmatically click the composer's
   // submit button. PromptInput's full submission pipeline (text +
   // attachments + mentions) then runs unchanged; handleSubmit reads
@@ -994,8 +1021,8 @@ export function MessageInput({
       bypassBlockingRef.current = true;
       // Find this composer's submit button via the stable
       // `data-message-input-submit` hook on FileAwareSubmitButton.
-      // We deliberately do NOT use aria-label â?that gets i18n'd
-      // ("åéæ¶æ? in zh) so a label-based query would silently
+      // We deliberately do NOT use aria-label — that gets i18n'd
+      // ("发送消息" in zh) so a label-based query would silently
       // miss in non-en locales and the bypass flag would leak.
       // (Codex P2 fix, 2026-04-30.)
       const btn = typeof document !== 'undefined'
@@ -1055,13 +1082,13 @@ export function MessageInput({
   // Drop-router for folders: browsers hand us directory drops as 0-size File
   // entries whose mediaType is ''. Default behavior in PromptInput would insert
   // them as bogus attachments. Route them to the existing @mention pipeline as
-  // directory references instead â?matching what the picker produces.
+  // directory references instead — matching what the picker produces.
   const handleDirectoriesDropped = useCallback((dirs: File[]) => {
     const resolver = typeof window !== 'undefined' ? window.electronAPI?.fs?.getPathForFile : undefined;
     for (const dir of dirs) {
       const absolute = resolver ? resolver(dir) : '';
       // Without an absolute path (non-Electron or resolver missing), fall back
-      // to the folder name â?the LLM can still act on the name as a hint.
+      // to the folder name — the LLM can still act on the name as a hint.
       const rawPath = absolute || dir.name;
       if (!rawPath) continue;
       const normalized = normalizeMentionPath(rawPath);
@@ -1071,17 +1098,67 @@ export function MessageInput({
     }
   }, [normalizeMentionPath]);
 
-  // Effort selector state â?guard against undefined when model not found in current provider's list
-  const currentModelMeta = currentModelOption as (typeof currentModelOption & { supportsEffort?: boolean; supportedEffortLevels?: string[]; effortNoteKey?: string }) | undefined;
-  const showEffortSelector = currentModelMeta?.supportsEffort === true;
-  // Default label is 'auto' â?the UI displays "é»è®¤ / Auto" and no explicit
+  // Effort selector state — guard against undefined when model not found in current provider's list
+  const currentModelMeta = currentModelOption as (typeof currentModelOption & {
+    upstreamModelId?: string;
+    supportsEffort?: boolean;
+    supportedEffortLevels?: string[];
+    effortNoteKey?: string;
+    contextWindow?: number;
+  }) | undefined;
+  const currentProviderGroup = providerGroups.find((group) => group.provider_id === currentProviderIdValue);
+  const capabilityDescriptor = buildComposerModelCapabilityDescriptor({
+    runtime: runtimeApplied ?? (runtime === 'auto' ? undefined : runtime),
+    protocol: currentProviderGroup?.protocol,
+    modelIds: [currentModelMeta?.value, currentModelMeta?.upstreamModelId],
+    supportsEffort: currentModelMeta?.supportsEffort,
+    supportedEffortLevels: currentModelMeta?.supportedEffortLevels,
+    effortNoteKey: currentModelMeta?.effortNoteKey,
+    contextWindow: currentModelMeta?.contextWindow,
+  });
+  const normalizedContext1m = normalizeContext1mSelection(
+    capabilityDescriptor.context1m,
+    context1m,
+  );
+  const contextAdjustmentNoticeRef = useRef('');
+  useEffect(() => {
+    if (fetchState !== 'loaded' || !currentModelMeta) return;
+    onContext1mEffectiveChange?.(normalizedContext1m.effective);
+    if (!normalizedContext1m.adjusted) return;
+    const noticeIdentity = [
+      currentProviderIdValue,
+      currentModelMeta.value,
+      normalizedContext1m.source,
+    ].join('\u0000');
+    if (contextAdjustmentNoticeRef.current !== noticeIdentity) {
+      contextAdjustmentNoticeRef.current = noticeIdentity;
+      void import('@/hooks/useToast').then(({ showToast }) => {
+        showToast({
+          type: 'info',
+          message: t('messageInput.context1m.resetOnModelSwitch' as TranslationKey),
+          duration: 4000,
+        });
+      });
+    }
+  }, [
+    fetchState,
+    currentModelMeta,
+    currentModelMeta?.value,
+    currentProviderIdValue,
+    normalizedContext1m.adjusted,
+    normalizedContext1m.effective,
+    normalizedContext1m.source,
+    onContext1mEffectiveChange,
+    t,
+  ]);
+  // Default label is 'auto' — the UI displays "默认 / Auto" and no explicit
   // effort value is sent to the backend. This lets Claude Code apply its
   // per-model default (e.g. xhigh on Opus 4.7). If we initialized to 'high'
   // instead, the button would say "High" while the request actually carried
   // undefined, which silently sent a different level than shown.
   const [localEffort, setLocalEffort] = useState<string>('auto');
-  // s07 reviewer fix (run i31, 2026-07-18) â?the displayed tier is a CONTROLLED
-  // value when the parent owns effort state (onEffortChange wired â?every real
+  // s07 reviewer fix (run i31, 2026-07-18) — the displayed tier is a CONTROLLED
+  // value when the parent owns effort state (onEffortChange wired — every real
   // call site does). The old `effortProp ?? localEffort` re-surfaced a stale
   // local pick after a parent reset (model switch dropping an unsupported tier),
   // so the button showed e.g. `xhigh` while the wire already omitted effort. Now
@@ -1092,7 +1169,7 @@ export function MessageInput({
   const selectedEffort = resolveComposerEffortDisplay(effortProp, localEffort, isEffortControlled);
   const setSelectedEffort = useCallback((v: string) => {
     setLocalEffort(v);
-    // Passthrough â?including the 'auto' sentinel. The send path in
+    // Passthrough — including the 'auto' sentinel. The send path in
     // page.tsx / ChatView.tsx filters 'auto' before building the request
     // so the backend receives no effort field, letting CLI apply its
     // per-model default.
@@ -1135,14 +1212,14 @@ export function MessageInput({
             />
           )}
 
-          {/* Quick Actions â?memory-driven suggestion chips */}
+          {/* Quick Actions — memory-driven suggestion chips */}
           <QuickActions
             isAssistantProject={!!isAssistantProject}
             hasMessages={!!hasMessages}
             onAction={async (text) => {
-              // #615 â?await delivery and clear ONLY when the send was actually
+              // #615 — await delivery and clear ONLY when the send was actually
               // delivered. A gated send (provider / model / runtime / directory
-              // not ready â?onSend returns false) must keep the composer instead
+              // not ready → onSend returns false) must keep the composer instead
               // of silently eating the user's text. Mirrors handleSubmit.
               const delivered = await onSend(text);
               if (delivered !== false) setInputValue('');
@@ -1165,7 +1242,7 @@ export function MessageInput({
             <FileTreeAttachmentBridge />
             {/* Chip rows: each carries its own `pt-2.5 px-3 order-first`
                 so they float above the textarea via flex `order` and
-                produce zero DOM when their data is empty â?wrapping them
+                produce zero DOM when their data is empty — wrapping them
                 in `PromptInputHeader` would re-introduce the addon's
                 always-on padding even with no chips. */}
             <ComposerBadgeRow
@@ -1209,8 +1286,8 @@ export function MessageInput({
               />
             </PromptInputBody>
 
-            <PromptInputFooter>
-              <PromptInputTools>
+            <PromptInputFooter className="flex-wrap items-center">
+              <PromptInputTools className="flex-1 flex-wrap">
                 <PromptInputActionMenu>
                   <PromptInputActionMenuTrigger
                     aria-label={t('messageInput.actionMenuTooltip' as TranslationKey)}
@@ -1221,11 +1298,11 @@ export function MessageInput({
                       label={t('messageInput.actionAddContext' as TranslationKey)}
                     />
                     <PromptInputActionMenuItem onSelect={() => slashCommands.handleInsertSlash()}>
-                      <BuckyballIcon name="code" size="md" className="mr-2" aria-hidden />
+                      <CodePilotIcon name="code" size="md" className="mr-2" aria-hidden />
                       {t('messageInput.actionInsertCommand' as TranslationKey)}
                     </PromptInputActionMenuItem>
                     <PromptInputActionMenuItem onSelect={() => { void cliToolsFetch.handleOpenCliPopover(); }}>
-                      <BuckyballIcon name="cli" size="md" className="mr-2" aria-hidden />
+                      <CodePilotIcon name="cli" size="md" className="mr-2" aria-hidden />
                       {t('messageInput.actionCallCli' as TranslationKey)}
                     </PromptInputActionMenuItem>
                   </PromptInputActionMenuContent>
@@ -1240,20 +1317,24 @@ export function MessageInput({
                   onProviderModelChange={emitProviderModelChange}
                   globalDefaultModel={globalDefaultModel}
                   globalDefaultProvider={globalDefaultProvider}
-                  runtimeApplied={runtimeApplied}
+                  runtimeApplied={runtime === 'auto' ? runtimeApplied : runtime}
+                  onRuntimeChange={onRuntimeChange}
+                  runtimeChangeDisabled={isStreaming}
                   isLoading={isProviderLoading}
                 />
 
-                {showEffortSelector && (
-                  <EffortSelectorDropdown
-                    selectedEffort={selectedEffort}
-                    onEffortChange={setSelectedEffort}
-                    supportedEffortLevels={currentModelMeta?.supportedEffortLevels}
-                    effortNoteKey={currentModelMeta?.effortNoteKey}
-                  />
-                )}
+                <ModelCapabilityDropdown
+                  descriptor={capabilityDescriptor}
+                  selectedEffort={selectedEffort}
+                  onEffortChange={setSelectedEffort}
+                  context1m={normalizedContext1m.effective}
+                  contextWindow={currentModelMeta?.contextWindow}
+                  onContext1mChange={onContext1mChange}
+                />
+                {permissionControl}
               </PromptInputTools>
 
+              {runStatusControl}
               <FileAwareSubmitButton
                 status={chatStatus}
                 onStop={onStop}

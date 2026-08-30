@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getContextWindow, MODEL_CONTEXT_WINDOWS } from '../../lib/model-context';
 
-describe('getContextWindow â€?alias disambiguation', () => {
+describe('getContextWindow â€” alias disambiguation', () => {
   it('bare opus alias resolves to 200K (Bedrock/Vertex-safe default)', () => {
     assert.equal(getContextWindow('opus'), 200_000);
   });
@@ -43,7 +43,7 @@ describe('getContextWindow â€?alias disambiguation', () => {
 
   it('unknown upstream falls back to model alias instead of returning null', () => {
     // When the caller supplies an upstream we don't recognize, we should
-    // not drop to null â€?we should honor the alias the caller also knows.
+    // not drop to null â€” we should honor the alias the caller also knows.
     // Example: some third-party proxy passes an opaque upstream ID we've
     // never seen, but the UI model is still 'opus'.
     assert.equal(
@@ -71,6 +71,11 @@ describe('getContextWindow â€?alias disambiguation', () => {
 
   it('unknown model returns null (so callers can fall back safely)', () => {
     assert.equal(getContextWindow('nonexistent-model'), null);
+  });
+
+  it('GLM-5.3-Flash resolves its official 1M window for both wire IDs', () => {
+    assert.equal(getContextWindow('glm-5.3-flash'), 1_000_000);
+    assert.equal(getContextWindow('haiku', { upstream: 'glm-5.3-flash[1m]' }), 1_000_000);
   });
 
   it('MODEL_CONTEXT_WINDOWS still carries explicit entries expected by route code', () => {

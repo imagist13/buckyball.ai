@@ -1,5 +1,5 @@
 /**
- * run-cockpit-unknown-capacity.test.ts â€?contract for RunCockpit's
+ * run-cockpit-unknown-capacity.test.ts â€” contract for RunCockpit's
  * "context window unknown" popover block.
  *
  * Background (2026-05-08): the old fallback path rendered only the
@@ -8,12 +8,13 @@
  * isn't in `model-context.ts`). The popover lost the entire context
  * breakdown even though `useContextUsage` had valid input / output /
  * cache numbers from the assistant turn. The user's recommendation:
- * mirror the old `ContextUsageIndicator` "capacity unknown" branch â€? * still surface the breakdown, just drop the percentage + progress
+ * mirror the old `ContextUsageIndicator` "capacity unknown" branch â€”
+ * still surface the breakdown, just drop the percentage + progress
  * bar that have no denominator.
  *
  * This contract keeps both the unknown-capacity guard and the
  * breakdown rows present so a future refactor doesn't quietly
- * regress to "no contextWindow â†?no context info."
+ * regress to "no contextWindow â†’ no context info."
  */
 
 import { describe, it } from 'node:test';
@@ -23,12 +24,12 @@ import * as path from 'node:path';
 
 const repoRoot = path.join(__dirname, '..', '..');
 
-describe('RunCockpit â€?capacity-unknown context block', () => {
+describe('RunCockpit â€” capacity-unknown context block', () => {
   // 2026-05-09 split: the unknown-capacity branch lives in the lazy
   // popover content file (RunCockpit.tsx is the trigger-only shell).
   // We read from RunCockpitPopoverContent.tsx so the contract still
   // catches a regression that drops the breakdown rows. The shell file
-  // intentionally never references these keys â€?that's the whole point
+  // intentionally never references these keys â€” that's the whole point
   // of the split, and the chat-static-graph test enforces it.
   const src = fs.readFileSync(
     path.join(repoRoot, 'components/chat/RunCockpitPopoverContent.tsx'),
@@ -54,8 +55,8 @@ describe('RunCockpit â€?capacity-unknown context block', () => {
   it('renders ContextBreakdownList in the unknown-capacity block (Phase 6 Phase 2a redesign)', () => {
     // 2026-05-19 redesign: the legacy 3-row Input / Output / Cache
     // breakdown is replaced by the 10-row ContextBreakdownList. The
-    // contract is unchanged in spirit â€?breakdown stays visible without
-    // a contextWindow â€?only the rendering surface changed.
+    // contract is unchanged in spirit â€” breakdown stays visible without
+    // a contextWindow â€” only the rendering surface changed.
     // Cache still surfaces via the `cache_or_previous` row inside
     // ContextBreakdownList when cacheReadTokens / cacheCreationTokens > 0.
     assert.match(

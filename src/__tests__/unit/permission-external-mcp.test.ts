@@ -1,12 +1,12 @@
 /**
  * The external-MCP capability gate + the auto_review display contract.
- * `runtime-permission-modes.md` Phase 1 �?review round #4, P1 (a04/a09) and P2 (a07).
+ * `runtime-permission-modes.md` Phase 1 — review round #4, P1 (a04/a09) and P2 (a07).
  *
  * The thing under test is a promise: 替我审批 tells the user that credential,
  * billing and publishing tools are blocked outright rather than handed to a
  * model. That promise is only keepable if every MCP tool that could reach the
  * turn is classifiable BEFORE the SDK's auto-mode classifier runs. External MCP
- * servers declare their tools at connect time, so they are not �?which is why
+ * servers declare their tools at connect time, so they are not — which is why
  * their mere possibility must make `'auto'` unavailable.
  *
  * These tests therefore assert the SHIPPING assembly
@@ -56,7 +56,7 @@ const wire = (over: Partial<Parameters<typeof buildClaudePermissionQueryOptions>
 
 // ── the gate itself ──────────────────────────────────────────────────
 
-describe('external MCP gate �?auto_review is refused when tools cannot be pre-classified (a04 + a09)', () => {
+describe('external MCP gate — auto_review is refused when tools cannot be pre-classified (a04 + a09)', () => {
   it('ships auto only when external MCP is confirmed absent', () => {
     const options = wire({ externalMcp: { present: false } });
     assert.equal(options.permissionMode, 'auto');
@@ -74,7 +74,7 @@ describe('external MCP gate �?auto_review is refused when tools cannot be pre-c
     assert.notEqual(options.allowDangerouslySkipPermissions, true);
   });
 
-  it('refuses auto when the MCP config could not be read �?undetectable is not absent', () => {
+  it('refuses auto when the MCP config could not be read — undetectable is not absent', () => {
     const options = wire({
       externalMcp: { present: true, certainty: 'undetectable', sources: ['user:~/.claude.json'] },
     });
@@ -82,7 +82,7 @@ describe('external MCP gate �?auto_review is refused when tools cannot be pre-c
     assert.equal(options.degradedReason, 'auto_review_external_mcp');
   });
 
-  it('refuses auto when the caller never probed at all �?omission is not absence', () => {
+  it('refuses auto when the caller never probed at all — omission is not absence', () => {
     // The load-bearing default. A future call site that forgets `externalMcp`
     // must not silently get the permissive answer; that is how a gate rots.
     const options = buildClaudePermissionQueryOptions({
@@ -95,7 +95,7 @@ describe('external MCP gate �?auto_review is refused when tools cannot be pre-c
     assert.equal(options.degradedReason, 'auto_review_external_mcp');
   });
 
-  it('does not disturb default / full_access / plan �?the gate is auto_review-only', () => {
+  it('does not disturb default / full_access / plan — the gate is auto_review-only', () => {
     const present = { present: true, certainty: 'configured', sources: ['x'] } as const;
 
     assert.equal(wire({ permissionMode: 'acceptEdits', externalMcp: present }).permissionMode, 'acceptEdits');
@@ -125,14 +125,14 @@ describe('external MCP gate �?auto_review is refused when tools cannot be pre-c
 
 describe('external credential / billing / publish / unknown tools never reach the reviewer (a09)', () => {
   // These are the tools the UI copy promises are "blocked, not reviewed". They
-  // live on THIRD-PARTY servers, so no deny list can name them �?the only thing
+  // live on THIRD-PARTY servers, so no deny list can name them — the only thing
   // standing between them and the classifier is the gate. Each case asserts the
   // wire never says 'auto' while such a server could be loaded.
   const externalServers: ReadonlyArray<{ readonly name: string; readonly why: string }> = [
-    { name: 'vault', why: 'credential �?mcp__vault__read_secret' },
-    { name: 'stripe', why: 'billing �?mcp__stripe__create_charge' },
-    { name: 'twitter', why: 'external publish �?mcp__twitter__post_tweet' },
-    { name: 'some-new-thing', why: 'unknown kind �?unclassifiable by construction' },
+    { name: 'vault', why: 'credential — mcp__vault__read_secret' },
+    { name: 'stripe', why: 'billing — mcp__stripe__create_charge' },
+    { name: 'twitter', why: 'external publish — mcp__twitter__post_tweet' },
+    { name: 'some-new-thing', why: 'unknown kind — unclassifiable by construction' },
   ];
 
   for (const server of externalServers) {
@@ -161,8 +161,8 @@ describe('external credential / billing / publish / unknown tools never reach th
   // An earlier revision exempted `codepilot-*` from the gate. Config keys are
   // named by the USER, so the exemption was a published bypass recipe: name
   // your server `codepilot-vault` and the fail-closed gate waves it through.
-  // These four ride the real shipping wire �?summarize �?buildClaudePermission
-  // QueryOptions �?and assert the gate sees them and refuses 'auto'.
+  // These four ride the real shipping wire — summarize → buildClaudePermission
+  // QueryOptions — and assert the gate sees them and refuses 'auto'.
   const spoofedServers: ReadonlyArray<{ readonly name: string; readonly why: string }> = [
     { name: 'codepilot-vault', why: 'credential exfil behind a trusted-looking name' },
     { name: 'codepilot-stripe', why: 'billing behind a trusted-looking name' },
@@ -174,12 +174,12 @@ describe('external credential / billing / publish / unknown tools never reach th
     it(`a spoofed '${server.name}' does NOT inherit trust from its name (${server.why})`, () => {
       const status = summarizeExternalMcp({ explicitServerNames: [server.name] });
       assert.equal(status.present, true,
-        `${server.name} is a user-controlled config key �?no name may be trusted`);
+        `${server.name} is a user-controlled config key — no name may be trusted`);
       assert.equal(status.certainty, 'configured');
 
       const options = wire({ externalMcp: status });
       assert.equal(options.permissionMode, 'default',
-        `${server.why} �?the gate must refuse 'auto', not exempt the name`);
+        `${server.why} — the gate must refuse 'auto', not exempt the name`);
       assert.notEqual(options.permissionMode, 'auto');
       assert.equal(options.degradedReason, 'auto_review_external_mcp');
     });
@@ -199,7 +199,7 @@ describe('external credential / billing / publish / unknown tools never reach th
 
 // ── summarize: the pure decision ─────────────────────────────────────
 
-describe('summarizeExternalMcp �?every uncertainty resolves to present', () => {
+describe('summarizeExternalMcp — every uncertainty resolves to present', () => {
   it('absent + empty probes mean absent', () => {
     assert.deepEqual(
       summarizeExternalMcp({ probes: [
@@ -220,13 +220,13 @@ describe('summarizeExternalMcp �?every uncertainty resolves to present', () => 
     assert.deepEqual(status.present && status.sources, ['user:~/.claude.json']);
   });
 
-  it('an unreadable file is present/undetectable �?not empty', () => {
+  it('an unreadable file is present/undetectable — not empty', () => {
     const status = summarizeExternalMcp({ probes: [{ label: 'user:~/.claude.json', outcome: 'unreadable' }] });
     assert.equal(status.present, true);
     assert.equal(status.present && status.certainty, 'undetectable');
   });
 
-  it('a server we can see outranks a file we cannot read �?name the real cause', () => {
+  it('a server we can see outranks a file we cannot read — name the real cause', () => {
     const status = summarizeExternalMcp({ probes: [
       { label: 'unreadable-one', outcome: 'unreadable' },
       { label: 'user:~/.claude.json', outcome: 'has-servers' },
@@ -235,14 +235,14 @@ describe('summarizeExternalMcp �?every uncertainty resolves to present', () => 
     assert.deepEqual(status.present && status.sources, ['user:~/.claude.json']);
   });
 
-  it('no probes and no explicit servers means absent �?an empty environment is a real answer', () => {
+  it('no probes and no explicit servers means absent — an empty environment is a real answer', () => {
     assert.deepEqual(summarizeExternalMcp({}), { present: false });
   });
 });
 
 // ── the filesystem walk ──────────────────────────────────────────────
 
-describe('collectMcpConfigProbes / probeExternalMcp �?real files (a09)', () => {
+describe('collectMcpConfigProbes / probeExternalMcp — real files (a09)', () => {
   it('detects a project .mcp.json even when project is NOT in settingSources', () => {
     // The trap: DB-provider turns run settingSources ['user'], and claude-client
     // re-injects <cwd>/.mcp.json by hand anyway. A gate that trusted
@@ -275,7 +275,7 @@ describe('collectMcpConfigProbes / probeExternalMcp �?real files (a09)', () => 
       const status = probeExternalMcp({ workingDirectory: dir, settingSources: [], homeDir: dir });
       assert.equal(status.present, true);
       assert.equal(status.present && status.certainty, 'undetectable',
-        'mcp-loader swallows a parse error as {} �?here that would mean "no servers", i.e. a false all-clear');
+        'mcp-loader swallows a parse error as {} — here that would mean "no servers", i.e. a false all-clear');
     });
   });
 
@@ -310,7 +310,7 @@ describe('collectMcpConfigProbes / probeExternalMcp �?real files (a09)', () => 
     });
   });
 
-  it('never reports file contents or server args as sources �?labels only', () => {
+  it('never reports file contents or server args as sources — labels only', () => {
     withTempDir((dir) => {
       fs.writeFileSync(path.join(dir, '.mcp.json'), JSON.stringify({
         mcpServers: { vault: { command: 'vault-mcp', env: { VAULT_TOKEN: 'sk-super-secret-value' } } },
@@ -326,12 +326,12 @@ describe('collectMcpConfigProbes / probeExternalMcp �?real files (a09)', () => 
 
 // ── the display contract (P2) ────────────────────────────────────────
 
-describe('auto_review display �?no placeholder ever stands in for a fact (a07)', () => {
+describe('auto_review display — no placeholder ever stands in for a fact (a07)', () => {
   it('while checking: unselectable, and says it is checking', () => {
     const display = resolveAutoReviewDisplay({ probe: { status: 'checking' }, permissionProfile: 'default' });
     assert.equal(display.selectable, false);
     assert.equal(display.notice?.key, AUTO_REVIEW_NOTICE_KEYS.checking);
-    assert.equal(display.notice?.params, undefined, 'nothing to interpolate �?nothing is known yet');
+    assert.equal(display.notice?.params, undefined, 'nothing to interpolate — nothing is known yet');
     assert.equal(display.degraded, false, 'an unfinished probe is not a confirmed degradation');
   });
 
@@ -340,7 +340,7 @@ describe('auto_review display �?no placeholder ever stands in for a fact (a07)'
     assert.equal(display.selectable, false);
     assert.equal(display.notice?.key, AUTO_REVIEW_NOTICE_KEYS.probeFailed);
     assert.notEqual(display.notice?.key, AUTO_REVIEW_NOTICE_KEYS.sdkVersion,
-      'a failed probe must never masquerade as a version mismatch �?we never learned a version');
+      'a failed probe must never masquerade as a version mismatch — we never learned a version');
   });
 
   it('when supported: selectable, no notice', () => {
@@ -437,7 +437,7 @@ describe('auto_review display �?no placeholder ever stands in for a fact (a07)'
       false, 'a session that never asked for auto_review has nothing to degrade');
   });
 
-  it('cannot produce an em-dash placeholder in any state �?the P2 regression', () => {
+  it('cannot produce an em-dash placeholder in any state — the P2 regression', () => {
     const states: Parameters<typeof resolveAutoReviewDisplay>[0]['probe'][] = [
       { status: 'checking' },
       { status: 'failed' },
@@ -451,7 +451,7 @@ describe('auto_review display �?no placeholder ever stands in for a fact (a07)'
       for (const permissionProfile of ['default', 'auto_review']) {
         const { notice } = resolveAutoReviewDisplay({ probe, permissionProfile });
         for (const value of Object.values(notice?.params ?? {})) {
-          assert.ok(value && value !== '�? && value.trim().length > 0,
+          assert.ok(value && value !== '—' && value.trim().length > 0,
             `interpolated a placeholder for ${JSON.stringify(probe)}`);
         }
       }
@@ -459,7 +459,7 @@ describe('auto_review display �?no placeholder ever stands in for a fact (a07)'
   });
 
   it('a capability payload with no minVersion falls back to the probe-failed sentence', () => {
-    // The exact shape that produced "requires SDK �?(installed: �?".
+    // The exact shape that produced "requires SDK — (installed: —)".
     const display = resolveAutoReviewDisplay({
       probe: { status: 'ready', capability: { supported: false, unavailableReason: 'sdk_version' } },
       permissionProfile: 'default',
@@ -503,7 +503,7 @@ describe('auto_review notice copy is real in both locales (a07)', () => {
     for (const locale of [en, zh] as ReadonlyArray<Record<string, string>>) {
       for (const key of paramFree) {
         assert.ok(!/\{[a-zA-Z]+\}/.test(locale[key]),
-          `${key} has an unfilled placeholder �?the resolver sends it no params`);
+          `${key} has an unfilled placeholder — the resolver sends it no params`);
       }
     }
   });

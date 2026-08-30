@@ -1,12 +1,12 @@
 /**
- * context-window-trusted.test.ts â€?guardrail for v0.56.x Phase 2 (#632):
+ * context-window-trusted.test.ts â€” guardrail for v0.56.x Phase 2 (#632):
  * the context-usage UI must only show a percentage / remaining / unused
  * against a TRUSTED (SDK / upstream-reported) context window. The static
  * `catalogContextWindow` fallback is a guess; rendering a percentage over it
  * is what produced the ">100%" / å‡ç™¾åˆ†æ¯” the user reported.
  *
  * Contract (source-pinned because the hook + RunCockpit need React and the
- * repo has no component test harness â€?same approach as
+ * repo has no component test harness â€” same approach as
  * `use-context-usage-output-only-skip.test.ts` and
  * `run-cockpit-unknown-capacity.test.ts`):
  *
@@ -15,7 +15,7 @@
  *   2. useContextUsage omits the window it feeds the breakdown when untrusted
  *      (so the dot-matrix shows used-relative composition, not a fake total).
  *   3. RunCockpit gates `hasFullCtx` on `usage.contextWindowTrusted`.
- *   4. Both render sites clamp the displayed ratio to â‰?00%.
+ *   4. Both render sites clamp the displayed ratio to â‰¤100%.
  */
 
 import { describe, it } from 'node:test';
@@ -51,7 +51,7 @@ describe('context-window trusted denominator (#632)', () => {
     assert.match(
       hookSrc,
       /contextWindow:\s*contextWindowTrusted\s*\?\s*\(contextWindow \?\? undefined\)\s*:\s*undefined/,
-      'untrusted â†?pass undefined to buildContextUsageBreakdown so the dot-matrix renders a used-relative composition, not a guess-based %',
+      'untrusted â†’ pass undefined to buildContextUsageBreakdown so the dot-matrix renders a used-relative composition, not a guess-based %',
     );
   });
 
@@ -63,14 +63,14 @@ describe('context-window trusted denominator (#632)', () => {
     );
   });
 
-  it('RunCockpit clamps the displayed percentage to â‰?00% and shows percent + used together', () => {
+  it('RunCockpit clamps the displayed percentage to â‰¤100% and shows percent + used together', () => {
     assert.match(
       cockpitSrc,
       /const clampedRatio = Math\.min\(1, Math\.max\(0, usage\.ratio\)\);/,
       'a trusted window momentarily exceeded by used (post-compaction) must never render >100%',
     );
     // Trusted trigger shows "percent + used" together (e.g. "56.6% 452K"), per
-    // user spec â€?not a standalone "remaining" number.
+    // user spec â€” not a standalone "remaining" number.
     assert.match(
       cockpitSrc,
       /hasFullCtx[\s\S]{0,160}clampedRatio \* 100\)\.toFixed\(1\)\}% \$\{formatTokensCompact\(usage\.used\)\}/,
@@ -78,11 +78,11 @@ describe('context-window trusted denominator (#632)', () => {
     );
   });
 
-  it('RunCockpitPopoverContent clamps the header percentage to â‰?00%', () => {
+  it('RunCockpitPopoverContent clamps the header percentage to â‰¤100%', () => {
     assert.match(
       popoverSrc,
       /const clampedRatio = Math\.min\(1, Math\.max\(0, usage\.ratio\)\);[\s\S]{0,200}clampedRatio \* 100/,
-      'popover header percentage must also clamp â‰?00%',
+      'popover header percentage must also clamp â‰¤100%',
     );
   });
 
@@ -109,7 +109,7 @@ describe('context-window trusted denominator (#632)', () => {
   });
 
   // #632 follow-up: the Native agent loop must not launder the static catalog
-  // window into token_usage.context_window â€?that field is what useContextUsage
+  // window into token_usage.context_window â€” that field is what useContextUsage
   // treats as SDK-authoritative (contextWindowTrusted), so a catalog fill there
   // resurfaces the exact ">100% / fake 200K" trusted-display this fix removed.
   it('agent-loop does NOT write the static catalog window into token_usage.context_window', () => {
@@ -126,10 +126,10 @@ describe('context-window trusted denominator (#632)', () => {
 // on the PROVIDER vouching for it. The server write-gate (#632 P1) only stops
 // NEW third-party turns from persisting the SDK's bogus ~200K; EXISTING GLM
 // sessions still have that value in token_usage, so the renderer must gate at
-// READ time. These pins lock the end-to-end wiring â€?route â†?ProviderModelGroup
-// â†?ChatView â†?RunCockpit â†?useContextUsage â€?so a refactor can't silently drop
+// READ time. These pins lock the end-to-end wiring â€” route â†’ ProviderModelGroup
+// â†’ ChatView â†’ RunCockpit â†’ useContextUsage â€” so a refactor can't silently drop
 // the existing-session gate and resurface the fake "200K".
-describe('context-window trusted â€?existing-session provider gate (#632 item 1)', () => {
+describe('context-window trusted â€” existing-session provider gate (#632 item 1)', () => {
   it('useContextUsage accepts a reportedContextWindowTrusted option and derives a back-compat-default flag', () => {
     assert.match(
       hookSrc,
@@ -174,7 +174,7 @@ describe('context-window trusted â€?existing-session provider gate (#632 item 1)
     assert.match(
       chatViewSrc,
       /providerGroups\.find\(\s*g => g\.provider_id === \(currentProviderId \|\| 'env'\)/,
-      'ChatView must resolve the active group by provider_id (env-mode "" â†?the env group)',
+      'ChatView must resolve the active group by provider_id (env-mode "" â†’ the env group)',
     );
     // Codex P3: fail-closed until provider models load so an existing third-party
     // session never flashes its persisted bogus window as a % before we know.
@@ -183,8 +183,12 @@ describe('context-window trusted â€?existing-session provider gate (#632 item 1)
       /providerFetchState === 'loaded'\s*\?\s*\(activeProviderGroup\?\.reportedContextWindowTrusted \?\? true\)\s*:\s*false/,
       'ChatView must fail-closed (untrusted) while providerFetchState !== "loaded"',
     );
-    const passes = chatViewSrc.match(/reportedContextWindowTrusted=\{activeProviderReportsTrustedWindow\}/g) || [];
-    assert.ok(passes.length >= 2, `both RunCockpit render sites must pass the resolved flag; found ${passes.length}`);
+    const cockpitPasses = chatViewSrc.match(/reportedContextWindowTrusted=\{activeProviderReportsTrustedWindow\}/g) || [];
+    assert.equal(cockpitPasses.length, 1,
+      'the shared RunCockpit control must receive the resolved flag exactly once');
+    const composerSlots = chatViewSrc.match(/runStatusControl=\{composerRunStatusControl\}/g) || [];
+    assert.ok(composerSlots.length >= 2,
+      `both composer layouts must reuse the trusted shared control; found ${composerSlots.length}`);
   });
 
   it('the providers/models route sets reportedContextWindowTrusted with the first-party gate (Codex stays trusted)', () => {
@@ -197,7 +201,7 @@ describe('context-window trusted â€?existing-session provider gate (#632 item 1)
     assert.match(
       routeSrc,
       /protocol !== 'anthropic' \|\| isFirstPartyAnthropicEndpoint\(provider\.base_url/,
-      'DB groups: only an anthropic-protocol third-party base_url is untrusted â€?non-anthropic (Codex) stays trusted',
+      'DB groups: only an anthropic-protocol third-party base_url is untrusted â€” non-anthropic (Codex) stays trusted',
     );
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Phase 5 Phase 5 â€?CodePilot provider proxy injection contract.
+ * Phase 5 Phase 5 â€” CodePilot provider proxy injection contract.
  *
  * Pins the shape `buildCodexProviderProxyInjection` produces.
  * Codex's `thread/start` accepts `config.model_providers` overrides
@@ -7,7 +7,7 @@
  * with the CodexProxyInjection type that the runtime will pass.
  *
  * The actual proxy route returns 501 unsupported_yet for every
- * compat tier in this MVP â€?Phase 5b will land the Responses
+ * compat tier in this MVP â€” Phase 5b will land the Responses
  * translator. Tests for those behaviors live in
  * `codex-provider-proxy-route.test.ts`.
  */
@@ -20,7 +20,7 @@ import {
   CODEX_PROXY_PROVIDER_KEY,
 } from '@/lib/codex/provider-proxy';
 
-describe('buildCodexProviderProxyInjection â€?config override shape', () => {
+describe('buildCodexProviderProxyInjection â€” config override shape', () => {
   it('sets modelProvider to the canonical proxy key', () => {
     const injection = buildCodexProviderProxyInjection('prov-1', 'http://127.0.0.1:3000');
     assert.equal(injection.modelProvider, CODEX_PROXY_PROVIDER_KEY);
@@ -53,7 +53,7 @@ describe('buildCodexProviderProxyInjection â€?config override shape', () => {
   });
 });
 
-describe('resolveCodexProxyBaseUrl â€?env-driven default', () => {
+describe('resolveCodexProxyBaseUrl â€” env-driven default', () => {
   it('respects CODEPILOT_PROXY_BASE_URL when set', () => {
     const saved = process.env.CODEPILOT_PROXY_BASE_URL;
     process.env.CODEPILOT_PROXY_BASE_URL = 'http://codepilot.example.com';

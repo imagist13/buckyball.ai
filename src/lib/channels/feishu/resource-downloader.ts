@@ -24,7 +24,7 @@ const DOWNLOAD_RETRY_DELAY_MS = 1000;
 /** Supported Feishu resource types */
 export type FeishuResourceType = 'image' | 'file' | 'audio' | 'video';
 
-/** MIME type mapping per resource type. Best-effort â€?Feishu doesn't always return MIME. */
+/** MIME type mapping per resource type. Best-effort â€” Feishu doesn't always return MIME. */
 const MIME_BY_TYPE: Record<FeishuResourceType, string> = {
   image: 'image/png',
   file: 'application/octet-stream',
@@ -47,7 +47,7 @@ interface MessageResourceResponse {
 }
 
 /**
- * Access im.messageResource from lark.Client (typing workaround â€?SDK types are loose).
+ * Access im.messageResource from lark.Client (typing workaround â€” SDK types are loose).
  */
 function getMessageResourceApi(client: lark.Client): {
   get(payload: { path: { message_id: string; file_key: string }; params: { type: string } }): Promise<MessageResourceResponse>;
@@ -98,14 +98,14 @@ export async function downloadResource(
         totalSize += buf.length;
         if (totalSize > MAX_FILE_SIZE) {
           console.warn(LOG_TAG, `Resource too large (>${MAX_FILE_SIZE}): key=${fileKey}`);
-          return null; // Size limit â€?don't retry, caller gets null
+          return null; // Size limit â€” don't retry, caller gets null
         }
         chunks.push(buf);
       }
 
       if (totalSize === 0) {
         console.warn(LOG_TAG, `Empty resource: key=${fileKey}`);
-        continue; // Empty is probably transient â€?retry
+        continue; // Empty is probably transient â€” retry
       }
 
       const buffer = Buffer.concat(chunks);

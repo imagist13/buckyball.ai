@@ -2,7 +2,7 @@
  * Tiny shared module so both AppShell (gate) and FeatureAnnouncementDialog
  * (consumer) can reference the dismiss flag without AppShell having to
  * import the dialog itself. Keeping the constant in its own file is the
- * whole point â€?pulling it from FeatureAnnouncementDialog.tsx would defeat
+ * whole point â€” pulling it from FeatureAnnouncementDialog.tsx would defeat
  * the lazy-load (AppShell's compile graph would still drag in the dialog
  * + react-markdown + i18n strings on first paint).
  *

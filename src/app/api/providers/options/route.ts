@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest) {
     // `setProviderOptions` atomically clears the pinned keys at db.ts:1680
     // even though `merged` still carries them (the route's generic merge
     // can't know about Auto's clear semantics). Returning `merged`
-    // directly would lie to the client â€?the response would still show
+    // directly would lie to the client â€” the response would still show
     // a pinned provider/model that no longer exists in the DB. Refetch
     // so the response always matches what the resolver sees next.
     const persisted = getProviderOptions(providerId);

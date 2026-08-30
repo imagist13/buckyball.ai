@@ -1,9 +1,16 @@
 /**
- * Env (built-in "Claude Code") 模型列表单一出口回归 (Codex review P1, 2026-06-10)�? *
- * 背景:env 默认模型列表曾有三份手工镜像 —�?provider-resolver.ts envModels�? * /api/providers/models route �?DEFAULT_MODELS + ENV_ALIAS_TO_UPSTREAM�? * useProviderModels.ts 的客户端 fallback。三份已漂移:resolver �? * opus-4-8 + fable-5,另外两份�?opus-4-8 都没�?—�?用户在模型选择器的
- * Claude Code 组里看不到新模型�? *
- * 现在三处必须全部派生�?provider-catalog.ts �?ENV_CLAUDE_CODE_MODELS�? * 本文件钉�?(a) route 真实返回包含 fable-5 / opus-4-8 及其能力;
- * (b) 三个消费方不许再各自硬编码一份�? */
+ * Env (built-in "Claude Code") 模型列表单一出口回归 (Codex review P1, 2026-06-10)。
+ *
+ * 背景:env 默认模型列表曾有三份手工镜像 —— provider-resolver.ts envModels、
+ * /api/providers/models route 的 DEFAULT_MODELS + ENV_ALIAS_TO_UPSTREAM、
+ * useProviderModels.ts 的客户端 fallback。三份已漂移:resolver 有
+ * opus-4-8 + fable-5,另外两份连 opus-4-8 都没有 —— 用户在模型选择器的
+ * Claude Code 组里看不到新模型。
+ *
+ * 现在三处必须全部派生自 provider-catalog.ts 的 ENV_CLAUDE_CODE_MODELS。
+ * 本文件钉住:(a) route 真实返回包含 fable-5 / opus-4-8 及其能力;
+ * (b) 三个消费方不许再各自硬编码一份。
+ */
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -18,7 +25,7 @@ import { GET as modelsGET } from '../../app/api/providers/models/route';
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (f: string) => fs.readFileSync(path.join(SRC, f), 'utf8');
 
-describe('ENV_CLAUDE_CODE_MODELS �?canonical content', () => {
+describe('ENV_CLAUDE_CODE_MODELS — canonical content', () => {
   it('ships the full alias set including Opus 5 and the prior explicit models', () => {
     const ids = new Set(ENV_CLAUDE_CODE_MODELS.map(m => m.modelId));
     for (const expected of ['sonnet', 'sonnet-5', 'opus', 'opus-4-8', 'opus-5', 'fable-5', 'haiku']) {
@@ -49,7 +56,7 @@ describe('ENV_CLAUDE_CODE_MODELS �?canonical content', () => {
   });
 });
 
-describe('/api/providers/models �?env group serves the canonical list', () => {
+describe('/api/providers/models — env group serves the canonical list', () => {
   let snapRuntime: string;
 
   before(() => {
@@ -84,7 +91,7 @@ describe('/api/providers/models �?env group serves the canonical list', () => {
     assert.deepEqual(fable!.supportedEffortLevels, ['low', 'medium', 'high', 'xhigh', 'max']);
     assert.equal(fable!.supportsAdaptiveThinking, true);
 
-    // opus-4-8 was missing from the same hand-maintained copy �?pin it too.
+    // opus-4-8 was missing from the same hand-maintained copy — pin it too.
     const opus48 = envGroup!.models.find(m => m.value === 'opus-4-8');
     assert.ok(opus48, 'env group must include opus-4-8');
     assert.equal(opus48!.upstreamModelId, 'claude-opus-4-8');
@@ -96,7 +103,7 @@ describe('/api/providers/models �?env group serves the canonical list', () => {
     assert.equal(opus5!.contextWindow, 1_000_000);
     assert.deepEqual(opus5!.supportedEffortLevels, ['low', 'medium', 'high', 'xhigh', 'max']);
 
-    // sonnet-5 (model plan Phase 2) �?flows through the same derived route.
+    // sonnet-5 (model plan Phase 2) — flows through the same derived route.
     const sonnet5 = envGroup!.models.find(m => m.value === 'sonnet-5');
     assert.ok(sonnet5, 'env group must include sonnet-5');
     assert.equal(sonnet5!.label, 'Sonnet 5');
@@ -208,7 +215,7 @@ describe('/api/providers/models �?env group serves the canonical list', () => {
   });
 });
 
-describe('no third copy �?all consumers derive from ENV_CLAUDE_CODE_MODELS', () => {
+describe('no third copy — all consumers derive from ENV_CLAUDE_CODE_MODELS', () => {
   const CONSUMERS = [
     'app/api/providers/models/route.ts',
     'hooks/useProviderModels.ts',

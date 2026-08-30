@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { X } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import type { SkillInfo } from './PluginCard';
 
 interface PluginDetailProps {
@@ -23,7 +23,7 @@ export function PluginDetail({ plugin, onClose }: PluginDetailProps) {
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="flex items-center gap-2">
-            <BuckyballIcon
+            <CodePilotIcon
               name={isPlugin ? 'plugin' : 'skill'}
               size="md"
               className="text-muted-foreground"

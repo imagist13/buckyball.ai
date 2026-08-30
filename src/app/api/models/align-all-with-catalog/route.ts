@@ -8,10 +8,10 @@ import { getCatalogDefaultModelsForRecord } from '@/lib/provider-catalog';
  * One-shot global cleanup: for every configured provider that has catalog
  * defaults, flip its `enabled` flags so only catalog-matched models are
  * visible. Providers with no catalog defaults (custom URL anthropic-thirdparty,
- * etc.) are skipped â€?there's no truth to align against.
+ * etc.) are skipped â€” there's no truth to align against.
  *
  * `?dryRun=1` returns the same per-provider counts as a real apply but
- * without writing â€?used by the UI to render an "x will be enabled, y
+ * without writing â€” used by the UI to render an "x will be enabled, y
  * hidden, z catalog seeds pruned" preview before the user confirms.
  */
 export async function POST(request: NextRequest) {

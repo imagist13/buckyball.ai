@@ -1,11 +1,12 @@
 /**
- * Phase 5b smoke round 6 (2026-05-18) �?`findCodexBinary` discovery
+ * Phase 5b smoke round 6 (2026-05-18) — `findCodexBinary` discovery
  * order pins.
  *
  * User-driven scenario: the macOS Codex.app installer drops the
  * `codex` binary inside the app bundle (`/Applications/Codex.app/
  * Contents/Resources/codex`) but doesn't always wire a PATH entry,
- * so users who installed via the .dmg saw "未安�? on Settings �? * 执行引擎 �?Codex even though `command -v codex` would resolve
+ * so users who installed via the .dmg saw "未安装" on Settings →
+ * 执行引擎 → Codex even though `command -v codex` would resolve
  * via shell shims. The fix adds the bundled path as a last-resort
  * fallback AFTER PATH walk + CODEX_BIN + CODEX_DISABLED still take
  * priority.
@@ -46,7 +47,7 @@ const managerSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('findCodexBinary �?discovery order (round 6)', () => {
+describe('findCodexBinary — discovery order (round 6)', () => {
   let savedDisabled: string | undefined;
   let savedBin: string | undefined;
   let savedPath: string | undefined;
@@ -73,7 +74,7 @@ describe('findCodexBinary �?discovery order (round 6)', () => {
     process.env.PATH = '';
     resetCodexBinaryCacheForTests();
     assert.equal(findCodexBinary(), null,
-      'CODEX_DISABLED must beat CODEX_BIN �?it is the test-harness escape hatch');
+      'CODEX_DISABLED must beat CODEX_BIN — it is the test-harness escape hatch');
   });
 
   it('CODEX_BIN takes priority over PATH walk + macOS fallback', () => {
@@ -91,7 +92,7 @@ describe('findCodexBinary �?discovery order (round 6)', () => {
     process.env.CODEX_BIN = '/definitely/does/not/exist/codex';
     process.env.PATH = '/no/such/dir';
     resetCodexBinaryCacheForTests();
-    // No PATH match, no real CLI on the test machine for sure �?but
+    // No PATH match, no real CLI on the test machine for sure — but
     // on macOS we may find the Codex.app fallback. So we only assert
     // that the result isn't the broken CODEX_BIN path.
     const out = findCodexBinary();
@@ -100,7 +101,7 @@ describe('findCodexBinary �?discovery order (round 6)', () => {
   });
 });
 
-describe('findCodexBinary �?macOS desktop bundle discovery', () => {
+describe('findCodexBinary — macOS desktop bundle discovery', () => {
   it('covers current ChatGPT.app + legacy Codex.app in system and user Applications', () => {
     assert.deepEqual(getMacOSCodexBundleCandidates('/Users/tester'), [
       '/Applications/ChatGPT.app/Contents/Resources/codex',
@@ -189,7 +190,7 @@ describe('findCodexBinary �?macOS desktop bundle discovery', () => {
   });
 });
 
-describe('findCodexBinary �?Windows standalone and desktop discovery', () => {
+describe('findCodexBinary — Windows standalone and desktop discovery', () => {
   it('checks the official standalone installer directory even when PATH misses it', () => {
     const candidates = getWindowsCodexCandidates(
       'C:\\Users\\tester',
@@ -232,13 +233,14 @@ describe('findCodexBinary �?Windows standalone and desktop discovery', () => {
     );
     assert.match(panelSrc, /codexAvailability\.kind === ["']desktop_only["']/);
     assert.match(panelSrc, /chatgpt\.com\/codex\/install\.ps1/);
-    assert.match(panelSrc, /仅桌面应�?);
+    assert.match(panelSrc, /仅桌面应用/);
   });
 });
 
-describe('Codex availability �?installed but idle state', () => {
+describe('Codex availability — installed but idle state', () => {
   it('returns installed_idle when a binary is found but app-server has not initialized', () => {
-    // Phase 5b closeout follow-up (2026-05-19) �?Settings �?    // Runtime showed "检测中�? forever because /api/codex/status is
+    // Phase 5b closeout follow-up (2026-05-19) — Settings →
+    // Runtime showed "检测中…" forever because /api/codex/status is
     // intentionally non-spawning: when the binary exists but the
     // app-server has not been initialized, `lastAvailability` stayed
     // `unknown` forever. The UI needs a terminal non-spinner state for
@@ -256,7 +258,7 @@ describe('Codex availability �?installed but idle state', () => {
       'utf8',
     );
     assert.match(panelSrc, /codexAvailability\.kind\s*===\s*["']installed_idle["']/);
-    // Copy softening (2026-05-19) �?"待启�? was misread as "not yet
+    // Copy softening (2026-05-19) — "待启动" was misread as "not yet
     // usable". The new wording frames it as available + a small
     // explainer about on-demand startup. Both languages tested so a
     // refactor can't drop one side accidentally.
@@ -305,7 +307,7 @@ describe('Codex app-server spawn compatibility', () => {
   });
 });
 
-describe('buildCodexLaunch �?Windows .cmd shim wrapping (Phase 1, 2026-06-02)', () => {
+describe('buildCodexLaunch — Windows .cmd shim wrapping (Phase 1, 2026-06-02)', () => {
   // Packaged-Windows P0: the resolved codex was an npm `.cmd` shim and
   // `spawn(shim, [...])` failed with EINVAL because Windows can't execute a
   // batch file directly. buildCodexLaunch wraps shims in cmd.exe; .exe and
@@ -368,13 +370,13 @@ describe('buildCodexLaunch �?Windows .cmd shim wrapping (Phase 1, 2026-06-02)',
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// P0.1 (2026-06-01) �?version-aware binary discovery. The packaged P0 was
+// P0.1 (2026-06-01) — version-aware binary discovery. The packaged P0 was
 // an old Homebrew /opt/homebrew/bin/codex 0.45.0 on PATH shadowing the
 // newer /Applications/Codex.app build 0.135.0; the old one rejected the
 // user's `xhigh` effort config fatally. Discovery must pick the newer one.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('selectBestCodexCandidate �?version-aware discovery (P0.1)', () => {
+describe('selectBestCodexCandidate — version-aware discovery (P0.1)', () => {
   it('picks the current ChatGPT.app bundle over an older Homebrew codex', () => {
     const chosen = selectBestCodexCandidate([
       { path: '/opt/homebrew/bin/codex', version: 'codex-cli 0.45.0' },
@@ -442,7 +444,7 @@ describe('selectBestCodexCandidate �?version-aware discovery (P0.1)', () => {
 });
 
 describe('parseCodexVersion', () => {
-  it('parses `codex-cli 0.135.0-alpha.1` �?[0,135,0]', () => {
+  it('parses `codex-cli 0.135.0-alpha.1` → [0,135,0]', () => {
     assert.deepEqual(parseCodexVersion('codex-cli 0.135.0-alpha.1'), [0, 135, 0]);
   });
   it('parses a bare `0.45.0`', () => {
@@ -488,12 +490,12 @@ describe('Codex auto-review minimum version', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// P0.2 (2026-06-01) �?fatal-stderr fast-fail. The old binary prints the
+// P0.2 (2026-06-01) — fatal-stderr fast-fail. The old binary prints the
 // fatal config error to stderr and then lingers ~30s before exiting, so
 // proc.once('exit') alone is too slow. Detect the signature on stderr.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('isFatalCodexConfigStderr �?fatal-stderr detection (P0.2)', () => {
+describe('isFatalCodexConfigStderr — fatal-stderr detection (P0.2)', () => {
   it('matches the xhigh deserialize fatal the old binary prints', () => {
     assert.equal(
       isFatalCodexConfigStderr(
@@ -512,7 +514,7 @@ describe('isFatalCodexConfigStderr �?fatal-stderr detection (P0.2)', () => {
 
   it('does NOT SIGKILL on a bare `unknown variant` without config context (Codex P2 narrowing)', () => {
     // A future non-fatal warning/log that merely contains "unknown variant"
-    // must NOT kill a healthy process �?it's only fatal in a config-load context.
+    // must NOT kill a healthy process — it's only fatal in a config-load context.
     assert.equal(isFatalCodexConfigStderr('WARN something: unknown variant `foo` in the response payload'), false);
     assert.equal(isFatalCodexConfigStderr('unknown variant'), false);
   });
@@ -523,7 +525,7 @@ describe('isFatalCodexConfigStderr �?fatal-stderr detection (P0.2)', () => {
   });
 });
 
-describe('isCodexModelRefreshTimeoutStderr �?wedged refresh signal', () => {
+describe('isCodexModelRefreshTimeoutStderr — wedged refresh signal', () => {
   it('matches only the complete Codex internal refresh-timeout signature', () => {
     assert.equal(isCodexModelRefreshTimeoutStderr(
       'WARN codex_models_manager::manager: failed to refresh available models: timeout waiting for child process to exit',
@@ -533,7 +535,7 @@ describe('isCodexModelRefreshTimeoutStderr �?wedged refresh signal', () => {
   });
 });
 
-describe('appendCodexHealthSignal �?bounded unhealthy threshold', () => {
+describe('appendCodexHealthSignal — bounded unhealthy threshold', () => {
   it('marks the third signal inside ten minutes unhealthy and expires older signals', () => {
     assert.equal(appendCodexHealthSignal([0, 1], 2).unhealthy, true);
     const expired = appendCodexHealthSignal([0, 1], 10 * 60_000 + 2);
@@ -542,7 +544,7 @@ describe('appendCodexHealthSignal �?bounded unhealthy threshold', () => {
   });
 });
 
-describe('app-server-manager �?P0.1/P0.2 wiring source pins', () => {
+describe('app-server-manager — P0.1/P0.2 wiring source pins', () => {
   it('findCodexBinary routes multi-candidate selection through selectBestCodexCandidate + version probe', () => {
     assert.match(managerSrc, /selectBestCodexCandidate\(/,
       'findCodexBinary must select multi-candidate via selectBestCodexCandidate');

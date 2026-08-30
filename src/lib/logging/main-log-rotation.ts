@@ -1,7 +1,7 @@
 /**
  * Size-based rotation for the persistent main log (B-025).
  *
- * The old `setupPersistentMainLog` had `No size-based rotation` â€?it only ever
+ * The old `setupPersistentMainLog` had `No size-based rotation` â€” it only ever
  * did a one-shot sanitizer rename and then appended forever. A real user hit a
  * 12.5 GB `codepilot-main.log` because the Codex app-server INFO tracing flood
  * streamed into it unbounded. This caps the active file and keeps a small ring
@@ -13,7 +13,7 @@
 import fs from 'node:fs';
 
 /**
- * Rotate `activeLogFile` â†?`.1`, shifting existing `.1`â†’`.2` â€?and dropping the
+ * Rotate `activeLogFile` â†’ `.1`, shifting existing `.1`â†’`.2` â€¦ and dropping the
  * oldest beyond `maxArchives`. Best-effort: a rotation failure (locked file,
  * readonly FS) must never block logging, so all of it is swallowed.
  */
@@ -58,7 +58,7 @@ function openAppendFd(file: string): number | null {
  *
  * Uses SYNCHRONOUS fd writes (openSync / writeSync / closeSync), NOT an async
  * `createWriteStream`, because the cap must be a real hard limit (B-025 review):
- *  - a buffered stream can flush queued writes AFTER the rotate-rename â€?landing
+ *  - a buffered stream can flush queued writes AFTER the rotate-rename â€” landing
  *    them in the just-archived file, or letting the active file drift past cap;
  *  - on Windows, renaming a file whose stream handle is still open can fail and
  *    (since rotateLogFiles swallows errors) silently leave the file growing.

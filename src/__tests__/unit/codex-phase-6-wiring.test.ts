@@ -1,25 +1,25 @@
 /**
- * Phase 5 Phase 6 (2026-05-14) â?source-level pin for Settingsæ¶å£.
+ * Phase 5 Phase 6 (2026-05-14) — source-level pin for Settings收口.
  *
  * IA correction (2026-05-14, same day): Codex shouldn't be a
- * top-level Settings tab â?it spans two domains (engine + provider).
+ * top-level Settings tab — it spans two domains (engine + provider).
  * The standalone /settings/codex page is now a transitional redirect;
  * its content lives in Runtime (app-server status) + Providers
  * (account / quota) + Models (Codex Account models).
  *
  * Pins kept here cover the surfaces that survived the correction:
  *
- *   1. /settings/codex â?redirect to /settings/runtime
+ *   1. /settings/codex → redirect to /settings/runtime
  *   2. nav-config does NOT register a top-level "codex" section
  *   3. Chat model picker shows codex_runtime-specific disclosure +
  *      empty-state copy (per user spec 2026-05-14: filter, not
- *      gray-out; "åå Claude Code / CodePilot Runtime" wording).
+ *      gray-out; "切回 Claude Code / CodePilot Runtime" wording).
  *   4. Electron `before-quit` hook calls /api/codex/dispose before
  *      `killServer()` (avoids orphan Codex grandchild).
  *   5. /api/codex/rate-limits route exists and wraps
  *      `account/rateLimits/read`.
  *
- * No live codex binary in CI â?these are source-level greps. Same
+ * No live codex binary in CI — these are source-level greps. Same
  * pattern as round 3 / 4 / 5 pins.
  */
 
@@ -30,18 +30,18 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(__dirname, '../..');
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// IA correction â?top-level Codex tab removed; URL redirected
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// IA correction — top-level Codex tab removed; URL redirected
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Settings IA â?no top-level Codex tab (IA correction)', () => {
+describe('Settings IA — no top-level Codex tab (IA correction)', () => {
   const navSrc = fs.readFileSync(
     path.join(repoRoot, 'components/settings/nav-config.ts'),
     'utf8',
   );
 
   it('SettingsSection union does NOT include "codex"', () => {
-    // Codex is split across runtime / providers / models â?not its own
+    // Codex is split across runtime / providers / models — not its own
     // section. A regression here would put the misaligned tab back.
     assert.doesNotMatch(navSrc, /\|\s*['"]codex['"]/);
   });
@@ -52,7 +52,7 @@ describe('Settings IA â?no top-level Codex tab (IA correction)', () => {
 
   it('/settings/codex remains routable as a redirect to /settings/runtime', () => {
     // Deep links from the brief window the standalone page shipped
-    // should still resolve â?just to the correct location.
+    // should still resolve — just to the correct location.
     const pageSrc = fs.readFileSync(
       path.join(repoRoot, 'app/settings/codex/page.tsx'),
       'utf8',
@@ -66,16 +66,16 @@ describe('Settings IA â?no top-level Codex tab (IA correction)', () => {
     assert.equal(
       fs.existsSync(panelPath),
       false,
-      'CodexPanel.tsx must not exist â?its content lives in RuntimePanel + ProviderManager + ModelsSection',
+      'CodexPanel.tsx must not exist — its content lives in RuntimePanel + ProviderManager + ModelsSection',
     );
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Codex capability card aligns to the Codex Account profile (2026-05-28)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Settings Runtime page â?Codex card uses the Codex Account profile', () => {
+describe('Settings Runtime page — Codex card uses the Codex Account profile', () => {
   const pageSrc = fs.readFileSync(
     path.join(repoRoot, 'app/settings/runtime/page.tsx'),
     'utf8',
@@ -101,9 +101,9 @@ describe('Settings Runtime page â?Codex card uses the Codex Account profile',
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Rate limits API â?wraps `account/rateLimits/read`
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Rate limits API — wraps `account/rateLimits/read`
+// ─────────────────────────────────────────────────────────────────────
 
 describe('/api/codex/rate-limits route (IA correction)', () => {
   it('GET route exists and imports readCodexRateLimits', () => {
@@ -127,17 +127,17 @@ describe('/api/codex/rate-limits route (IA correction)', () => {
     assert.match(accountSrc, /export\s+async\s+function\s+readCodexRateLimits/);
     assert.match(accountSrc, /['"]account\/rateLimits\/read['"]/);
     // Must surface primary + secondary windows (the user-spec quotas
-    // for 5h and 7d buckets) â?not just the deprecated flat shape.
+    // for 5h and 7d buckets) — not just the deprecated flat shape.
     assert.match(accountSrc, /primary:\s*toWindow/);
     assert.match(accountSrc, /secondary:\s*toWindow/);
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// RuntimePanelä¸å¼æå â?Codex Runtime as a peer engine
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// RuntimePanel三引擎化 — Codex Runtime as a peer engine
+// ─────────────────────────────────────────────────────────────────────
 
-describe('RuntimePanel â?three-engine picker (IA correction)', () => {
+describe('RuntimePanel — three-engine picker (IA correction)', () => {
   const panelSrc = fs.readFileSync(
     path.join(repoRoot, 'components/settings/RuntimePanel.tsx'),
     'utf8',
@@ -177,12 +177,12 @@ describe('RuntimePanel â?three-engine picker (IA correction)', () => {
   it('Codex Runtime detail card renders below the picker', () => {
     // The detail card pulls reason/impact/recovery from codexRuntimeStatus
     // and surfaces the app-server status row + Codex home + jump links.
-    // Phase 6 UIæ¶å£ P1 (2026-05-14): short detail-card heading "Codex"
-    // (the page title + section header carry the "Runtime / å¼æ"
+    // Phase 6 UI收口 P1 (2026-05-14): short detail-card heading "Codex"
+    // (the page title + section header carry the "Runtime / 引擎"
     // framing; repeating it on every card was redundant noise).
     assert.match(panelSrc, /<RuntimeCard\s+name="Codex"/);
     assert.match(panelSrc, /codexRuntimeStatus/);
-    // Jump links to where account + models live â?these are load-bearing
+    // Jump links to where account + models live — these are load-bearing
     // for the IA: the Codex card MUST NOT duplicate Provider / Models
     // content, just point to it.
     assert.match(panelSrc, /href="\/settings\/providers"/);
@@ -196,12 +196,12 @@ describe('RuntimePanel â?three-engine picker (IA correction)', () => {
       'the refresh button must POST so same-path upgrades clear resolver/version/failure caches',
     );
     assert.match(panelSrc, /["']binary["']\s+in\s+codexAvailability/);
-    assert.match(panelSrc, /CLI æ¥æº/);
+    assert.match(panelSrc, /CLI 来源/);
     assert.match(panelSrc, /CLI source/);
   });
 });
 
-describe('/api/codex/status â?safe refresh contract', () => {
+describe('/api/codex/status — safe refresh contract', () => {
   const routeSrc = fs.readFileSync(
     path.join(repoRoot, 'app/api/codex/status/route.ts'),
     'utf8',
@@ -227,14 +227,14 @@ describe('/api/codex/status â?safe refresh contract', () => {
   });
 });
 
-describe('runtime/effective â?three-engine union (IA correction)', () => {
+describe('runtime/effective — three-engine union (IA correction)', () => {
   it('AgentRuntime accepts codex_runtime', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'lib/runtime/effective.ts'), 'utf8');
     assert.match(src, /AgentRuntime\s*=\s*["']claude-code-sdk["']\s*\|\s*["']native["']\s*\|\s*["']codex_runtime["']/);
   });
 
   it('runtimeDisplayLabel returns short "Codex" label for codex_runtime', () => {
-    // Phase 6 UIæ¶å£ P1 fix-up (2026-05-14): label dropped the redundant
+    // Phase 6 UI收口 P1 fix-up (2026-05-14): label dropped the redundant
     // "Runtime" suffix so the engine picker / composer button / detail
     // card heading / runtime explainer banner all read consistently.
     const src = fs.readFileSync(path.join(repoRoot, 'lib/runtime/effective.ts'), 'utf8');
@@ -253,11 +253,11 @@ describe('runtime/effective â?three-engine union (IA correction)', () => {
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Providers â?Codex Account virtual provider card
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Providers — Codex Account virtual provider card
+// ─────────────────────────────────────────────────────────────────────
 
-describe('ProviderManager â?Codex Account virtual card (IA correction)', () => {
+describe('ProviderManager — Codex Account virtual card (IA correction)', () => {
   const mgrSrc = fs.readFileSync(
     path.join(repoRoot, 'components/settings/ProviderManager.tsx'),
     'utf8',
@@ -271,7 +271,7 @@ describe('ProviderManager â?Codex Account virtual card (IA correction)', () =
 
   it('Codex Account card renders alongside OAuth virtual providers when logged in', () => {
     // The OAuth section header must trigger when OpenAI, xAI, OR Codex is
-    // connected â?regressing this means a virtual-provider user would
+    // connected — regressing this means a virtual-provider user would
     // see no card at all.
     assert.match(
       mgrSrc,
@@ -280,17 +280,17 @@ describe('ProviderManager â?Codex Account virtual card (IA correction)', () =
     assert.match(mgrSrc, /codexAccount\?\.kind\s*===\s*['"]logged_in['"][\s\S]{0,500}<ProviderCard/);
   });
 
-  it('Codex card uses "ç»å½æ¹å¼" instead of "ç±»å" for account.type', () => {
+  it('Codex card uses "登录方式" instead of "类型" for account.type', () => {
     // Phase 6 IA correction copy fix: type=chatgpt/apiKey/amazonBedrock
-    // is the LOGIN METHOD, not the plan. "ç±»å" reads as plan to users.
+    // is the LOGIN METHOD, not the plan. "类型" reads as plan to users.
     // Pin the rename so a future build can't silently revert it.
-    assert.match(mgrSrc, /label:\s*isZh\s*\?\s*['"]ç»å½æ¹å¼['"]/);
+    assert.match(mgrSrc, /label:\s*isZh\s*\?\s*['"]登录方式['"]/);
     assert.match(mgrSrc, /['"]Login method['"]/);
-    // The Codex card MUST NOT render `account.type` under a "ç±»å" /
-    // "Type" label â?that was the confusing original.
+    // The Codex card MUST NOT render `account.type` under a "类型" /
+    // "Type" label — that was the confusing original.
     const codexCardBlock = mgrSrc.match(/codexAccount\?\.kind\s*===\s*['"]logged_in['"][\s\S]+?<\/ProviderCard>/);
     if (codexCardBlock) {
-      assert.doesNotMatch(codexCardBlock[0], /label:\s*isZh\s*\?\s*['"]ç±»å['"]/);
+      assert.doesNotMatch(codexCardBlock[0], /label:\s*isZh\s*\?\s*['"]类型['"]/);
       assert.doesNotMatch(codexCardBlock[0], /['"]Type['"]\s*,\s*value:\s*codexAccount\.account\.type/);
     } else {
       assert.fail('Could not locate the Codex Account ProviderCard block');
@@ -325,7 +325,7 @@ describe('ProviderManager â?Codex Account virtual card (IA correction)', () =
   });
 });
 
-describe('CodexQuotaWidget â?primary + secondary windows (IA correction)', () => {
+describe('CodexQuotaWidget — primary + secondary windows (IA correction)', () => {
   const src = fs.readFileSync(
     path.join(repoRoot, 'components/settings/CodexQuotaWidget.tsx'),
     'utf8',
@@ -337,12 +337,12 @@ describe('CodexQuotaWidget â?primary + secondary windows (IA correction)', ()
   });
 
   it('shows usedPercent (per upstream schema), not absolute remaining tokens', () => {
-    // Upstream only reports usedPercent + resetsAt â?there is no
+    // Upstream only reports usedPercent + resetsAt — there is no
     // absolute token count. UI copy must reflect that or it implies
     // data the API doesn't actually return.
-    assert.match(src, /å·²ç¨\s*\$\{pct\.toFixed\(0\)\}%/);
+    assert.match(src, /已用\s*\$\{pct\.toFixed\(0\)\}%/);
     assert.match(src, /\$\{pct\.toFixed\(0\)\}%\s*used/);
-    assert.doesNotMatch(src, /å©ä½\s*\d+\s*tokens?/);
+    assert.doesNotMatch(src, /剩余\s*\d+\s*tokens?/);
     assert.doesNotMatch(src, /remaining\s*\d+\s*tokens?/i);
   });
 
@@ -357,16 +357,16 @@ describe('CodexQuotaWidget â?primary + secondary windows (IA correction)', ()
     // type label live in separate code regions. Pin them
     // independently rather than via one wide regex.
     assert.match(src, /isRateLimited\s*=\s*!!snapshot\.rateLimitReachedType/);
-    assert.match(src, /å·²è§¦è¾¾éé¢ä¸é?);
+    assert.match(src, /已触达配额上限/);
     assert.match(src, /Rate limit reached/);
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Models â?Codex Account read-only block
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Models — Codex Account read-only block
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Models page â?Codex Account read-only block (IA correction)', () => {
+describe('Models page — Codex Account read-only block (IA correction)', () => {
   it('ModelsSection imports + renders CodexAccountModelsBlock', () => {
     const sectionSrc = fs.readFileSync(
       path.join(repoRoot, 'components/settings/ModelsSection.tsx'),
@@ -388,25 +388,25 @@ describe('Models page â?Codex Account read-only block (IA correction)', () =>
     assert.match(blockSrc, /if\s*\(\s*!group\s*\|\|\s*!group\.models\?\.length\s*\)\s*return\s+null/);
   });
 
-  it('block carries the "ä»?Codex" badge + "Codex only" en mirror', () => {
-    // Phase 6 UIæ¶å£ P1 fix-up sweep (2026-05-14): badge follows the
-    // short product name. "Codex Runtime" / "ä»?Codex Runtime" was the
+  it('block carries the "仅 Codex" badge + "Codex only" en mirror', () => {
+    // Phase 6 UI收口 P1 fix-up sweep (2026-05-14): badge follows the
+    // short product name. "Codex Runtime" / "仅 Codex Runtime" was the
     // pre-sweep wording that leaked the "Runtime" suffix into a
     // qualifier badge.
     const blockSrc = fs.readFileSync(
       path.join(repoRoot, 'components/settings/CodexAccountModelsBlock.tsx'),
       'utf8',
     );
-    assert.match(blockSrc, /ä»?Codex/);
+    assert.match(blockSrc, /仅 Codex/);
     assert.match(blockSrc, /Codex only/);
     // Regression guard against re-bolting the suffix.
-    assert.doesNotMatch(blockSrc, /ä»?Codex Runtime/);
+    assert.doesNotMatch(blockSrc, /仅 Codex Runtime/);
     assert.doesNotMatch(blockSrc, /Codex Runtime only/);
   });
 
   it('block is read-only (no enable/disable Switch, no edit display name)', () => {
     // Phase 6 IA correction principle: Codex Account models come from
-    // upstream Codex, not from CodePilot's DB â?nothing to toggle.
+    // upstream Codex, not from CodePilot's DB — nothing to toggle.
     // Regressing to a writable list would be confusing (the toggle
     // would do nothing) AND require new persistence schema.
     const blockSrc = fs.readFileSync(
@@ -418,20 +418,20 @@ describe('Models page â?Codex Account read-only block (IA correction)', () =>
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Chat composer RuntimeSelector â?codex_runtime stickiness (IA round 3)
+// ─────────────────────────────────────────────────────────────────────
+// Chat composer RuntimeSelector — codex_runtime stickiness (IA round 3)
 //
 // Pre-round-3 the chat composer hard-coded a binary ternary
-// `=== 'claude-code-sdk' ? 'claude_code' : 'bbagent'` at two
+// `=== 'claude-code-sdk' ? 'claude_code' : 'codepilot_runtime'` at two
 // callsites and `useGlobalAgentRuntime` only typed two values. With
 // `agent_runtime='codex_runtime'` stored, the RuntimeSelector trigger
 // rendered "Claude Code" while Models / Settings already agreed Codex
 // was the default. Round 3 expanded the hook + extracted the registry-id
-// â?ChatRuntime mapping into `agentRuntimeToChatRuntime()` and pins the
+// → ChatRuntime mapping into `agentRuntimeToChatRuntime()` and pins the
 // new wiring here so the binary ternary can't slip back in.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Chat composer RuntimeSelector â?codex_runtime support (IA round 3)', () => {
+describe('Chat composer RuntimeSelector — codex_runtime support (IA round 3)', () => {
   it('useGlobalAgentRuntime preserves codex_runtime (not coerced to claude-code-sdk)', () => {
     const hookSrc = fs.readFileSync(
       path.join(repoRoot, 'hooks/useGlobalAgentRuntime.ts'),
@@ -461,33 +461,37 @@ describe('Chat composer RuntimeSelector â?codex_runtime support (IA round 3)'
       'utf8',
     );
     assert.match(sharedSrc, /export\s+function\s+agentRuntimeToChatRuntime/);
-    assert.match(sharedSrc, /stored\s*===\s*['"]native['"][\s\S]{0,80}bbagent/);
+    assert.match(sharedSrc, /stored\s*===\s*['"]native['"][\s\S]{0,80}codepilot_runtime/);
     assert.match(sharedSrc, /stored\s*===\s*['"]codex_runtime['"][\s\S]{0,80}codex_runtime/);
     // Default branch for 'claude-code-sdk' / 'auto' / null
     assert.match(sharedSrc, /return\s+['"]claude_code['"]/);
   });
 
-  it('both chat composer callsites use the helper (not inline binary ternary)', () => {
+  it('both chat composer callsites resolve a concrete runtime and wire it into the integrated picker', () => {
     for (const relativePath of ['app/chat/page.tsx', 'components/chat/ChatView.tsx']) {
       const src = fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
-      // The new wiring: helper invocation
       assert.match(
         src,
-        /effectiveRuntime=\{agentRuntimeToChatRuntime\(globalRuntime\.agentRuntime\)\}/,
-        `${relativePath} must call agentRuntimeToChatRuntime`,
+        /sessionRuntimeParam\s*=\s*effectiveChatRuntime\(runtimePin,\s*globalRuntime\.agentRuntime\)/,
+        `${relativePath} must resolve the effective runtime before rendering the integrated picker`,
+      );
+      assert.match(
+        src,
+        /<MessageInput[\s\S]{0,900}runtime=\{sessionRuntimeParam\}[\s\S]{0,120}onRuntimeChange=/,
+        `${relativePath} must let the model picker change the session runtime`,
       );
       // The old wiring: inline binary ternary that dropped codex_runtime
       assert.doesNotMatch(
         src,
-        /agentRuntime\s*===\s*['"]claude-code-sdk['"]\s*\?\s*['"]claude_code['"]\s*:\s*['"]bbagent['"]/,
+        /agentRuntime\s*===\s*['"]claude-code-sdk['"]\s*\?\s*['"]claude_code['"]\s*:\s*['"]codepilot_runtime['"]/,
         `${relativePath} must not reintroduce the binary ternary`,
       );
     }
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Model picker â?full-catalog + per-row disabled (Phase 6 UIæ¶å£ P2)
+// ─────────────────────────────────────────────────────────────────────
+// Model picker — Runtime lane + compatible model routes
 //
 // Replaces the earlier Slice B suite which pinned the server-side
 // filter behavior + header disclosure copy. P2 inverted those:
@@ -498,86 +502,80 @@ describe('Chat composer RuntimeSelector â?codex_runtime support (IA round 3)'
 //     case; the codex-specific empty state is gone (Codex rows just
 //     appear disabled when not logged in / app-server unavailable
 //     because the server omits the group entirely)
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Model picker â?per-row compat gating (Phase 6 UIæ¶å£ P2)', () => {
+describe('Model picker — Runtime-first compatible routes', () => {
   const pickerSrc = fs.readFileSync(
     path.join(repoRoot, 'components/chat/ModelSelectorDropdown.tsx'),
     'utf8',
   );
+  const enSrc = fs.readFileSync(path.join(repoRoot, 'i18n/en.ts'), 'utf8');
+  const zhSrc = fs.readFileSync(path.join(repoRoot, 'i18n/zh.ts'), 'utf8');
 
-  it('row disabled-state checks opt.supportedRuntimes against runtimeApplied', () => {
-    // The load-bearing assertion: each model row computes its own
-    // disabled state from the per-row annotation. Regression would
-    // either hide rows again (server filter) or stop reading the
-    // annotation (incompatible rows become silently clickable).
+  it('left lane enumerates Runtime IDs and compatibility is evaluated against that lane', () => {
+    assert.match(pickerSrc, /RUNTIME_IDS\.map\(\(runtimeId\)\s*=>/);
+    assert.match(pickerSrc, /<nav[^>]+aria-label="Runtime"/);
     assert.match(
       pickerSrc,
-      /opt\.supportedRuntimes[\s\S]{0,80}\.includes\(runtimeApplied\)/,
+      /option\.supportedRuntimes[\s\S]{0,80}option\.supportedRuntimes\.includes\(lane\)/,
     );
+    assert.match(pickerSrc, /ranked\.filter\(\(route\)\s*=>\s*route\.selectable\s*&&\s*route\.option\)/);
   });
 
-  it('row tooltip reads from opt.unsupportedReasonByRuntime for the active runtime', () => {
-    assert.match(
-      pickerSrc,
-      /opt\.unsupportedReasonByRuntime\?\.\[runtimeApplied!\]/,
-    );
-    // Generic zh + en fallbacks for rows whose upstream contract
-    // doesn't supply a per-runtime reason.
-    assert.match(pickerSrc, /å½å Agent å¼æä¸æ¯ææ­¤æ¨¡å/);
-    assert.match(pickerSrc, /Current Agent engine does not support this model/);
+  it('right lane is grouped by provider, with models nested under each provider heading', () => {
+    assert.match(pickerSrc, /interface\s+ProviderRouteSection/);
+    assert.match(pickerSrc, /providerSections\.map\(\(section\)\s*=>/);
+    assert.match(pickerSrc, /data-model-provider-section=\{section\.providerInstanceId\}/);
+    assert.match(pickerSrc, /<ProviderGlyph\s+name=\{section\.providerName\}/);
+    assert.match(pickerSrc, /section\.routes\.map\(\(route\)\s*=>/);
   });
 
-  it('recent-models section honours the same disabled-state gating', () => {
-    // Without this gate, a "recently used GLM" entry would stay
-    // clickable under Codex even though the active engine can't
-    // serve GLM models. Same supportedRuntimes / tooltip wiring as
-    // the main groups below.
-    assert.match(
-      pickerSrc,
-      /option\.supportedRuntimes[\s\S]{0,80}\.includes\(runtimeApplied\)/,
-    );
+  it('favorites sit above Runtime and key the exact Runtime + provider + model combination', () => {
+    const favoritesOffset = pickerSrc.indexOf("setLane('favorites')");
+    const runtimesOffset = pickerSrc.indexOf('RUNTIME_IDS.map');
+    assert.ok(favoritesOffset >= 0 && favoritesOffset < runtimesOffset);
+    assert.match(pickerSrc, /modelRouteFavoriteIdentity\(\s*favorite\.runtimeId/);
+    assert.match(pickerSrc, /runtimeId:\s*route\.runtimeId/);
+    assert.match(pickerSrc, /onRuntimeChange\?\.\(route\.runtimeId\)/);
+    assert.match(pickerSrc, /onProviderModelChange\?\.\(route\.providerInstanceId,\s*route\.modelId\)/);
   });
 
-  it('header disclosure banners are GONE (per-row tooltips replace them)', () => {
-    // Pre-P2 the picker carried a "only showing models for X" /
-    // "Codex currently supports only Codex Account models..." top
-    // banner. Both are obsolete now that every row is visible with
-    // its own tooltip â?keeping them would be visual noise.
-    assert.doesNotMatch(
-      pickerSrc,
-      /ä»æ¾ç¤ºå½å?Agent å¼æå¯ç¨çæ¨¡å?,
-    );
-    assert.doesNotMatch(
-      pickerSrc,
-      /Models available under the current Agent engine/,
-    );
-    assert.doesNotMatch(
-      pickerSrc,
-      /Codex å½åä»æ¯æ?Codex Account æ¨¡å/,
-    );
+  it('recent ranking reuses the same route object and selection gate', () => {
+    assert.match(pickerSrc, /recentAt:\s*recentTimes\.get\(modelRouteIdentity/);
+    assert.match(pickerSrc, /disabled=\{selectionDisabled\}/);
+    assert.match(pickerSrc, /onClick=\{\(\) => handleModelSelect\(route\)\}/);
   });
 
-  it('empty state collapses to the generic "no providers configured" copy', () => {
-    // Phase 6 UIæ¶å£ P2: with the full catalog always returned, an
-    // empty groups array means "user has zero providers configured
-    // at all" â?rare, and the only meaningful recovery is the
-    // Providers page. No more codex-specific empty-state branch.
+  it('empty states distinguish no providers, no favorites, and no Runtime-compatible model', () => {
     assert.match(pickerSrc, /providerGroups\.length\s*===\s*0/);
-    assert.match(pickerSrc, /å°æªéç½®ä»»ä½æå¡å?);
-    assert.match(pickerSrc, /No providers configured yet/);
-    // Regression guard: the codex-specific empty branch must not
-    // creep back in. The picker's compat gating now operates per
-    // row, not per empty-state branch.
-    assert.doesNotMatch(
-      pickerSrc,
-      /providerGroups\.length\s*===\s*0[\s\S]{0,300}runtimeApplied\s*===\s*['"]codex_runtime['"]/,
+    assert.match(pickerSrc, /composer\.noProvidersConfigured/);
+    assert.match(pickerSrc, /composer\.noFavoriteCombinations/);
+    assert.match(pickerSrc, /composer\.noModelsForRuntime/);
+    assert.match(enSrc, /'composer\.noProvidersConfigured': 'No providers configured yet'/);
+    assert.match(enSrc, /'composer\.noFavoriteCombinations': 'No favorite model combinations yet'/);
+    assert.match(enSrc, /'composer\.noModelsForRuntime': 'No models are available for this runtime'/);
+    assert.match(zhSrc, /'composer\.noProvidersConfigured': '尚未配置任何服务商'/);
+    assert.match(zhSrc, /'composer\.noFavoriteCombinations': '还没有收藏模型组合'/);
+    assert.match(zhSrc, /'composer\.noModelsForRuntime': '这个 Runtime 暂无可用模型'/);
+  });
+});
+
+describe('Composer footer — context status stays beside Send', () => {
+  const inputSrc = fs.readFileSync(
+    path.join(repoRoot, 'components/chat/MessageInput.tsx'),
+    'utf8',
+  );
+
+  it('renders runStatusControl after the left tools group and immediately before submit', () => {
+    assert.match(
+      inputSrc,
+      /<\/PromptInputTools>\s*\{runStatusControl\}\s*<FileAwareSubmitButton/,
     );
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Phase 6 P0 (2026-05-15) â?chat composer runtime gate, auto-correct
+// ─────────────────────────────────────────────────────────────────────
+// Phase 6 P0 (2026-05-15) — chat composer runtime gate, auto-correct
 // semantics, codex proxy-pending reason.
 //
 // The earlier P2 work delivered "show all + disabled" rendering but
@@ -596,11 +594,11 @@ describe('Model picker â?per-row compat gating (Phase 6 UIæ¶å£ P2)', 
 //   (c) `getModelCompat` had no `codex_runtime` entries in
 //       `unsupportedReasonByRuntime` for non-codex providers, so
 //       disabled rows under Codex showed only the generic fallback
-//       tooltip instead of the "Codex provider proxy å°æªè¦ç"
+//       tooltip instead of the "Codex provider proxy 尚未覆盖"
 //       parity wording the user spec called for.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('effectiveChatRuntime â?resolves "auto" to a concrete RuntimeId (Phase 6 P0)', () => {
+describe('effectiveChatRuntime — resolves "auto" to a concrete RuntimeId (Phase 6 P0)', () => {
   it('returns the session pin verbatim when it\'s a known RuntimeId', () => {
     const sharedSrc = fs.readFileSync(
       path.join(repoRoot, 'lib/chat-runtime-shared.ts'),
@@ -622,7 +620,7 @@ describe('effectiveChatRuntime â?resolves "auto" to a concrete RuntimeId (Pha
   });
 });
 
-describe('Chat composer â?passes concrete RuntimeId to useProviderModels (Phase 6 P0)', () => {
+describe('Chat composer — passes concrete RuntimeId to useProviderModels (Phase 6 P0)', () => {
   it('chat/page.tsx uses effectiveChatRuntime, not chatRuntimeParamForSession', () => {
     const src = fs.readFileSync(path.join(repoRoot, 'app/chat/page.tsx'), 'utf8');
     assert.match(src, /effectiveChatRuntime\(\s*runtimePin\s*,\s*globalRuntime\.agentRuntime\s*\)/);
@@ -639,7 +637,7 @@ describe('Chat composer â?passes concrete RuntimeId to useProviderModels (Pha
   });
 });
 
-describe('invalid-default branch â?auto-fallback writes through to parent state (Phase 6 P0 round 3)', () => {
+describe('invalid-default branch — auto-fallback writes through to parent state (Phase 6 P0 round 3)', () => {
   const pageSrc = fs.readFileSync(
     path.join(repoRoot, 'app/chat/page.tsx'),
     'utf8',
@@ -647,7 +645,7 @@ describe('invalid-default branch â?auto-fallback writes through to parent sta
 
   it('both resolver branches call resolveNewChatDefault again with mode="auto" on invalid-default', () => {
     // The load-bearing assertion. Pre-round-3 the invalid-default
-    // branch cleared currentProviderId/Model â?banner said
+    // branch cleared currentProviderId/Model — banner said
     // "auto-switched" but parent state stayed empty, MessageInput's
     // useProviderModels resolved a different visible fallback, and
     // the send gate then tripped on the empty parent state. Round 3
@@ -655,7 +653,7 @@ describe('invalid-default branch â?auto-fallback writes through to parent sta
     // through to parent state so banner / display / send all agree.
     //
     // Two resolver call sites (initial-load + checkProvider), both
-    // must do this â?pinned by two anchored matches.
+    // must do this — pinned by two anchored matches.
     const invalidDefaultBranches = pageSrc.match(
       /resolved\.status\s*===\s*['"]invalid-default['"][\s\S]+?(?=\n\s*\}\s*else\s*\{|\n\s*\}\s*else\s+if)/g,
     );
@@ -672,14 +670,14 @@ describe('invalid-default branch â?auto-fallback writes through to parent sta
       assert.match(
         branch,
         /mode:\s*['"]auto['"]/,
-        'auto-fallback call must explicitly use mode="auto" so it walks the savedPair â?apiDefault â?first chain regardless of the pinned mode that originally failed',
+        'auto-fallback call must explicitly use mode="auto" so it walks the savedPair → apiDefault → first chain regardless of the pinned mode that originally failed',
       );
       assert.match(
         branch,
         /autoFallback\.status\s*===\s*['"]auto-resolved['"][\s\S]{0,300}setCurrentProviderId/,
         'the fallback result must be written through to parent state so MessageInput / send gate / banner all see the same pair',
       );
-      // The pinned-invalid warning still fires â?banner copy says
+      // The pinned-invalid warning still fires — banner copy says
       // "auto-switched", so the warning state must stick.
       assert.match(branch, /setInvalidDefault\(\s*\{/);
     }
@@ -693,19 +691,19 @@ describe('invalid-default branch â?auto-fallback writes through to parent sta
     // and that was IT. Now there's always a follow-up auto-resolve
     // before / after. A regression would re-introduce the bare
     // empty-set pattern. Check by searching the whole file for the
-    // dangerous shape â?three consecutive setters with no
+    // dangerous shape — three consecutive setters with no
     // intervening fallback assignment.
     const dangerous = pageSrc.match(
       /setCurrentModel\(['"]['"]?\)\s*;\s*setCurrentProviderId\(['"]['"]?\)\s*;\s*setNoCompatibleProvider\(false\)\s*;\s*setInvalidDefault\(\s*\{[^}]*reason:[^}]*\}\s*\)\s*;\s*\}/,
     );
     assert.ok(
       !dangerous,
-      'invalid-default branch must not leave parent state empty (currentModel + currentProviderId set to "") without a follow-up auto-resolve writing a working pair â?that splits parent state from MessageInput visual state',
+      'invalid-default branch must not leave parent state empty (currentModel + currentProviderId set to "") without a follow-up auto-resolve writing a working pair — that splits parent state from MessageInput visual state',
     );
   });
 });
 
-describe('Empty-state â?hasSendableProviderForCurrentRuntime bypasses /api/setup for Codex (Phase 6 P0 round 2)', () => {
+describe('Empty-state — hasSendableProviderForCurrentRuntime bypasses /api/setup for Codex (Phase 6 P0 round 2)', () => {
   const pageSrc = fs.readFileSync(
     path.join(repoRoot, 'app/chat/page.tsx'),
     'utf8',
@@ -714,7 +712,7 @@ describe('Empty-state â?hasSendableProviderForCurrentRuntime bypasses /api/se
   it('hasSendableProviderForCurrentRuntime is derived from canSendWithCurrentProvider + modelReady', () => {
     // The empty-state gate must NOT flash for a Codex-Account-only
     // user during the initial resolver window. `modelReady=false`
-    // means "still loading" â?keep the empty state hidden until
+    // means "still loading" — keep the empty state hidden until
     // the resolver lands. Once modelReady=true, the gate collapses
     // to canSendWithCurrentProvider, which honours the codex_account
     // / openai-oauth virtual-provider bypass.
@@ -734,7 +732,7 @@ describe('Empty-state â?hasSendableProviderForCurrentRuntime bypasses /api/se
 
   it('empty-state overlay gates on hasSendableProvider*, NOT the raw hasProvider', () => {
     // Pre-round-2 the overlay condition was
-    // `(!workingDir.trim() || !hasProvider)` â?that flashed the
+    // `(!workingDir.trim() || !hasProvider)` — that flashed the
     // legacy "configure a provider" card on Codex-Account-only
     // users even when the resolver had landed cleanly on
     // (codex_account, gpt-5.5). Round 2 routes through the new
@@ -765,7 +763,7 @@ describe('Empty-state â?hasSendableProviderForCurrentRuntime bypasses /api/se
   });
 });
 
-describe('Send gate â?canSendWithCurrentProvider bypasses /api/setup for Codex Account (Phase 6 P0 follow-up)', () => {
+describe('Send gate — canSendWithCurrentProvider bypasses /api/setup for Codex Account (Phase 6 P0 follow-up)', () => {
   const pageSrc = fs.readFileSync(
     path.join(repoRoot, 'app/chat/page.tsx'),
     'utf8',
@@ -776,7 +774,7 @@ describe('Send gate â?canSendWithCurrentProvider bypasses /api/setup for Code
     // outside /api/setup's "provider === 'completed'" world, so
     // hasProvider is false for Codex-Account-only users. Without this
     // bypass, the user sees a green send button (composer enabled by
-    // useProviderModels' resolved pair) â?click â?"no provider
+    // useProviderModels' resolved pair) → click → "no provider
     // configured" legacy error. The runtime/model pair is the source
     // of truth at send time; the bypass keeps the gate honest.
     assert.match(
@@ -790,7 +788,7 @@ describe('Send gate â?canSendWithCurrentProvider bypasses /api/setup for Code
   });
 
   it('openai-oauth gets the same bypass (other known virtual provider)', () => {
-    // Same shape as codex_account â?openai-oauth is also virtual
+    // Same shape as codex_account — openai-oauth is also virtual
     // (managed by /api/openai-oauth/status, not /api/setup). The
     // bypass set must include both so the OAuth-only flow doesn't
     // regress.
@@ -803,7 +801,7 @@ describe('Send gate â?canSendWithCurrentProvider bypasses /api/setup for Code
   it('sendFirstMessage uses canSendWithCurrentProvider, not the raw hasProvider gate', () => {
     // Regression guard against re-introducing the bare `!hasProvider`
     // check that blocked Codex Account sends. The empty-state path
-    // (line 1076 in page.tsx today) still reads hasProvider â?that's
+    // (line 1076 in page.tsx today) still reads hasProvider — that's
     // intentional, it's about onboarding visibility, not about "is
     // this specific send valid".
     const sendBlock = pageSrc.match(
@@ -816,7 +814,7 @@ describe('Send gate â?canSendWithCurrentProvider bypasses /api/setup for Code
   });
 });
 
-describe('MessageInput auto-correct â?manual-only side effects (Phase 6 P0)', () => {
+describe('MessageInput auto-correct — manual-only side effects (Phase 6 P0)', () => {
   it('MessageInput auto-correct passes `{ isAuto: true }` to onProviderModelChange', () => {
     const src = fs.readFileSync(
       path.join(repoRoot, 'components/chat/MessageInput.tsx'),
@@ -829,8 +827,8 @@ describe('MessageInput auto-correct â?manual-only side effects (Phase 6 P0)',
     // s07 reviewer fix (run i31): the effect now routes through the
     // `emitProviderModelChange` wrapper, which enriches opts with the new
     // model's supportedEffortLevels (so both effort-reset consumers validate
-    // against the same picker feed) and forwards `...opts` â?including
-    // `isAuto` â?to `onProviderModelChange`. Assert both hops preserve isAuto.
+    // against the same picker feed) and forwards `...opts` — including
+    // `isAuto` — to `onProviderModelChange`. Assert both hops preserve isAuto.
     assert.match(
       src,
       /emitProviderModelChange\([\s\S]{0,120}\{\s*isAuto:\s*true\s*\}\s*\)/,
@@ -849,7 +847,7 @@ describe('MessageInput auto-correct â?manual-only side effects (Phase 6 P0)',
       'utf8',
     );
     // PATCHing the session on a silent fallback would persist a
-    // model the user never picked â?the next page load would surface
+    // model the user never picked — the next page load would surface
     // the auto-corrected pair as their "real" selection. Must not.
     //
     // s07 (2026-07-18) moved the effort-effect block ABOVE this guard so the
@@ -864,12 +862,12 @@ describe('MessageInput auto-correct â?manual-only side effects (Phase 6 P0)',
   });
 });
 
-describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b)', () => {
+describe('Picker — codex_runtime supportedRuntimes flows end-to-end (Phase 5b)', () => {
   // Pre-5b the picker disabled non-Codex rows under Codex Runtime
   // with a proxy-pending reason. After the unified provider-proxy
   // translator landed, every known compat tier reaches Codex Runtime
   // so the picker re-enables those rows. The pin here exercises the
-  // full chain â?invoke the API route, walk every returned row, and
+  // full chain — invoke the API route, walk every returned row, and
   // assert non-`unknown` tiers carry `codex_runtime` in supportedRuntimes.
   it('GET /api/providers/models response shape: known-tier rows include codex_runtime in supportedRuntimes', async () => {
     const { GET } = await import('@/app/api/providers/models/route');
@@ -889,13 +887,13 @@ describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b
     };
     assert.ok(Array.isArray(data.groups), 'response must include groups[]');
 
-    // Every row must carry supportedRuntimes â?picker gate reads this
+    // Every row must carry supportedRuntimes — picker gate reads this
     // per row. Missing annotation falls back to "universally supported".
     for (const g of data.groups) {
       for (const m of g.models) {
         assert.ok(
           Array.isArray(m.supportedRuntimes),
-          `${g.provider_id}/${m.value} must carry supportedRuntimes â?picker gate reads this per row`,
+          `${g.provider_id}/${m.value} must carry supportedRuntimes — picker gate reads this per row`,
         );
       }
     }
@@ -904,7 +902,7 @@ describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b
     // list codex_runtime in supportedRuntimes now that Phase 5b's
     // unified translator handles all three adapter families. The
     // built-in `env` provider (Claude Code default) is the ONE
-    // explicit exception â?Phase 5b deliberately excludes env from
+    // explicit exception — Phase 5b deliberately excludes env from
     // Codex Runtime parity, so env rows must NOT carry codex_runtime
     // even though their tier (claude_code_ready) is otherwise ready.
     const phase5bReadyTiers = new Set([
@@ -912,7 +910,7 @@ describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b
       'claude_code_verified',
       'claude_code_experimental',
       'openrouter_anthropic_skin',
-      'bbagent_only',
+      'codepilot_only',
     ]);
     let checkedNonEnv = false;
     let checkedEnv = false;
@@ -924,23 +922,23 @@ describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b
           checkedEnv = true;
           assert.ok(
             !m.supportedRuntimes?.includes('codex_runtime'),
-            `${g.provider_id} / ${m.value}: env (Claude Code default) MUST be excluded from codex_runtime â?selecting it under Codex Runtime would fail to send`,
+            `${g.provider_id} / ${m.value}: env (Claude Code default) MUST be excluded from codex_runtime — selecting it under Codex Runtime would fail to send`,
           );
           assert.match(
             m.unsupportedReasonByRuntime?.codex_runtime ?? '',
-            /env|é»è®¤|Claude Code/,
+            /env|默认|Claude Code/,
             `${g.provider_id} / ${m.value}: env exclusion must surface a clear reason for the picker tooltip`,
           );
         } else {
           checkedNonEnv = true;
           assert.ok(
             m.supportedRuntimes?.includes('codex_runtime'),
-            `${g.provider_id} (${g.compat}) / ${m.value} must list codex_runtime in supportedRuntimes â?Phase 5b proxy adapter is ready for this tier`,
+            `${g.provider_id} (${g.compat}) / ${m.value} must list codex_runtime in supportedRuntimes — Phase 5b proxy adapter is ready for this tier`,
           );
           assert.equal(
             m.unsupportedReasonByRuntime?.codex_runtime,
             undefined,
-            `${g.provider_id} / ${m.value} must not carry a codex_runtime reason â?adapter is wired`,
+            `${g.provider_id} / ${m.value} must not carry a codex_runtime reason — adapter is wired`,
           );
         }
       }
@@ -952,7 +950,7 @@ describe('Picker â?codex_runtime supportedRuntimes flows end-to-end (Phase 5b
   });
 });
 
-describe('runtime-compat â?codex_runtime supportedness after Phase 5b proxy adapter ships', () => {
+describe('runtime-compat — codex_runtime supportedness after Phase 5b proxy adapter ships', () => {
   const src = fs.readFileSync(
     path.join(repoRoot, 'lib/runtime-compat.ts'),
     'utf8',
@@ -962,24 +960,24 @@ describe('runtime-compat â?codex_runtime supportedness after Phase 5b proxy a
     // Phase 5b: every known compat tier routes through the unified
     // provider-proxy translator. `unknown` is the only tier where the
     // proxy can't pick a wire format without more info, so it stays
-    // pending. The proxy-pending reason wording shifted from "å°æª
-    // è¦ç" (pre-5b sweep) to "ææªè¯å«" (post-5b nuance â?proxy is
+    // pending. The proxy-pending reason wording shifted from "尚未
+    // 覆盖" (pre-5b sweep) to "暂未识别" (post-5b nuance — proxy is
     // live, just can't infer the protocol for this row).
     assert.match(
       src,
-      /Codex provider proxy ææªè¯å«è¯?provider ç±»åï¼æ æ³å¤å®?wire format/,
+      /Codex provider proxy 暂未识别该 provider 类型，无法判定 wire format/,
     );
   });
 
   it('Phase 5b-ready tiers add codex_runtime to supported set', () => {
-    // Mirror of the switch arms in `getModelCompat` â?each Phase 5b
+    // Mirror of the switch arms in `getModelCompat` — each Phase 5b
     // adapter-ready tier must call `supported.add('codex_runtime')`.
     for (const tier of [
       'claude_code_ready',
       'claude_code_verified',
       'claude_code_experimental',
       'openrouter_anthropic_skin',
-      'bbagent_only',
+      'codepilot_only',
     ]) {
       const tierBlock = src.match(
         new RegExp(`case ['"]${tier}['"]:[\\s\\S]{0,2000}?break;`),
@@ -988,12 +986,12 @@ describe('runtime-compat â?codex_runtime supportedness after Phase 5b proxy a
       assert.match(
         tierBlock![0],
         /supported\.add\(['"]codex_runtime['"]\)/,
-        `${tier} must add codex_runtime to the supported set â?Phase 5b adapter handles it`,
+        `${tier} must add codex_runtime to the supported set — Phase 5b adapter handles it`,
       );
       assert.doesNotMatch(
         tierBlock![0],
         /reasons\.codex_runtime\s*=/,
-        `${tier} must NOT set a codex_runtime reason â?adapter is wired`,
+        `${tier} must NOT set a codex_runtime reason — adapter is wired`,
       );
     }
   });
@@ -1009,12 +1007,12 @@ describe('runtime-compat â?codex_runtime supportedness after Phase 5b proxy a
     assert.doesNotMatch(
       tierBlock![0],
       /supported\.add\(['"]codex_runtime['"]\)/,
-      'unknown tier must NOT add codex_runtime to supported â?proxy can\'t infer wire format',
+      'unknown tier must NOT add codex_runtime to supported — proxy can\'t infer wire format',
     );
   });
 });
 
-describe('useProviderModels â?full-catalog fetch + client-side compat (Phase 6 UIæ¶å£ P2)', () => {
+describe('useProviderModels — full-catalog fetch + client-side compat (Phase 6 UI收口 P2)', () => {
   const hookSrc = fs.readFileSync(
     path.join(repoRoot, 'hooks/useProviderModels.ts'),
     'utf8',
@@ -1048,7 +1046,7 @@ describe('useProviderModels â?full-catalog fetch + client-side compat (Phase 
   });
 });
 
-describe('/api/providers/models â?annotated rows always (Phase 6 UIæ¶å£ P2)', () => {
+describe('/api/providers/models — annotated rows always (Phase 6 UI收口 P2)', () => {
   const routeSrc = fs.readFileSync(
     path.join(repoRoot, 'app/api/providers/models/route.ts'),
     'utf8',
@@ -1066,7 +1064,7 @@ describe('/api/providers/models â?annotated rows always (Phase 6 UIæ¶å
     // expression shape so future tweaks don't accidentally drop them.
     assert.match(routeSrc, /supportedRuntimes,/);
     assert.match(routeSrc, /unsupportedReasonByRuntime,/);
-    // The cap pair still has to be the source â?assert both names
+    // The cap pair still has to be the source — assert both names
     // appear, just not necessarily on the same line as the output.
     assert.match(routeSrc, /cap\.supportedRuntimes/);
     assert.match(routeSrc, /cap\.unsupportedReasonByRuntime/);
@@ -1074,17 +1072,17 @@ describe('/api/providers/models â?annotated rows always (Phase 6 UIæ¶å
 
   it('media rows are still dropped at the row layer (do not belong in chat pickers)', () => {
     // Image / video / embedding don't surface in chat picker
-    // regardless of runtime gating â?this guard predates P2 and
+    // regardless of runtime gating — this guard predates P2 and
     // must survive the refactor.
     assert.match(routeSrc, /if\s*\(\s*cap\.media\s*\)\s*return\s+null/);
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Slice C â?Electron before-quit dispose
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
+// Slice C — Electron before-quit dispose
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Electron before-quit â?Codex app-server dispose (Slice C)', () => {
+describe('Electron before-quit — Codex app-server dispose (Slice C)', () => {
   const electronMainSrc = fs.readFileSync(
     path.join(repoRoot, '..', 'electron', 'main.ts'),
     'utf8',
@@ -1093,7 +1091,7 @@ describe('Electron before-quit â?Codex app-server dispose (Slice C)', () => {
   it('before-quit handler fetches /api/codex/dispose before killServer', () => {
     // Pin the relative ordering by string indices anchored on the
     // 'before-quit' handler start. Non-greedy regex-extracting the
-    // handler block doesn't work â?nested })s in the embedded
+    // handler block doesn't work — nested })s in the embedded
     // Promise.race / setTimeout closures make the match terminate
     // early on the wrong })s.
     const beforeQuitIdx = electronMainSrc.indexOf("app.on('before-quit'");
@@ -1109,7 +1107,7 @@ describe('Electron before-quit â?Codex app-server dispose (Slice C)', () => {
   });
 
   it('dispose fetch has a timeout race so a hang cannot block app exit', () => {
-    // 1.5s budget per the route docstring â?without this the entire
+    // 1.5s budget per the route docstring — without this the entire
     // quit waits on a hung fetch, which is worse than the orphan we're
     // trying to prevent.
     assert.match(

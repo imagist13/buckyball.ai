@@ -1,9 +1,9 @@
 /**
- * Phase 3 Step 4 â€?background Agent task runner.
+ * Phase 3 Step 4 â€” background Agent task runner.
  *
- * **Step 4a â†?4b transition (now active in 4b)**:
+ * **Step 4a â†’ 4b transition (now active in 4b)**:
  *
- *   - **4a delivered** the architectural shell â€?task-bound chat
+ *   - **4a delivered** the architectural shell â€” task-bound chat
  *     session creation / reuse, `task.source` branching, HEARTBEAT_OK
  *     silent contract, message persistence with `task_run_id`
  *     metadata, marker render path. Underlying model call was
@@ -16,32 +16,32 @@
  *     chat. Tool calls, file reads, permission requests are real;
  *     `waiting_for_permission` is reachable when the agent hits a
  *     permission gate while running headless. The runner's return
- *     signature is unchanged from 4a â€?the swap is local to the
+ *     signature is unchanged from 4a â€” the swap is local to the
  *     `// 4. Model call` block.
  *
  * `task.source` branching:
  *
- *   - `'user'` â†?task-bound session (`chat_sessions.source='task'`,
+ *   - `'user'` â†’ task-bound session (`chat_sessions.source='task'`,
  *     hidden from main list). Headless streamClaude consumes the
- *     stream; `permission_request` â†?`status: 'waiting_for_permission'`
+ *     stream; `permission_request` â†’ `status: 'waiting_for_permission'`
  *     with partial assistant text persisted; `scheduled_tasks.status`
- *     â†?`'paused'` so the scheduler doesn't refire.
+ *     â†’ `'paused'` so the scheduler doesn't refire.
  *
- *   - `'assistant_heartbeat'` â†?buddy session (lazy-created if the
+ *   - `'assistant_heartbeat'` â†’ buddy session (lazy-created if the
  *     user toggles heartbeat on before opening the workspace). Same
  *     headless streamClaude path; HEARTBEAT_OK silent contract gates
  *     the assistant message + notification.
  *
- * **No durable resume** â€?the v2 plan's hard line. When the runner
+ * **No durable resume** â€” the v2 plan's hard line. When the runner
  * sees `permission_request` it cancels the stream completely. The
  * partial assistant text is persisted with `task_run_id` metadata
  * so the user can see what the agent was thinking; choosing
  * "Re-run" starts a brand new run with a fresh runId from scratch.
  *
- * **Marker render contract** â€?every message persisted here carries
+ * **Marker render contract** â€” every message persisted here carries
  * `metadata.task_run_id`. MessageList renders `<TaskRunMarker />`
  * before the first message of each run group. The marker is RENDER-
- * ONLY â€?`task_run_id` is never written into `message.content` and
+ * ONLY â€” `task_run_id` is never written into `message.content` and
  * never enters the LLM prompt context.
  */
 
@@ -79,11 +79,12 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
     await import('@/lib/db');
   if (task.session_id) {
     const existing = getSession(task.session_id);
-    // Codex P2 follow-up â€?non-heartbeat ai_task tasks must ONLY
+    // Codex P2 follow-up â€” non-heartbeat ai_task tasks must ONLY
     // reuse a session whose `source === 'task'`. Two attack paths
     // this guard closes:
     //
-    //   1. Legacy dirty rows from before origin_session_id existed â€?    //      task.session_id was set (by an earlier-rev ensureTask path
+    //   1. Legacy dirty rows from before origin_session_id existed â€”
+    //      task.session_id was set (by an earlier-rev ensureTask path
     //      or a manual repair) to point at a user-visible chat. After
     //      the origin_session_id fix, the runner would still trust
     //      that pointer and write the task's assistant message into
@@ -101,18 +102,18 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
     // task-bound execution session, and fall through to the create
     // branch below (which will inherit from origin_session_id and
     // overwrite task.session_id with the new task-bound id). The
-    // task-bound session always has source='task' â€?it's set on
+    // task-bound session always has source='task' â€” it's set on
     // creation by `createSession(..., 'task')`.
     if (existing && existing.source === 'task') {
       return existing.id;
     }
-    // Otherwise fall through â€?even if `existing` is defined but
+    // Otherwise fall through â€” even if `existing` is defined but
     // user-source, we DO NOT return it. The new task-bound session
     // created below will become this task's session, the dirty
     // pointer gets overwritten on persist, and from now on the
     // legacy bug is closed for this row.
   }
-  // Phase 3 Step 4 follow-up â€?inherit the originating chat session's
+  // Phase 3 Step 4 follow-up â€” inherit the originating chat session's
   // runtime context into the task-bound session. Without this the
   // runner used to fall back to whatever the global default was at
   // tick time, so a task scheduled from project A could end up
@@ -122,14 +123,14 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
   //
   // Origin chain (every field independently fallable so a partially-
   // populated origin row still helps):
-  //   1. task.origin_session_id â†?chat_sessions row (the user chat
+  //   1. task.origin_session_id â†’ chat_sessions row (the user chat
   //      where the model called codepilot_schedule_task)
   //   2. task.working_directory (POSTed alongside origin_session_id;
   //      the closure-captured stream cwd)
   //   3. otherwise undefined / 'default' / etc.
   //
   // We DELIBERATELY do NOT call resolveBuddySessionId or
-  // getLatestSessionByWorkingDirectory here â€?the buddy/heartbeat
+  // getLatestSessionByWorkingDirectory here â€” the buddy/heartbeat
   // surface is for the heartbeat path only. Mixing them re-introduces
   // the cross-project bleed the origin_session_id column was added
   // to fix.
@@ -147,7 +148,7 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
     || undefined;
   const inheritedProviderId = originSession?.provider_id || undefined;
   const inheritedModel = originSession?.model || undefined;
-  // Inherit the origin session's profile â€?never upgrade. A background task
+  // Inherit the origin session's profile â€” never upgrade. A background task
   // has no foreground UI to raise a prompt in, which is an argument for
   // asking less, not for granting more.
   const inheritedPermissionProfile = normalizePermissionProfile(originSession?.permission_profile);
@@ -161,11 +162,11 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
     inheritedProviderId,
     inheritedPermissionProfile,
     'task',
-    // The task's name is the session's identity â€?never re-derive it from
+    // The task's name is the session's identity â€” never re-derive it from
     // whatever prompt the runner happens to send first.
     'system',
   );
-  // Inherit runtime_pin separately â€?createSession doesn't take it as
+  // Inherit runtime_pin separately â€” createSession doesn't take it as
   // an arg today (it's a Phase 2 column added later). Lift the same
   // pin so the task-bound session honors the origin's per-session
   // runtime commitment.
@@ -176,10 +177,10 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
   }
   // Persist session_id back to the task so next run reuses the
   // session. Best-effort: if the update fails for any reason, the next
-  // run will create a second session â€?not ideal but not corrupt.
+  // run will create a second session â€” not ideal but not corrupt.
   try {
     updateScheduledTask(task.id, { session_id: newSession.id });
-  } catch { /* swallow â€?we still proceed with this run */ }
+  } catch { /* swallow â€” we still proceed with this run */ }
   return newSession.id;
 }
 
@@ -187,7 +188,7 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
  * Resolve (or lazily create) the buddy session for the assistant
  * workspace. Used by the heartbeat path.
  *
- * v2 review fix â€?earlier rev failed when no workspace session
+ * v2 review fix â€” earlier rev failed when no workspace session
  * existed yet (heartbeat would error out the moment a user toggled
  * heartbeat on without first opening the workspace), which is a
  * pretty hostile failure mode for "Hermes-style background ping".
@@ -201,7 +202,7 @@ export async function ensureTaskBoundSession(task: ScheduledTask): Promise<strin
  * obvious where the messages came from when the user later opens it.
  *
  * Returns undefined ONLY when no `assistant_workspace_path` setting
- * is configured at all â€?the caller treats that as "no workspace,
+ * is configured at all â€” the caller treats that as "no workspace,
  * skip the run", which is a different signal from "workspace exists
  * but is fresh".
  */
@@ -209,7 +210,7 @@ async function resolveBuddySessionId(): Promise<string | undefined> {
   const { getSetting, getLatestSessionByWorkingDirectory, createSession } = await import('@/lib/db');
   const workspacePath = getSetting('assistant_workspace_path');
   if (!workspacePath) return undefined;
-  // Codex review fix â€?restrict the lookup to `source='user'`. Without
+  // Codex review fix â€” restrict the lookup to `source='user'`. Without
   // this filter, a separate `ai_task` whose `working_directory` happens
   // to point at the assistant workspace would have created a hidden
   // `source='task'` execution session that sorts as the "latest" by
@@ -220,7 +221,7 @@ async function resolveBuddySessionId(): Promise<string | undefined> {
   });
   if (existing) return existing.id;
   // Lazy create. Source='user' so the session appears in the main
-  // chat list â€?heartbeat speak-up is part of the assistant
+  // chat list â€” heartbeat speak-up is part of the assistant
   // conversation the user opens manually later. Permission profile
   // 'default' so tool gating still applies once the user starts
   // chatting in it.
@@ -245,7 +246,7 @@ async function resolveBuddySessionId(): Promise<string | undefined> {
  * Best-effort read of HEARTBEAT.md from the assistant workspace. The
  * contents are appended to the task prompt as additional context so the
  * model's silent / speak-up decision is grounded in what the user wrote
- * in the file. Missing file â†?empty string (the prompt itself still
+ * in the file. Missing file â†’ empty string (the prompt itself still
  * tells the model what to do).
  */
 async function readHeartbeatMd(workspacePath?: string | null): Promise<string> {
@@ -282,7 +283,7 @@ export function isHeartbeatSilent(modelOutput: string): boolean {
  * + task_run_logs row lifecycle.
  *
  * `providedRunId` lets `runScheduledTaskNow` (the manual "Run now"
- * flow) hand its pre-allocated row to the runner â€?that row was
+ * flow) hand its pre-allocated row to the runner â€” that row was
  * created with `status='running'` so the caller could return a runId
  * to the user immediately. When omitted (the scheduler poll path),
  * the runner creates the running row itself.
@@ -342,7 +343,7 @@ export async function runScheduledAgentTask(
     if (isHeartbeat) {
       const buddyId = await resolveBuddySessionId();
       if (!buddyId) {
-        const error = 'No assistant workspace / buddy session â€?heartbeat skipped.';
+        const error = 'No assistant workspace / buddy session â€” heartbeat skipped.';
         updateTaskRunLog(runId, {
           status: 'failed',
           error,
@@ -372,26 +373,26 @@ export async function runScheduledAgentTask(
       // 3a. user-source ai_task: persist the user prompt as the first
       //     message of this run so opening the task-bound session shows
       //     a real conversation, not just "where did this assistant
-      //     reply come from?". Heartbeat skips this â€?buddy session is
+      //     reply come from?". Heartbeat skips this â€” buddy session is
       //     a continuing conversation, the prompt itself is internal.
       try {
         addMessage(sessionId, 'user', task.prompt, undefined, { task_run_id: runId });
-      } catch { /* best-effort â€?model call still goes ahead */ }
+      } catch { /* best-effort â€” model call still goes ahead */ }
     }
 
-    // 4. Model call â€?Step 4b: headless `streamClaude` via
+    // 4. Model call â€” Step 4b: headless `streamClaude` via
     //    `runClaudeHeadless`. Replaces 4a's `generateTextFromProvider`
     //    one-shot. Tasks now go through the same Runtime / Agent
     //    execution chain as interactive chat: tool calls, file reads,
     //    permission requests are all real. `permission_request`
     //    causes the wrapper to abort the stream + return
     //    `status: 'waiting_for_permission'` with partial assistant
-    //    text â€?the runner persists that partial text and pauses the
+    //    text â€” the runner persists that partial text and pauses the
     //    scheduled_tasks row so the user can decide to re-run or
     //    abandon. No durable resume in v1.
-    // Codex P1 â€?earlier rev only forwarded prompt/sessionId/system/
+    // Codex P1 â€” earlier rev only forwarded prompt/sessionId/system/
     // workingDirectory to runClaudeHeadless. Result: every scheduled
-    // run was effectively a "new brain" â€?no SDK resume, no
+    // run was effectively a "new brain" â€” no SDK resume, no
     // conversationHistory, no sessionSummary, no per-session
     // runtime/provider pin. So the buddy heartbeat couldn't recall
     // what it last said, and a recurring task wouldn't follow up its
@@ -399,13 +400,13 @@ export async function runScheduledAgentTask(
     // task-bound session. Mirror chat/route.ts:434-666 here: load
     // session + history + summary, plumb sdk_session_id through, and
     // persist the new sdk_session_id back after a successful run.
-    // Lightweight imports first â€?these are needed by the invalidReason
+    // Lightweight imports first â€” these are needed by the invalidReason
     // gate below and must NOT be paid for on the heavy headless path
     // when we can short-circuit fast. mcp-loader / headless-claude
     // pull in transitive trees (claude-client, SDK shims, etc.) and
     // would push a "session has a deleted provider" run from the
     // synchronous gate that should take <50ms up to several hundred
-    // ms â€?long enough that timing-sensitive tests (run-event-link)
+    // ms â€” long enough that timing-sensitive tests (run-event-link)
     // see the row still in 'running' when they sample it after a 400ms
     // wait. The gate must always be fast.
     const {
@@ -418,11 +419,11 @@ export async function runScheduledAgentTask(
     const { resolveRuntimeForSession } = await import('./chat-runtime');
 
     const session = getSession(sessionId);
-    // session must exist by this point â€?ensureTaskBoundSession /
+    // session must exist by this point â€” ensureTaskBoundSession /
     // resolveBuddySessionId would have created or thrown above. We
     // still tolerate `undefined` defensively (DB row deletion races).
 
-    // Codex P2 â€?Phase 2 immunity gate, mirrored from
+    // Codex P2 â€” Phase 2 immunity gate, mirrored from
     // chat/route.ts:102-128. Without it, the runner falls through
     // raw `resolveProvider`'s env fallback when the session's stored
     // provider has been deleted, silently re-routing the run through
@@ -448,6 +449,10 @@ export async function runScheduledAgentTask(
       const reasonLabel =
         resolved.invalidReason === 'provider-missing'
           ? 'session provider no longer exists'
+          : resolved.invalidReason === 'credentials-unreadable'
+            ? 'session provider credential cannot be decrypted'
+            : resolved.invalidReason === 'credentials-missing'
+              ? 'session provider credential is missing'
           : resolved.invalidReason === 'model-missing'
             ? 'session model not available'
             : 'session runtime no longer compatible';
@@ -462,7 +467,7 @@ export async function runScheduledAgentTask(
     const effectiveProviderId =
       resolved.provider?.id || session?.provider_id || '';
 
-    // Heavy imports only on the healthy path â€?the invalidReason gate
+    // Heavy imports only on the healthy path â€” the invalidReason gate
     // above already returned for the deleted-provider case and we
     // never need these.
     const { runClaudeHeadless } = await import('./headless-claude');
@@ -475,7 +480,7 @@ export async function runScheduledAgentTask(
     // only wants servers with `${...}` env placeholders (the SDK loads
     // the rest via settingSources). Without this, headless runs only
     // saw the keyword-injected CodePilot built-ins, never the
-    // user-configured MCP servers â€?so the same prompt could behave
+    // user-configured MCP servers â€” so the same prompt could behave
     // differently in foreground vs scheduled.
     const mcpServers = predictNativeRuntime(effectiveProviderId)
       ? loadAllMcpServers()
@@ -505,7 +510,7 @@ export async function runScheduledAgentTask(
       _rowid: m._rowid,
     }));
 
-    // Codex P1 â€?heartbeat systemPrompt is now strict. Earlier rev
+    // Codex P1 â€” heartbeat systemPrompt is now strict. Earlier rev
     // gave the model a one-line instruction with no tool restrictions,
     // so the model would routinely fan out into list_tasks /
     // memory_recent / shell-`date` / Search across multiple steps.
@@ -528,10 +533,10 @@ export async function runScheduledAgentTask(
     ] as const;
     const systemPrompt = isHeartbeat
       ? `You are the user's assistant buddy running a background heartbeat check. STRICT RULES:\n` +
-        `1. HEARTBEAT.md is already in the prompt below â€?read it.\n` +
+        `1. HEARTBEAT.md is already in the prompt below â€” read it.\n` +
         `2. AT MOST ONE tool call. Allowed: codepilot_memory_recent (only if you genuinely need recent memory to interpret HEARTBEAT.md). Forbidden: ${HEARTBEAT_DISALLOWED_TOOLS.join(', ')}, any shell, any web.\n` +
         `3. If HEARTBEAT.md is empty or nothing needs the user's attention right now: respond with EXACTLY the literal string \`HEARTBEAT_OK\` and nothing else.\n` +
-        `4. Otherwise: write a SHORT (â‰? sentence) message about what needs attention. Do not invent items not grounded in HEARTBEAT.md.\n` +
+        `4. Otherwise: write a SHORT (â‰¤2 sentence) message about what needs attention. Do not invent items not grounded in HEARTBEAT.md.\n` +
         `Heartbeat must NOT introspect the scheduling system itself or invoke tools that have side effects on the user (notifications, scheduling, naming).`
       : `You are executing a scheduled task. Be concise and direct.\nTask name: ${task.name}\nCurrent time: ${new Date().toLocaleString()}`;
 
@@ -539,12 +544,12 @@ export async function runScheduledAgentTask(
       prompt,
       callScene: isHeartbeat ? 'assistant_heartbeat' : 'scheduled_task',
       sessionId,
-      // SDK session resume â€?when present, streamClaude continues the
+      // SDK session resume â€” when present, streamClaude continues the
       // existing SDK conversation instead of starting from scratch.
-      // Empty â†?fresh SDK session (which conversationHistory +
+      // Empty â†’ fresh SDK session (which conversationHistory +
       // sessionSummary below repopulate as fallback context).
       sdkSessionId: session?.sdk_session_id || undefined,
-      // Codex P2 â€?feed the resolved provider + model directly so the
+      // Codex P2 â€” feed the resolved provider + model directly so the
       // headless run uses the SAME destination chat/route.ts would
       // pick for an interactive turn. Falling back to streamClaude's
       // own raw resolver here would re-introduce the silent env
@@ -554,14 +559,14 @@ export async function runScheduledAgentTask(
       sessionProviderId: session?.provider_id || undefined,
       // Prefer upstream over alias (route.ts line 647 does the same)
       // so the SDK addresses the model the provider actually serves
-      // â€?third-party Anthropic-compat proxies sometimes only accept
+      // â€” third-party Anthropic-compat proxies sometimes only accept
       // the upstream id.
       model:
         resolved.upstreamModel ||
         resolved.model ||
         session?.model ||
         undefined,
-      // Per-session runtime pin from chat_sessions â€?the headline
+      // Per-session runtime pin from chat_sessions â€” the headline
       // immunity behaviour Phase 2 promised. ScheduledTask itself
       // doesn't carry runtime_pin; pinning lives on the task-bound
       // (or buddy) session row.
@@ -575,24 +580,24 @@ export async function runScheduledAgentTask(
       conversationHistory,
       sessionSummary: sessionSummaryData.summary || undefined,
       sessionSummaryBoundaryRowid: sessionSummaryData.boundaryRowid,
-      // Codex P1 â€?heartbeat MUST NOT carry external user MCP
+      // Codex P1 â€” heartbeat MUST NOT carry external user MCP
       // servers. claude-client also gates MCP registration on
       // agentMode='heartbeat' as a hard backstop, but cutting it
       // here too means the heartbeat path never even computes the
       // MCP map. Normal ai_task keeps full MCP access.
       mcpServers: isHeartbeat ? undefined : mcpServers,
-      // Codex P1 â€?agentMode tells claude-client to apply heartbeat
+      // Codex P1 â€” agentMode tells claude-client to apply heartbeat
       // restrictions: skip codepilot-notify/widget/media/cli-tools/
       // dashboard MCP registrations, drop project mcps, restrict
       // allowedTools to memory only, and add disallowedTools that
       // block dangerous SDK builtins (Bash/Edit/Write/etc.).
       agentMode: isHeartbeat ? 'heartbeat' : undefined,
-      // Default permission mode â€?agent will request permissions for
+      // Default permission mode â€” agent will request permissions for
       // destructive tools, which the headless wrapper translates into
       // `waiting_for_permission`. Read-only tools (Read / Glob / Grep)
       // proceed without prompting.
       permissionMode: 'default',
-      // Codex P1 â€?explicit per-tool timeout. claude-client's default
+      // Codex P1 â€” explicit per-tool timeout. claude-client's default
       // (toolTimeoutSeconds=0) means "no timeout"; in a background
       // task on a runtime that never returns from a tool, the tool
       // blocks the SDK indefinitely. Heartbeat: 5 min cap (its
@@ -605,7 +610,7 @@ export async function runScheduledAgentTask(
       // can see what the agent did from /settings/tasks.
       autoTrigger: false,
     },
-    // Codex P1 â€?consumer-side total / idle fuses. Heartbeat is
+    // Codex P1 â€” consumer-side total / idle fuses. Heartbeat is
     // intentionally tight because the prompt + disallowedTools keeps
     // the workload to <30s; if a heartbeat trips this, the prompt or
     // runtime is wrong, not the fuse.
@@ -634,11 +639,11 @@ export async function runScheduledAgentTask(
     if (headless.status === 'waiting_for_permission') {
       // Persist partial assistant text (with task_run_id) so the user
       // can see what the agent was about to do when it hit the
-      // permission gate. Empty assistantText is fine â€?message just
+      // permission gate. Empty assistantText is fine â€” message just
       // has the marker linkage and a placeholder body.
       const partialBody = trimmed.length > 0
         ? trimmed
-        : `(ç­‰å¾…æƒé™ï¼?{headless.pendingPermission?.toolName || 'å·¥å…·è°ƒç”¨'}ï¼‰`;
+        : `(ç­‰å¾…æƒé™ï¼š${headless.pendingPermission?.toolName || 'å·¥å…·è°ƒç”¨'}ï¼‰`;
       try {
         addMessage(sessionId, 'assistant', partialBody, undefined, { task_run_id: runId });
       } catch { /* best-effort */ }
@@ -657,7 +662,7 @@ export async function runScheduledAgentTask(
 
     if (headless.status === 'failed') {
       const errorMsg = headless.error || 'Headless stream failed';
-      // Codex follow-up â€?when the model produced output (typical for
+      // Codex follow-up â€” when the model produced output (typical for
       // the pseudo-tool-call-XML failure case where streamClaude said
       // 'done' cleanly but no tools fired), persist that output to
       // the chat session WITH a clear failure annotation so the user
@@ -694,7 +699,7 @@ export async function runScheduledAgentTask(
       return { runId, status: 'succeeded', silent: true, sessionId, result: trimmed };
     }
 
-    // Speak-up (heartbeat) or normal ai_task â†?write assistant message.
+    // Speak-up (heartbeat) or normal ai_task â†’ write assistant message.
     try {
       addMessage(sessionId, 'assistant', trimmed, undefined, { task_run_id: runId });
     } catch { /* best-effort */ }

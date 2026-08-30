@@ -21,7 +21,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { SpinnerGap, CaretDown, CaretUp, ArrowSquareOut, CheckCircle, XCircle, Warning } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import type { ProviderFormData } from "./ProviderForm";
 import type { QuickPreset } from "./provider-presets";
 import { QUICK_PRESETS } from "./provider-presets";
@@ -66,12 +66,12 @@ export function PresetConnectDialog({
   // Edit-mode flag: DB already has a stored key for this provider. When true
   // and apiKey is empty, the UI shows a "keep existing" placeholder and
   // test/save requests OMIT the apiKey field so the backend falls back to the
-  // stored value. This is the fix for #449 â?the old code shoved the masked
+  // stored value. This is the fix for #449 — the old code shoved the masked
   // key string into state and sent it back, which tried to auth with "***"
-  // against upstream APIs. See docs/exec-plans/active/v0.48-post-release-issues.md Â§5.5.
+  // against upstream APIs. See docs/exec-plans/active/v0.48-post-release-issues.md §5.5.
   const [hasStoredKey, setHasStoredKey] = useState(false);
   // Companion flag for an explicit "I want to clear the stored key" intent.
-  // Without this, users would have no way to delete a stored key â?the
+  // Without this, users would have no way to delete a stored key — the
   // hasStoredKey + empty input combination is unconditionally interpreted as
   // "keep existing". When clearStoredKey=true, save sends api_key="" so the
   // backend overwrites the stored value.
@@ -88,7 +88,7 @@ export function PresetConnectDialog({
   const [headersJson, setHeadersJson] = useState("{}");
   const [envOverridesJson, setEnvOverridesJson] = useState("");
   const [notes, setNotes] = useState("");
-  // Model mapping fields (sonnet/opus/haiku â?actual API model IDs)
+  // Model mapping fields (sonnet/opus/haiku → actual API model IDs)
   const [mapSonnet, setMapSonnet] = useState("");
   const [mapOpus, setMapOpus] = useState("");
   const [mapHaiku, setMapHaiku] = useState("");
@@ -98,7 +98,7 @@ export function PresetConnectDialog({
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; error?: { code: string; message: string; suggestion: string; recoveryActions?: Array<{ label: string; url?: string; action?: string }> } } | null>(null);
   const { t } = useTranslation();
-  const isZh = t('nav.chats') === 'å¯¹è¯';
+  const isZh = t('nav.chats') === '对话';
 
   // Unified auth-style transition. Both the dropdown selector and the
   // "smart recommend" helper link MUST go through this helper so edit-mode
@@ -117,12 +117,12 @@ export function PresetConnectDialog({
 
   // Whether the "Test connection" button can meaningfully run with the
   // current form state. Four cases:
-  //   1. Preset doesn't use api_key (Bedrock / Vertex / extra_env) â?always OK.
-  //   2. User typed a replacement key â?test with it directly.
-  //   3. Edit mode with an untouched stored key â?backend back-fills via providerId.
-  //   4. Edit mode with a pending clear and no replacement â?test would
+  //   1. Preset doesn't use api_key (Bedrock / Vertex / extra_env) → always OK.
+  //   2. User typed a replacement key → test with it directly.
+  //   3. Edit mode with an untouched stored key → backend back-fills via providerId.
+  //   4. Edit mode with a pending clear and no replacement → test would
   //      use the DB key that's about to be deleted, giving a misleading
-  //      success. Block it â?the user must either enter a new key or
+  //      success. Block it — the user must either enter a new key or
   //      undo the clear first. This is the Codex P2 clear-and-test
   //      defense; without it, clicking Test in the pending-clear state
   //      reports success with credentials the saved config won't have.
@@ -149,7 +149,7 @@ export function PresetConnectDialog({
       } catch { /* ignore */ }
       // #449 fix: in edit mode, send providerId so the backend can look up the
       // real key from DB when the user hasn't touched the placeholder. Omit
-      // apiKey entirely in that case â?never send the masked value.
+      // apiKey entirely in that case — never send the masked value.
       const body: Record<string, unknown> = {
         presetKey: preset?.key,
         baseUrl: baseUrl || preset?.base_url || '',
@@ -165,7 +165,7 @@ export function PresetConnectDialog({
       if (apiKey) {
         body.apiKey = apiKey;
       }
-      // If edit mode + empty apiKey + hasStoredKey â?body has providerId but
+      // If edit mode + empty apiKey + hasStoredKey → body has providerId but
       // no apiKey field, backend will back-fill from DB.
       const res = await fetch('/api/providers/test', {
         method: 'POST',
@@ -198,7 +198,7 @@ export function PresetConnectDialog({
     setClearStoredKey(false);
 
     if (isEdit && editProvider) {
-      // Edit mode â?pre-fill from existing provider
+      // Edit mode — pre-fill from existing provider
       setName(editProvider.name);
       setBaseUrl(editProvider.base_url);
       setExtraEnv(editProvider.extra_env || preset.extra_env);
@@ -218,7 +218,7 @@ export function PresetConnectDialog({
       // show a "keep existing" placeholder; test/save will omit the apiKey
       // field and backend back-fills from DB.
       if (!preset.fields.includes("api_key") && !editProvider.api_key) {
-        // Preset doesn't expose api_key field AND stored is empty â?pre-fill
+        // Preset doesn't expose api_key field AND stored is empty → pre-fill
         // from preset extra_env default (e.g. Ollama uses 'ollama' token).
         const presetEnv = (() => { try { return JSON.parse(preset.extra_env || '{}'); } catch { return {}; } })();
         const defaultToken = detected === 'auth_token'
@@ -268,14 +268,14 @@ export function PresetConnectDialog({
       const hasNotes = !!editProvider.notes;
       setShowAdvanced(hasModelMapping || hasExtraEnvBeyondAuth || !!hasHeaders || hasEnvOverrides || hasNotes);
     } else {
-      // Create mode â?reset to preset defaults
+      // Create mode — reset to preset defaults
       setBaseUrl(preset.base_url);
       setName(preset.name);
       setExtraEnv(preset.extra_env);
       // Pre-fill the model-name field with the preset's default model id so a
       // preset that requires a user-specified model (e.g. MiMo) shows its
       // current model (editable) rather than an empty box (#577). Harmless for
-      // presets without the model_names field â?the value is only read on save
+      // presets without the model_names field — the value is only read on save
       // when that field is exposed.
       setModelName(preset.defaultModelId || "");
       // Use authStyle directly from preset (single source of truth)
@@ -319,7 +319,7 @@ export function PresetConnectDialog({
     // just for a clearer UX.
     if (preset.protocol === 'anthropic' && !preset.base_url && !baseUrl.trim()) {
       setError(isZh
-        ? 'è¯·å¡«å?Base URLï¼å®æ?API ä½¿ç¨ https://api.anthropic.comï¼?
+        ? '请填写 Base URL（官方 API 使用 https://api.anthropic.com）'
         : 'Please specify a base URL (use https://api.anthropic.com for the official API)');
       return;
     }
@@ -332,7 +332,7 @@ export function PresetConnectDialog({
       && !baseUrl.trim()
     ) {
       setError(isZh
-        ? 'è¯·å¡«å?Base URLï¼çç©ºä¼åè½å°å®æ¹æå¡ï¼æ æ³ä½ä¸ºç¬¬ä¸æ¹çæï¼'
+        ? '请填写 Base URL（留空会回落到官方服务，无法作为第三方生效）'
         : 'Please specify a base URL (leaving this blank falls back to the official endpoint)');
       return;
     }
@@ -340,10 +340,10 @@ export function PresetConnectDialog({
     // If auth style changed in edit mode, require a new key.
     // hasStoredKey is cleared when the user switches away from the stored
     // style (see auth style onValueChange), so checking !apiKey alone is
-    // sufficient â?masked values no longer enter state.
+    // sufficient — masked values no longer enter state.
     if (isEdit && authStyle !== initialAuthStyle && !apiKey) {
       setError(isZh
-        ? 'åæ¢è®¤è¯æ¹å¼åéè¦éæ°è¾å¥å¯é?
+        ? '切换认证方式后需要重新输入密钥'
         : 'Please re-enter the key after changing auth style');
       return;
     }
@@ -373,7 +373,7 @@ export function PresetConnectDialog({
     // In edit mode, preserve existing role_models_json unless the user modifies mapping fields
     let roleModelsJson = (isEdit && editProvider?.role_models_json) ? editProvider.role_models_json : "{}";
 
-    // Model mapping (sonnet/opus/haiku â?actual API model IDs)
+    // Model mapping (sonnet/opus/haiku → actual API model IDs)
     // Merge into existing roleModels to preserve roles not shown in this preset.
     // If the preset exposes these fields and user cleared them all, remove those keys.
     if (preset.fields.includes("model_mapping")) {
@@ -382,7 +382,7 @@ export function PresetConnectDialog({
         // If user fills any, all 3 are required
         if (!mapSonnet.trim() || !mapOpus.trim() || !mapHaiku.trim()) {
           setError(isZh
-            ? 'æ¨¡åæ å°éè¦åæ¶å¡«å?SonnetãOpusãHaiku ä¸ä¸ªæ¨¡ååç§°'
+            ? '模型映射需要同时填写 Sonnet、Opus、Haiku 三个模型名称'
             : 'Model mapping requires all 3 model names (Sonnet, Opus, Haiku)');
           return;
         }
@@ -394,7 +394,7 @@ export function PresetConnectDialog({
           haiku: mapHaiku.trim(),
         });
       } else {
-        // All cleared â?remove these keys from existing
+        // All cleared — remove these keys from existing
         const existing = (() => { try { return JSON.parse(roleModelsJson); } catch { return {}; } })();
         delete existing.sonnet;
         delete existing.opus;
@@ -403,7 +403,7 @@ export function PresetConnectDialog({
       }
     }
 
-    // Inject model name into role_models_json â?merge, don't replace.
+    // Inject model name into role_models_json — merge, don't replace.
     // If the preset exposes model_names and user cleared it, remove the default key.
     if (preset.fields.includes("model_names")) {
       const existing = (() => { try { return JSON.parse(roleModelsJson); } catch { return {}; } })();
@@ -420,9 +420,9 @@ export function PresetConnectDialog({
     // copy in zh/en. Field labels go through `t(...)` so the error reads
     // as "<the field you just looked at> must be valid JSON".
     // Headers and Env Overrides are only saved on the edit path
-    // (`env_overrides_json: isEdit ? â?: undefined`), so we only validate
+    // (`env_overrides_json: isEdit ? … : undefined`), so we only validate
     // them when isEdit. envOverridesJson was historically missing from
-    // this list â?invalid JSON would silently slip past the front end and
+    // this list — invalid JSON would silently slip past the front end and
     // surface as a runtime parse failure later.
     const jsonFields: Array<[TranslationKey, string]> = [
       ['provider.extraEnvVars' as TranslationKey, finalExtraEnv],
@@ -444,13 +444,14 @@ export function PresetConnectDialog({
     try {
       // #449 fix: three distinct save intents for api_key in edit mode.
       //
-      //   apiKey non-empty         â?"new value" â?always wins.
-      //   hasStoredKey, clearStoredKey=true â?"clear it" â?send "" so the
+      //   apiKey non-empty         → "new value" — always wins.
+      //   hasStoredKey, clearStoredKey=true → "clear it" — send "" so the
       //       backend overwrites the stored value. updateProvider()'s
       //       `?? existing.api_key` only falls back on nullish, so "" wins.
-      //   hasStoredKey, clearStoredKey=false â?"keep existing" â?omit the
-      //       field entirely. undefined â?JSON.stringify drops the key â?      //       PUT body has no api_key â?updateProvider() preserves DB value.
-      //   create mode / no stored key â?pass apiKey as-is (possibly "").
+      //   hasStoredKey, clearStoredKey=false → "keep existing" — omit the
+      //       field entirely. undefined → JSON.stringify drops the key →
+      //       PUT body has no api_key → updateProvider() preserves DB value.
+      //   create mode / no stored key → pass apiKey as-is (possibly "").
       const apiKeyForSave: string | undefined = (() => {
         if (apiKey) return apiKey;
         if (isEdit && hasStoredKey && clearStoredKey) return "";
@@ -495,17 +496,17 @@ export function PresetConnectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Meta info panel â?API key link, billing badge, notes */}
+        {/* Meta info panel — API key link, billing badge, notes */}
         {preset.meta && (
           <div className="space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               {preset.meta.billingModel && (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
-                  {preset.meta.billingModel === 'pay_as_you_go' ? (isZh ? 'æéä»è´¹' : 'Pay-as-you-go')
+                  {preset.meta.billingModel === 'pay_as_you_go' ? (isZh ? '按量付费' : 'Pay-as-you-go')
                     : preset.meta.billingModel === 'coding_plan' ? 'Coding Plan'
                     : preset.meta.billingModel === 'token_plan' ? 'Token Plan'
-                    : preset.meta.billingModel === 'free' ? (isZh ? 'åè´¹' : 'Free')
-                    : preset.meta.billingModel === 'self_hosted' ? (isZh ? 'èªæç®? : 'Self-hosted')
+                    : preset.meta.billingModel === 'free' ? (isZh ? '免费' : 'Free')
+                    : preset.meta.billingModel === 'self_hosted' ? (isZh ? '自托管' : 'Self-hosted')
                     : preset.meta.billingModel}
                 </span>
               )}
@@ -513,27 +514,27 @@ export function PresetConnectDialog({
                 <a href={preset.meta.apiKeyUrl} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline">
                   <ArrowSquareOut size={12} />
-                  {isZh ? 'è·å API Key' : 'Get API Key'}
+                  {isZh ? '获取 API Key' : 'Get API Key'}
                 </a>
               )}
               {preset.meta.docsUrl && (
                 <a href={preset.meta.docsUrl} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline">
                   <ArrowSquareOut size={12} />
-                  {isZh ? 'å®æ¹ææ¡£' : 'Official docs'}
+                  {isZh ? '官方文档' : 'Official docs'}
                 </a>
               )}
               {preset.meta.purchaseUrl && (
                 <a href={preset.meta.purchaseUrl} target="_blank" rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline">
                   <ArrowSquareOut size={12} />
-                  {isZh ? 'è´­ä¹°æç®¡çå¥é¤? : 'Purchase or manage plan'}
+                  {isZh ? '购买或管理套餐' : 'Purchase or manage plan'}
                 </a>
               )}
               <a href={isZh ? 'https://www.codepilot.sh/zh/docs/providers' : 'https://www.codepilot.sh/docs/providers'} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline">
                 <ArrowSquareOut size={12} />
-                {isZh ? 'éç½®æå' : 'Setup Guide'}
+                {isZh ? '配置指南' : 'Setup Guide'}
               </a>
             </div>
             {(isZh ? (preset.meta.notesZh ?? preset.meta.notes) : preset.meta.notes)?.length ? (
@@ -550,7 +551,7 @@ export function PresetConnectDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 min-w-0 mt-6">
-          {/* Name field â?custom/thirdparty */}
+          {/* Name field — custom/thirdparty */}
           {preset.fields.includes("name") && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">{t('provider.name')}</Label>
@@ -609,16 +610,16 @@ export function PresetConnectDialog({
                   }}
                   placeholder={
                     clearStoredKey
-                      ? (isZh ? "ä¿å­åå°æ¸ç©ºå·²å­å¯é¥" : "Stored key will be cleared on save")
+                      ? (isZh ? "保存后将清空已存密钥" : "Stored key will be cleared on save")
                       : hasStoredKey
-                      ? (isZh ? "å·²ä¿å­ï¼çç©ºåæ²¿ç¨åå¯é¥" : "Saved â?leave blank to keep existing")
+                      ? (isZh ? "已保存，留空则沿用原密钥" : "Saved — leave blank to keep existing")
                       : (authStyle === "auth_token" ? "token-..." : "sk-...")
                   }
                   className="text-sm font-mono flex-1"
                   autoFocus
                 />
               </div>
-              {/* Explicit "clear stored key" action â?only visible in edit
+              {/* Explicit "clear stored key" action — only visible in edit
                   mode when a stored key exists and the user hasn't typed a
                   replacement. Without this, hasStoredKey + empty input was
                   always interpreted as "keep existing", leaving users with
@@ -628,7 +629,7 @@ export function PresetConnectDialog({
                   {clearStoredKey ? (
                     <>
                       <span className="text-amber-500">
-                        {isZh ? "ä¿å­åå°æ¸ç©ºå·²å­å¯é¥ã? : "The stored key will be cleared on save. "}
+                        {isZh ? "保存后将清空已存密钥。" : "The stored key will be cleared on save. "}
                       </span>
                       <Button
                         type="button"
@@ -636,7 +637,7 @@ export function PresetConnectDialog({
                         className="h-auto p-0 text-[11px] text-amber-500 underline hover:no-underline"
                         onClick={() => setClearStoredKey(false)}
                       >
-                        {isZh ? "æ¤é" : "Undo"}
+                        {isZh ? "撤销" : "Undo"}
                       </Button>
                     </>
                   ) : (
@@ -646,7 +647,7 @@ export function PresetConnectDialog({
                       className="h-auto p-0 text-[11px] text-muted-foreground underline hover:no-underline"
                       onClick={() => setClearStoredKey(true)}
                     >
-                      {isZh ? "æ¸é¤å·²å­å¯é¥" : "Clear stored key"}
+                      {isZh ? "清除已存密钥" : "Clear stored key"}
                     </Button>
                   )}
                 </p>
@@ -657,7 +658,7 @@ export function PresetConnectDialog({
                 return inferred && inferred !== authStyle ? (
                   <p className="text-[11px] text-amber-500">
                     {isZh
-                      ? `æ£æµå°æ­?URL éå¸¸ä½¿ç¨ ${inferred === 'auth_token' ? 'Auth Token' : 'API Key'} è®¤è¯æ¹å¼`
+                      ? `检测到此 URL 通常使用 ${inferred === 'auth_token' ? 'Auth Token' : 'API Key'} 认证方式`
                       : `This URL typically uses ${inferred === 'auth_token' ? 'Auth Token' : 'API Key'} authentication`}
                     {' '}
                     <Button
@@ -665,7 +666,7 @@ export function PresetConnectDialog({
                       className="h-auto p-0 text-[11px] text-amber-500 underline hover:no-underline"
                       onClick={() => applyAuthStyleChange(inferred)}
                     >
-                      {isZh ? 'åæ¢' : 'Switch'}
+                      {isZh ? '切换' : 'Switch'}
                     </Button>
                   </p>
                 ) : null;
@@ -673,7 +674,7 @@ export function PresetConnectDialog({
             </div>
           )}
 
-          {/* Model name â?for providers that need user-specified model */}
+          {/* Model name — for providers that need user-specified model */}
           {preset.fields.includes("model_names") && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">{t('provider.modelName' as TranslationKey)}</Label>
@@ -685,23 +686,23 @@ export function PresetConnectDialog({
               />
               <p className="text-[11px] text-muted-foreground">
                 {isZh
-                  ? 'å¨æå¡åæ§å¶å°éç½®çæ¨¡ååç§°ï¼å¯æ¹ä¸ºä½ è´¦å·å®éå¯ç¨çåå·'
-                  : 'Model name as configured in the provider console â?change it to the model your account uses'}
+                  ? '在服务商控制台配置的模型名称，可改为你账号实际可用的型号'
+                  : 'Model name as configured in the provider console — change it to the model your account uses'}
               </p>
             </div>
           )}
 
-          {/* Model mapping â?surfaced inline (was previously buried behind
+          {/* Model mapping — surfaced inline (was previously buried behind
               "Advanced options"). Only `anthropic-thirdparty` carries this
-              field; flagged as éå¡« since defaults work for most users. */}
+              field; flagged as 选填 since defaults work for most users. */}
           {preset.fields.includes("model_mapping") && (
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
-                {isZh ? 'æ¨¡ååç§°æ å°ï¼éå¡«ï¼? : 'Model name mapping (optional)'}
+                {isZh ? '模型名称映射（选填）' : 'Model name mapping (optional)'}
               </Label>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 {isZh
-                  ? 'å¦ææå¡åä½¿ç¨ä¸åçæ¨¡ååç§°ï¼å¦ claude-sonnet-4-6ï¼ï¼å¨æ­¤æ å°ãçç©ºåä½¿ç¨é»è®¤åç§°ï¼sonnet / opus / haikuï¼ã?
+                  ? '如果服务商使用不同的模型名称（如 claude-sonnet-4-6），在此映射。留空则使用默认名称（sonnet / opus / haiku）。'
                   : 'Map model names if the provider uses different IDs (e.g. claude-sonnet-4-6). Leave empty to use defaults (sonnet / opus / haiku).'}
               </p>
               <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 items-center">
@@ -730,7 +731,7 @@ export function PresetConnectDialog({
             </div>
           )}
 
-          {/* Advanced options â?edit-mode only.
+          {/* Advanced options — edit-mode only.
               Create mode has nothing to show after the extra_env JSON input
               was removed and model_mapping was hoisted out, so the toggle
               would expand into emptiness; hide it entirely. */}
@@ -801,9 +802,9 @@ export function PresetConnectDialog({
               <div className={`rounded-md px-3 py-2 text-sm ${bgClass}`}>
                 <div className="flex items-center gap-2">
                   {testResult.success
-                    ? <><CheckCircle size={16} className="text-emerald-500 shrink-0" />{/* lint-allow-raw-color */}<span className="text-emerald-600 dark:text-emerald-400">{/* lint-allow-raw-color */}{isZh ? 'è¿æ¥æå' : 'Connection successful'}</span></>
+                    ? <><CheckCircle size={16} className="text-emerald-500 shrink-0" />{/* lint-allow-raw-color */}<span className="text-emerald-600 dark:text-emerald-400">{/* lint-allow-raw-color */}{isZh ? '连接成功' : 'Connection successful'}</span></>
                     : isSkipped
-                      ? <><Warning size={16} className="text-muted-foreground shrink-0" /><span className="text-muted-foreground">{isZh ? 'æ­¤æå¡åç±»åæ æ³è¿è¡è¿æ¥æµè¯ï¼è¯·ä¿å­éç½®ååéæ¶æ¯éªè¯? : 'Connection test not available for this provider type'}</span></>
+                      ? <><Warning size={16} className="text-muted-foreground shrink-0" /><span className="text-muted-foreground">{isZh ? '此服务商类型无法进行连接测试，请保存配置后发送消息验证' : 'Connection test not available for this provider type'}</span></>
                       : <><XCircle size={16} className="text-destructive shrink-0" /><span className="text-destructive">{testResult.error?.message || 'Connection failed'}</span></>
                   }
                 </div>
@@ -842,14 +843,14 @@ export function PresetConnectDialog({
                 disabled={saving || testing || !canTest}
                 className="gap-1.5"
               >
-                {testing ? <SpinnerGap size={14} className="animate-spin" /> : <BuckyballIcon name="diagnose" size="sm" aria-hidden />}
-                {testing ? (isZh ? 'æµè¯ä¸?..' : 'Testing...') : (isZh ? 'æµè¯è¿æ¥' : 'Test')}
+                {testing ? <SpinnerGap size={14} className="animate-spin" /> : <CodePilotIcon name="diagnose" size="sm" aria-hidden />}
+                {testing ? (isZh ? '测试中...' : 'Testing...') : (isZh ? '测试连接' : 'Test')}
               </Button>
               <Button
                 type="submit"
                 disabled={saving || testing || !canTest}
                 className="gap-2"
-                title={!canTest ? (isZh ? 'è¯·åå¡«å API Key åè¿æ? : 'Fill the API Key before connecting') : undefined}
+                title={!canTest ? (isZh ? '请先填写 API Key 再连接' : 'Fill the API Key before connecting') : undefined}
               >
                 {saving && <SpinnerGap size={16} className="animate-spin" />}
                 {saving ? t('provider.saving') : isEdit ? t('provider.update') : t('provider.connect')}

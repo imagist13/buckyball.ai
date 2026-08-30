@@ -1,14 +1,14 @@
 /**
- * Phase 5.2 (2026-06-02) �?Windows provider-edit "two close buttons" overlap.
+ * Phase 5.2 (2026-06-02) — Windows provider-edit "two close buttons" overlap.
  *
  * ProviderForm renders <DialogContent fullscreen> (fixed inset-0). The
  * fullscreen close button sat at top-5 / right-5 (20px), which on Windows lands
  * inside the system Window Controls Overlay band (electron/main.ts sets
- * titleBarOverlay height 44) �?right beside the OS close button ("两个 X 太近").
+ * titleBarOverlay height 44) — right beside the OS close button ("两个 X 太近").
  *
  * Fix: a --platform-titlebar-safe-area token (0 off Windows, 44px on win32
  * electron) nudges the fullscreen close button below the WCO band. macOS
- * (traffic lights are top-LEFT) and the web shell keep 0 �?no change.
+ * (traffic lights are top-LEFT) and the web shell keep 0 → no change.
  *
  * Source/config pins only; the real Windows top-bar visual is a Phase 7 smoke
  * item (can't be verified off a Windows machine).
@@ -24,7 +24,7 @@ const globalsCss = readFileSync(path.join(root, 'src/app/globals.css'), 'utf8');
 const mainSrc = readFileSync(path.join(root, 'electron/main.ts'), 'utf8');
 const providerFormSrc = readFileSync(path.join(root, 'src/components/settings/ProviderForm.tsx'), 'utf8');
 
-describe('Phase 5.2 �?fullscreen dialog close button clears the Windows WCO', () => {
+describe('Phase 5.2 — fullscreen dialog close button clears the Windows WCO', () => {
   it('the fullscreen close button offsets its top by the titlebar safe-area token', () => {
     assert.match(
       dialogSrc,
@@ -33,7 +33,7 @@ describe('Phase 5.2 �?fullscreen dialog close button clears the Windows WCO', (
     );
   });
 
-  it('the non-fullscreen (centered) close button is unchanged �?stays top-4, no token', () => {
+  it('the non-fullscreen (centered) close button is unchanged — stays top-4, no token', () => {
     assert.match(dialogSrc, /"top-4 right-4 rounded-xs/);
   });
 

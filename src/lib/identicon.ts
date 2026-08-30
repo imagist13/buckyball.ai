@@ -8,7 +8,7 @@
 
 /**
  * Color palette for assistant avatars.
- * Derived from buckyball.ai's OKLCH primary color family.
+ * Derived from CodePilot's OKLCH primary color family.
  */
 export const AVATAR_COLORS = [
   '#6C5CE7', // purple-blue (primary)
@@ -20,7 +20,7 @@ export const AVATAR_COLORS = [
 
 /**
  * Available avatar variants from boring-avatars.
- * 'beam' is the default â?clean, geometric, friendly.
+ * 'beam' is the default — clean, geometric, friendly.
  */
 export type AvatarVariant = 'marble' | 'beam' | 'pixel' | 'sunset' | 'ring' | 'bauhaus';
 

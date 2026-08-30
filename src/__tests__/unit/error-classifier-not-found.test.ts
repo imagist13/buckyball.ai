@@ -19,4 +19,31 @@ describe('error classifier not-found responsibility boundary', () => {
       'MODEL_NOT_AVAILABLE',
     );
   });
+
+  it('separates OS process denial from missing binaries and provider authorization', () => {
+    for (const code of ['EPERM', 'EACCES']) {
+      const denied = Object.assign(new Error(`spawn claude ${code}`), { code });
+      const result = classifyError({ error: denied });
+      assert.equal(result.category, 'EXECUTION_PERMISSION_DENIED');
+      assert.equal(result.retryable, false);
+    }
+
+    for (const code of ['EPERM', 'EACCES']) {
+      const productFault = Object.assign(new Error(`rename database backup failed: ${code}`), { code });
+      assert.equal(
+        classifyError({ error: productFault }).category,
+        'UNKNOWN',
+        'a bare filesystem errno is a product fault unless the text proves spawn/exec denial',
+      );
+    }
+
+    assert.equal(
+      classifyError({ error: new Error('spawn /usr/local/bin/claude operation not permitted') }).category,
+      'EXECUTION_PERMISSION_DENIED',
+    );
+    assert.equal(
+      classifyError({ error: new Error('403 permission denied by provider') }).category,
+      'AUTH_FORBIDDEN',
+    );
+  });
 });

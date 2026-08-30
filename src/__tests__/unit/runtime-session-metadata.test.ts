@@ -1,11 +1,11 @@
 /**
- * Phase 0.5 Slice A guardrail â€?Session / Tab / Panel state must only
+ * Phase 0.5 Slice A guardrail â€” Session / Tab / Panel state must only
  * carry the canonical `RuntimeSessionRef` shape (runtimeId + opaque
  * token + adapter-private metadata).
  *
  * Concrete runtime-side identifiers (Claude SDK session id, future
  * Codex thread id, Native internal state) must live inside
- * `RuntimeSessionRef.metadata` (adapter-owned namespace) â€?never as
+ * `RuntimeSessionRef.metadata` (adapter-owned namespace) â€” never as
  * top-level fields on the chat session row, the workspace Tab
  * metadata, the PreviewSource union, or the panel state.
  *

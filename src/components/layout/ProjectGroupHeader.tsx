@@ -7,7 +7,7 @@ import {
   DotsThree,
   ArrowSquareOut,
 } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -89,7 +89,7 @@ export function ProjectGroupHeader({
   };
 
   const handleCopyFolderPath = () => {
-    // v11 fix â?see lib/clipboard.ts for why fire-and-forget writeText
+    // v11 fix — see lib/clipboard.ts for why fire-and-forget writeText
     // fails in Electron renderers after a popup menu loses focus.
     void copyWithToast({ text: workingDirectory, t });
   };
@@ -105,7 +105,7 @@ export function ProjectGroupHeader({
               onCreateSession(event as unknown as React.MouseEvent)
             }
           >
-            <BuckyballIcon name="edit" size="sm" aria-hidden />
+            <CodePilotIcon name="edit" size="sm" aria-hidden />
             <span>{t('chatList.newConversation')}</span>
           </ContextMenuItem>
           <ContextMenuSeparator />
@@ -114,7 +114,7 @@ export function ProjectGroupHeader({
             <span>{t('chatList.openFolder' as TranslationKey)}</span>
           </ContextMenuItem>
           <ContextMenuItem onSelect={handleCopyFolderPath}>
-            <BuckyballIcon name="copy" size="sm" aria-hidden />
+            <CodePilotIcon name="copy" size="sm" aria-hidden />
             <span>{t('chatList.copyFolderPath' as TranslationKey)}</span>
           </ContextMenuItem>
           {onRemoveProject && !isWorkspace && (
@@ -139,7 +139,7 @@ export function ProjectGroupHeader({
       "flex items-center gap-0.5 transition-opacity",
       showActions ? "opacity-100" : "opacity-0 pointer-events-none"
     )}>
-      {/* New chat button â?a "åæ°å¯¹è¯" pencil/compose icon (clearer than a
+      {/* New chat button — a "写新对话" pencil/compose icon (clearer than a
           bare +, which read ambiguously as "add what?"). */}
       <Button
         variant="ghost"
@@ -149,7 +149,7 @@ export function ProjectGroupHeader({
         onClick={onCreateSession}
         title={t('chatList.newConversation')}
       >
-        <BuckyballIcon name="edit" size="sm" aria-hidden />
+        <CodePilotIcon name="edit" size="sm" aria-hidden />
       </Button>
       {/* Three-dot menu */}
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
@@ -173,7 +173,7 @@ export function ProjectGroupHeader({
             <span>{t('chatList.openFolder' as TranslationKey)}</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleCopyFolderPath}>
-            <BuckyballIcon name="copy" size="sm" aria-hidden />
+            <CodePilotIcon name="copy" size="sm" aria-hidden />
             <span>{t('chatList.copyFolderPath' as TranslationKey)}</span>
           </DropdownMenuItem>
           {onRemoveProject && !isWorkspace && (
@@ -266,9 +266,9 @@ export function ProjectGroupHeader({
         )
       )}
       {isCollapsed ? (
-        <BuckyballIcon name="folder" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
+        <CodePilotIcon name="folder" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
       ) : (
-        <BuckyballIcon name="folder_open" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
+        <CodePilotIcon name="folder_open" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
       )}
       <span className="flex-1 truncate text-[13px] font-normal text-sidebar-foreground/70">
         {displayName}

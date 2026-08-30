@@ -68,20 +68,20 @@ function reactivateProviders(ids: string[]) {
 
 // ── Suite 1: SDK availability with env vars ────────────────────
 
-describe('sdkRuntime.isAvailable() �?env var paths', () => {
+describe('sdkRuntime.isAvailable() — env var paths', () => {
   beforeEach(() => saveEnv());
   afterEach(() => restoreEnv());
 
-  it('ANTHROPIC_API_KEY env �?credential check passes', async () => {
+  it('ANTHROPIC_API_KEY env → credential check passes', async () => {
     clearAnthropicEnv();
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
     const { sdkRuntime } = await import('@/lib/runtime/sdk-runtime');
     const result = sdkRuntime.isAvailable();
-    // true if CLI exists, false if not �?but credential branch is exercised either way
+    // true if CLI exists, false if not — but credential branch is exercised either way
     if (result) assert.equal(result, true);
   });
 
-  it('ANTHROPIC_AUTH_TOKEN env �?credential check passes', async () => {
+  it('ANTHROPIC_AUTH_TOKEN env → credential check passes', async () => {
     clearAnthropicEnv();
     process.env.ANTHROPIC_AUTH_TOKEN = 'test-auth-token';
     const { sdkRuntime } = await import('@/lib/runtime/sdk-runtime');
@@ -89,7 +89,7 @@ describe('sdkRuntime.isAvailable() �?env var paths', () => {
     if (result) assert.equal(result, true);
   });
 
-  it('legacy DB anthropic_auth_token �?credential check passes', async () => {
+  it('legacy DB anthropic_auth_token → credential check passes', async () => {
     clearAnthropicEnv();
     setSetting('anthropic_auth_token', 'test-legacy-token');
     const { sdkRuntime } = await import('@/lib/runtime/sdk-runtime');
@@ -101,7 +101,7 @@ describe('sdkRuntime.isAvailable() �?env var paths', () => {
 
 // ── Suite 2: SDK availability with DB providers ────────────────
 
-describe('sdkRuntime.isAvailable() �?DB provider paths', () => {
+describe('sdkRuntime.isAvailable() — DB provider paths', () => {
   let deactivated: string[] = [];
 
   beforeEach(() => {
@@ -118,7 +118,7 @@ describe('sdkRuntime.isAvailable() �?DB provider paths', () => {
     restoreEnv();
   });
 
-  it('active DB provider with api_key �?available (getActiveProvider path)', async () => {
+  it('active DB provider with api_key → available (getActiveProvider path)', async () => {
     createProvider({
       name: '__test_sdk_anthropic',
       provider_type: 'anthropic',
@@ -151,20 +151,20 @@ describe('sdkRuntime.isAvailable() �?DB provider paths', () => {
     assert.equal(typeof result, 'boolean'); // depends on CLI binary existence
   });
 
-  it('no active providers + no env creds �?depends only on CLI binary', async () => {
+  it('no active providers + no env creds → depends only on CLI binary', async () => {
     // isAvailable() now only checks CLI binary existence.
     // Auth is managed by CLI itself (OAuth session, etc.) and fails at runtime.
     // This test verifies the check doesn't crash with empty DB/env state.
     const { sdkRuntime } = await import('@/lib/runtime/sdk-runtime');
     const result = sdkRuntime.isAvailable();
-    // Result depends on whether CLI binary exists on this machine �?both are valid
+    // Result depends on whether CLI binary exists on this machine — both are valid
     assert.equal(typeof result, 'boolean');
   });
 });
 
 // ── Suite 3: Announcement DB persistence ───────────────────────
 
-describe('Announcement dismiss �?real DB persistence', () => {
+describe('Announcement dismiss — real DB persistence', () => {
   const ANNOUNCEMENT_KEY = 'codepilot:announcement:v0.48-agent-engine';
   let savedValue: string | undefined;
 
@@ -191,7 +191,7 @@ describe('Announcement dismiss �?real DB persistence', () => {
 
 // ── Suite 4: Announcement API whitelist ────────────────────────
 
-describe('Announcement dismiss �?API route whitelist', () => {
+describe('Announcement dismiss — API route whitelist', () => {
   // Tests that the settings/app route handler accepts the announcement key.
   // This is the exact regression that was fixed (key missing from ALLOWED_KEYS).
 
@@ -206,7 +206,7 @@ describe('Announcement dismiss �?API route whitelist', () => {
     );
     assert.ok(
       routeSource.includes('codepilot:announcement:v0.48-agent-engine'),
-      'ALLOWED_KEYS must include the announcement dismiss key �?' +
+      'ALLOWED_KEYS must include the announcement dismiss key — ' +
       'without it, PUT silently drops the key and the dialog reappears on restart',
     );
   });

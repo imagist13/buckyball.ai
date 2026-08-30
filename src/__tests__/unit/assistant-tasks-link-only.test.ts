@@ -1,5 +1,5 @@
 /**
- * v9 â†?v12 retirement contract for `Settings â†?Assistant`'s scheduled-task
+ * v9 â†’ v12 retirement contract for `Settings â†’ Assistant`'s scheduled-task
  * surface.
  *
  * Phase 3 IA evolution:
@@ -8,7 +8,7 @@
  *     inline list as a transitional view.
  *   - v9: inline list + delete button retired from Assistant page;
  *     replaced with a single SettingsCard linking to
- *     `/settings/tasks?source=assistant` ("X scheduled tasks â†?view
+ *     `/settings/tasks?source=assistant` ("X scheduled tasks â†’ view
  *     in Settings Â· Tasks").
  *   - v12: even the link card retired. Reasoning: the global Tasks
  *     entry is already reachable from the Settings sidebar nav, and a
@@ -45,7 +45,7 @@ const EN_SRC = readFileSync(
 
 /**
  * Strip line + block comments so retirement rationale we leave in the
- * source ("v12 â€?Scheduled tasks block removed entirelyâ€?) doesn't
+ * source ("v12 â€” Scheduled tasks block removed entirelyâ€¦") doesn't
  * trip the negative assertions below. Order = lines first, then
  * blocks, sharing the gotcha protection used by other repo-wide grep
  * tests (a `/*` inside a line comment must be removed before the
@@ -63,12 +63,12 @@ const SRC_NO_COMMENTS = stripComments(SRC);
 const ZH_NO_COMMENTS = stripComments(ZH_SRC);
 const EN_NO_COMMENTS = stripComments(EN_SRC);
 
-describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 retirement)', () => {
+describe('Settings â†’ Assistant must NOT render any scheduled-task surface (v12 retirement)', () => {
   it('does not iterate `tasks.map(...)` to render rows (v9 invariant retained)', () => {
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /\btasks\.map\s*\(/,
-      'AssistantWorkspaceSection must not iterate `tasks.map(...)` â€?full list lives in /settings/tasks',
+      'AssistantWorkspaceSection must not iterate `tasks.map(...)` â€” full list lives in /settings/tasks',
     );
   });
 
@@ -79,12 +79,12 @@ describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /\buseState\s*<\s*ScheduledTask\[\]\s*>/,
-      'AssistantWorkspaceSection must not declare `useState<ScheduledTask[]>(...)` â€?the v12 retirement removed the only consumer',
+      'AssistantWorkspaceSection must not declare `useState<ScheduledTask[]>(...)` â€” the v12 retirement removed the only consumer',
     );
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /\bsetTasks\s*\(/,
-      'AssistantWorkspaceSection must not call `setTasks(...)` â€?the tasks state is retired',
+      'AssistantWorkspaceSection must not call `setTasks(...)` â€” the tasks state is retired',
     );
   });
 
@@ -92,7 +92,7 @@ describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /\bScheduledTask\b/,
-      'AssistantWorkspaceSection must not import or reference the ScheduledTask type â€?the v12 retirement removed the last consumer',
+      'AssistantWorkspaceSection must not import or reference the ScheduledTask type â€” the v12 retirement removed the last consumer',
     );
   });
 
@@ -100,7 +100,7 @@ describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /\bhandleDeleteTask\b/,
-      'handleDeleteTask must not be reintroduced in AssistantWorkspaceSection â€?task deletion is owned by Settings â†?Tasks',
+      'handleDeleteTask must not be reintroduced in AssistantWorkspaceSection â€” task deletion is owned by Settings â†’ Tasks',
     );
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
@@ -113,11 +113,11 @@ describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /import[^;]*\bTrash\b[^;]*from\s*['"]@\/components\/ui\/icon['"]/,
-      'AssistantWorkspaceSection must not import Trash â€?the only consumer (per-row delete glyph) was retired in v9',
+      'AssistantWorkspaceSection must not import Trash â€” the only consumer (per-row delete glyph) was retired in v9',
     );
   });
 
-  it('does not navigate to the global Tasks page from this component (v12 â€?even the link card is gone)', () => {
+  it('does not navigate to the global Tasks page from this component (v12 â€” even the link card is gone)', () => {
     // v9 added a `router.push('/settings/tasks?source=assistant')`
     // link card; v12 removed it. This assertion catches an accidental
     // re-introduction without forcing the test author to first
@@ -125,7 +125,7 @@ describe('Settings â†?Assistant must NOT render any scheduled-task surface (v12 
     assert.doesNotMatch(
       SRC_NO_COMMENTS,
       /router\.push\(\s*['"`]\/settings\/tasks(?:\?[^'"`]*)?['"`]\s*\)/,
-      'AssistantWorkspaceSection must not router.push to /settings/tasks â€?v12 retired the link card. The global Tasks page is reachable via the Settings sidebar nav.',
+      'AssistantWorkspaceSection must not router.push to /settings/tasks â€” v12 retired the link card. The global Tasks page is reachable via the Settings sidebar nav.',
     );
   });
 

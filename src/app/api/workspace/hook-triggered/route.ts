@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
 
     // Compare-and-swap: if expectedOwner is provided, only proceed when the
     // current owner matches.  This prevents two tabs that both see the same
-    // stale owner from racing through clear â†?set sequences.
+    // stale owner from racing through clear â†’ set sequences.
     if (expectedOwner !== undefined) {
       const currentOwner = state.hookTriggeredSessionId ?? null;
       if (currentOwner !== expectedOwner) {

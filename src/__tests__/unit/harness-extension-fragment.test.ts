@@ -1,5 +1,5 @@
 /**
- * Phase 5e review fix P1 #2 (2026-05-18) �?HarnessBundle extensions
+ * Phase 5e review fix P1 #2 (2026-05-18) — HarnessBundle extensions
  * really enter the runtime send path via `runtime-adapter`.
  *
  * Pre-fix: `scanUserCodePilotExtensions` + `scanExternalFrameworkExtensions`
@@ -82,7 +82,7 @@ const SAMPLE_EXTERNAL_EXECUTABLE: ExternalFrameworkHarnessRef = {
   executable: true,
 };
 
-describe('renderHarnessExtensionFragment �?shape', () => {
+describe('renderHarnessExtensionFragment — shape', () => {
   it('returns empty string when no extensions supplied', () => {
     assert.equal(renderHarnessExtensionFragment(bundleWith({})), '');
     assert.equal(
@@ -134,7 +134,7 @@ describe('renderHarnessExtensionFragment �?shape', () => {
     assert.ok(perceptionIdx > callableIdx, 'callable section must come before perception');
   });
 
-  // Phase 5e review round 3 fix P1 #A �?builder strong-validation:
+  // Phase 5e review round 3 fix P1 #A — builder strong-validation:
   // executable=false WITHOUT perceptionHint must throw at the
   // buildHarnessBundle stage, NOT silently render a default fallback.
   it('builder throws when a non-executable entry lacks perceptionHint (no silent default)', () => {
@@ -152,7 +152,7 @@ describe('renderHarnessExtensionFragment �?shape', () => {
               id: 'codex:plugin:nohint',
               displayName: 'nohint',
               executable: false,
-              // perceptionHint INTENTIONALLY omitted �?builder must reject
+              // perceptionHint INTENTIONALLY omitted — builder must reject
             },
           ],
         }),
@@ -162,7 +162,7 @@ describe('renderHarnessExtensionFragment �?shape', () => {
   });
 });
 
-describe('adaptForClaudeCode �?extension fragment merging', () => {
+describe('adaptForClaudeCode — extension fragment merging', () => {
   it('output without extensions matches the pre-fix capability-only shape', () => {
     const base = adaptForClaudeCode({
       sessionId: 'sess-1',
@@ -210,7 +210,7 @@ describe('adaptForClaudeCode �?extension fragment merging', () => {
   });
 });
 
-describe('adaptForNative �?extension fragment merging', () => {
+describe('adaptForNative — extension fragment merging', () => {
   it('merges extension fragment into systemPromptText', () => {
     const out = adaptForNative({
       sessionId: 'sess-n',
@@ -237,7 +237,7 @@ describe('adaptForNative �?extension fragment merging', () => {
   });
 });
 
-describe('adaptForCodexProxy �?extension fragment merging', () => {
+describe('adaptForCodexProxy — extension fragment merging', () => {
   it('merges extension fragment into systemPromptInstructions', () => {
     const out = adaptForCodexProxy({
       sessionId: 'sess-c',
@@ -264,7 +264,7 @@ describe('adaptForCodexProxy �?extension fragment merging', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Runtime entry-point wire-up �?source pin
+// Runtime entry-point wire-up — source pin
 //
 // The adapter accepts extensions, but they only matter if the three
 // Runtime entry points actually scan + pass them. These pins enforce
@@ -272,12 +272,12 @@ describe('adaptForCodexProxy �?extension fragment merging', () => {
 // the wire" is covered above via direct adapter calls.
 // ─────────────────────────────────────────────────────────────────────
 
-// Phase 5e review round 4 fix P2 #1 �?claude-client.ts MUST scan
+// Phase 5e review round 4 fix P2 #1 — claude-client.ts MUST scan
 // + call adapter unconditionally (not gated on enabledCapabilities.size > 0).
 // Pre-fix the whole adapter branch lived inside `if (enabledCapabilities.size > 0)`,
 // so a turn with no built-in capability gated in (rare but reachable)
 // would skip the User / External harness perception fragment too.
-describe('claude-client �?harness injection NOT gated on enabledCapabilities.size', () => {
+describe('claude-client — harness injection NOT gated on enabledCapabilities.size', () => {
   it('claude-client.ts has no `if (enabledCapabilities.size > 0)` guard wrapping the scan + adapter block', () => {
     const src = readSrc('src/lib/claude-client.ts');
     // Strip comments so JSDoc explaining the pre-fix shape doesn't trip
@@ -294,12 +294,12 @@ describe('claude-client �?harness injection NOT gated on enabledCapabilities.si
     assert.equal(
       /if\s*\(enabledCapabilities\.size\s*>\s*0\)\s*\{[^}]*$/m.test(preceding),
       false,
-      'adaptForClaudeCode must NOT be wrapped in `if (enabledCapabilities.size > 0) { ... }` �?User/External harness injection has to run even when no built-in capability is gated in',
+      'adaptForClaudeCode must NOT be wrapped in `if (enabledCapabilities.size > 0) { ... }` — User/External harness injection has to run even when no built-in capability is gated in',
     );
   });
 });
 
-describe('Runtime entry points �?scan + pass extensions to adapter', () => {
+describe('Runtime entry points — scan + pass extensions to adapter', () => {
   it('claude-client.ts scans User + External and forwards to adaptForClaudeCode', () => {
     const src = readSrc('src/lib/claude-client.ts');
     assert.match(
@@ -322,7 +322,7 @@ describe('Runtime entry points �?scan + pass extensions to adapter', () => {
       /activeFramework:\s*'claude_code'/,
       'claude-client.ts must tag external scan with activeFramework=claude_code so ClaudeCode-side configs render as executable',
     );
-    // Phase 5e review round 3 fix P2 #C �?scanner call MUST pass
+    // Phase 5e review round 3 fix P2 #C — scanner call MUST pass
     // runtimeId so skill / slash get classified per Runtime.
     assert.match(
       src,
@@ -341,7 +341,7 @@ describe('Runtime entry points �?scan + pass extensions to adapter', () => {
     );
     assert.match(
       src,
-      /scanUserCodePilotExtensions\(\{[\s\S]*?runtimeId:\s*'bbagent'[\s\S]*?\}\)/,
+      /scanUserCodePilotExtensions\(\{[\s\S]*?runtimeId:\s*'codepilot_runtime'[\s\S]*?\}\)/,
       'builtin-tools/index.ts must pass runtimeId:"codepilot_runtime" so skill / slash render as perception_only on Native',
     );
   });
@@ -368,12 +368,12 @@ describe('Runtime entry points �?scan + pass extensions to adapter', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e review round 3 fix P1 #A �?adapter MUST go through
+// Phase 5e review round 3 fix P1 #A — adapter MUST go through
 // buildHarnessBundle() (strong-validation), not the raw-array
 // renderer shortcut.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Adapter �?strong-validation via buildHarnessBundle', () => {
+describe('Adapter — strong-validation via buildHarnessBundle', () => {
   it('runtime-adapter.ts imports buildHarnessBundle (not just types)', () => {
     const src = readSrc('src/lib/harness/runtime-adapter.ts');
     assert.match(
@@ -392,7 +392,7 @@ describe('Adapter �?strong-validation via buildHarnessBundle', () => {
       /function\s+buildBundleAndRender\(/,
       'runtime-adapter must define buildBundleAndRender helper',
     );
-    for (const rid of ['claude_code', 'bbagent', 'codex_runtime']) {
+    for (const rid of ['claude_code', 'codepilot_runtime', 'codex_runtime']) {
       assert.match(
         src,
         new RegExp(`buildBundleAndRender\\(input,\\s*'${rid}'\\)`),
@@ -418,7 +418,7 @@ describe('Adapter �?strong-validation via buildHarnessBundle', () => {
     assert.equal(
       /perceptionHint\s*\?\?\s*['"]not callable in the current Runtime['"]/.test(src),
       false,
-      'no default "not callable in the current Runtime" fallback �?builder must enforce hints upstream',
+      'no default "not callable in the current Runtime" fallback — builder must enforce hints upstream',
     );
   });
 });

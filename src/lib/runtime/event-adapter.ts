@@ -1,36 +1,36 @@
 /**
- * Event adapter �?Phase 0.5 Slice E (2026-05-13).
+ * Event adapter — Phase 0.5 Slice E (2026-05-13).
  *
  * Each runtime adapter translates its concrete native events into
  * the canonical 9-type `RuntimeRunEvent` union (8 main types +
  * `unknown_item` fallback). UI consumers (SSE channel, chat surface,
  * stream manager) consume only the canonical union.
  *
- * Mapping table �?Claude Code SDK SSE �?canonical:
+ * Mapping table — Claude Code SDK SSE → canonical:
  *
  *   SDK SSEEventType          Canonical RuntimeRunEvent
  *   --------------------------  ----------------------------------
- *   text                      �?assistant_delta
- *   thinking                  �?assistant_delta (different category;
+ *   text                      → assistant_delta
+ *   thinking                  → assistant_delta (different category;
  *                               consumer can branch on payload, not type)
- *   tool_use                  �?tool_started
- *   tool_result               �?tool_completed
- *   tool_output (stderr)      �?tool_started (intermediate output;
+ *   tool_use                  → tool_started
+ *   tool_result               → tool_completed
+ *   tool_output (stderr)      → tool_started (intermediate output;
  *                               not a separate canonical type)
- *   tool_timeout              �?tool_completed (with error)
- *   status                    �?unknown_item (UI metadata, not a run
+ *   tool_timeout              → tool_completed (with error)
+ *   status                    → unknown_item (UI metadata, not a run
  *                               event in the canonical sense)
- *   result                    �?run_completed (terminal)
- *   error                     �?run_failed (terminal)
- *   permission_request        �?flows through RuntimePermissionEvent
- *                               (separate union �?see permission-adapter.ts)
- *   mode_changed              �?unknown_item (SDK-specific UI signal)
- *   task_update               �?unknown_item (TodoWrite sync �?UI signal)
- *   keep_alive                �?ignored at canonical level (transport)
- *   rewind_point              �?unknown_item (SDK feature)
- *   rate_limit                �?unknown_item (telemetry; not a usage event)
- *   context_usage             �?usage_updated
- *   done                      �?run_completed
+ *   result                    → run_completed (terminal)
+ *   error                     → run_failed (terminal)
+ *   permission_request        → flows through RuntimePermissionEvent
+ *                               (separate union — see permission-adapter.ts)
+ *   mode_changed              → unknown_item (SDK-specific UI signal)
+ *   task_update               → unknown_item (TodoWrite sync — UI signal)
+ *   keep_alive                → ignored at canonical level (transport)
+ *   rewind_point              → unknown_item (SDK feature)
+ *   rate_limit                → unknown_item (telemetry; not a usage event)
+ *   context_usage             → usage_updated
+ *   done                      → run_completed
  *
  * Notes:
  *   - `command_started` in the canonical 8 is forward-looking for
@@ -40,11 +40,11 @@
  *   - `file_changed` flows through the `codepilot:file-changed`
  *     window event channel (see `src/lib/file-changed-event.ts`),
  *     not the SSE stream. The canonical `file_changed` event is the
- *     logical contract that channel implements �?adapters emit it
+ *     logical contract that channel implements — adapters emit it
  *     into the channel, not into the SSE stream.
  *   - When Codex Runtime adds its own translators alongside
  *     `translateClaudeCodeRunEvent`, the SSE layer + chat UI don't
- *     need to change �?they already consume the canonical union.
+ *     need to change — they already consume the canonical union.
  */
 
 import type { RuntimeRunEvent } from './contract';
@@ -56,7 +56,7 @@ interface BaseInput {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Constructor helpers �?adapters call these instead of inline literals
+// Constructor helpers — adapters call these instead of inline literals
 // so the canonical shapes have a single source of truth.
 // ─────────────────────────────────────────────────────────────────────
 
@@ -80,7 +80,8 @@ export function makeToolCompleted(
     toolId: string;
     output?: unknown;
     error?: string;
-    /** See `tool_completed` discussion in `runtime/contract.ts` �?     *  optional MediaBlock list for image/audio/video tool results
+    /** See `tool_completed` discussion in `runtime/contract.ts` —
+     *  optional MediaBlock list for image/audio/video tool results
      *  (Codex imageGeneration / imageView etc.). Drives the SSE
      *  `tool_result.media` channel that `MediaPreview` renders. */
     media?: readonly import('@/types').MediaBlock[];
@@ -129,14 +130,14 @@ export function makeRunFailed(
 }
 
 /**
- * Mandatory fallback channel �?adapters use this for any native item
+ * Mandatory fallback channel — adapters use this for any native item
  * shape they can't classify into the 8 canonical types. `sourceType`
  * is adapter-defined (e.g. `'sdk.mode_changed'` / `'codex.plugin.x'`);
  * `payload` is opaque to the UI.
  *
  * Adapter contract: NEVER silently drop an unknown item. Always
  * surface it through this fallback so the UI can render a generic
- * block �?that's how new plugin / extension items stay visible
+ * block — that's how new plugin / extension items stay visible
  * before bespoke renderers are added.
  */
 export function makeUnknownItem(
@@ -147,20 +148,20 @@ export function makeUnknownItem(
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// SDK SSEEventType �?canonical type mapping helper.
+// SDK SSEEventType → canonical type mapping helper.
 //
 // Three return categories, intentionally distinct (P2 fix from Codex
-// review 2026-05-13 �?earlier revision conflated "known transport-
+// review 2026-05-13 — earlier revision conflated "known transport-
 // only" with "unknown to the adapter", which silently dropped new
 // SDK / Codex item types):
 //
-//   - Canonical type ('assistant_delta', 'tool_started', ...) �?the
+//   - Canonical type ('assistant_delta', 'tool_started', ...) — the
 //     SDK type has a direct mapping; adapter emits that canonical
 //     event.
-//   - `null` �?known transport-only types (e.g. `keep_alive`,
+//   - `null` — known transport-only types (e.g. `keep_alive`,
 //     `permission_request` which is handled through the separate
 //     permission channel). Caller can safely ignore.
-//   - `'unknown_item'` �?the SDK type is not in the mapping table
+//   - `'unknown_item'` — the SDK type is not in the mapping table
 //     at all (new SDK release, custom event, drift). Caller MUST
 //     surface it via `makeUnknownItem` so the user sees a generic
 //     block instead of silent drop.
@@ -179,7 +180,7 @@ const SDK_SSE_TO_CANONICAL: Record<string, RuntimeRunEvent['type'] | null> = {
   status: 'unknown_item',
   result: 'run_completed',
   error: 'run_failed',
-  // permission_request flows through RuntimePermissionEvent �?not in
+  // permission_request flows through RuntimePermissionEvent — not in
   // RuntimeRunEvent. The translator for permissions lives in
   // permission-adapter.ts. Mapped to null here so the caller knows
   // it's handled, not lost.
@@ -199,10 +200,10 @@ const SDK_SSE_TO_CANONICAL: Record<string, RuntimeRunEvent['type'] | null> = {
  * - Returns a canonical `RuntimeRunEvent['type']` when the SDK type
  *   has a direct mapping.
  * - Returns `null` for known transport-only types (`keep_alive` /
- *   `permission_request`) �?caller can safely ignore.
+ *   `permission_request`) — caller can safely ignore.
  * - Returns `'unknown_item'` for any SDK type not in the table.
  *   Caller MUST surface this via `makeUnknownItem({ sourceType })`
- *   rather than dropping �?adapters never silently lose items.
+ *   rather than dropping — adapters never silently lose items.
  */
 export function mapSdkSseToCanonicalType(
   sdkType: string,
@@ -214,7 +215,7 @@ export function mapSdkSseToCanonicalType(
 }
 
 /**
- * Helper for the unknown branch �?wraps an unrecognized SDK item in
+ * Helper for the unknown branch — wraps an unrecognized SDK item in
  * a canonical `unknown_item` event. Adapter calls this when
  * `mapSdkSseToCanonicalType(sdkType)` returns `'unknown_item'`.
  *

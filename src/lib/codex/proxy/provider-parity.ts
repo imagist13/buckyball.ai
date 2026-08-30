@@ -1,5 +1,5 @@
 /**
- * Phase 5b â?Provider parity inventory for the Codex proxy.
+ * Phase 5b — Provider parity inventory for the Codex proxy.
  *
  * Answers "which CodePilot providers / models can route through
  * Codex's `codepilot_proxy`?" so the picker UI can render disabled
@@ -13,10 +13,10 @@
  *   provider_name     User-visible.
  *   compat            ProviderRuntimeCompat tier.
  *   adapter_status    Per Phase 5b adapter readiness for that compat
- *                     tier â?'ready' / 'pending' / 'not_applicable'.
+ *                     tier — 'ready' / 'pending' / 'not_applicable'.
  *   excluded_reason   Populated when adapter_status !== 'ready'.
  *
- * The contract: for every NON-excluded bbagent-reachable
+ * The contract: for every NON-excluded codepilot_runtime-reachable
  * provider in the DB, the inventory must include an entry. A future
  * provider added to the DB or a future compat tier must trip the
  * `phase-5b-parity-contract` test until the adapter status is set
@@ -32,7 +32,7 @@ import { getProviderCompat } from '@/lib/runtime-compat';
  * this and stops disabling rows for that tier.
  */
 export const ADAPTER_STATUS_BY_COMPAT: Record<ProviderRuntimeCompat, ProxyAdapterStatus> = {
-  // Native runtime never goes through the proxy â?Codex Account
+  // Native runtime never goes through the proxy — Codex Account
   // routes through Codex's own app-server, not via codepilot_proxy.
   codex_account: 'not_applicable',
   // Image / video / embedding don't surface in chat picker.
@@ -45,8 +45,8 @@ export const ADAPTER_STATUS_BY_COMPAT: Record<ProviderRuntimeCompat, ProxyAdapte
   claude_code_verified: 'ready',
   claude_code_experimental: 'ready',
   openrouter_anthropic_skin: 'ready',
-  bbagent_only: 'ready',
-  // Unknown stays pending â?we don't know which wire format an
+  codepilot_only: 'ready',
+  // Unknown stays pending — we don't know which wire format an
   // unrecognised provider speaks, so the safe default is to surface
   // a clear error instead of guessing.
   unknown: 'pending',
@@ -65,16 +65,16 @@ export const ADAPTER_FAMILY_BY_COMPAT: Record<ProviderRuntimeCompat, AdapterFami
   // Anthropic-compat adapter handles these.
   claude_code_ready: 'anthropic_compatible',
   openrouter_anthropic_skin: 'anthropic_compatible',
-  // Verified + experimental are CodePlan / å¥é¤å?brands speaking
+  // Verified + experimental are CodePlan / 套餐型 brands speaking
   // Anthropic wire format. Same adapter family as claude_code_ready
   // mechanically but classified separately because they carry
-  // brand-specific alias mapping (GLM / Kimi / ç¾ç¼ / MiniMax /
+  // brand-specific alias mapping (GLM / Kimi / 百炼 / MiniMax /
   // DeepSeek) that the CodePlan adapter is responsible for honoring.
   claude_code_verified: 'codeplan',
   claude_code_experimental: 'codeplan',
   // OpenAI chat-completions wire.
-  bbagent_only: 'openai_compatible',
-  // Unknown â?best-guess to OpenAI-compatible since chat/completions
+  codepilot_only: 'openai_compatible',
+  // Unknown — best-guess to OpenAI-compatible since chat/completions
   // is the more common third-party shape; adapter surfaces the
   // failure cleanly if it doesn't fit.
   unknown: 'openai_compatible',
@@ -92,7 +92,7 @@ export interface ProviderParityEntry {
 
 /**
  * Snapshot of the proxy's parity surface for one provider. Pure
- * function â?doesn't read the DB; caller passes ApiProvider records
+ * function — doesn't read the DB; caller passes ApiProvider records
  * in. Picker tooltip + Settings inventory both call this.
  */
 export function getProxyParityEntry(provider: ApiProvider): ProviderParityEntry {
@@ -125,7 +125,7 @@ function pendingReason(family: AdapterFamily): string {
     case 'codeplan':
       return 'Codex provider proxy: CodePlan / brand-shaped adapter currently disabled.';
     case 'native':
-      // Should never be returned â?native maps to not_applicable.
+      // Should never be returned — native maps to not_applicable.
       // Defensive fallback.
       return 'Provider does not route through the Codex proxy.';
   }
@@ -142,18 +142,18 @@ export function pickerDisabledReason(family: AdapterFamily, isZh: boolean): stri
   if (isZh) {
     switch (family) {
       case 'openai_compatible':
-        return 'Codex provider proxy ææªè¯å«è¯?provider ç?wire formatï¼è¯·å?provider è®¾ç½®éæ¾å¼é?OpenAI å¼å®¹ / Anthropic å¼å®¹';
+        return 'Codex provider proxy 暂未识别该 provider 的 wire format；请在 provider 设置里显式选 OpenAI 兼容 / Anthropic 兼容';
       case 'anthropic_compatible':
-        return 'Codex provider proxy ç?Anthropic / ClaudeCode å¼å®¹ adapter å½åå·²åç?;
+        return 'Codex provider proxy 的 Anthropic / ClaudeCode 兼容 adapter 当前已停用';
       case 'codeplan':
-        return 'Codex provider proxy ç?CodePlan / å¥é¤å?adapter å½åå·²åç?;
+        return 'Codex provider proxy 的 CodePlan / 套餐型 adapter 当前已停用';
       case 'native':
-        return 'è¯¥æå¡åä¸éè¿ Codex provider proxy';
+        return '该服务商不通过 Codex provider proxy';
     }
   }
   switch (family) {
     case 'openai_compatible':
-      return 'Codex provider proxy: provider wire format unidentified â?set the provider protocol explicitly';
+      return 'Codex provider proxy: provider wire format unidentified — set the provider protocol explicitly';
     case 'anthropic_compatible':
       return 'Codex provider proxy: Anthropic / ClaudeCode-compatible adapter currently disabled';
     case 'codeplan':

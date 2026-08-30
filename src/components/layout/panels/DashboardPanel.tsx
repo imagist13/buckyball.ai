@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { X, CaretUp, CaretDown, Clock, Check, Warning } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { showToast } from "@/hooks/useToast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -35,7 +35,7 @@ interface AssistantSummary {
 }
 
 /**
- * The Dashboard / Widget surface â?rendered exclusively as the
+ * The Dashboard / Widget surface — rendered exclusively as the
  * Workspace Sidebar's `widget` fixed Tab. The shell + Tab strip own
  * resize / close, so this component renders just the dashboard
  * header (refresh, auto-refresh toggle, assistant summary) and the
@@ -124,7 +124,7 @@ export function DashboardPanel() {
       }, 3000);
       return () => clearInterval(interval);
     } else if (wasStreamingRef.current) {
-      // Streaming just ended â?do a final fetch to catch any last-moment changes
+      // Streaming just ended — do a final fetch to catch any last-moment changes
       wasStreamingRef.current = false;
       loadDashboard();
     }
@@ -207,7 +207,7 @@ export function DashboardPanel() {
         const data = await res.json();
         setConfig(data);
         // Notify chat widgets that a pin was removed
-        // No need to notify chat Pin buttons â?they are stateless triggers
+        // No need to notify chat Pin buttons — they are stateless triggers
       }
     } catch (e) {
       console.error('[DashboardPanel] Delete widget failed:', e);
@@ -216,7 +216,7 @@ export function DashboardPanel() {
 
   const handleMoveWidget = useCallback(async (widgetId: string, direction: 'up' | 'down' | 'top') => {
     if (!workingDirectory || !config) return;
-    // Optimistic local update â?avoids React DOM reorder which destroys iframes
+    // Optimistic local update — avoids React DOM reorder which destroys iframes
     const widgets = [...config.widgets];
     const idx = widgets.findIndex(w => w.id === widgetId);
     if (idx === -1) return;
@@ -231,7 +231,7 @@ export function DashboardPanel() {
       return; // no change
     }
     setConfig({ ...config, widgets });
-    // Persist absolute order (race-free â?last write wins with correct final state)
+    // Persist absolute order (race-free — last write wins with correct final state)
     fetch('/api/dashboard', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -303,7 +303,7 @@ export function DashboardPanel() {
           <div className="flex items-center gap-1">
             {(widgets.length > 0 || isAssistantWorkspace) && (
               <>
-                {/* Auto-refresh toggle â?shadcn Switch (size="sm")
+                {/* Auto-refresh toggle — shadcn Switch (size="sm")
                     in place of the hand-rolled track + thumb so the
                     control reads the same as Settings switches. */}
                 <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
@@ -333,12 +333,12 @@ export function DashboardPanel() {
                   disabled={refreshingAll}
                   title={t('dashboard.refresh')}
                 >
-                  <BuckyballIcon name="refresh" size="sm" className={refreshingAll ? "animate-spin" : ""} aria-hidden />
+                  <CodePilotIcon name="refresh" size="sm" className={refreshingAll ? "animate-spin" : ""} aria-hidden />
                   <span className="sr-only">{t('dashboard.refresh')}</span>
                 </Button>
               </>
             )}
-            {/* No close button here â?the Workspace Sidebar shell's
+            {/* No close button here — the Workspace Sidebar shell's
                 collapse + Tab strip own the equivalent action. */}
           </div>
         </div>
@@ -356,14 +356,14 @@ export function DashboardPanel() {
               )}
               {!(isAssistantWorkspace && assistantSummary?.configured) && (
                 <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground">
-                  <BuckyballIcon name="chart" size="xl" className="mb-3 opacity-40" aria-hidden />
+                  <CodePilotIcon name="chart" size="xl" className="mb-3 opacity-40" aria-hidden />
                   <p className="text-sm">{t('dashboard.empty')}</p>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex flex-col gap-4 p-3">
-              {/* Assistant status card â?always first in assistant workspace */}
+              {/* Assistant status card — always first in assistant workspace */}
               {isAssistantWorkspace && assistantSummary?.configured && (
                 <AssistantStatusCard summary={assistantSummary} t={t} />
               )}
@@ -453,7 +453,7 @@ function DashboardWidgetCard({ widget, refreshing, isFirst, isLast, style, onRef
             title={t('dashboard.refreshWidget')}
             className="h-5 w-5"
           >
-            <BuckyballIcon name="refresh" size={12} className={refreshing ? "animate-spin" : ""} aria-hidden />
+            <CodePilotIcon name="refresh" size={12} className={refreshing ? "animate-spin" : ""} aria-hidden />
           </Button>
           <Button
             variant="ghost"
@@ -471,7 +471,7 @@ function DashboardWidgetCard({ widget, refreshing, isFirst, isLast, style, onRef
             title={t('dashboard.exportWidget')}
             className="h-5 w-5"
           >
-            <BuckyballIcon name="download" size={12} aria-hidden />
+            <CodePilotIcon name="download" size={12} aria-hidden />
           </Button>
           <Button
             variant="ghost"
@@ -480,7 +480,7 @@ function DashboardWidgetCard({ widget, refreshing, isFirst, isLast, style, onRef
             title={t('dashboard.deleteWidget')}
             className="h-5 w-5 text-muted-foreground hover:text-destructive"
           >
-            <BuckyballIcon name="delete" size={12} aria-hidden />
+            <CodePilotIcon name="delete" size={12} aria-hidden />
           </Button>
         </div>
       </div>
@@ -509,7 +509,7 @@ function getRequiredMemories(rarity: string): number {
   return reqs[rarity] || 100;
 }
 
-/** Built-in assistant status card â?injected at the top of assistant workspace dashboards. */
+/** Built-in assistant status card — injected at the top of assistant workspace dashboards. */
 function AssistantStatusCard({ summary, t }: {
   summary: AssistantSummary;
   t: (key: TranslationKey, params?: Record<string, string | number>) => string;
@@ -517,11 +517,11 @@ function AssistantStatusCard({ summary, t }: {
   const router = useRouter();
   const buddy = summary.buddy;
 
-  // Round 31.1 â?outer accent ring removed entirely. User feedback:
+  // Round 31.1 — outer accent ring removed entirely. User feedback:
   // even the muted rarity ring (ring-1 / 30% alpha) read as a colored
   // "selected" outline that broke the card's blend-in look. Rarity is
   // still expressed via the inline rarity badge in the header (see
-  // line below â?RARITY_DISPLAY stars + label inside a colored chip).
+  // line below — RARITY_DISPLAY stars + label inside a colored chip).
   return (
     <div className={cn('rounded-xl bg-muted/20 p-4 space-y-3')}>
       {/* Header: 3D image + Name + Species + Rarity + Settings gear */}
@@ -556,7 +556,7 @@ function AssistantStatusCard({ summary, t }: {
           {buddy && (
             <div className="text-[10px] text-muted-foreground truncate">
               {getBuddyTitle(buddy as BuddyData)
-                ? `${getBuddyTitle(buddy as BuddyData)} Â· ${SPECIES_LABEL[buddy.species]?.zh || buddy.species}`
+                ? `${getBuddyTitle(buddy as BuddyData)} · ${SPECIES_LABEL[buddy.species]?.zh || buddy.species}`
                 : SPECIES_LABEL[buddy.species]?.zh || buddy.species}
             </div>
           )}
@@ -567,7 +567,7 @@ function AssistantStatusCard({ summary, t }: {
           className="shrink-0 text-muted-foreground text-[10px] gap-1 h-6 px-1.5"
           onClick={() => router?.push('/settings/assistant')}
         >
-          <BuckyballIcon name="settings" size={12} aria-hidden />
+          <CodePilotIcon name="settings" size={12} aria-hidden />
           {t('settings.title' as TranslationKey)}
         </Button>
       </div>
@@ -595,15 +595,15 @@ function AssistantStatusCard({ summary, t }: {
         </div>
       )}
 
-      {/* Status row â?compact single line */}
+      {/* Status row — compact single line */}
       <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
         <div className="flex items-center gap-1">
-          <BuckyballIcon name="health" size={11} aria-hidden />
+          <CodePilotIcon name="health" size={11} aria-hidden />
           <span className={`h-1.5 w-1.5 rounded-full ${summary.heartbeatEnabled ? 'bg-status-success' : 'bg-muted-foreground/30'}`} />
           <span>{t('assistant.panel.heartbeat' as TranslationKey)}</span>
         </div>
         <div className="flex items-center gap-1">
-          <BuckyballIcon name="memory" size={11} aria-hidden />
+          <CodePilotIcon name="memory" size={11} aria-hidden />
           <span>{t('assistant.panel.memories' as TranslationKey)}</span>
           <span className="text-foreground">{summary.memoryCount}</span>
         </div>
@@ -654,7 +654,7 @@ function AssistantStatusCard({ summary, t }: {
                 if (res.ok) {
                   const data = await res.json();
                   if (data.evolved) {
-                    showToast({ type: 'success', message: `ð ${t('buddy.evolutionSuccess' as TranslationKey)}` });
+                    showToast({ type: 'success', message: `🌟 ${t('buddy.evolutionSuccess' as TranslationKey)}` });
                     // Refresh summary to show new rarity
                     window.location.reload();
                   } else if (data.check) {
@@ -691,7 +691,7 @@ function AssistantStatusCard({ summary, t }: {
             } catch { /* ignore */ }
           }}
         >
-          ð¥ {t('buddy.hatch' as TranslationKey)}
+          🥚 {t('buddy.hatch' as TranslationKey)}
         </Button>
       )}
 

@@ -1,5 +1,5 @@
 /**
- * Heartbeat system �?HEARTBEAT_OK protocol, active hours, deduplication.
+ * Heartbeat system — HEARTBEAT_OK protocol, active hours, deduplication.
  * Only applies to assistant workspace sessions.
  */
 
@@ -69,10 +69,18 @@ export function shouldSkipDuplicate(
 }
 
 /** Default HEARTBEAT.md template content */
-export const HEARTBEAT_TEMPLATE = `# 心跳检查清�?
-每次心跳时按以下清单检查，如果都没有需要关注的事项，回�?HEARTBEAT_OK�?
-- [ ] 最近的 daily memory 中有没有未完成的事项或待跟进的事�?- [ ] 用户上次提到�?deadline 或计划是否临�?- [ ] 是否超过 3 天没有互动（如果是，轻量问候）
-- [ ] 工作区中是否有新增或变动的文件需要更新索�?
-## 不要做的�?- 不要重复上次已经讨论过的内容
+export const HEARTBEAT_TEMPLATE = `# 心跳检查清单
+
+每次心跳时按以下清单检查，如果都没有需要关注的事项，回复 HEARTBEAT_OK。
+
+- [ ] 最近的 daily memory 中有没有未完成的事项或待跟进的事情
+- [ ] 用户上次提到的 deadline 或计划是否临近
+- [ ] 是否超过 3 天没有互动（如果是，轻量问候）
+- [ ] 工作区中是否有新增或变动的文件需要更新索引
+
+## 不要做的事
+- 不要重复上次已经讨论过的内容
 - 不要问固定的问卷问题
-- 不要在深夜时段（23:00-08:00）打扰，除非有紧急事�?- 如果用户上次明确�?今天不需要了"，今天就不要再触�?`;
+- 不要在深夜时段（23:00-08:00）打扰，除非有紧急事项
+- 如果用户上次明确说"今天不需要了"，今天就不要再触发
+`;

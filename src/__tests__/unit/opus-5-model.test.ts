@@ -14,7 +14,7 @@ import { getContextWindow } from '../../lib/model-context';
 import { ENV_CLAUDE_CODE_MODELS, VENDOR_PRESETS } from '../../lib/provider-catalog';
 import { listClaudeSubagentRoutes } from '../../lib/claude-subagent-mcp';
 
-describe('Claude Opus 5 â€?catalog and Claude Code route', () => {
+describe('Claude Opus 5 â€” catalog and Claude Code route', () => {
   const model = ENV_CLAUDE_CODE_MODELS.find(entry => entry.modelId === 'opus-5');
 
   it('ships an explicit first-party/env option without repinning the opus role', () => {
@@ -50,7 +50,7 @@ describe('Claude Opus 5 â€?catalog and Claude Code route', () => {
   });
 });
 
-describe('Claude Opus 5 â€?adaptive thinking and effort contract', () => {
+describe('Claude Opus 5 â€” adaptive thinking and effort contract', () => {
   it('matches exact, short, and tagged IDs without claiming Opus 50', () => {
     for (const id of ['claude-opus-5', 'opus-5', 'claude-opus-5[1m]']) {
       assert.equal(isOpus5Model(id), true);
@@ -168,7 +168,7 @@ describe('Claude Opus 5 â€?adaptive thinking and effort contract', () => {
   });
 });
 
-describe('Claude Opus 5 â€?Runtime notice wiring', () => {
+describe('Claude Opus 5 â€” Runtime notice wiring', () => {
   const read = (relative: string) => readFileSync(join(process.cwd(), 'src', relative), 'utf8');
 
   it('both production Runtime paths consume the shared adjustment fact', () => {

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CaretDown, DotOutline } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { createContext, memo, useContext, useMemo } from "react";
 
 interface ChainOfThoughtContextValue {
@@ -87,7 +87,7 @@ export const ChainOfThoughtHeader = memo(
           )}
           {...props}
         >
-          <BuckyballIcon name="assistant" size="md" aria-hidden />
+          <CodePilotIcon name="assistant" size="md" aria-hidden />
           <span className="flex-1 text-left">
             {children ?? "Chain of Thought"}
           </span>

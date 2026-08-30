@@ -1,11 +1,12 @@
 /**
- * Phase 0.5 Slice A guardrail â€?UI must not consume Codex-specific
+ * Phase 0.5 Slice A guardrail â€” UI must not consume Codex-specific
  * (or any runtime-specific) event / metadata names.
  *
  * Chat / Run / Preview surfaces speak in the canonical
  * `RuntimeRunEvent` / `RuntimePermissionEvent` union. Codex
  * app-server's native event names (`thread/started`, `turn/started`,
- * `item/agentMessage`, `app-server`, etc.) are adapter-internal â€? * they translate into the canonical union inside `src/lib/codex/` (or
+ * `item/agentMessage`, `app-server`, etc.) are adapter-internal â€”
+ * they translate into the canonical union inside `src/lib/codex/` (or
  * any other runtime adapter), not in UI components.
  *
  * RuntimeSelector is the only allowed exception: it may render a
@@ -28,7 +29,7 @@ const UI_FILES = [
 ];
 
 // Codex / runtime-specific tokens that must never appear in these UI files.
-// Adapter implementations (src/lib/codex/...) MAY use these freely â€?UI
+// Adapter implementations (src/lib/codex/...) MAY use these freely â€” UI
 // must consume the translated canonical union.
 const FORBIDDEN_TOKENS = [
   'thread/started',
@@ -42,7 +43,7 @@ const FORBIDDEN_TOKENS = [
   'codex_thread_id',
   'codex_turn_id',
   // ClaudeCode SDK private session id should also stay out of these
-  // files â€?adapters expose it via `RuntimeSessionRef.token` instead.
+  // files â€” adapters expose it via `RuntimeSessionRef.token` instead.
   'sdkSessionId',
   'claude_sdk_session_id',
 ];
@@ -53,7 +54,7 @@ describe('UI components must not branch on runtime-specific names', () => {
       const abs = path.resolve(__dirname, '../..', rel);
       if (!fs.existsSync(abs)) {
         // Some files may not exist in all worktrees / branches; skip
-        // missing files rather than failing â€?the test is a regression
+        // missing files rather than failing â€” the test is a regression
         // guard for files that do exist.
         return;
       }

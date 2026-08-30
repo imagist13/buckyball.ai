@@ -1,18 +1,18 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ProviderModelGroup } from '@/types';
-// `chat-runtime-shared` (not `chat-runtime`) â?even type-only imports
+// `chat-runtime-shared` (not `chat-runtime`) — even type-only imports
 // from the server-side module muddy the boundary; keeping all hook /
 // component imports pointed at the shared module makes "client-safe"
 // the local rule for this hook too.
 import type { ChatRuntimeParam } from '@/lib/chat-runtime-shared';
 import { isRuntimeId, type RuntimeId } from '@/lib/runtime/runtime-id';
-// Canonical-aware model matcher (tech-debt #37) â?pure helper shared by the
+// Canonical-aware model matcher (tech-debt #37) — pure helper shared by the
 // composer (picker / auto-correct / run-status / context upstream) so every
 // surface resolves a saved canonical id the same way. Re-exported below for
 // existing importers of this hook.
 import { findModelOption } from '@/lib/model-option-match';
 // provider-catalog is client-safe (zod only; already imported by
-// provider-presets.tsx) â?the env default model list must DERIVE from this
+// provider-presets.tsx) — the env default model list must DERIVE from this
 // single source, not be re-hardcoded (Codex review P1, 2026-06-10: this
 // fallback copy was missing opus-4-8 and fable-5).
 import { ENV_CLAUDE_CODE_MODELS } from '@/lib/provider-catalog';
@@ -25,7 +25,7 @@ import {
 
 export { findModelOption };
 
-// Default Claude model options â?used as fallback when API is unavailable
+// Default Claude model options — used as fallback when API is unavailable
 export interface DefaultModelOption {
   value: string;
   label: string;
@@ -45,16 +45,16 @@ export const DEFAULT_MODEL_OPTIONS: DefaultModelOption[] = ENV_CLAUDE_CODE_MODEL
 }));
 
 /**
- * Should the chat composer show "æ­£å¨åå¤è¿è¡ç¯å¢â??
+ * Should the chat composer show "正在准备运行环境…"?
  *
- * P0.4 (2026-06-01): only during the GENUINE first load â?i.e. while the
+ * P0.4 (2026-06-01): only during the GENUINE first load — i.e. while the
  * feed is in-flight AND no sendable model has resolved yet. Once a model is
  * resolved, a background refetch (provider-changed / runtime switch resets
  * `fetchState` to 'idle' but keeps the prior `providerGroups`) must NOT
  * re-flash the placeholder. Previously the composer keyed purely on
- * `fetchState === 'idle'`, so every refetch â?including the full-catalog
- * background load that a broken Codex used to stall â?froze the input on
- * "æ­£å¨åå¤è¿è¡ç¯å¢â? even though a perfectly sendable model was already known.
+ * `fetchState === 'idle'`, so every refetch — including the full-catalog
+ * background load that a broken Codex used to stall — froze the input on
+ * "正在准备运行环境…" even though a perfectly sendable model was already known.
  */
 export function isComposerProviderLoading(
   fetchState: 'idle' | 'loaded' | 'failed',
@@ -71,7 +71,7 @@ export interface UseProviderModelsReturn {
    * "showing models for X runtime" in the picker. Undefined when
    * caller passed `runtime: null` (Settings full-catalog mode).
    *
-   * Typed as the canonical `RuntimeId` from runtime-id.ts â?adding a
+   * Typed as the canonical `RuntimeId` from runtime-id.ts — adding a
    * new runtime (Codex etc.) flows through automatically without
    * touching this hook.
    */
@@ -85,7 +85,7 @@ export interface UseProviderModelsReturn {
   globalDefaultProvider: string | undefined;
   /**
    * True when the runtime-filtered API succeeded but returned an empty
-   * group list â?user has providers configured but none are compatible
+   * group list — user has providers configured but none are compatible
    * with the active runtime. Distinct from "API is unreachable" (the
    * catch branch synthesises an `env` group, so providerGroups.length
    * stays 1 in that case). Callers (chat picker / send-gate) use this
@@ -125,7 +125,7 @@ export interface UseProviderModelsReturn {
    * Caller should PATCH /api/chat/sessions/:id with the resolved pair
    * to keep DB / UI / wire-format consistent.
    *
-   * Only meaningful after `fetchState === 'loaded'` â?during loading
+   * Only meaningful after `fetchState === 'loaded'` — during loading
    * and on API failure we don't want to silently rewrite saved state.
    */
   providerWasFilteredOut: boolean;
@@ -135,18 +135,18 @@ export interface UseProviderModelsReturn {
 
 /**
  * @param runtime  Runtime gate for the picker feed. **Required as of
- * Phase 2 Step 3b** â?the previous `'auto'` default made every chat-side
+ * Phase 2 Step 3b** — the previous `'auto'` default made every chat-side
  * caller silently re-filter on global `agent_runtime` change, so any
  * open chat could "lose" its provider when the user flipped Settings.
  * Callers must now choose deliberately:
  *   - `'auto'`: server resolves the active runtime via global setting
  *     and filters. **Only** appropriate for new-chat / Settings flows
  *     where there is no session intent yet.
- *   - `'claude_code'` / `'bbagent'`: explicit pin. The chat
+ *   - `'claude_code'` / `'codepilot_runtime'`: explicit pin. The chat
  *     view computes this from the session's `runtime_pin` via
  *     `chatRuntimeParamForSession()`, so the picker reflects what THIS
- *     session can actually reach â?global flips don't cascade.
- *   - `null`: skip the filter entirely â?full catalog (e.g. Settings >
+ *     session can actually reach — global flips don't cascade.
+ *   - `null`: skip the filter entirely — full catalog (e.g. Settings >
  *     Providers' global default-model selector).
  */
 export function useProviderModels(
@@ -160,7 +160,7 @@ export function useProviderModels(
   const [globalDefaultProvider, setGlobalDefaultProvider] = useState<string | undefined>();
   const [runtimeApplied, setRuntimeApplied] = useState<RuntimeId | undefined>(undefined);
   // Tri-state load tracking. `noCompatibleProvider` is meaningful only
-  // after a successful response â?the initial empty `providerGroups`
+  // after a successful response — the initial empty `providerGroups`
   // array is NOT a "no compatible provider" signal, it's just "fetch
   // hasn't returned yet". Without this, mounting a chat session would
   // briefly disable the composer (and let auto-trigger / retry paths
@@ -186,7 +186,8 @@ export function useProviderModels(
     fetchControllerRef.current = controller;
     const signal = controller.signal;
 
-    // Phase 6 UIæ¶å£ P2 (2026-05-14): always fetch the FULL catalog â?    // server side annotates each model row with `supportedRuntimes`
+    // Phase 6 UI收口 P2 (2026-05-14): always fetch the FULL catalog —
+    // server side annotates each model row with `supportedRuntimes`
     // and `unsupportedReasonByRuntime`, and the picker uses those
     // per-row fields to render disabled+tooltip for incompatible
     // models instead of hiding them. Resolution / send logic in this
@@ -207,7 +208,7 @@ export function useProviderModels(
           setProviderGroups(data.groups);
           setDefaultProviderId(data.default_provider_id || '');
           // Without server-side filtering, `runtime_applied` is no
-          // longer authoritative â?derive from the caller's runtime
+          // longer authoritative — derive from the caller's runtime
           // param so the picker can still surface which runtime context
           // its disabled-state checks are evaluated against. `'auto'`
           // means "no session pin"; the picker treats it as "no per-row
@@ -218,12 +219,12 @@ export function useProviderModels(
           setRuntimeApplied(fromParam);
           setFetchState('loaded');
         } else {
-          // Malformed response â?same handling as a network failure.
+          // Malformed response — same handling as a network failure.
           throw new Error('Malformed /api/providers/models response');
         }
       })
       .catch((err) => {
-        // Aborted by a newer fetchAll â?leave state alone, the newer
+        // Aborted by a newer fetchAll — leave state alone, the newer
         // call owns the next setProviderGroups / setFetchState write.
         if (err?.name === 'AbortError' || signal.aborted) return;
         setProviderGroups([{
@@ -238,7 +239,7 @@ export function useProviderModels(
         setFetchState('failed');
       });
 
-    // Fetch global default model â?same abort discipline so its late
+    // Fetch global default model — same abort discipline so its late
     // response doesn't bleed into a subsequent fetchAll's window.
     fetch('/api/providers/options?providerId=__global__', { signal })
       .then(r => r.ok ? r.json() : null)
@@ -247,11 +248,12 @@ export function useProviderModels(
         setGlobalDefaultModel(data?.options?.default_model || undefined);
         setGlobalDefaultProvider(data?.options?.default_model_provider || undefined);
       })
-      .catch(() => { /* aborted or network â?silent best-effort */ });
+      .catch(() => { /* aborted or network — silent best-effort */ });
   }, [runtime]);
 
   // Load on mount and listen for provider changes.
-  // fetchAll's first line is `setFetchState('idle')` to gate refetches â?  // a lint rule flags the synchronous setState as a potential cascading
+  // fetchAll's first line is `setFetchState('idle')` to gate refetches —
+  // a lint rule flags the synchronous setState as a potential cascading
   // render, but the set is intentional: mount/refetch must reset the
   // load gate before the new request resolves. The follow-up setState
   // calls happen inside async then/catch (off the render path), so
@@ -289,7 +291,7 @@ export function useProviderModels(
     void warmCodexModelCatalog();
   }, []);
 
-  // Phase 6 UIæ¶å£ P2 (2026-05-14) â?runtime-compatible projection of
+  // Phase 6 UI收口 P2 (2026-05-14) — runtime-compatible projection of
   // the full catalog. The hook fetches everything unfiltered (so the
   // picker can render disabled rows for incompatible models with a
   // tooltip explaining why); resolution logic below still wants a
@@ -298,7 +300,7 @@ export function useProviderModels(
   //
   // Annotation contract: each model row carries `supportedRuntimes:
   // RuntimeId[]`. Rows without an annotation are treated as universally
-  // supported (legacy fallback â?Settings models page and the env
+  // supported (legacy fallback — Settings models page and the env
   // synthetic group don't carry per-row annotations and we don't want
   // to silently hide them).
   //
@@ -318,19 +320,19 @@ export function useProviderModels(
 
   // Two layers of provider id resolution:
   //
-  // requestedProviderId â?the *semantic* id the caller actually wants
+  // requestedProviderId — the *semantic* id the caller actually wants
   //   us to route to. Preserves "user picked env" intent even when env
   //   isn't in the current runtime feed. Used by `providerWasFilteredOut`
   //   so a session whose desired provider got replaced by a fallback
   //   gets PATCHed back to a consistent state.
   //
-  // preferredProviderId â?what we look up in `compatibleProviderGroups`
+  // preferredProviderId — what we look up in `compatibleProviderGroups`
   //   for the group / model-options derivation. May resolve to
   //   `groups[0]` when the requested id can't be served by the current
-  //   runtime (env filtered out under bb-agent Runtime, etc.).
+  //   runtime (env filtered out under CodePilot Runtime, etc.).
   //
   // Both layers keep `undefined` and `''` distinct: undefined means
-  // "caller didn't supply â?use the global default chain"; '' is the
+  // "caller didn't supply — use the global default chain"; '' is the
   // historic env-mode session value that must NOT be hijacked by
   // globalDefaultProvider.
   let requestedProviderId: string | undefined;
@@ -356,7 +358,7 @@ export function useProviderModels(
   // compatible projection. The preferred id may be missing under the
   // active runtime (e.g. user pinned GLM globally but the session
   // routes through Codex Runtime); when that happens we MUST report a
-  // provider id that actually exists in compatibleProviderGroups â?if
+  // provider id that actually exists in compatibleProviderGroups — if
   // we returned the now-missing preferred id alongside `modelOptions`
   // from the fallback group, MessageInput's auto-correct would write
   // back `(stale provider, fallback model)` and re-introduce the
@@ -366,7 +368,7 @@ export function useProviderModels(
   // currentProviderIdValue tracks currentGroup. If the preferred id was
   // filtered out, this surfaces a runtime-compatible fallback id so the
   // picker has *something* live to render. **The hook does NOT persist
-  // this back to the session** â?Phase 2 Step 3b removed the silent
+  // this back to the session** — Phase 2 Step 3b removed the silent
   // PATCH effect in ChatView that used to do that. Persistence now
   // requires an explicit user action through `onProviderModelChange`
   // (model picker), which is why the caller pairs this value with the
@@ -374,7 +376,7 @@ export function useProviderModels(
   // and gate send.
   const currentProviderIdValue = currentGroup?.provider_id ?? preferredProviderId;
   // DEFAULT_MODEL_OPTIONS (the canonical env aliases, derived from
-  // ENV_CLAUDE_CODE_MODELS) is reserved for the env provider only â?when
+  // ENV_CLAUDE_CODE_MODELS) is reserved for the env provider only — when
   // the user is genuinely on the built-in Claude Code path, the picker
   // shows the canonical short aliases.
   //
@@ -387,7 +389,7 @@ export function useProviderModels(
   // chat request that the server then resolves against `env` defaults,
   // bypassing the runtime gate the API just enforced).
   const allowDefaultFallback = currentProviderIdValue === 'env';
-  // NOTE: do NOT wrap this in useMemo â?this is a React Compiler project and a
+  // NOTE: do NOT wrap this in useMemo — this is a React Compiler project and a
   // manual useMemo here triggers "Existing memoization could not be preserved"
   // (the compiler infers `currentGroup` as the dep, coarser than a hand-written
   // [currentGroup?.models, ...]). The compiler auto-memoizes; leave it plain.
@@ -402,11 +404,11 @@ export function useProviderModels(
     [modelOptions, currentModelValue],
   );
 
-  // Resolved pair contract â?single source of truth for "what should the
+  // Resolved pair contract — single source of truth for "what should the
   // picker / send path actually use right now".
   //
   // resolvedModel: resolve the caller's modelName to a row by alias `value` OR
-  //   canonical `upstreamModelId` (tech-debt #37 â?a saved canonical id like
+  //   canonical `upstreamModelId` (tech-debt #37 — a saved canonical id like
   //   `claude-opus-4-7` must round-trip to its `opus` row instead of silently
   //   dropping to the group's first model and SENDING that). Resolve to the
   //   matched row's `value` (the alias the backend re-canonicalizes on send);
@@ -417,8 +419,8 @@ export function useProviderModels(
   // providerWasFilteredOut: did the runtime-filtered feed force us to
   // route somewhere different from what the caller semantically
   // requested? Compare requestedProviderId (semantic intent) NOT
-  // preferredProviderId (which already absorbs the envâgroups[0]
-  // fallback). The flag is purely informational â?the hook does not
+  // preferredProviderId (which already absorbs the env→groups[0]
+  // fallback). The flag is purely informational — the hook does not
   // act on it. Phase 2 Step 3b: the consumer (ChatView) reads this to
   // render an inline notice and disable send until the user picks a
   // new provider via the picker; persistence to the session row is
@@ -436,7 +438,7 @@ export function useProviderModels(
     currentModelOption,
     globalDefaultModel,
     globalDefaultProvider,
-    // Phase 6 UIæ¶å£ P2 (2026-05-14) â?derived from the runtime-
+    // Phase 6 UI收口 P2 (2026-05-14) — derived from the runtime-
     // compatible projection, not the raw full-catalog state. The
     // server now always returns the full catalog with annotations, so
     // `providerGroups.length === 0` would only ever fire on a totally

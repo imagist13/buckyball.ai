@@ -41,7 +41,7 @@ export interface PromptDialogProps {
   open: boolean;
   /** Called when the dialog requests a close (cancel button, Esc, overlay click, or after successful confirm). */
   onOpenChange: (open: boolean) => void;
-  /** Dialog title. Required â€?always pass a translated string. */
+  /** Dialog title. Required â€” always pass a translated string. */
   title: string;
   /** Optional secondary text shown under the title. */
   description?: string;
@@ -49,9 +49,9 @@ export interface PromptDialogProps {
   defaultValue?: string;
   /** Input placeholder shown when the value is empty. */
   placeholder?: string;
-  /** Label for the confirm (primary) button. Required â€?always pass a translated string. */
+  /** Label for the confirm (primary) button. Required â€” always pass a translated string. */
   confirmLabel: string;
-  /** Label for the cancel (secondary) button. Required â€?always pass a translated string. */
+  /** Label for the cancel (secondary) button. Required â€” always pass a translated string. */
   cancelLabel: string;
   /**
    * Called with the trimmed (if `trimOnConfirm`) input value when the user

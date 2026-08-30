@@ -1,11 +1,11 @@
 /**
- * Phase 5c slice 5 (2026-05-16, post-smoke) â€?proxy preflight errors
+ * Phase 5c slice 5 (2026-05-16, post-smoke) â€” proxy preflight errors
  * survive a chat refresh.
  *
  * Smoke evidence: GLM-5 Turbo + Codex Runtime + image request 400'd
  * at the proxy because of an unrecognised `namespace` tool. The user
  * saw the inline error on screen at the time, but refreshing the
- * chat showed only the user bubble â€?no assistant trace of the
+ * chat showed only the user bubble â€” no assistant trace of the
  * failure. Root cause: the server-side collect path only persists
  * when `contentBlocks.length > 0`. An `event.type === 'error'`
  * SSE event sets `hasError` + `errorMessage` but doesn't push
@@ -18,7 +18,7 @@
  * post-refresh transcript matches what the live SSE showed.
  *
  * Source-pin: testing the full chat route end-to-end means booting
- * a real Codex app-server + provider stack â€?well beyond what unit
+ * a real Codex app-server + provider stack â€” well beyond what unit
  * tests should carry. The pin below asserts the two fallback sites
  * exist in the collect module with the right wording. Real-credential
  * smoke will exercise the behaviour end-to-end after this slice
@@ -26,7 +26,7 @@
  *
  * Session ownership rework: `collectStreamResponse` (which owns these
  * fallback sites) moved out of `route.ts` into
- * `src/lib/chat-collect-stream-response.ts` â€?Next App Router forbids
+ * `src/lib/chat-collect-stream-response.ts` â€” Next App Router forbids
  * non-method exports from a route module. The pins follow the code;
  * the assertions are unchanged.
  */
@@ -41,7 +41,7 @@ const COLLECT_SRC = fs.readFileSync(
   'utf-8',
 );
 
-describe('chat route â€?proxy preflight error message persists across refresh', () => {
+describe('chat route â€” proxy preflight error message persists across refresh', () => {
   it('happy-path block pushes a fallback error text block when contentBlocks is empty + hasError set', () => {
     // The fallback MUST land BEFORE the existing
     // `if (contentBlocks.length > 0)` persistence guard, otherwise

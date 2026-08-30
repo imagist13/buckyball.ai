@@ -1,5 +1,5 @@
 /**
- * Unit tests for hasCodePilotProvider() â€?the precheck used by /api/chat to
+ * Unit tests for hasCodePilotProvider() â€” the precheck used by /api/chat to
  * decide whether to let a request through or redirect the user to the setup
  * flow.
  *
@@ -109,7 +109,7 @@ describe('hasCodePilotProvider', () => {
     assert.equal(hasCodePilotProvider(), true);
   });
 
-  it('returns FALSE even when ~/.claude/settings.json has a cc-switch token â€?this is by design', async () => {
+  it('returns FALSE even when ~/.claude/settings.json has a cc-switch token â€” this is by design', async () => {
     writeClaudeSettings({
       env: {
         ANTHROPIC_BASE_URL: 'https://relay.example.com',
@@ -121,7 +121,7 @@ describe('hasCodePilotProvider', () => {
     // hasCodePilotProvider() intentionally ignores it so users relying only on
     // cc-switch get routed to the CodePilot setup wizard. This will intercept
     // first-time cc-switch users at /api/chat until they add a provider
-    // explicitly â€?a deliberate behavior change documented in 0.50.3 release
+    // explicitly â€” a deliberate behavior change documented in 0.50.3 release
     // notes (see docs/exec-plans/active/runtime-auto-and-onboarding.md).
     assert.equal(hasCodePilotProvider(), false);
   });

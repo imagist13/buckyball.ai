@@ -291,7 +291,7 @@ describe('Harness Home Design APIs', () => {
       }],
       assets: [],
       executionHistory: [{
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         providerId: 'provider',
         modelId: 'model',
         changedAt: '2026-07-30T12:00:00.000Z',

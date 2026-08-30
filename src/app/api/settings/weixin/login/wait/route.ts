@@ -1,6 +1,6 @@
 /**
  * Poll WeChat QR login status.
- * POST { session_id } â€?polls the QR code status
+ * POST { session_id } â€” polls the QR code status
  */
 
 import { NextResponse } from 'next/server';
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     // Clean up completed sessions
     if (session.status === 'confirmed' || session.status === 'failed') {
-      // Don't delete immediately â€?let the client read the final status
+      // Don't delete immediately â€” let the client read the final status
       setTimeout(() => cancelQrLoginSession(sessionId), 30_000);
     }
 

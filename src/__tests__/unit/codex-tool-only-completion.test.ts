@@ -1,5 +1,5 @@
 /**
- * Phase 5b smoke round 10 (2026-05-16) �?live-stream completion
+ * Phase 5b smoke round 10 (2026-05-16) — live-stream completion
  * consistency for tool-only turns.
  *
  * Round 9 fixed "image path 403". Round 10 fixes "image visible NOW
@@ -8,8 +8,8 @@
  *   1. `buildFinalMessageContent` (stream-session-manager) used to
  *      return null when only tools were present (image generation
  *      with no continuation text). That left finalMessageContent
- *      null on the snapshot �?ChatView never appended the assistant
- *      message �?user had to switch sessions for the DB re-fetch
+ *      null on the snapshot → ChatView never appended the assistant
+ *      message → user had to switch sessions for the DB re-fetch
  *      to pick it up. Helper now treats text / thinking / tool_use
  *      / tool_result as independent signals: any single one builds
  *      a non-null final content.
@@ -23,10 +23,11 @@
  *   3. `canonicalToSseLine` for tool_completed now stringifies
  *      object `output` (imageGeneration hands us a ThreadItem
  *      object) and maps `event.error` onto `is_error: true` (which
- *      is what `useSSEStream` actually reads �?the pre-fix raw
+ *      is what `useSSEStream` actually reads — the pre-fix raw
  *      `error` field was silently ignored).
  *
- * Together these unblock the "active stream �?tool_use + media �? * completion �?immediate render" path so GPT-Image-2.0 results
+ * Together these unblock the "active stream → tool_use + media →
+ * completion → immediate render" path so GPT-Image-2.0 results
  * become visible in the current ChatView without a session switch.
  */
 
@@ -36,11 +37,11 @@ import { buildFinalMessageContent } from '@/lib/stream-session-manager';
 import type { ToolUseInfo, ToolResultInfo, MediaBlock } from '@/types';
 
 // ─────────────────────────────────────────────────────────────────────
-// buildFinalMessageContent �?accepts every shape of completion
+// buildFinalMessageContent — accepts every shape of completion
 // ─────────────────────────────────────────────────────────────────────
 
-describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only, orphan-result', () => {
-  it('text only �?returns the trimmed string (back-compat fast path)', () => {
+describe('buildFinalMessageContent — covers text-only, thinking-only, tool-only, orphan-result', () => {
+  it('text only → returns the trimmed string (back-compat fast path)', () => {
     const out = buildFinalMessageContent({
       accumulated: '  hello world  ',
       thinking: '',
@@ -50,7 +51,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
     assert.equal(out, 'hello world', 'pure-text completions stay as plain strings');
   });
 
-  it('completely empty �?null (no message worth persisting)', () => {
+  it('completely empty → null (no message worth persisting)', () => {
     const out = buildFinalMessageContent({
       accumulated: '',
       thinking: '',
@@ -60,9 +61,10 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
     assert.equal(out, null);
   });
 
-  it('TOOL-ONLY turn (image gen with no text) �?non-null JSON blocks including media (P0 fix)', () => {
+  it('TOOL-ONLY turn (image gen with no text) → non-null JSON blocks including media (P0 fix)', () => {
     // The GPT-Image-2.0 shape: assistant calls a tool, tool returns
-    // with media, no follow-up text. Pre-fix this returned null �?    // ChatView never appended �?user switched sessions to see it.
+    // with media, no follow-up text. Pre-fix this returned null →
+    // ChatView never appended → user switched sessions to see it.
     const toolUse: ToolUseInfo = { id: 'tu_img_1', name: 'gpt_image_2', input: { prompt: 'a cat' } };
     const media: MediaBlock[] = [
       { type: 'image', mimeType: 'image/png', localPath: '/home/me/.codepilot/.codepilot-media/x.png', mediaId: 'm1' },
@@ -89,7 +91,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
     assert.equal(blocks[1].media!.length, 1);
   });
 
-  it('ORPHAN tool_result (no matching tool_use) �?still written into blocks (P0 fix)', () => {
+  it('ORPHAN tool_result (no matching tool_use) → still written into blocks (P0 fix)', () => {
     // Codex sometimes emits item/completed without the matching
     // tool_started having been pushed into the array (race / reorder
     // / partial event drop). Pre-fix the orphan was discarded by the
@@ -125,7 +127,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
       toolResults: [matchedResult, orphanResult],
     });
     const blocks = JSON.parse(out!) as Array<{ type: string; tool_use_id?: string; text?: string }>;
-    // Expect text �?tool_use �?tool_result(matched) �?tool_result(orphan)
+    // Expect text → tool_use → tool_result(matched) → tool_result(orphan)
     assert.equal(blocks.length, 4);
     assert.equal(blocks[0].type, 'text');
     assert.equal(blocks[0].text, 'wrapping text');
@@ -137,7 +139,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
   });
 
   it('tool_result.content stays string when normalised', () => {
-    // Defensive �?SSE boundary stringifies, but the helper must not
+    // Defensive — SSE boundary stringifies, but the helper must not
     // re-introduce object types. Feed an object-typed `content` and
     // confirm the JSON output has it as a string.
     const orphan = {
@@ -156,7 +158,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
     assert.equal(blocks[0].content, '{"foo":"bar"}', 'object content is JSON-stringified');
   });
 
-  it('thinking only �?wraps in [thinking] block', () => {
+  it('thinking only → wraps in [thinking] block', () => {
     const out = buildFinalMessageContent({
       accumulated: '',
       thinking: 'pondering...',
@@ -179,7 +181,7 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
       toolResults: [result],
     });
     const blocks = JSON.parse(out!) as Array<{ type: string; tool_use_id?: string }>;
-    assert.equal(blocks.length, 2, 'paired tool_use + tool_result �?exactly 2 blocks');
+    assert.equal(blocks.length, 2, 'paired tool_use + tool_result → exactly 2 blocks');
     assert.equal(blocks[0].type, 'tool_use');
     assert.equal(blocks[1].type, 'tool_result');
   });
@@ -234,15 +236,15 @@ describe('buildFinalMessageContent �?covers text-only, thinking-only, tool-only
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// canonicalToSseLine (SSE boundary) �?content stringification + is_error
+// canonicalToSseLine (SSE boundary) — content stringification + is_error
 // ─────────────────────────────────────────────────────────────────────
 
-describe('codex/runtime.canonicalToSseLine �?tool_result wire shape', () => {
+describe('codex/runtime.canonicalToSseLine — tool_result wire shape', () => {
   it('stringifyToolResultContent normalises object output to JSON string', async () => {
     const { stringifyToolResultContent } = await import('@/lib/codex/runtime');
     assert.equal(stringifyToolResultContent('plain'), 'plain', 'strings pass through');
-    assert.equal(stringifyToolResultContent(null), '', 'null �?empty');
-    assert.equal(stringifyToolResultContent(undefined), '', 'undefined �?empty');
+    assert.equal(stringifyToolResultContent(null), '', 'null → empty');
+    assert.equal(stringifyToolResultContent(undefined), '', 'undefined → empty');
     assert.equal(stringifyToolResultContent({ a: 1 }), '{"a":1}', 'objects stringify');
     assert.equal(stringifyToolResultContent([1, 2]), '[1,2]', 'arrays stringify');
     assert.equal(stringifyToolResultContent(42), '42', 'primitives stringify');
@@ -258,7 +260,7 @@ describe('codex/runtime.canonicalToSseLine �?tool_result wire shape', () => {
   });
 });
 
-describe('codex/runtime.canonicalToSseLine source �?tool_result emits is_error + stringified content (round 10)', () => {
+describe('codex/runtime.canonicalToSseLine source — tool_result emits is_error + stringified content (round 10)', () => {
   // The canonicalToSseLine function is private inside codex/runtime.ts.
   // Source-grep is the cheapest pin that catches a regression
   // without booting the runtime (which requires Codex app-server).
@@ -282,7 +284,7 @@ describe('codex/runtime.canonicalToSseLine source �?tool_result emits is_error 
     );
   });
 
-  it('tool_completed arm maps event.error �?is_error: true (NOT raw error field)', () => {
+  it('tool_completed arm maps event.error → is_error: true (NOT raw error field)', () => {
     const arm = src.match(/case 'tool_completed':\s*\{[\s\S]{0,2500}\}/);
     assert.ok(arm);
     assert.match(

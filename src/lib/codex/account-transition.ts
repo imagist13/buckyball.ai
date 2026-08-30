@@ -2,7 +2,7 @@
  * Codex account transitions that must drop cached capability.
  *
  * `src/lib/codex/models.ts` keeps an in-memory model/list cache, and the
- * `cacheOnly` read path ignores TTL on purpose (P0.3 spawn decoupling) â€?a warm
+ * `cacheOnly` read path ignores TTL on purpose (P0.3 spawn decoupling) â€” a warm
  * cache is served forever until something invalidates it. That makes every
  * account transition a correctness event, not just a freshness one: after a
  * logout or an account switch, the full catalog and the `turn/start` effort

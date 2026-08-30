@@ -12,7 +12,7 @@ import {
   waitForPageReady,
 } from '../helpers';
 
-// Settings page was rewritten �?new sections (账户信息 etc.), new tabs,
+// Settings page was rewritten — new sections (账户信息 etc.), new tabs,
 // new save/reset flow. Old "Manage your Claude CLI settings" text, Visual
 // / JSON editor tabs, and Save Changes/Reset button layout no longer match
 // the current UI. Marked skip with the rest of the layout/plugins rewrite

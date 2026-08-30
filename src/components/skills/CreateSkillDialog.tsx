@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SpinnerGap } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 
@@ -138,7 +138,7 @@ export function CreateSkillDialog({
                     : "border-border hover:bg-accent"
                 )}
               >
-                <BuckyballIcon name="folder_open" size="md" aria-hidden />
+                <CodePilotIcon name="folder_open" size="md" aria-hidden />
                 {t('skills.project')}
               </Button>
               <Button
@@ -151,7 +151,7 @@ export function CreateSkillDialog({
                     : "border-border hover:bg-accent"
                 )}
               >
-                <BuckyballIcon name="web_simple" size="md" aria-hidden />
+                <CodePilotIcon name="web_simple" size="md" aria-hidden />
                 {t('skills.global')}
               </Button>
             </div>

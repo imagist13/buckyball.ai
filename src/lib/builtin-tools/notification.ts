@@ -1,9 +1,9 @@
 /**
- * builtin-tools/notification.ts â€?Notification tool handlers (shared between runtimes).
+ * builtin-tools/notification.ts â€” Notification tool handlers (shared between runtimes).
  *
  * These are the pure handler functions extracted from notification-mcp.ts.
  * Both SDK Runtime (via createSdkMcpServer) and Native Runtime (via AI SDK tool())
- * use these same handlers â€?single source of truth.
+ * use these same handlers â€” single source of truth.
  */
 
 import { tool } from 'ai';
@@ -16,7 +16,7 @@ function getBaseUrl(): string {
 }
 
 /**
- * Phase 5d Phase 2 slice 2d (2026-05-17) â€?system prompt now
+ * Phase 5d Phase 2 slice 2d (2026-05-17) â€” system prompt now
  * re-exports from the canonical MCP-side source. The previous local
  * Chinese paraphrase drifted shorter than the MCP authority and had
  * a slightly different vocabulary; the Expected Differences Ledger
@@ -29,7 +29,7 @@ function getBaseUrl(): string {
 export const NOTIFICATION_SYSTEM_PROMPT = NOTIFICATION_MCP_SYSTEM_PROMPT;
 
 /**
- * Phase 3 Step 4 follow-up â€?hidden run context for the schedule
+ * Phase 3 Step 4 follow-up â€” hidden run context for the schedule
  * tool. Mirrors `NotificationMcpContext` in notification-mcp.ts.
  * Native Runtime's tool factory closes over `{sessionId, workingDirectory}`
  * the same way the SDK MCP variant does so a model in chat session A
@@ -68,11 +68,11 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
     codepilot_schedule_task: tool({
       description:
         'Create a scheduled task (cron / interval / once). Pick `kind` based on user intent:\n' +
-        '  - "reminder" â€?natural-language reminders like "remind me to drink water in 5 minutes" / ' +
-        '"æé†’æˆ?9 ç‚¹å¼€ä¼?. The scheduler will pop a notification with the prompt as the body and ' +
+        '  - "reminder" â€” natural-language reminders like "remind me to drink water in 5 minutes" / ' +
+        '"æé†’æˆ‘ 9 ç‚¹å¼€ä¼š". The scheduler will pop a notification with the prompt as the body and ' +
         'will NOT call any AI model. Use this whenever the user just wants to be reminded of ' +
         'something at a future time.\n' +
-        '  - "ai_task" â€?workflows where the user wants an AI to actually run something on a schedule, ' +
+        '  - "ai_task" â€” workflows where the user wants an AI to actually run something on a schedule, ' +
         'e.g. "every morning summarize my unread emails", "every Monday review last week\'s commits". ' +
         'The scheduler feeds the prompt to the configured provider and surfaces the AI\'s reply.',
       inputSchema: z.object({
@@ -81,7 +81,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
           'For kind=reminder: the reminder body the user will see in the notification. ' +
           'For kind=ai_task: the instruction handed to the model.',
         ),
-        // Phase 3 Step 3 â€?kind required so reminders bypass the AI
+        // Phase 3 Step 3 â€” kind required so reminders bypass the AI
         // path. Server validates; if this is missing, /api/tasks/schedule
         // returns 400. DB default 'ai_task' is migration-only.
         kind: z.enum(['reminder', 'ai_task']).describe(
@@ -96,7 +96,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
       execute: async ({ name, prompt, kind, schedule_type, schedule_value, priority, notify_on_complete, durable }) => {
         try {
           // v6 fix (P2): if `durable=false`, take the session-only
-          // branch â€?match `notification-mcp.ts` exactly so the AI
+          // branch â€” match `notification-mcp.ts` exactly so the AI
           // SDK builtin and the MCP variant behave the same way. The
           // previous code accepted the param then silently ignored
           // it, creating a persistent task; that broke the schema's
@@ -118,7 +118,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
               }
               next_run = cronNext.toISOString();
             }
-            // v4 fix #1 â€?session task literal MUST carry `kind`
+            // v4 fix #1 â€” session task literal MUST carry `kind`
             // explicitly. Bypassing /api/tasks/schedule means the
             // server-side kind validation doesn't run; the in-memory
             // dispatch in executeDueTask reads task.kind directly.
@@ -135,7 +135,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
               priority: priority || 'normal',
               notify_on_complete: notify_on_complete === false ? 0 : 1,
               permanent: 0,
-              // Hidden run context (closure-captured) â€?same rationale
+              // Hidden run context (closure-captured) â€” same rationale
               // as the SDK MCP variant: the model's literal args don't
               // carry which project session this task belongs to.
               origin_session_id: ctx.sessionId,
@@ -147,11 +147,11 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
             return `Session task "${name}" scheduled (${kind}, non-durable). ID: ${id}, next run: ${next_run}`;
           }
 
-          // v7 fix â€?POST body must carry `notify_on_complete` as 0/1,
+          // v7 fix â€” POST body must carry `notify_on_complete` as 0/1,
           // never raw boolean. The /api/tasks/schedule route now also
           // normalizes defensively, but matching the MCP variant here
           // keeps the wire format consistent across both AI surfaces.
-          // Maps false â†?0, anything else (true/undefined) â†?1.
+          // Maps false â†’ 0, anything else (true/undefined) â†’ 1.
           const notifyFlag: 0 | 1 = notify_on_complete === false ? 0 : 1;
           const baseUrl = getBaseUrl();
           const res = await fetch(`${baseUrl}/api/tasks/schedule`, {
@@ -166,7 +166,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
               priority,
               notify_on_complete: notifyFlag,
               durable,
-              // Hidden run context â€?model can't override; closure
+              // Hidden run context â€” model can't override; closure
               // value wins. Empty when the tool was registered
               // without context (legacy callers / unit tests).
               origin_session_id: ctx.sessionId,
@@ -187,14 +187,14 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
       inputSchema: z.object({
         status: z.enum(['active', 'paused', 'completed', 'disabled', 'all']).optional(),
       }),
-      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€?pre-fix this
+      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€” pre-fix this
       // handler only hit `/api/tasks/list` (durable tasks). The MCP
       // authority (`notification-mcp.ts:222-`) merges session-only
       // tasks from `getSessionTasks()` so the model sees the FULL
-      // set. Native must match â€?running `list_tasks` in a session
+      // set. Native must match â€” running `list_tasks` in a session
       // that scheduled an in-memory task should show it.
       //
-      // Phase 5e review fix P1 #3 (2026-05-18) â€?two bugs in the
+      // Phase 5e review fix P1 #3 (2026-05-18) â€” two bugs in the
       // first pass:
       //   1. Used `t.scheduleType / t.scheduleValue` (camelCase) on the
       //      session task rows. Actual `ScheduledTask` interface
@@ -205,7 +205,8 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
       //   2. The `status` filter was only forwarded to the durable
       //      `/api/tasks/list` query string; session tasks were ALWAYS
       //      merged regardless of the user's filter. MCP authority
-      //      (notification-mcp.ts:228) filters session tasks too â€?      //      Native must match.
+      //      (notification-mcp.ts:228) filters session tasks too â€”
+      //      Native must match.
       execute: async ({ status }) => {
         try {
           const baseUrl = getBaseUrl();
@@ -235,7 +236,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
               );
             }
           } catch {
-            // task-scheduler not available â€?degrade to durable-only
+            // task-scheduler not available â€” degrade to durable-only
           }
 
           const durableRows = durable.map(
@@ -250,15 +251,15 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
       },
     }),
 
-    // Phase 5e round 8 follow-up (2026-05-18) â€?Native parity for the
+    // Phase 5e round 8 follow-up (2026-05-18) â€” Native parity for the
     // `assistant_buddy` capability. Previously this lived only in the
     // MCP authority (notification-mcp.ts:287); the catalog drift fix
     // in round 4 marked `assistant_buddy.exposure.native` as
     // `unsupported`. Round 8 user direction: "æˆ‘ä»¬è‡ªå®¶ Runtime æ˜¯åŸºç¡€
-    // ç›?â€?CodePilot ä¸èƒ½åœåœ¨ 7/8". This Native handler mirrors the
+    // ç›˜ â€” CodePilot ä¸èƒ½åœåœ¨ 7/8". This Native handler mirrors the
     // MCP version verbatim (same HTTP endpoint, same response shape,
     // same lazy `@/lib/buddy` import) so both runtimes share the
-    // SAME contract â€?adding a stat / changing a label only needs to
+    // SAME contract â€” adding a stat / changing a label only needs to
     // happen in one canonical place going forward (next refactor
     // slice can extract this body to a shared helper).
     codepilot_hatch_buddy: tool({
@@ -313,11 +314,11 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
       inputSchema: z.object({
         task_id: z.string().describe('Task ID to cancel'),
       }),
-      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€?pre-fix this
+      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€” pre-fix this
       // handler only DELETE'd `/api/tasks/:id` (durable). The MCP
       // authority (`notification-mcp.ts:264-`) tries
       // `removeSessionTask(task_id)` FIRST, then falls back to the
-      // durable DELETE. Native must match â€?session-only IDs aren't
+      // durable DELETE. Native must match â€” session-only IDs aren't
       // in the durable DB and the previous shape returned a 404 for
       // them.
       execute: async ({ task_id }) => {
@@ -330,7 +331,7 @@ export function createNotificationTools(ctx: NotificationToolsContext = {}) {
             return `Task ${task_id} cancelled (session-only).`;
           }
         } catch {
-          // task-scheduler unavailable â€?fall through to durable DELETE
+          // task-scheduler unavailable â€” fall through to durable DELETE
         }
 
         // 2. Fall back to durable DELETE.

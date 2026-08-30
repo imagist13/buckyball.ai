@@ -11,19 +11,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SpinnerGap, Check } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
 import { showToast } from "@/hooks/useToast";
 import { cn } from "@/lib/utils";
+import type { CatalogModelPresenceState } from "@/lib/catalog-model-identity";
 
 /**
- * "æç´¢å¹¶æ·»å æ¨¡å? dialog (originally OpenRouter-only, generalized to any
- * provider whose `/v1/models` returns a usable catalog â?see
+ * "搜索并添加模型" dialog (originally OpenRouter-only, generalized to any
+ * provider whose `/v1/models` returns a usable catalog — see
  * `canSearchUpstreamModels`).
  *
  * Opens, fetches the full candidate list from `POST /search-models`, then
- * filters client-side as the user types â?server has no `q` param.
+ * filters client-side as the user types — server has no `q` param.
  * Adding a candidate goes through `POST /api/providers/[id]/models`
  * (manual path, source='manual', enable_source='manual_enabled').
  *
@@ -32,11 +33,11 @@ import { cn } from "@/lib/utils";
  * alreadyAdded reflects the current DB state).
  *
  * Failure fallback: if `/search-models` returns an error (key invalid,
- * upstream 5xx, network), the dialog renders a "æå¨è¾å¥æ¨¡å ID"
+ * upstream 5xx, network), the dialog renders a "手动输入模型 ID"
  * button alongside the error message; clicking calls `onManualFallback`,
  * which closes this dialog and opens the manual-entry dialog so the
  * user is never stuck. Per Codex review the contract is "search if
- * possible, fall back to manual otherwise" â?and this needs to apply
+ * possible, fall back to manual otherwise" — and this needs to apply
  * at runtime too, not just at the static gate.
  */
 
@@ -49,6 +50,8 @@ export interface SearchCandidate {
   alreadyAdded: boolean;
   existingHidden: boolean;
   existingModelId?: string;
+  presenceState?: CatalogModelPresenceState;
+  conflictModelIds?: string[];
 }
 
 interface SearchModelsResponse {
@@ -57,13 +60,30 @@ interface SearchModelsResponse {
   cachedAt: string;
 }
 
+interface ModelIdentityConflictResponse {
+  code: "MODEL_IDENTITY_CONFLICT";
+  conflictModelIds?: string[];
+}
+
+export function isModelIdentityConflictResponse(
+  status: number,
+  body: unknown,
+): body is ModelIdentityConflictResponse {
+  if (status !== 409 || !body || typeof body !== "object") return false;
+  const record = body as Record<string, unknown>;
+  return record.code === "MODEL_IDENTITY_CONFLICT"
+    && (record.conflictModelIds === undefined
+      || (Array.isArray(record.conflictModelIds)
+        && record.conflictModelIds.every(id => typeof id === "string")));
+}
+
 interface OpenRouterSearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   providerId: string;
   providerName: string;
-  /** Called after the user successfully adds a candidate, so the parent
-   *  can refetch the provider's model bundle and update its row list. */
+  /** Called after a mutation response that may have changed catalog rows
+   *  (including a typed conflict after merge), so the parent can refetch. */
   onModelAdded?: () => void;
   /** Called when /search-models fails and the user clicks "type model
    *  ID manually". The parent should close this dialog and open the
@@ -80,7 +100,7 @@ function formatContextWindow(ctx: number | undefined): string | null {
 
 function formatPrice(n: number | undefined): string | null {
   if (n === undefined || !Number.isFinite(n)) return null;
-  // OpenRouter prices vary 0.01 â?50+ per 1M; 2 decimals gives readability
+  // OpenRouter prices vary 0.01 – 50+ per 1M; 2 decimals gives readability
   // without truncating cheap models to 0.00.
   return n < 0.1 ? n.toFixed(3) : n.toFixed(2);
 }
@@ -132,9 +152,8 @@ export function OpenRouterSearchDialog({
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [addingId, setAddingId] = useState<string | null>(null);
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
-  // Phase 1 Step 2 æ¶æ round 3 (2026-05-06): the OpenRouter section in
+  // Phase 1 Step 2 收敛 round 3 (2026-05-06): the OpenRouter section in
   // the Models page no longer has its own refresh / validate button.
   // The "fetch / refresh upstream catalog" flow lives entirely inside
   // this dialog now: auto-fetch on open + an in-dialog retry button on
@@ -142,7 +161,7 @@ export function OpenRouterSearchDialog({
   // handler cancel a stale in-flight request without resurrecting an
   // earlier error.
   const abortRef = useRef<{ aborted: boolean } | null>(null);
-  const fetchCandidates = useCallback(() => {
+  const fetchCandidates = useCallback(async () => {
     // Cancel any in-flight request before kicking off a new one.
     // Previous form `abortRef.current?.aborted && (... = true)` was a
     // no-op for in-flight (aborted=false short-circuited the &&), so a
@@ -154,25 +173,19 @@ export function OpenRouterSearchDialog({
     abortRef.current = guard;
     setLoading(true);
     setFetchError(null);
-    fetch(`/api/providers/${providerId}/search-models`, { method: "POST" })
-      .then(async res => {
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body?.error || `${res.status} ${res.statusText}`);
-        }
-        return res.json() as Promise<SearchModelsResponse>;
-      })
-      .then(data => {
-        if (guard.aborted) return;
-        setCandidates(data.candidates);
-      })
-      .catch(err => {
-        if (guard.aborted) return;
-        setFetchError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!guard.aborted) setLoading(false);
-      });
+    try {
+      const res = await fetch(`/api/providers/${providerId}/search-models`, { method: "POST" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error || `${res.status} ${res.statusText}`);
+      }
+      const data = await res.json() as SearchModelsResponse;
+      if (!guard.aborted) setCandidates(data.candidates);
+    } catch (err) {
+      if (!guard.aborted) setFetchError(err instanceof Error ? err.message : String(err));
+    } finally {
+      if (!guard.aborted) setLoading(false);
+    }
   }, [providerId]);
 
   // Fetch candidates when dialog opens; reset state when it closes so the
@@ -182,11 +195,10 @@ export function OpenRouterSearchDialog({
       setQuery("");
       setFetchError(null);
       setAddingId(null);
-      setAddedIds(new Set());
       if (abortRef.current) abortRef.current.aborted = true;
       return;
     }
-    fetchCandidates();
+    void fetchCandidates();
     return () => {
       if (abortRef.current) abortRef.current.aborted = true;
     };
@@ -207,22 +219,32 @@ export function OpenRouterSearchDialog({
         body: JSON.stringify(mutation.body),
       });
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body?.error || `${res.status} ${res.statusText}`);
+        const body: unknown = await res.json().catch(() => ({}));
+        if (isModelIdentityConflictResponse(res.status, body)) {
+          // The server may have materialized other catalog rows before the
+          // target CAS failed. Re-read both dialog and parent model state so a
+          // 409 never leaves stale candidates or hides those real writes.
+          await fetchCandidates();
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("provider-changed"));
+          }
+          onModelAdded?.();
+          throw new Error(t(
+            "provider.search.openrouter.mutationIdentityConflict" as TranslationKey,
+            {
+              ids: body.conflictModelIds?.join(", ") || candidate.modelId,
+            },
+          ));
+        }
+        const error = body && typeof body === "object" && "error" in body
+          ? String((body as { error?: unknown }).error || "")
+          : "";
+        throw new Error(error || `${res.status} ${res.statusText}`);
       }
-      if (candidate.existingHidden) {
-        setCandidates(previous => previous.map(item =>
-          item.modelId === candidate.modelId
-            ? { ...item, existingHidden: false, alreadyAdded: true }
-            : item,
-        ));
-      } else {
-        setAddedIds(prev => {
-          const next = new Set(prev);
-          next.add(candidate.modelId);
-          return next;
-        });
-      }
+      // Re-read the server-owned five-state classifier. A 2xx mutation alone
+      // is not proof that a catalog CAS won, and optimistic local state used
+      // to report a false success when another row claimed the identity.
+      await fetchCandidates();
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("provider-changed"));
       }
@@ -260,9 +282,9 @@ export function OpenRouterSearchDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col gap-0 overflow-hidden">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-4">
-          {/* Phase 1 Step 2 æ¶æ round 6 (2026-05-06): title generalized
-              from OpenRouter-specific "ä»?OpenRouter æç´¢æ¨¡å" to a
-              provider-agnostic "ä¸ºã{name}ãæ·»å æ¨¡å? â?same wording as
+          {/* Phase 1 Step 2 收敛 round 6 (2026-05-06): title generalized
+              from OpenRouter-specific "从 OpenRouter 搜索模型" to a
+              provider-agnostic "为「{name}」添加模型" — same wording as
               the trigger button. The dialog now serves any provider
               whose /v1/models reliably lists models (ollama, litellm,
               anthropic-thirdparty, generic openai-compatible) plus
@@ -275,7 +297,7 @@ export function OpenRouterSearchDialog({
             {t('provider.search.dialogDescription' as TranslationKey)}
           </DialogDescription>
           <div className="relative mt-3">
-            <BuckyballIcon
+            <CodePilotIcon
               name="search"
               size="sm"
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -293,7 +315,8 @@ export function OpenRouterSearchDialog({
             {totalLabel ? (
               <div className="text-[11px] text-muted-foreground">{totalLabel}</div>
             ) : <span />}
-            {/* Lightweight éæ°å è½½ â?exists per Codex spec ("å¼¹çªåå¯ä»?                æä¸ä¸ªè½»éãéæ°å è½½ãæé®ï¼åªç¨äºå¤±è´¥æç¨æ·ä¸»å¨éè¯").
+            {/* Lightweight 重新加载 — exists per Codex spec ("弹窗内可以
+                有一个轻量「重新加载」按钮，只用于失败或用户主动重试").
                 Always rendered (not failure-only) so a user who suspects
                 the cached list is stale can re-fetch without closing
                 and re-opening the dialog. Cheap server-side cache (5
@@ -315,7 +338,7 @@ export function OpenRouterSearchDialog({
           {loading && (
             <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
               <SpinnerGap size={16} className="animate-spin" />
-              <span className="text-xs">â?/span>
+              <span className="text-xs">…</span>
             </div>
           )}
           {fetchError && !loading && (
@@ -330,7 +353,7 @@ export function OpenRouterSearchDialog({
                   endpoint fails the user must still have a path to add
                   a model, otherwise the dialog is a dead end. Manual
                   entry is the only path that doesn't depend on
-                  upstream /v1/models â?same as what canSearchUpstream
+                  upstream /v1/models — same as what canSearchUpstream
                   Models=false providers get. */}
               {onManualFallback && (
                 <div className="flex items-center gap-2">
@@ -358,7 +381,7 @@ export function OpenRouterSearchDialog({
             // Scroll container is the rounded list itself, so the
             // scrollbar sits inside the muted block (right edge of the
             // list) rather than at the dialog's outer edge.
-            // `min-h-0` is the standard flex trick â?without it, the
+            // `min-h-0` is the standard flex trick — without it, the
             // list refuses to shrink below content height and the outer
             // wrapper has no scroll target. No row dividers per design
             // call: typography + py-3 spacing already give clear
@@ -366,9 +389,10 @@ export function OpenRouterSearchDialog({
             <div className="rounded-md bg-muted/40 overflow-y-auto flex-1 min-h-0">
               <div>
                 {filtered.map(candidate => {
-                  const isAdded = (candidate.alreadyAdded && !candidate.existingHidden)
-                    || addedIds.has(candidate.modelId);
+                  const isAdded = candidate.alreadyAdded && !candidate.existingHidden;
                   const isAdding = addingId === candidate.modelId;
+                  const isLegacyUpgrade = candidate.presenceState === 'legacy_upgrade_available';
+                  const isIdentityConflict = candidate.presenceState === 'identity_conflict';
                   const ctx = formatContextWindow(candidate.contextWindow);
                   const promptPrice = formatPrice(candidate.pricing?.promptPerMillion);
                   const completionPrice = formatPrice(candidate.pricing?.completionPerMillion);
@@ -382,6 +406,13 @@ export function OpenRouterSearchDialog({
                         <div className="text-[11px] text-muted-foreground truncate">
                           {candidate.upstreamModelId || candidate.modelId}
                         </div>
+                        {isIdentityConflict && (
+                          <div className="mt-1 text-[10px] leading-4 text-status-warning-foreground">
+                            {t("provider.search.openrouter.identityConflictDetail" as TranslationKey, {
+                              ids: candidate.conflictModelIds?.join(", ") || candidate.modelId,
+                            })}
+                          </div>
+                        )}
                         {(ctx || (promptPrice && completionPrice)) && (
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
                             {ctx && (
@@ -400,7 +431,21 @@ export function OpenRouterSearchDialog({
                           </div>
                         )}
                       </div>
-                      {candidate.existingHidden ? (
+                      {isIdentityConflict ? (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="inline-flex items-center rounded-full bg-status-warning-muted px-2 py-0.5 text-[10px] font-medium text-status-warning-foreground">
+                            {t("provider.search.openrouter.identityConflict" as TranslationKey)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 px-2.5 text-xs"
+                            onClick={() => onOpenChange(false)}
+                          >
+                            {t("provider.search.openrouter.reviewModels" as TranslationKey)}
+                          </Button>
+                        </div>
+                      ) : candidate.existingHidden ? (
                         <div className="flex items-center gap-2 shrink-0">
                           <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                             {t("provider.search.openrouter.alreadyAddedHidden" as TranslationKey)}
@@ -439,11 +484,15 @@ export function OpenRouterSearchDialog({
                           {isAdding ? (
                             <SpinnerGap size={11} className="animate-spin" />
                           ) : (
-                            <BuckyballIcon name="plus" size={11} strokeWidth={2} aria-hidden />
+                            <CodePilotIcon name="plus" size={11} strokeWidth={2} aria-hidden />
                           )}
                           {isAdding
-                            ? t("provider.search.openrouter.adding" as TranslationKey)
-                            : t("provider.search.openrouter.addButton" as TranslationKey)}
+                            ? t((isLegacyUpgrade
+                                ? "provider.search.openrouter.upgrading"
+                                : "provider.search.openrouter.adding") as TranslationKey)
+                            : t((isLegacyUpgrade
+                                ? "provider.search.openrouter.upgradeButton"
+                                : "provider.search.openrouter.addButton") as TranslationKey)}
                         </Button>
                       )}
                     </div>

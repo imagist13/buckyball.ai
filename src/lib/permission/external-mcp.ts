@@ -4,10 +4,10 @@
  *
  * ## The hole this closes
  *
- * `resolveHumanOnlyDenyTools` can only enumerate buckyball.ai's OWN in-process
+ * `resolveHumanOnlyDenyTools` can only enumerate CodePilot's OWN in-process
  * servers, because that is all that exists at options-build time. A
  * user-configured **external** MCP server ships its tool list at connect time,
- * i.e. after the SDK options are already built â?so a credential-shaped tool on
+ * i.e. after the SDK options are already built — so a credential-shaped tool on
  * a third-party server (`mcp__vault__read_secret`) never reaches the deny list,
  * and under `permissionMode: 'auto'` the model classifier may approve it
  * outright. `canUseTool` does not save us: under `'auto'` an approved call
@@ -23,14 +23,14 @@
  * ## Fail-closed, deliberately over-reporting
  *
  * Every uncertainty resolves to "present":
- *   - a config file we cannot read or parse â?`undetectable` â?treated as present
- *   - a server entry we can see â?present, regardless of whether the SDK would
+ *   - a config file we cannot read or parse → `undetectable` → treated as present
+ *   - a server entry we can see → present, regardless of whether the SDK would
  *     really load it (we do not model `mcpServerOverrides` disable state; a
  *     false "present" costs the user the auto_review option, a false "absent"
  *     costs them a secret)
  *
  * The direction of the error matters more than its rate. `default` and
- * `full_access` are untouched â?this gate exists only because `auto_review`
+ * `full_access` are untouched — this gate exists only because `auto_review`
  * makes a promise the other two profiles never make.
  */
 
@@ -43,7 +43,7 @@ import os from 'os';
  *
  * `certainty` is the breadcrumb the UI needs: 'configured' means we saw real
  * servers and can name them; 'undetectable' means a config file was unreadable
- * and we refused to guess. The user-visible copy differs â?telling someone
+ * and we refused to guess. The user-visible copy differs — telling someone
  * "you have an MCP server configured" when we actually mean "we could not read
  * your settings file" is the kind of confident-wrong status this plan exists to
  * prevent.
@@ -59,7 +59,7 @@ export type ExternalMcpStatus =
 
 /** Outcome of inspecting ONE config source. Pure input to {@link summarizeExternalMcp}. */
 export interface McpConfigProbe {
-  /** Stable label for the UI + audit â?e.g. `user:~/.claude.json`. */
+  /** Stable label for the UI + audit — e.g. `user:~/.claude.json`. */
   readonly label: string;
   readonly outcome: 'absent' | 'empty' | 'has-servers' | 'unreadable';
 }
@@ -68,35 +68,35 @@ export interface McpConfigProbe {
  * ## Why there is no name-based exemption (review round #5, P1)
  *
  * An earlier revision exempted servers named `codepilot-*` from this gate, on
- * the theory that they were buckyball.ai's own in-process servers. They are not:
- * every name reaching this module comes from a **user-controlled** source â?an
+ * the theory that they were CodePilot's own in-process servers. They are not:
+ * every name reaching this module comes from a **user-controlled** source — an
  * explicit `mcpServers` record, or an `mcpServers` key in a user/project/local
  * config file. A third party naming their server `codepilot-vault` inherited
  * the exemption and walked straight through the fail-closed gate.
  *
- * buckyball.ai's real in-process servers are registered by claude-client *after*
- * the permission options are built (`claude-client.ts` â?the probe at the
- * options boundary, the `codepilot-memory` / `codepilot-cli-tools` / â?merges
+ * CodePilot's real in-process servers are registered by claude-client *after*
+ * the permission options are built (`claude-client.ts` — the probe at the
+ * options boundary, the `codepilot-memory` / `codepilot-cli-tools` / … merges
  * far below it). They are structurally incapable of appearing in this module's
  * input, so the exemption protected nothing and cost everything: trust here is
  * derived from the *source* of a name, never from the name itself. If an
  * in-process server ever does need to be declared trusted, it must be marked
- * explicitly by the caller against a trusted registry â?not inferred.
+ * explicitly by the caller against a trusted registry — not inferred.
  *
- * See `docs/guardrails/` â?PermissionBoundary: "no prefix-based trust".
+ * See `docs/guardrails/` — PermissionBoundary: "no prefix-based trust".
  */
 
 /**
  * The pure decision. Kept separate from the filesystem walk so the fail-closed
  * behaviour is table-testable without touching a real HOME.
  *
- * Precedence: a server we can SEE beats a file we cannot read â?naming the
+ * Precedence: a server we can SEE beats a file we cannot read — naming the
  * real cause is more useful than reporting the vaguer one.
  */
 export function summarizeExternalMcp(input: {
   /**
    * Server record keys explicitly passed to `streamClaude`. Every one of these
-   * is external by construction â?see the note above on why no name is trusted.
+   * is external by construction — see the note above on why no name is trusted.
    */
   readonly explicitServerNames?: readonly string[];
   readonly probes?: readonly McpConfigProbe[];
@@ -178,7 +178,7 @@ export function collectMcpConfigProbes(input: {
     if (sources.includes('local')) {
       probes.push(inspectConfigFile(path.join(cwd, '.claude', 'settings.local.json'), 'local:.claude/settings.local.json'));
     }
-    // Unconditional â?see the doc note above.
+    // Unconditional — see the doc note above.
     probes.push(inspectConfigFile(path.join(cwd, '.mcp.json'), 'project:.mcp.json'));
   }
 
@@ -190,7 +190,7 @@ export function collectMcpConfigProbes(input: {
  *
  * Called by claude-client immediately before the SDK options are assembled,
  * with the same `settingSources` / `mcpServers` / cwd that turn will actually
- * use â?an answer derived from anything else would be about a different turn.
+ * use — an answer derived from anything else would be about a different turn.
  */
 export function probeExternalMcp(input: {
   readonly workingDirectory?: string;

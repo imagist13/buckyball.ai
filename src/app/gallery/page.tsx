@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { SortDescending, SpinnerGap } from '@/components/ui/icon';
 import {
-  BuckyballIcon,
-  type BuckyballIconName,
+  CodePilotIcon,
+  type CodePilotIconName,
 } from '@/components/ui/semantic-icon';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ const PAGE_SIZE = 20;
 
 type SortOrder = 'newest' | 'oldest';
 
-const KIND_ICONS: Readonly<Record<string, BuckyballIconName>> = {
+const KIND_ICONS: Readonly<Record<string, CodePilotIconName>> = {
   image: 'image',
   video: 'media_video',
   audio: 'media_audio',
@@ -339,7 +339,7 @@ export default function GalleryPage() {
               className="h-8 gap-1.5"
               onClick={() => setFavoritesOnly((v) => !v)}
             >
-              <BuckyballIcon
+              <CodePilotIcon
                 name="favorite"
                 size="sm"
                 strokeWidth={1.5}
@@ -371,7 +371,7 @@ export default function GalleryPage() {
             className="gap-1.5 rounded-full px-3"
             onClick={() => setKind('')}
           >
-            <BuckyballIcon name="artifact" size={12} aria-hidden />
+            <CodePilotIcon name="artifact" size={12} aria-hidden />
             {t('gallery.kindAll')}
           </Button>
           {kinds.map((entry) => (
@@ -382,7 +382,7 @@ export default function GalleryPage() {
               className="gap-1.5 rounded-full px-3"
               onClick={() => setKind(entry.id)}
             >
-              <BuckyballIcon
+              <CodePilotIcon
                 name={KIND_ICONS[entry.id] || 'artifact'}
                 size={12}
                 aria-hidden
@@ -402,7 +402,7 @@ export default function GalleryPage() {
           </div>
         ) : items.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground">
-            <BuckyballIcon name="appearance" size={40} className="opacity-30" aria-hidden />
+            <CodePilotIcon name="appearance" size={40} className="opacity-30" aria-hidden />
             <p className="text-sm">{t('gallery.empty' as TranslationKey)}</p>
             <p className="text-xs opacity-70">{t('gallery.emptyHint' as TranslationKey)}</p>
           </div>

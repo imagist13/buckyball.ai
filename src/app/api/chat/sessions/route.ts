@@ -9,15 +9,15 @@ import { isExistingDirectory } from '@/lib/working-directory';
 
 export async function GET(request: NextRequest) {
   try {
-    // Phase 3 Step 4 â€?task-bound sessions (`source='task'`) are the
+    // Phase 3 Step 4 â€” task-bound sessions (`source='task'`) are the
     // execution sessions created by the agent task runner; they
     // shouldn't pollute the main ChatListPanel. The `source` query
     // param controls visibility:
-    //   - omitted / 'user' â†?only user-created sessions (the default
+    //   - omitted / 'user' â†’ only user-created sessions (the default
     //     for ChatListPanel and most consumers).
-    //   - 'task' â†?only task-bound sessions (used by Tasks page when
+    //   - 'task' â†’ only task-bound sessions (used by Tasks page when
     //     listing all execution sessions).
-    //   - 'all' â†?both (no filter).
+    //   - 'all' â†’ both (no filter).
     // This keeps the original "main list shows user conversations"
     // contract while still letting the Tasks page surface execution
     // sessions for users who want to browse them directly.
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // A session is created with the profile the composer was showing. An
-    // unrecognised value is rejected rather than coerced â€?silently
+    // unrecognised value is rejected rather than coerced â€” silently
     // downgrading a caller that asked for 'full_access' would be as much a
     // lie as silently honouring a typo'd elevation.
     if (body.permission_profile !== undefined && !isPermissionProfile(body.permission_profile)) {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Title is optional and, since the composer stopped sending one, normally
-    // absent â€?the session is created as a placeholder and POST /api/chat
+    // absent â€” the session is created as a placeholder and POST /api/chat
     // derives the fallback from the first real message. A caller that DOES
     // name the session is stating explicit intent, so it's validated through
     // the shared rules and recorded as 'manual' (never auto-overwritten).

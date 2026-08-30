@@ -9,10 +9,10 @@
  *   - telegram_bot_token: Bot API token from @BotFather
  *   - telegram_chat_id:   Target chat/group/channel ID
  *   - telegram_enabled:   'true' | '' (empty = disabled)
- *   - telegram_notify_start:      'true' | '' â?notify on session start
- *   - telegram_notify_complete:   'true' | '' â?notify on session complete
- *   - telegram_notify_error:      'true' | '' â?notify on errors
- *   - telegram_notify_permission: 'true' | '' â?notify on permission requests
+ *   - telegram_notify_start:      'true' | '' — notify on session start
+ *   - telegram_notify_complete:   'true' | '' — notify on session complete
+ *   - telegram_notify_error:      'true' | '' — notify on errors
+ *   - telegram_notify_permission: 'true' | '' — notify on permission requests
  */
 
 import { getSetting, getActiveSessions, getAllSessions } from './db';
@@ -23,7 +23,7 @@ import {
   formatSessionHeader,
 } from './bridge/adapters/telegram-utils';
 
-// ââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Types ──────────────────────────────────────────────────────
 
 interface TelegramConfig {
   botToken: string;
@@ -53,12 +53,12 @@ export interface TelegramNotifyOptions {
   workingDirectory?: string;
 }
 
-// ââ Constants ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Constants ──────────────────────────────────────────────────
 
 const TELEGRAM_API = 'https://api.telegram.org';
 const MAX_MESSAGE_LENGTH = 4000; // Telegram limit is 4096, leave buffer
 
-// ââ Bridge Mode Guard âââââââââââââââââââââââââââââââââââââââââ
+// ── Bridge Mode Guard ─────────────────────────────────────────
 
 /**
  * When the bridge adapter is active, the notification bot's polling
@@ -81,7 +81,7 @@ export function setBridgeModeActive(active: boolean): void {
   }
 }
 
-// ââ Config âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Config ─────────────────────────────────────────────────────
 
 export function getTelegramConfig(): TelegramConfig {
   return {
@@ -113,7 +113,7 @@ function ensurePollingStarted(): void {
   }
 }
 
-// ââ Core API âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Core API ───────────────────────────────────────────────────
 
 /**
  * Send a message to the configured Telegram chat.
@@ -141,7 +141,7 @@ async function sendMessage(text: string, parseMode: 'HTML' | 'Markdown' = 'HTML'
   return { ok: true };
 }
 
-// ââ Public Notification Functions ââââââââââââââââââââââââââââââ
+// ── Public Notification Functions ──────────────────────────────
 
 /**
  * Notify that a session has started processing.
@@ -152,7 +152,7 @@ export async function notifySessionStart(opts?: TelegramNotifyOptions): Promise<
   if (isBridgeModeActive()) return;
 
   const header = formatSessionHeader(opts);
-  const msg = `â¶ï¸ <b>Task Started</b>\n${header}`.trim();
+  const msg = `▶️ <b>Task Started</b>\n${header}`.trim();
 
   const result = await sendMessage(msg);
   if (!result.ok) {
@@ -172,7 +172,7 @@ export async function notifySessionComplete(
   if (isBridgeModeActive()) return;
 
   const header = formatSessionHeader(opts);
-  let msg = `â?<b>Task Completed</b>\n${header}`.trim();
+  let msg = `✅ <b>Task Completed</b>\n${header}`.trim();
   if (summary) {
     const truncated = summary.length > 500
       ? summary.slice(0, 500) + '...'
@@ -201,7 +201,7 @@ export async function notifySessionError(
   const truncatedError = errorMessage.length > 500
     ? errorMessage.slice(0, 500) + '...'
     : errorMessage;
-  const msg = `â?<b>Task Error</b>\n${header}\n\n<pre>${escapeHtml(truncatedError)}</pre>`.trim();
+  const msg = `❌ <b>Task Error</b>\n${header}\n\n<pre>${escapeHtml(truncatedError)}</pre>`.trim();
 
   const result = await sendMessage(msg);
   if (!result.ok) {
@@ -229,13 +229,13 @@ export async function notifyPermissionRequest(
     : inputStr;
 
   const msg = [
-    `ð <b>Permission Required</b>`,
+    `🔐 <b>Permission Required</b>`,
     header,
     ``,
     `Tool: <code>${escapeHtml(toolName)}</code>`,
     `<pre>${escapeHtml(truncatedInput)}</pre>`,
     ``,
-    `â ï¸ Please approve or deny in buckyball.ai.`,
+    `⚠️ Please approve or deny in CodePilot.`,
   ].filter(Boolean).join('\n');
 
   const result = await sendMessage(msg);
@@ -256,7 +256,7 @@ export async function notifyGeneric(
 
   const header = formatSessionHeader(opts);
   const msg = [
-    `ð¢ <b>${escapeHtml(title)}</b>`,
+    `📢 <b>${escapeHtml(title)}</b>`,
     header,
     message ? `\n${escapeHtml(message)}` : '',
   ].filter(Boolean).join('\n');
@@ -267,7 +267,7 @@ export async function notifyGeneric(
   }
 }
 
-// ââ Bot Verification âââââââââââââââââââââââââââââââââââââââââââ
+// ── Bot Verification ───────────────────────────────────────────
 
 /**
  * Verify a bot token and optionally send a test message.
@@ -292,7 +292,7 @@ export async function verifyBot(
     if (chatId) {
       const testResult = await callTelegramApi(botToken, 'sendMessage', {
         chat_id: chatId,
-        text: `â?buckyball.ai connected successfully!\n\nBot: @${botName}\nNotifications will be sent to this chat.`,
+        text: `✅ CodePilot connected successfully!\n\nBot: @${botName}\nNotifications will be sent to this chat.`,
         parse_mode: 'HTML',
       });
       if (!testResult.ok) {
@@ -356,10 +356,10 @@ export async function detectChatId(
   }
 }
 
-// ââ Status Query âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Status Query ───────────────────────────────────────────────
 
 /**
- * Build a status summary of current buckyball.ai sessions.
+ * Build a status summary of current CodePilot sessions.
  * Used by the /status command handler.
  */
 export function buildStatusMessage(): string {
@@ -368,7 +368,7 @@ export function buildStatusMessage(): string {
   const recentSessions = allSessions.slice(0, 5);
 
   const lines: string[] = [
-    `ð <b>CodePilot Status</b>`,
+    `📊 <b>CodePilot Status</b>`,
     ``,
   ];
 
@@ -377,9 +377,9 @@ export function buildStatusMessage(): string {
   } else {
     lines.push(`<b>Active Tasks (${activeSessions.length}):</b>`);
     for (const s of activeSessions) {
-      const status = s.runtime_status === 'waiting_permission' ? 'ð Waiting Permission' : 'â?Running';
+      const status = s.runtime_status === 'waiting_permission' ? '🔐 Waiting Permission' : '⚡ Running';
       const title = s.title || 'Untitled';
-      const dir = s.working_directory ? ` â?<code>${escapeHtml(s.working_directory)}</code>` : '';
+      const dir = s.working_directory ? ` — <code>${escapeHtml(s.working_directory)}</code>` : '';
       lines.push(`  ${status} ${escapeHtml(title)}${dir}`);
     }
   }
@@ -390,9 +390,9 @@ export function buildStatusMessage(): string {
     lines.push(`  No sessions yet.`);
   } else {
     for (const s of recentSessions) {
-      const statusIcon = s.runtime_status === 'running' ? 'â?
-        : s.runtime_status === 'waiting_permission' ? 'ð'
-        : 'ð¤';
+      const statusIcon = s.runtime_status === 'running' ? '⚡'
+        : s.runtime_status === 'waiting_permission' ? '🔐'
+        : '💤';
       const title = s.title || 'Untitled';
       lines.push(`  ${statusIcon} ${escapeHtml(title)}`);
     }
@@ -404,7 +404,7 @@ export function buildStatusMessage(): string {
   return lines.join('\n');
 }
 
-// ââ Long Polling âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Long Polling ───────────────────────────────────────────────
 
 interface TelegramUpdate {
   update_id: number;
@@ -415,7 +415,7 @@ interface TelegramUpdate {
   };
 }
 
-// ââ Recently Seen Chats (for auto-detect fallback) ââââââââââââ
+// ── Recently Seen Chats (for auto-detect fallback) ────────────
 
 interface RecentChat {
   chatId: string;
@@ -458,10 +458,10 @@ function getPollerState(): PollerState {
 
 /**
  * Start the long-polling loop to listen for incoming Telegram commands.
- * Supports: /status â?replies with current buckyball.ai session status.
+ * Supports: /status — replies with current CodePilot session status.
  * Only processes messages from the configured chat_id for security.
  *
- * This is idempotent â?calling it multiple times won't create duplicate pollers.
+ * This is idempotent — calling it multiple times won't create duplicate pollers.
  */
 export function startPolling(): void {
   if (isBridgeModeActive()) return; // Bridge adapter handles polling
@@ -533,13 +533,13 @@ async function pollLoop(botToken: string, chatId: string, state: PollerState): P
           await callTelegramApi(botToken, 'sendMessage', {
             chat_id: chatId,
             text: [
-              `ð <b>buckyball.ai Bot</b>`,
+              `👋 <b>CodePilot Bot</b>`,
               ``,
-              `I'll send you notifications about your buckyball.ai tasks.`,
+              `I'll send you notifications about your CodePilot tasks.`,
               ``,
               `<b>Commands:</b>`,
-              `/status â?Show current task status`,
-              `/help â?Show available commands`,
+              `/status — Show current task status`,
+              `/help — Show available commands`,
             ].join('\n'),
             parse_mode: 'HTML',
           });
@@ -555,10 +555,10 @@ async function pollLoop(botToken: string, chatId: string, state: PollerState): P
           await callTelegramApi(botToken, 'sendMessage', {
             chat_id: chatId,
             text: [
-              `<b>buckyball.ai Bot Commands</b>`,
+              `<b>CodePilot Bot Commands</b>`,
               ``,
-              `/status â?Show current task status`,
-              `/help â?Show this help message`,
+              `/status — Show current task status`,
+              `/help — Show this help message`,
             ].join('\n'),
             parse_mode: 'HTML',
           });

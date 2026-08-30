@@ -1,23 +1,23 @@
 /**
- * permission-approval-token.test.ts â€?AI SDK 7 Phase 4 â‘?security targeted
+ * permission-approval-token.test.ts â€” AI SDK 7 Phase 4 â‘¡ security targeted
  * tests for the approval-token hardening of /api/chat/permission.
  *
  * Attack surfaces pinned (one describe block each, per the phase's required
  * check "approval token è¿‡æœŸã€ç¯¡æ”¹ã€é‡å¤ä½¿ç”¨ä¸‰ç±»æ”»å‡»é¢å‡è¢«æ‹’ç»"):
- *   1. tamper/forge â€?bit-flipped token, token bound to another id, token
- *      bound to a different expiry, missing token â†?403, waiter untouched.
- *   2. expiry â€?persisted expires_at in the past â†?410 even with a token
+ *   1. tamper/forge â€” bit-flipped token, token bound to another id, token
+ *      bound to a different expiry, missing token â†’ 403, waiter untouched.
+ *   2. expiry â€” persisted expires_at in the past â†’ 410 even with a token
  *      that verifies (HMAC signs the stored expiry, so the client cannot
  *      extend it); unparseable expiry fails closed.
- *   3. replay â€?a captured VALID token replayed after the first successful
- *      resolution â†?409 ALREADY_RESOLVED (single-use anchored in the DB
+ *   3. replay â€” a captured VALID token replayed after the first successful
+ *      resolution â†’ 409 ALREADY_RESOLVED (single-use anchored in the DB
  *      status flip, not in token state).
  *
- * Plus the legitimate path: valid token + pending + unexpired â†?200 and the
+ * Plus the legitimate path: valid token + pending + unexpired â†’ 200 and the
  * in-memory waiter resolves with the user's decision.
  *
  * These tests drive the REAL route handler (POST import) against the REAL
- * isolated DB (db-isolation.setup) and the REAL permission registry â€?no
+ * isolated DB (db-isolation.setup) and the REAL permission registry â€” no
  * mocks on the verification path.
  */
 
@@ -64,7 +64,7 @@ function setupPending(opts?: { expiresInMs?: number; expiresAtRaw?: string }) {
 const ALLOW_DECISION = { behavior: 'allow' as const };
 
 describe('permission-approval-token unit', () => {
-  it('round-trips issue â†?verify for the exact (id, expiresAt) pair', () => {
+  it('round-trips issue â†’ verify for the exact (id, expiresAt) pair', () => {
     const token = issueApprovalToken('abc', '2026-07-03T00:00:00.000Z');
     assert.equal(verifyApprovalToken('abc', '2026-07-03T00:00:00.000Z', token), true);
   });
@@ -94,7 +94,7 @@ describe('permission-approval-token unit', () => {
   });
 });
 
-describe('/api/chat/permission â€?attack surface: tamper/forge', () => {
+describe('/api/chat/permission â€” attack surface: tamper/forge', () => {
   it('rejects a missing token with 403 and leaves the waiter pending', async () => {
     const { id } = setupPending();
     const res = await POST(postReq({ permissionRequestId: id, decision: ALLOW_DECISION }));
@@ -129,10 +129,11 @@ describe('/api/chat/permission â€?attack surface: tamper/forge', () => {
   });
 });
 
-describe('/api/chat/permission â€?attack surface: expiry', () => {
+describe('/api/chat/permission â€” attack surface: expiry', () => {
   it('rejects an expired request with 410 even when the token itself verifies', async () => {
     const { id, expiresAt } = setupPending({ expiresInMs: -60_000 }); // already past
-    const token = issueApprovalToken(id, expiresAt); // token DOES verifyâ€?    assert.equal(verifyApprovalToken(id, expiresAt, token), true);
+    const token = issueApprovalToken(id, expiresAt); // token DOES verifyâ€¦
+    assert.equal(verifyApprovalToken(id, expiresAt, token), true);
     const res = await POST(
       postReq({ permissionRequestId: id, approvalToken: token, decision: ALLOW_DECISION }),
     );
@@ -143,7 +144,7 @@ describe('/api/chat/permission â€?attack surface: expiry', () => {
 
   it('a client cannot extend expiry: token re-bound to a later expiresAt fails the HMAC (403)', async () => {
     const { id, expiresAt } = setupPending({ expiresInMs: -60_000 });
-    // Attacker computes nothing â€?they only HOLD the original token but claim
+    // Attacker computes nothing â€” they only HOLD the original token but claim
     // a fresh expiry. Verification recomputes against the STORED expires_at,
     // so the original token is the only one that can verify, and it is 410.
     const forgedForLater = issueApprovalToken(id, new Date(Date.now() + 3_600_000).toISOString());
@@ -164,7 +165,7 @@ describe('/api/chat/permission â€?attack surface: expiry', () => {
   });
 });
 
-describe('/api/chat/permission â€?attack surface: replay (single-use)', () => {
+describe('/api/chat/permission â€” attack surface: replay (single-use)', () => {
   it('accepts the first valid approval, rejects the identical replay with 409', async () => {
     const { id, expiresAt, waiter } = setupPending();
     const token = issueApprovalToken(id, expiresAt);
@@ -176,7 +177,7 @@ describe('/api/chat/permission â€?attack surface: replay (single-use)', () => {
     assert.equal(resolved.behavior, 'allow');
     assert.equal(getPermissionRequest(id)?.status, 'allow');
 
-    // Byte-identical replay of the captured request â†?rejected.
+    // Byte-identical replay of the captured request â†’ rejected.
     const replay = await POST(postReq(body));
     assert.equal(replay.status, 409);
     assert.equal((await replay.json()).code, 'ALREADY_RESOLVED');
@@ -202,7 +203,7 @@ describe('/api/chat/permission â€?attack surface: replay (single-use)', () => {
   });
 });
 
-describe('/api/chat/permission â€?legitimate path stays green', () => {
+describe('/api/chat/permission â€” legitimate path stays green', () => {
   it('valid token + pending + unexpired resolves the waiter with the decision', async () => {
     const { id, expiresAt, waiter } = setupPending();
     const res = await POST(

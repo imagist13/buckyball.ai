@@ -1,5 +1,5 @@
 /**
- * tools/edit.ts â€?Edit files via string replacement with multi-layer fallback.
+ * tools/edit.ts â€” Edit files via string replacement with multi-layer fallback.
  *
  * Implements a cascade of replacement strategies (inspired by OpenCode's 9-layer approach):
  * 1. Exact match

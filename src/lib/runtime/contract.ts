@@ -1,5 +1,5 @@
 /**
- * Runtime Contract �?internal event / session / permission union.
+ * Runtime Contract — internal event / session / permission union.
  *
  * Slice A of Phase 0.5 (Runtime Contract Hardening, 2026-05-13).
  *
@@ -19,7 +19,8 @@
  *
  *   Adapters (sdk-runtime / native-runtime / future codex-runtime)
  *   translate their concrete events into this union; UI consumes only
- *   the union. Unknown items must always land in `unknown_item` �? *   never silently dropped.
+ *   the union. Unknown items must always land in `unknown_item` —
+ *   never silently dropped.
  *
  *   Slice B-E migrate consumers; Slice A only defines the shapes +
  *   ships guardrail tests that lock the contract.
@@ -37,7 +38,7 @@ import type { MediaBlock } from '@/types';
  *
  * Consumers (chat session row, RunCockpit, ChatView, PreviewPanel)
  * MUST NOT inspect `metadata`. The adapter that produced the ref is
- * the only code allowed to read it back �?typically by checking
+ * the only code allowed to read it back — typically by checking
  * `runtimeId` against its own id and casting to the adapter's
  * private metadata type.
  *
@@ -73,7 +74,7 @@ export interface RuntimeSessionRef {
  * events into. The 8 main types cover the assistant turn lifecycle;
  * `unknown_item` is the explicit fallback for adapter-side payloads
  * that don't fit the main set (most often plugin / extension events
- * Codex emits). The fallback path is mandatory �?adapters that drop
+ * Codex emits). The fallback path is mandatory — adapters that drop
  * unknown items silently violate the contract.
  */
 export type RuntimeRunEventType =
@@ -112,7 +113,8 @@ export type RuntimeRunEvent =
        * Optional media payload for tools whose output is an image /
        * audio / video file (Codex `imageGeneration`, `imageView`, MCP
        * tool results carrying image data, etc.). Surfaced through the
-       * SSE `tool_result.media` channel so `useSSEStream.ts` �?       * `SSECallbacks.onToolResult` �?`MediaPreview` can render the
+       * SSE `tool_result.media` channel so `useSSEStream.ts` →
+       * `SSECallbacks.onToolResult` → `MediaPreview` can render the
        * file inline. Pre-Phase-5b-smoke-round-8 this field didn't
        * exist; Codex image generation completed but the result hid
        * inside the JSON-stringified `output` and was never rendered.
@@ -184,9 +186,9 @@ interface RuntimePermissionEventBase {
 }
 
 /**
- * Generic permission hint shape �?adapters translate native
+ * Generic permission hint shape — adapters translate native
  * suggestion structures (SDK `PermissionSuggestion`, Codex approval
- * proposals, �? into this. UI renders one chip / button per hint.
+ * proposals, …) into this. UI renders one chip / button per hint.
  *
  * Shape kept identical to SDK `PermissionSuggestion` for back-compat
  * with PermissionPrompt's current rendering; Codex adapter will map
@@ -197,7 +199,7 @@ export interface PermissionHint {
   type: string;
   /** Optional structured rules (used by SDK rule-based suggestions). */
   rules?: ReadonlyArray<{ readonly toolName: string; readonly ruleContent?: string }>;
-  /** Optional intent �?typically 'allow' / 'deny'. */
+  /** Optional intent — typically 'allow' / 'deny'. */
   behavior?: string;
   /** Optional destination scope ('session' / 'project' / etc.). */
   destination?: string;
@@ -206,7 +208,7 @@ export interface PermissionHint {
 /**
  * Adapter-private round-trip ref. UI MUST NOT inspect `raw`. The
  * adapter that produced the permission event is the only code
- * allowed to read it back �?typically to echo the same id / shape
+ * allowed to read it back — typically to echo the same id / shape
  * to the upstream resume / approval API.
  */
 export interface NativeRequestRef {
@@ -270,7 +272,7 @@ export interface RuntimeCapabilities {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Exhaustiveness helpers �?used by tests + adapters
+// Exhaustiveness helpers — used by tests + adapters
 // ─────────────────────────────────────────────────────────────────────
 
 /**

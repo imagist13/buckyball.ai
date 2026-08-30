@@ -1,5 +1,5 @@
 /**
- * Phase 5c (2026-05-16) â€?provider proxy injection now carries
+ * Phase 5c (2026-05-16) â€” provider proxy injection now carries
  * session + workspace headers when CodexRuntime supplies them.
  *
  * These are what let the proxy mount the CodePilot built-in tool
@@ -12,7 +12,7 @@
  *
  * Codex Account paths skip the proxy injection entirely (the
  * routingBug check in `adapter.ts` short-circuits before this code
- * runs) â€?so the test for "no headers leak into codex_account" lives
+ * runs) â€” so the test for "no headers leak into codex_account" lives
  * in `codex-builtin-codex-account-guardrail.test.ts`, not here.
  */
 
@@ -24,7 +24,7 @@ import {
   CODEX_PROXY_PROVIDER_KEY,
 } from '@/lib/codex/provider-proxy';
 
-describe('buildCodexProviderProxyInjection â€?Phase 5c headers (session + workspace)', () => {
+describe('buildCodexProviderProxyInjection â€” Phase 5c headers (session + workspace)', () => {
   it('omits session/workspace headers when caller passes no opts (back-compat)', () => {
     const injection = buildCodexProviderProxyInjection('prov-1', 'http://127.0.0.1:3000');
     const headers = injection.config.model_providers[CODEX_PROXY_PROVIDER_KEY].http_headers;
@@ -53,7 +53,7 @@ describe('buildCodexProviderProxyInjection â€?Phase 5c headers (session + worksp
     assert.equal(
       headers['x-codepilot-workspace-path'],
       undefined,
-      'empty workspace MUST not emit the header â€?proxy uses absence to decide whether to skip workspace-gated tools',
+      'empty workspace MUST not emit the header â€” proxy uses absence to decide whether to skip workspace-gated tools',
     );
   });
 
@@ -69,7 +69,7 @@ describe('buildCodexProviderProxyInjection â€?Phase 5c headers (session + worksp
   });
 });
 
-describe('buildCodexThreadParams â€?sessionId forwarded into the injection', () => {
+describe('buildCodexThreadParams â€” sessionId forwarded into the injection', () => {
   it('forwards sessionId into proxy http_headers when injection runs', () => {
     const params = buildCodexThreadParams({
       providerId: 'prov-glm',

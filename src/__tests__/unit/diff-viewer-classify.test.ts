@@ -1,5 +1,5 @@
 /**
- * Phase 4.B â€?unified-diff line classifier.
+ * Phase 4.B â€” unified-diff line classifier.
  *
  * Pins the small line-prefix table so a future refactor can't quietly
  * change which lines render as added/removed/header/meta/context.

@@ -1,16 +1,16 @@
 /**
- * OpenRouter search-and-add â€?backend regression tests.
+ * OpenRouter search-and-add â€” backend regression tests.
  *
  * Locks the contract from `docs/exec-plans/active/openrouter-search-and-add.md`:
  *   1. Add Service must NOT auto-materialize the 300+ upstream catalog.
  *   2. Refresh (validate-models) must NOT INSERT rows or touch business
- *      fields â€?only `last_refreshed_at` moves.
+ *      fields â€” only `last_refreshed_at` moves.
  *   3. Search-models is a pure read (no DB writes).
  *   4. `alreadyAdded` flag accurately reflects current `provider_models`.
- *   5. discover-models for OpenRouter returns `unsupported` early â€?no fetch.
+ *   5. discover-models for OpenRouter returns `unsupported` early â€” no fetch.
  *   6. discover-models/apply for OpenRouter rejects with 400.
  *   7. `isOpenRouterProviderRecord` catches the legacy DB shape
- *      (`provider_type='openrouter'` with empty/missing `protocol`) â€?bare
+ *      (`provider_type='openrouter'` with empty/missing `protocol`) â€” bare
  *      `protocol === 'openrouter'` would miss it.
  *   8. The legacy cleanup entry only hides rows where
  *      `enable_source='recommended' AND user_edited=0`; manual_* rows survive.
@@ -90,7 +90,7 @@ function stubFetch(payload: { id: string; name?: string; context_length?: number
   return { getCalls: () => calls };
 }
 
-describe('isOpenRouterProviderRecord â€?record-aware', () => {
+describe('isOpenRouterProviderRecord â€” record-aware', () => {
   it('matches { provider_type: openrouter, protocol: openrouter, base_url } modern shape', () => {
     assert.equal(
       isOpenRouterProviderRecord({
@@ -126,7 +126,7 @@ describe('isOpenRouterProviderRecord â€?record-aware', () => {
   });
 });
 
-describe('classifyProvider â€?OpenRouter is unsupported (no auto-materialize)', () => {
+describe('classifyProvider â€” OpenRouter is unsupported (no auto-materialize)', () => {
   it('openrouter preset key returns unsupported, not api', () => {
     const r = classifyProvider({ protocol: 'openrouter', presetKey: 'openrouter' });
     assert.equal(r.classification, 'unsupported');
@@ -151,7 +151,7 @@ describe('classifyProvider â€?OpenRouter is unsupported (no auto-materialize)', 
   });
 });
 
-describe('OpenRouter cache helper â€?force vs default', () => {
+describe('OpenRouter cache helper â€” force vs default', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -160,26 +160,26 @@ describe('OpenRouter cache helper â€?force vs default', () => {
     const provider = getAllProviders().find(p => p.id === providerId)!;
     const stub = stubFetch([{ id: 'anthropic/claude-3.5-sonnet', name: 'Sonnet 3.5' }]);
 
-    // 1st call (default) â€?fetch fires
+    // 1st call (default) â€” fetch fires
     await getOpenRouterCatalog(provider);
     assert.equal(stub.getCalls(), 1);
 
-    // 2nd call (default) â€?cache hit, no new fetch
+    // 2nd call (default) â€” cache hit, no new fetch
     await getOpenRouterCatalog(provider);
     assert.equal(stub.getCalls(), 1, 'second default call must not refetch within TTL');
 
-    // 3rd call (force=true) â€?must refetch even though cache has fresh data
+    // 3rd call (force=true) â€” must refetch even though cache has fresh data
     await getOpenRouterCatalog(provider, { force: true });
     assert.equal(stub.getCalls(), 2);
 
-    // 4th call (default) â€?cache hit again with the new value
+    // 4th call (default) â€” cache hit again with the new value
     const after = await getOpenRouterCatalog(provider);
     assert.equal(stub.getCalls(), 2);
     assert.equal(after.candidates.length, 1);
   });
 });
 
-describe('Add Service eager seed â€?OpenRouter only writes catalog defaults', () => {
+describe('Add Service eager seed â€” OpenRouter only writes catalog defaults', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -194,7 +194,7 @@ describe('Add Service eager seed â€?OpenRouter only writes catalog defaults', ()
 
     const rows = getAllModelsForProvider(provider.id);
     // OpenRouter preset ships sonnet / opus (4.7) / opus-4-8 / haiku.
-    // (opus-4-8 added 2026-05-29 in Phase A â€?Opus 4.8 æŽ¥å…¥; see
+    // (opus-4-8 added 2026-05-29 in Phase A â€” Opus 4.8 æŽ¥å…¥; see
     //  docs/exec-plans/active/post-refactor-cleanup.md.)
     assert.equal(rows.length, 4, `expected 4 catalog seed rows, got ${rows.length}`);
     const ids = new Set(rows.map(r => r.model_id));
@@ -209,7 +209,7 @@ describe('Add Service eager seed â€?OpenRouter only writes catalog defaults', ()
     }
   });
 
-  it('seed is idempotent â€?second call does not duplicate rows', () => {
+  it('seed is idempotent â€” second call does not duplicate rows', () => {
     const providerId = createOpenRouterScratch();
     const provider = getAllProviders().find(p => p.id === providerId)!;
     const defaults = getCatalogDefaultModelsForRecord(provider);
@@ -222,7 +222,7 @@ describe('Add Service eager seed â€?OpenRouter only writes catalog defaults', ()
   });
 });
 
-describe('Legacy cleanup â€?hides recommended-not-edited only', () => {
+describe('Legacy cleanup â€” hides recommended-not-edited only', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -351,7 +351,7 @@ describe('OpenRouter helper integration with cache + provider models', () => {
   });
 });
 
-describe('OpenRouter base_url normalization â€?/v1 suffix not doubled', () => {
+describe('OpenRouter base_url normalization â€” /v1 suffix not doubled', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -406,7 +406,7 @@ describe('OpenRouter base_url normalization â€?/v1 suffix not doubled', () => {
   });
 });
 
-describe('Search-and-add â†?DB write contract', () => {
+describe('Search-and-add â†’ DB write contract', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -436,7 +436,7 @@ describe('Search-and-add â†?DB write contract', () => {
   });
 });
 
-describe('validate-models â€?does not flag local catalog aliases', () => {
+describe('validate-models â€” does not flag local catalog aliases', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -444,7 +444,7 @@ describe('validate-models â€?does not flag local catalog aliases', () => {
     // Reproduce the post-Add-Service state: 3 catalog seed rows
     // (sonnet/opus/haiku aliases) + 1 user-added real OpenRouter id.
     // /v1/models returns the real id but obviously not the aliases.
-    // Validate must report verified=1, missing=[] â€?NOT verified=1,
+    // Validate must report verified=1, missing=[] â€” NOT verified=1,
     // missing=['sonnet','opus','haiku'] which is what the original
     // implementation produced.
     const providerId = createOpenRouterScratch();
@@ -491,7 +491,7 @@ describe('validate-models â€?does not flag local catalog aliases', () => {
     const upstreamIds = new Set(candidates.map(c => c.modelId));
 
     // Mirror the validate route's loop body. Catalog rows must not enter
-    // either bucket â€?the contract is "ignore aliases, only validate
+    // either bucket â€” the contract is "ignore aliases, only validate
     // user-added or upstream-discovered IDs".
     const localModels = getAllModelsForProvider(providerId).filter(r => r.source !== 'catalog');
     const missing: string[] = [];

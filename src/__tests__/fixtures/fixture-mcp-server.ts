@@ -27,7 +27,7 @@ export const fixtureMcpServer = createSdkMcpServer({
     ),
     tool(
       'fail_always',
-      'Always throws â€?exercises error paths',
+      'Always throws â€” exercises error paths',
       {},
       async () => {
         throw new Error('intentional fixture failure');

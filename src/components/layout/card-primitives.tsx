@@ -1,44 +1,43 @@
 "use client";
 
 /**
- * Floating card layout primitives â€?Phase 7c.
+ * Floating card layout primitives â€” Phase 7c.
  *
  * See `docs/exec-plans/active/phase-7c-card-primitive.md` for the full
  * rationale. The short version: macOS Tahoe-style floating cards
  * collapsed into three single-responsibility components so the
  * shadow / clip / gutter concerns can't drift across panels.
  *
- *   CardFrame   â€?shadow + radius + isolation + layout. Does NOT clip.
- *   CardSurface â€?bg + clip-path + backdrop-filter + content slot.
+ *   CardFrame   â€” shadow + radius + isolation + layout. Does NOT clip.
+ *   CardSurface â€” bg + clip-path + backdrop-filter + content slot.
  *                 Does NOT paint outer shadow.
- *   ResizeGutter â€?8px-wide row-level child that sits ONLY between
+ *   ResizeGutter â€” 8px-wide row-level child that sits ONLY between
  *                  two adjacent visible CardFrames. Its visible 2px
  *                  line is centered inside the 8px gutter so it
  *                  always lands on the gap's geometric mid-line.
  *
  * Hard constraints (enforced by these components, not by globals.css):
- *   â€?ResizeGutter never lives inside a CardFrame.
- *   â€?CardFrame and CardSurface attribute marks (data-platform-*) are
- *     emitted by these components â€?call sites do not handwrite them.
- *   â€?Width state stays with the consumer panel; the primitives only
+ *   â€¢ ResizeGutter never lives inside a CardFrame.
+ *   â€¢ CardFrame and CardSurface attribute marks (data-platform-*) are
+ *     emitted by these components â€” call sites do not handwrite them.
+ *   â€¢ Width state stays with the consumer panel; the primitives only
  *     accept a `width` prop and forward `onResize/...` callbacks.
  */
 
 import { useCallback, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type CardKind = "sidebar" | "main" | "workspace" | "fileTree" | "assistant";
+export type CardKind = "sidebar" | "main" | "workspace" | "assistant";
 
 const CARD_FRAME_ATTR = "data-platform-card-frame";
 
-/** kind â†?the legacy data-attribute name we still emit on the surface
+/** kind â†’ the legacy data-attribute name we still emit on the surface
  *  so existing CSS selectors in globals.css keep matching. Adding new
- *  attribute names is fine â€?these are the load-bearing ones. */
+ *  attribute names is fine â€” these are the load-bearing ones. */
 const SURFACE_ATTR_BY_KIND: Record<CardKind, string> = {
   sidebar: "data-platform-sidebar",
   main: "data-platform-main-content",
   workspace: "data-workspace-sidebar",
-  fileTree: "data-platform-file-tree",
   assistant: "data-platform-assistant",
 };
 
@@ -46,7 +45,6 @@ const FRAME_VALUE_BY_KIND: Record<CardKind, string> = {
   sidebar: "sidebar",
   main: "main",
   workspace: "workspace",
-  fileTree: "file-tree",
   assistant: "assistant",
 };
 
@@ -57,7 +55,7 @@ const FRAME_VALUE_BY_KIND: Record<CardKind, string> = {
 interface CardFrameProps {
   kind: CardKind;
   /**
-   * Fixed pixel width. Provide for sidebar / workspace / fileTree where
+   * Fixed pixel width. Provide for sidebar / workspace where
    * the panel owns its own width state. Leave undefined for `kind="main"`
    * so the frame expands via `flex-1` to fill the remaining row space.
    */
@@ -68,7 +66,7 @@ interface CardFrameProps {
 
 /**
  * Outer floating-card frame. Carries the shadow and the layout slot in
- * the row's flex layout. Does NOT clip â€?overflow stays visible so the
+ * the row's flex layout. Does NOT clip â€” overflow stays visible so the
  * frame's box-shadow paints freely past the surface's rounded silhouette.
  *
  * The frame's `border-radius` exists so the shadow follows the card's
@@ -113,10 +111,10 @@ interface CardSurfaceProps {
 }
 
 /**
- * Inner surface â€?paints the card's background, clips its children to
+ * Inner surface â€” paints the card's background, clips its children to
  * the rounded silhouette, and provides the optional backdrop-filter
  * stack for the translucent kinds (sidebar / workspace). Does NOT paint
- * an outer shadow â€?that belongs to CardFrame.
+ * an outer shadow â€” that belongs to CardFrame.
  *
  * The `clip-path: inset(0 round 14px)` and `border-radius: 14px` live in
  * globals.css under the darwin profile. Off-mac the radius is 0 and the
@@ -137,9 +135,8 @@ export function CardSurface({ kind, variant, className, children }: CardSurfaceP
         kind === "sidebar" && "bg-[var(--platform-surface-sidebar)] backdrop-blur-xl",
         kind === "workspace" && "bg-background",
         kind === "main" && "bg-background",
-        kind === "fileTree" && "bg-background",
         // Assistant rail is opaque by deliberate user request (see
-        // AssistantPanel's "Round 5" note) â€?same treatment as fileTree.
+        // AssistantPanel's "Round 5" note).
         kind === "assistant" && "bg-background",
         className,
       )}
@@ -156,8 +153,11 @@ export function CardSurface({ kind, variant, className, children }: CardSurfaceP
 interface ResizeGutterProps {
   onResize: (delta: number) => void;
   onResizeEnd?: () => void;
-  /** Double-click handler â€?usually "reset to default width". */
+  /** Double-click handler â€” usually "reset to default width". */
   onReset?: () => void;
+  /** Accessible name for keyboard and assistive-technology users. */
+  ariaLabel?: string;
+  className?: string;
 }
 
 /**
@@ -165,7 +165,7 @@ interface ResizeGutterProps {
  * as a sibling between two CardFrames (NEVER inside a frame). Owns the
  * pointer math and gradient; consumer panels just plug in callbacks.
  *
- * Geometry contract â€?verified by the real-DOM e2e
+ * Geometry contract â€” verified by the real-DOM e2e
  * `src/__tests__/e2e/card-gutter-geometry.spec.ts`:
  *   gutter.boundingClientRect().width === 8
  *   line centerX === gutter centerX (the 2px line sits in the middle
@@ -179,17 +179,18 @@ interface ResizeGutterProps {
  */
 export const RESIZE_GUTTER_WIDTH_PX = 8;
 
-export function ResizeGutter({ onResize, onResizeEnd, onReset }: ResizeGutterProps) {
+export function ResizeGutter({ onResize, onResizeEnd, onReset, ariaLabel = "Resize panel", className }: ResizeGutterProps) {
   const isDragging = useRef(false);
   const startX = useRef(0);
-  const containerRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState(false);
   const [hoverY, setHoverY] = useState<number | null>(null);
+  const [gutterHeight, setGutterHeight] = useState(0);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     isDragging.current = true;
     startX.current = e.clientX;
+    setGutterHeight(e.currentTarget.getBoundingClientRect().height);
     setDragging(true);
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     document.body.style.cursor = "col-resize";
@@ -198,10 +199,9 @@ export function ResizeGutter({ onResize, onResizeEnd, onReset }: ResizeGutterPro
 
   const handlePointerMove = useCallback(
     (e: React.PointerEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setHoverY(e.clientY - rect.top);
-      }
+      const rect = e.currentTarget.getBoundingClientRect();
+      setHoverY(e.clientY - rect.top);
+      setGutterHeight(rect.height);
       if (!isDragging.current) return;
       const delta = e.clientX - startX.current;
       startX.current = e.clientX;
@@ -227,11 +227,16 @@ export function ResizeGutter({ onResize, onResizeEnd, onReset }: ResizeGutterPro
     if (!isDragging.current) setHoverY(null);
   }, []);
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    onResize(e.key === "ArrowLeft" ? -16 : 16);
+    onResizeEnd?.();
+  }, [onResize, onResizeEnd]);
+
   const gradientBg = (() => {
-    if (!dragging && hoverY === null) return undefined;
-    const el = containerRef.current;
-    if (!el) return undefined;
-    const h = el.getBoundingClientRect().height;
+    if ((!dragging && hoverY === null) || gutterHeight <= 0) return undefined;
+    const h = gutterHeight;
     const cy = dragging ? h / 2 : (hoverY ?? h / 2);
     const edge = Math.min(64, h / 2);
     const center = Math.max(edge, Math.min(h - edge, cy));
@@ -256,14 +261,21 @@ export function ResizeGutter({ onResize, onResizeEnd, onReset }: ResizeGutterPro
 
   return (
     <div
-      ref={containerRef}
       data-resize-gutter
+      role="separator"
+      aria-label={ariaLabel}
+      aria-orientation="vertical"
+      tabIndex={0}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
       onDoubleClick={onReset}
-      className="relative z-10 flex h-full shrink-0 cursor-col-resize items-stretch justify-center touch-none"
+      onKeyDown={handleKeyDown}
+      className={cn(
+        "relative z-10 flex h-full shrink-0 cursor-col-resize items-stretch justify-center touch-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        className,
+      )}
       style={{ width: RESIZE_GUTTER_WIDTH_PX }}
     >
       <div

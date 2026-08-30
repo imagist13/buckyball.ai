@@ -295,7 +295,7 @@ export function AssistantWorkspaceSection() {
           handleSaveClick(picked);
         }
       } else {
-        // Web fallback (no Electron) �?open the PromptDialog. Previously
+        // Web fallback (no Electron) — open the PromptDialog. Previously
         // used window.prompt(), which throws TypeError in Electron renderers
         // (see docs/exec-plans/active/v0.48-post-release-issues.md §5.6).
         setPathPromptOpen(true);
@@ -334,7 +334,7 @@ export function AssistantWorkspaceSection() {
       setShowWizard(true);
     }
   }, [workspace?.path]);
-  // handleStartCheckIn removed �?heartbeat triggers automatically on session open
+  // handleStartCheckIn removed — heartbeat triggers automatically on session open
 
   const handleReindex = useCallback(async () => {
     setReindexing(true);
@@ -385,7 +385,7 @@ export function AssistantWorkspaceSection() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Page title �?matches the style of other Settings sub-pages. */}
+      {/* Page title — matches the style of other Settings sub-pages. */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">{t('settings.assistant' as TranslationKey)}</h2>
       </div>
@@ -467,7 +467,7 @@ export function AssistantWorkspaceSection() {
                 <p className="text-sm font-medium truncate">{assistantName}</p>
                 {summary?.buddy && (
                   <span className="text-[10px] text-muted-foreground">
-                    {summary.buddy.rarity === 'common' ? '�? : summary.buddy.rarity === 'uncommon' ? '★★' : summary.buddy.rarity === 'rare' ? '★★�? : summary.buddy.rarity === 'epic' ? '★★★★' : '★★★★�?}
+                    {summary.buddy.rarity === 'common' ? '★' : summary.buddy.rarity === 'uncommon' ? '★★' : summary.buddy.rarity === 'rare' ? '★★★' : summary.buddy.rarity === 'epic' ? '★★★★' : '★★★★★'}
                   </span>
                 )}
               </div>
@@ -510,7 +510,7 @@ export function AssistantWorkspaceSection() {
               });
               if (!res.ok) return; // don't flip UI on failure
               await fetchWorkspace();
-            } catch { /* network error �?leave UI unchanged */ }
+            } catch { /* network error — leave UI unchanged */ }
           }}
           intervalHours={workspace.state?.heartbeatIntervalHours ?? 24}
           onIntervalChange={async (hours) => {
@@ -522,7 +522,7 @@ export function AssistantWorkspaceSection() {
               });
               if (!res.ok) return;
               await fetchWorkspace();
-            } catch { /* network error �?leave UI unchanged */ }
+            } catch { /* network error — leave UI unchanged */ }
           }}
           heartbeatStatus={workspace.heartbeat}
           runningNow={runningHeartbeat}
@@ -541,18 +541,18 @@ export function AssistantWorkspaceSection() {
         />
       )}
 
-      {/* v12 �?Scheduled tasks block removed entirely.
-          Phase 3 IA: Settings �?Tasks (`/settings/tasks`) is the
+      {/* v12 — Scheduled tasks block removed entirely.
+          Phase 3 IA: Settings → Tasks (`/settings/tasks`) is the
           single home for all scheduled tasks (list + run + pause +
           delete + delivery log). The Assistant page has no entry of
-          its own �?neither inline list (v9 retired that) nor a link
+          its own — neither inline list (v9 retired that) nor a link
           card (v12 retired even the link, since the global Tasks
           entry already exists in the sidebar nav and a redundant
           Assistant-page link added IA noise without surfacing
           assistant-specific information). */}
 
       {/* Tabbed Section: Files + Taxonomy / Index / Organize. All tabs
-          render in the tab strip �?the prior "+/�? toggle that hid the
+          render in the tab strip — the prior "+/−" toggle that hid the
           advanced three behind a collapse was extra friction with no
           payoff. */}
       {workspace?.path && workspace.valid !== false && (
@@ -613,11 +613,11 @@ export function AssistantWorkspaceSection() {
         />
       )}
 
-      {/* Web fallback for the folder picker �?only reachable when the page
+      {/* Web fallback for the folder picker — only reachable when the page
           is accessed outside Electron (no electronAPI). In Electron proper,
           handleSelectFolder takes the native dialog branch. Replaces an old
           window.prompt() call that threw TypeError in Electron renderers
-          even though the branch was never expected to fire there �?keeping
+          even though the branch was never expected to fire there — keeping
           the component robust across dev-server and packaged builds. */}
       <PromptDialog
         open={pathPromptOpen}

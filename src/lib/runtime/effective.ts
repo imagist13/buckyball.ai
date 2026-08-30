@@ -1,5 +1,5 @@
 /**
- * Shared runtime resolution helpers ‚Ä?single source of truth for two
+ * Shared runtime resolution helpers ‚Äî single source of truth for two
  * questions that previously had three different answers across the
  * codebase:
  *
@@ -18,9 +18,9 @@
  *   - `RuntimeBadge` ignored `cli_enabled` and just read `agent_runtime`
  *   - `RuntimePanel` originally read `cli_enabled` only into state, not
  *     into the displayed selection
- *   - `chat/page` did `globalPair ‚Ü?providerOnly ‚Ü?savedPair ‚Ü?first`
- *     while `RuntimePanel` did `globalPair ‚Ü?providerOnly ‚Ü?first`
- *     (skipping the saved-pair retry ‚Ä?divergent for users with a
+ *   - `chat/page` did `globalPair ‚Üí providerOnly ‚Üí savedPair ‚Üí first`
+ *     while `RuntimePanel` did `globalPair ‚Üí providerOnly ‚Üí first`
+ *     (skipping the saved-pair retry ‚Äî divergent for users with a
  *     valid global model that happened to be filtered out by runtime
  *     compat)
  *
@@ -30,8 +30,9 @@
 
 import { resolveLegacyRuntimeForDisplay } from "./legacy";
 
-// Phase 5 Phase 6 IA correction (2026-05-14) ‚Ä?three-engine union. Codex
-// Runtime joins as a peer of Claude Code and bb-agent Runtime; Settings ‚Ü?// Runtime now offers it as a global default and the chat header badge can
+// Phase 5 Phase 6 IA correction (2026-05-14) ‚Äî three-engine union. Codex
+// Runtime joins as a peer of Claude Code and CodePilot Runtime; Settings ‚Üí
+// Runtime now offers it as a global default and the chat header badge can
 // surface "Codex Runtime" directly.
 export type AgentRuntime = "claude-code-sdk" | "native" | "codex_runtime";
 
@@ -39,28 +40,28 @@ export type AgentRuntime = "claude-code-sdk" | "native" | "codex_runtime";
  *  zh/en + an optional fallback annotation; just produces the canonical
  *  spelling here.
  *
- *  Phase 6 UIÊî∂Âè£ P1 fix-up (2026-05-14) ‚Ä?short names. "AI SDK" is an
+ *  Phase 6 UIÊî∂Âè£ P1 fix-up (2026-05-14) ‚Äî short names. "AI SDK" is an
  *  internal implementation detail (users don't pick "an SDK"); the
- *  product label is "buckyball.ai". Similarly "Codex Runtime" drops the
+ *  product label is "CodePilot". Similarly "Codex Runtime" drops the
  *  redundant suffix to match the engine picker / composer / detail
  *  card heading. Three engines, three short names. */
-export function runtimeDisplayLabel(runtime: AgentRuntime): "Claude Code" | "buckyball.ai" | "Codex" {
+export function runtimeDisplayLabel(runtime: AgentRuntime): "Claude Code" | "CodePilot" | "Codex" {
   if (runtime === "claude-code-sdk") return "Claude Code";
   if (runtime === "codex_runtime") return "Codex";
-  return "buckyball.ai";
+  return "CodePilot";
 }
 
 /**
- * Compute the *effective* runtime ‚Ä?what the chat path will actually
+ * Compute the *effective* runtime ‚Äî what the chat path will actually
  * route to. Mirrors the priority chain in `registry.ts:resolveRuntime`:
  *
- *   1. `cli_enabled === false` ‚Ü?'native' (highest-priority constraint)
- *   2. Stored `agent_runtime` if available ‚Ä?but **availability is
+ *   1. `cli_enabled === false` ‚Üí 'native' (highest-priority constraint)
+ *   2. Stored `agent_runtime` if available ‚Äî but **availability is
  *      checked**: if the user picked `'claude-code-sdk'` and the CLI
  *      isn't currently connected, fall through to native (matches
  *      `registry.ts` line 67-68 where `r?.isAvailable()` gates the
  *      explicit setting).
- *   3. Auto / legacy / null ‚Ü?coerce to whichever concrete runtime
+ *   3. Auto / legacy / null ‚Üí coerce to whichever concrete runtime
  *      matches the current CLI state.
  *
  * `agent_runtime='auto'` (legacy) is coerced via
@@ -72,14 +73,15 @@ export function runtimeDisplayLabel(runtime: AgentRuntime): "Claude Code" | "buc
  * SDK because `sdk.isAvailable()` returned false in the registry.
  * Three surfaces (Settings panel, chat badge, registry) MUST agree.
  *
- * @param storedAgentRuntime  raw value from `settings.agent_runtime` ‚Ä? *   may be `'claude-code-sdk'` / `'native'` / `'auto'` (legacy) / null.
+ * @param storedAgentRuntime  raw value from `settings.agent_runtime` ‚Äî
+ *   may be `'claude-code-sdk'` / `'native'` / `'auto'` (legacy) / null.
  * @param cliEnabled  raw value from `settings.cli_enabled`. Stored as
  *   string `'true' | 'false'`; the helper accepts both string and
  *   boolean for caller convenience. `null` / `undefined` defaults to
  *   enabled.
  * @param cliConnected  whether Claude Code CLI is currently detected.
  *   Used both to disambiguate legacy `'auto'` AND to gate the explicit
- *   `'claude-code-sdk'` choice ‚Ä?same as registry.
+ *   `'claude-code-sdk'` choice ‚Äî same as registry.
  */
 export function computeEffectiveRuntime(
   storedAgentRuntime: string | null | undefined,
@@ -95,26 +97,26 @@ export function computeEffectiveRuntime(
       ? cliEnabled
       : cliEnabled !== "false";
 
-  // Phase 5 Phase 6 IA correction (2026-05-14) ‚Ä?codex_runtime is its
+  // Phase 5 Phase 6 IA correction (2026-05-14) ‚Äî codex_runtime is its
   // own engine and never falls back. Codex Account models can ONLY
   // run on the Codex app-server; ClaudeCode SDK / Native can't speak
   // its wire format. So if the user pinned Codex Runtime as global
   // default, we report it as the effective runtime even when the
-  // codex binary is missing ‚Ä?the send-time guardrail in
+  // codex binary is missing ‚Äî the send-time guardrail in
   // claude-client.ts surfaces a clear "Codex Runtime is not
-  // available ‚Ä?install codex CLI" error rather than silently
+  // available ‚Äî install codex CLI" error rather than silently
   // routing GPT-5.5 through Claude Code SDK (Round 5 fail-closed).
   if (storedAgentRuntime === "codex_runtime") return "codex_runtime";
 
   // cli_enabled=false is the highest-priority override for the two
   // legacy engines. Even if the user's stored preference is Claude
   // Code, this short-circuits to AI SDK because the registry won't
-  // spawn the CLI subprocess. Codex is unaffected ‚Ä?its app-server
+  // spawn the CLI subprocess. Codex is unaffected ‚Äî its app-server
   // is its own subprocess, independent of cli_enabled.
   if (!cliEnabledBool) return "native";
 
   // Stored `'native'` is always available (it's bundled). Stored
-  // `'claude-code-sdk'` requires the CLI to be present ‚Ä?same gate as
+  // `'claude-code-sdk'` requires the CLI to be present ‚Äî same gate as
   // registry's `r?.isAvailable()`. A user who chose Claude Code but
   // doesn't have CLI installed is functionally on AI SDK, not Claude
   // Code; the badge / explainer must reflect that.
@@ -123,16 +125,16 @@ export function computeEffectiveRuntime(
     return cliConnected ? "claude-code-sdk" : "native";
   }
 
-  // Legacy `'auto'` or `null` ‚Ä?coerce to whichever concrete runtime
+  // Legacy `'auto'` or `null` ‚Äî coerce to whichever concrete runtime
   // matches the current CLI state.
   return resolveLegacyRuntimeForDisplay(storedAgentRuntime, cliConnected) as AgentRuntime;
 }
 
 // ---------------------------------------------------------------------------
-// New-chat default resolver ‚Ä?Phase 2C contract
+// New-chat default resolver ‚Äî Phase 2C contract
 // ---------------------------------------------------------------------------
 //
-// The Phase 2C principle: *Pinned default is a hard promise ‚Ä?Auto is the
+// The Phase 2C principle: *Pinned default is a hard promise ‚Äî Auto is the
 // only mode allowed to fallback.* The resolver returns a tagged status so
 // callers can enforce that:
 //
@@ -145,7 +147,7 @@ export function computeEffectiveRuntime(
 //                       user resolves it (recovery actions live in 2C.3
 //                       Runtime banner / 2C.5 Health page).
 //   - 'no-compatible'   Empty `groups`; no compatible provider at all.
-//                       Higher-priority than mode ‚Ä?even Pinned with a
+//                       Higher-priority than mode ‚Äî even Pinned with a
 //                       valid pin returns this when groups is empty.
 
 /** Status tag for the resolver's return value. See file header. */
@@ -159,13 +161,13 @@ export type NewChatDefaultStatus =
  * Why a Pinned default is invalid. Drives the Runtime banner copy + which
  * recovery action is most prominent.
  *
- * - `'provider-missing'` ‚Ä?pinned provider isn't in the runtime-filtered
+ * - `'provider-missing'` ‚Äî pinned provider isn't in the runtime-filtered
  *   group list. Most likely the user pinned an OpenAI model but is on
  *   Claude Code Runtime (or vice versa).
- * - `'model-missing'` ‚Ä?pinned provider IS reachable but the pinned model
+ * - `'model-missing'` ‚Äî pinned provider IS reachable but the pinned model
  *   isn't in its filtered list (model disabled / filtered out by runtime
  *   compat).
- * - `'pin-incomplete'` ‚Ä?defensive: storage somehow has mode='pinned' but
+ * - `'pin-incomplete'` ‚Äî defensive: storage somehow has mode='pinned' but
  *   one of provider/model is empty. Shouldn't happen post-migration but
  *   we surface it instead of silently coercing to Auto.
  */
@@ -183,7 +185,7 @@ export interface NewChatDefaultResolution {
   providerName?: string;
   modelValue?: string;
   modelLabel?: string | null;
-  /** Reason ‚Ä?only meaningful when status === 'invalid-default'. */
+  /** Reason ‚Äî only meaningful when status === 'invalid-default'. */
   reason?: InvalidDefaultReason;
 }
 
@@ -196,13 +198,13 @@ interface ProviderGroup {
 export interface NewChatResolveInput {
   /** The runtime-filtered groups from `/api/providers/models?runtime=auto`. */
   groups: ProviderGroup[];
-  /** Default mode ‚Ä?Phase 2C contract. 'pinned' enforces an exact match
+  /** Default mode ‚Äî Phase 2C contract. 'pinned' enforces an exact match
    *  against `pinnedProviderId` + `pinnedModel`; 'auto' walks the
-   *  fallback chain (savedPair ‚Ü?apiDefault ‚Ü?first). */
+   *  fallback chain (savedPair ‚Üí apiDefault ‚Üí first). */
   mode: "auto" | "pinned";
-  /** User's committed pinned provider ‚Ä?required when mode='pinned'. */
+  /** User's committed pinned provider ‚Äî required when mode='pinned'. */
   pinnedProviderId?: string;
-  /** User's committed pinned model ‚Ä?required when mode='pinned'. */
+  /** User's committed pinned model ‚Äî required when mode='pinned'. */
   pinnedModel?: string;
   /** Server-suggested default provider id (response's `default_provider_id`
    *  field). Used as a fallback in Auto mode; ignored in Pinned mode. */
@@ -218,8 +220,8 @@ export interface NewChatResolveInput {
  *
  * Pinned mode (status: 'ok' | 'invalid-default'):
  *   Exact match against `pinnedProviderId` + `pinnedModel` in the filtered
- *   groups. Anything missing ‚Ü?'invalid-default' with a reason. **No
- *   fallback chain** ‚Ä?that's the entire point of pinning.
+ *   groups. Anything missing ‚Üí 'invalid-default' with a reason. **No
+ *   fallback chain** ‚Äî that's the entire point of pinning.
  *
  * Auto mode (status: 'auto-resolved'):
  *   Fallback chain:
@@ -227,7 +229,7 @@ export interface NewChatResolveInput {
  *     2. Saved provider with first available model.
  *     3. API-suggested default provider, first model.
  *     4. First compatible group, first model.
- *   Stored pinned values are intentionally ignored ‚Ä?Auto means Auto.
+ *   Stored pinned values are intentionally ignored ‚Äî Auto means Auto.
  *
  * Empty groups always returns 'no-compatible' regardless of mode.
  */

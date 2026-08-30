@@ -1,29 +1,29 @@
 /**
- * native-timeout-reasons.test.ts �?AI SDK 7 Phase 4 �?targeted tests: the
+ * native-timeout-reasons.test.ts — AI SDK 7 Phase 4 ① targeted tests: the
  * four Native-runtime timeout reason codes (connect / first-token /
  * tool-execution / total-run) fire accurately, surface as classified SSE
  * error events, and persist to the DB via the chat route's error fallback.
  *
- * Evidence layout (per the required check "四类 timeout 原因码准确落库且可展�?):
- *   1. Controller unit tests �?each budget fires on ITS signal only, is
+ * Evidence layout (per the required check "四类 timeout 原因码准确落库且可展示"):
+ *   1. Controller unit tests — each budget fires on ITS signal only, is
  *      cleared by ITS anchor part, and reports {reason, budgetMs, source}.
  *   2. End-to-end through the REAL runAgentLoop with a scripted provider
  *      fetch (same harness as toolloop-poc-parity.test.ts): each reason code
  *      arrives as an `error` SSE event with category TIMEOUT_* + timeout
  *      payload, and the run still terminates with `done`.
- *   3. 落库 read-back �?the error event's JSON is persisted through the chat
+ *   3. 落库 read-back — the error event's JSON is persisted through the chat
  *      route's `**Error:** <event.data>` fallback into messages.content;
  *      asserted by writing with addMessage and reading back via getMessages.
  *   4. 反例 (anti-fake-data): with budgets configured but generous, a normal
  *      turn produces NO timeout error; a USER abort with budgets armed is
  *      still a clean abort (no TIMEOUT_* misclassification); a connection
- *      BLACK HOLE never produces TIMEOUT_FIRST_TOKEN �?not with only
+ *      BLACK HOLE never produces TIMEOUT_FIRST_TOKEN — not with only
  *      firstTokenMs configured (fires nothing) and not with
- *      firstTokenMs < connectMs (fires connect) �?because the first-token
+ *      firstTokenMs < connectMs (fires connect) — because the first-token
  *      timer is armed only by `start-step` (response arrived).
  *
  * Defaults are all-off: `resolveNativeTimeoutConfig()` with no options and
- * no env returns an empty config and the controller arms nothing �?pinned
+ * no env returns an empty config and the controller arms nothing — pinned
  * below so enabling timeouts stays an explicit product decision.
  */
 
@@ -257,7 +257,8 @@ describe('createNativeTimeoutController', () => {
   it('first-token: fires when the response has output nothing; cleared by the first output part', async () => {
     const a = createNativeTimeoutController({ firstTokenMs: 40 }, new AbortController().signal);
     a.onStepRequest();
-    a.onStreamPart({ type: 'start-step' }); // response arrived�?    await sleep(80); // …but no output part
+    a.onStreamPart({ type: 'start-step' }); // response arrived…
+    await sleep(80); // …but no output part
     assert.deepEqual(a.fired, { reason: 'first-token', budgetMs: 40, source: 'agent-loop.fullStream[first-output-part]' });
     a.dispose();
 
@@ -277,7 +278,7 @@ describe('createNativeTimeoutController', () => {
     const ctl = createNativeTimeoutController({ firstTokenMs: 30 }, new AbortController().signal);
     ctl.onStepRequest();
     await sleep(90); // 3× the budget, still no response
-    assert.equal(ctl.fired, null, 'no start-step �?first-token must not fire (that window belongs to connect)');
+    assert.equal(ctl.fired, null, 'no start-step → first-token must not fire (that window belongs to connect)');
     assert.equal(ctl.signal.aborted, false, 'no spurious abort either');
     ctl.dispose();
   });
@@ -294,7 +295,7 @@ describe('createNativeTimeoutController', () => {
   it('first-token: the budget window starts at start-step, not at the request', async () => {
     const ctl = createNativeTimeoutController({ firstTokenMs: 60 }, new AbortController().signal);
     ctl.onStepRequest();
-    await sleep(120); // 2× the budget elapses BEFORE the response �?must not count
+    await sleep(120); // 2× the budget elapses BEFORE the response — must not count
     assert.equal(ctl.fired, null, 'pre-response time must not consume the first-token budget');
     ctl.onStreamPart({ type: 'start-step' });
     await sleep(120);
@@ -324,7 +325,7 @@ describe('createNativeTimeoutController', () => {
     const ctl = createNativeTimeoutController({ totalRunMs: 40, connectMs: 200 }, new AbortController().signal);
     ctl.onRunStart();
     ctl.onStepRequest();
-    // keep the stream "healthy" �?total-run must still fire
+    // keep the stream "healthy" — total-run must still fire
     ctl.onStreamPart({ type: 'start-step' });
     ctl.onStreamPart({ type: 'text-delta' });
     await sleep(80);
@@ -335,7 +336,7 @@ describe('createNativeTimeoutController', () => {
 
   it('guardStream: a fired budget unblocks a consumer stuck on a never-resolving stream read', async () => {
     // ai@7 keeps fullStream open while it awaits a hung tool execute even
-    // after the abort signal fires �?guardStream is what lets the loop
+    // after the abort signal fires — guardStream is what lets the loop
     // escape. Model that: a stream whose second read never resolves.
     const ctl = createNativeTimeoutController({ toolExecutionMs: 40 }, new AbortController().signal);
     const hungStream: AsyncIterable<string> = {
@@ -372,7 +373,7 @@ describe('createNativeTimeoutController', () => {
 // ── 3. End-to-end through the real agent loop ────────────────────
 
 describe('runAgentLoop timeout reason codes (end-to-end)', () => {
-  it('connect: black-hole fetch �?TIMEOUT_CONNECT error event, then done', async () => {
+  it('connect: black-hole fetch → TIMEOUT_CONNECT error event, then done', async () => {
     const { events } = await runLoop({
       timeouts: { connectMs: 150 },
       fetchHandler: (init) => neverRespond(init),
@@ -388,7 +389,7 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
     assert.ok(!events.some((e) => e.type === 'result'), 'timed-out turn must not persist a result');
   });
 
-  it('first-token: headers arrive but no output �?TIMEOUT_FIRST_TOKEN', async () => {
+  it('first-token: headers arrive but no output → TIMEOUT_FIRST_TOKEN', async () => {
     const { events } = await runLoop({
       timeouts: { firstTokenMs: 200 },
       fetchHandler: (init) => headersOnlyHangingResponse(init?.signal),
@@ -400,7 +401,7 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
     assert.equal(events[events.length - 1].type, 'done');
   });
 
-  it('tool-execution: hung tool execute �?TIMEOUT_TOOL_EXECUTION', async () => {
+  it('tool-execution: hung tool execute → TIMEOUT_TOOL_EXECUTION', async () => {
     const hungTool = tool({
       description: 'A tool that never finishes',
       inputSchema: z.object({ note: z.string() }),
@@ -418,7 +419,7 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
     assert.equal(events[events.length - 1].type, 'done');
   });
 
-  it('total-run: healthy-but-endless stream �?TIMEOUT_TOTAL_RUN', async () => {
+  it('total-run: healthy-but-endless stream → TIMEOUT_TOTAL_RUN', async () => {
     const { events } = await runLoop({
       timeouts: { totalRunMs: 300 },
       fetchHandler: (init) => headersOnlyHangingResponse(init?.signal),
@@ -449,7 +450,7 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
     assert.equal((stored.timeout as Record<string, unknown>).source, 'agent-loop.fullStream[start-step]');
   });
 
-  // 反例 1 (anti-fake-data): budgets configured but generous �?normal turn,
+  // 反例 1 (anti-fake-data): budgets configured but generous → normal turn,
   // no timeout error, result present.
   it('does NOT fire on a healthy turn with generous budgets', async () => {
     const { events } = await runLoop({
@@ -461,9 +462,9 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
   });
 
   // 反例 2 (P1 fix): a black-hole connection with firstTokenMs < connectMs
-  // must surface as TIMEOUT_CONNECT �?the shorter first-token budget cannot
+  // must surface as TIMEOUT_CONNECT — the shorter first-token budget cannot
   // pre-empt the connect window because it only arms after start-step.
-  it('black-hole with firstTokenMs < connectMs �?TIMEOUT_CONNECT, not first-token', async () => {
+  it('black-hole with firstTokenMs < connectMs → TIMEOUT_CONNECT, not first-token', async () => {
     const { events } = await runLoop({
       timeouts: { connectMs: 300, firstTokenMs: 100 },
       fetchHandler: (init) => neverRespond(init),
@@ -477,7 +478,7 @@ describe('runAgentLoop timeout reason codes (end-to-end)', () => {
     assert.equal(events[events.length - 1].type, 'done');
   });
 
-  // 反例 3: USER abort with budgets armed must stay a clean abort �?never a
+  // 反例 3: USER abort with budgets armed must stay a clean abort — never a
   // TIMEOUT_* misclassification, never an error bubble.
   it('classifies a user abort as abort, not as a timeout', async () => {
     const { events } = await runLoop({

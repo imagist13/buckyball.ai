@@ -1,5 +1,5 @@
 /**
- * Interrupt lifecycle â€?`/api/chat/interrupt` returns the
+ * Interrupt lifecycle â€” `/api/chat/interrupt` returns the
  * authoritative runtime_status and must NOT release/settle the session lock
  * (d-interrupt-returns-status, d-interrupt-no-kill-newowner).
  *
@@ -7,12 +7,12 @@
  * source-pin: the route reads chat_sessions.runtime_status and fans out
  * interrupts. The I1 correctness property we lock in here is that a Stop
  * carrying ONLY a sessionId (no owner lockId) never touches session_runtime_locks
- * â€?otherwise it would kill a newer turn that already reclaimed the lock. Real
+ * â€” otherwise it would kill a newer turn that already reclaimed the lock. Real
  * release + terminal-status write stay with the chat route's lockId-scoped
  * settleLock / watchdog.
  */
 
-// CRITICAL â€?this side-effect import MUST be first. It points
+// CRITICAL â€” this side-effect import MUST be first. It points
 // CLAUDE_GUI_DATA_DIR at a fresh per-worker temp DB BEFORE any @/lib import
 // chain triggers src/lib/db.ts module-load (which captures the env var at
 // module-load time). The full suite preloads this via `tsx --test --import`;
@@ -55,7 +55,7 @@ function callInterrupt(sessionId: unknown) {
   return POST(req as never);
 }
 
-describe('/api/chat/interrupt â€?authoritative runtime_status, lock-safe', () => {
+describe('/api/chat/interrupt â€” authoritative runtime_status, lock-safe', () => {
   it('d-interrupt-returns-status: echoes chat_sessions.runtime_status', async () => {
     const sid = createSession('interrupt-returns-status').id;
     setSessionRuntimeStatus(sid, 'running');
@@ -86,7 +86,7 @@ describe('/api/chat/interrupt â€?authoritative runtime_status, lock-safe', () =>
     assert.equal(
       isLockOwner(sid, newLock),
       true,
-      'interrupt must not release the lock a newer turn owns â€?that would kill the reclaimed turn',
+      'interrupt must not release the lock a newer turn owns â€” that would kill the reclaimed turn',
     );
   });
 
@@ -107,7 +107,7 @@ describe('/api/chat/interrupt â€?authoritative runtime_status, lock-safe', () =>
     // Fan-out reached the conversation (best-effort graceful interrupt)...
     assert.equal(interrupted, 1, 'SDK conversation.interrupt() should be invoked by the fan-out');
     assert.equal(controller.signal.aborted, true, 'Stop must also abort the application-owned child signal');
-    // ...but the registry entry must remain â€?interrupt never unregisters, so the
+    // ...but the registry entry must remain â€” interrupt never unregisters, so the
     // newer turn keeps its live stream handle.
     assert.equal(getConversation(sid), sentinel, 'interrupt must not evict the conversation registry entry');
     assert.equal(isLockOwner(sid, newLock), true, 'lock still owned by the newer turn');
@@ -164,18 +164,18 @@ describe('/api/chat/interrupt â€?authoritative runtime_status, lock-safe', () =>
     await callInterrupt(sid);
 
     // The interrupt route only READS runtime_status; the newer turn's 'running'
-    // must survive (no settle â†?no flip to idle/interrupted here).
+    // must survive (no settle â†’ no flip to idle/interrupted here).
     const res = await callInterrupt(sid);
     const body = await res.json();
-    assert.equal(body.runtime_status, 'running', 'status stays running â€?interrupt never writes a terminal status');
+    assert.equal(body.runtime_status, 'running', 'status stays running â€” interrupt never writes a terminal status');
   });
 
-  it('missing sessionId â†?400 (guard unchanged)', async () => {
+  it('missing sessionId â†’ 400 (guard unchanged)', async () => {
     const res = await callInterrupt(undefined);
     assert.equal(res.status, 400);
   });
 
-  it('unknown session â†?runtime_status null, still interrupted:true', async () => {
+  it('unknown session â†’ runtime_status null, still interrupted:true', async () => {
     const res = await callInterrupt('does-not-exist-session-id');
     const body = await res.json();
     assert.equal(body.interrupted, true);

@@ -9,7 +9,7 @@ import {
   XCircle,
   CaretRight,
 } from "@phosphor-icons/react";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 import { cn } from '@/lib/utils';
 import { Shimmer } from '@/components/ai-elements/shimmer';
 import { useStickToBottomContext } from 'use-stick-to-bottom';
@@ -44,17 +44,17 @@ interface ToolActionsGroupProps {
   streamingToolOutput?: string;
   /** When true, skip the collapsible header and render the tool list directly */
   flat?: boolean;
-  /** Thinking/reasoning content â?rendered as the first expandable item inside the group */
+  /** Thinking/reasoning content — rendered as the first expandable item inside the group */
   thinkingContent?: string;
 }
 
 // ---------------------------------------------------------------------------
-// Tool Registry â?extensible per-type rendering
+// Tool Registry — extensible per-type rendering
 // ---------------------------------------------------------------------------
 
 interface ToolRendererDef {
   match: (name: string) => boolean;
-  iconName: BuckyballIconName;
+  iconName: CodePilotIconName;
   label: string;
   getSummary: (input: unknown, name?: string) => string;
   /** Render inline detail when tool row is hovered/expanded (optional) */
@@ -102,7 +102,7 @@ const TOOL_REGISTRY: ToolRendererDef[] = [
         // Completed: show full output, truncated to 20 lines with indicator
         const lines = outputText.split('\n');
         if (lines.length > 20) {
-          return lines.slice(0, 20).join('\n') + `\nâ?+${lines.length - 20} lines`;
+          return lines.slice(0, 20).join('\n') + `\n… +${lines.length - 20} lines`;
         }
         return outputText;
       })();
@@ -205,7 +205,7 @@ const TOOL_REGISTRY: ToolRendererDef[] = [
     },
   },
   {
-    // Fallback â?must be last. Shows the raw tool name so unregistered tools
+    // Fallback — must be last. Shows the raw tool name so unregistered tools
     // (TodoWrite, MCP tools, plugin tools) remain identifiable.
     match: () => true,
     iconName: 'wrench',
@@ -230,7 +230,7 @@ export function registerToolRenderer(def: ToolRendererDef): void {
 }
 
 // ---------------------------------------------------------------------------
-// Status indicator â?running: gray, completed: green, error: red
+// Status indicator — running: gray, completed: green, error: red
 // ---------------------------------------------------------------------------
 
 type ToolStatus = 'running' | 'success' | 'error';
@@ -282,7 +282,7 @@ function StatusDot({ status }: { status: ToolStatus }) {
 }
 
 // ---------------------------------------------------------------------------
-// Context tool grouping â?auto-group 3+ consecutive read/search tools
+// Context tool grouping — auto-group 3+ consecutive read/search tools
 // ---------------------------------------------------------------------------
 
 const CONTEXT_TOOLS = new Set([
@@ -340,7 +340,7 @@ function ContextGroup({ tools }: { tools: ToolAction[] }) {
         onClick={() => setExpanded((prev) => !prev)}
         className="flex w-full items-center gap-2 px-2 py-1 min-h-[28px] text-xs hover:bg-muted/30 rounded-sm transition-colors"
       >
-        <BuckyballIcon name="search" size="sm" className="shrink-0 text-muted-foreground" aria-hidden />
+        <CodePilotIcon name="search" size="sm" className="shrink-0 text-muted-foreground" aria-hidden />
         <CaretRight
           size={10}
           className={cn(
@@ -377,7 +377,7 @@ function ContextGroup({ tools }: { tools: ToolAction[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Thinking row â?same style as tool rows, Brain icon â?caret on hover
+// Thinking row — same style as tool rows, Brain icon → caret on hover
 // ---------------------------------------------------------------------------
 
 function ThinkingRow({ content, isStreaming }: { content: string; isStreaming?: boolean }) {
@@ -427,7 +427,7 @@ function ThinkingRow({ content, isStreaming }: { content: string; isStreaming?: 
               className="opacity-70"
             />
           ) : (
-            <BuckyballIcon name="assistant" size="sm" className="text-muted-foreground" aria-hidden />
+            <CodePilotIcon name="assistant" size="sm" className="text-muted-foreground" aria-hidden />
           )}
         </span>
         <span className="font-mono text-muted-foreground/60 truncate flex-1 text-left">
@@ -465,7 +465,7 @@ function ToolActionRow({ tool, streamingToolOutput }: { tool: ToolAction; stream
   const hasDetail = renderer.iconName === 'terminal' || renderer.iconName === 'assistant';
   const showDetail = hasDetail && renderer.renderDetail && (status === 'running' || streamingToolOutput || tool.result);
 
-  // Phase 5e round 8 (2026-05-18) â?small inline hint when the model
+  // Phase 5e round 8 (2026-05-18) — small inline hint when the model
   // tried to call a `codepilot_*` built-in tool that isn't supported
   // on the active Runtime. Narrowed by `isToolUnsupportedError`:
   // fires only when the error content matches "tool not found /
@@ -484,7 +484,7 @@ function ToolActionRow({ tool, streamingToolOutput }: { tool: ToolAction; stream
   return (
     <div>
       <div className="flex items-center gap-2 px-2 py-1 min-h-[28px] text-xs hover:bg-muted/30 rounded-sm transition-colors">
-        <BuckyballIcon name={renderer.iconName} size="sm" className="shrink-0 text-muted-foreground" aria-hidden />
+        <CodePilotIcon name={renderer.iconName} size="sm" className="shrink-0 text-muted-foreground" aria-hidden />
 
         {renderer.label && (
           <span className="font-medium text-muted-foreground shrink-0">{renderer.label}</span>
@@ -501,7 +501,7 @@ function ToolActionRow({ tool, streamingToolOutput }: { tool: ToolAction; stream
         )}
 
         {tool.media && tool.media.length > 0 && (
-          <BuckyballIcon name="image" size="sm" className="shrink-0 text-primary/60" aria-hidden />
+          <CodePilotIcon name="image" size="sm" className="shrink-0 text-primary/60" aria-hidden />
         )}
 
         <StatusDot status={status} />
@@ -520,7 +520,7 @@ function ToolActionRow({ tool, streamingToolOutput }: { tool: ToolAction; stream
 }
 
 // ---------------------------------------------------------------------------
-// Header summary helper â?build running task description
+// Header summary helper — build running task description
 // ---------------------------------------------------------------------------
 
 function getRunningDescription(tools: ToolAction[]): string {
@@ -591,12 +591,12 @@ export function ToolActionsGroup({
 
   return (
     <div className="w-[min(100%,48rem)]">
-      {/* Header â?content left, caret right.
+      {/* Header — content left, caret right.
           Round 12 fix: was `py-1 rounded-sm` with NO horizontal
           padding, so the inner count badge sat flush against the
           button's left edge and the hover-bg `rounded-sm` (2px)
           curve cut into the badge's own `rounded` (4px). Visually
-          this read as "å¾æ é²å¨ hover åºå¤". `px-2` + `rounded-md`
+          this read as "图标露在 hover 区外". `px-2` + `rounded-md`
           (6px) keeps the badge inside the hover surface and matches
           the curve scale across nested elements. */}
       <button
@@ -609,7 +609,7 @@ export function ToolActionsGroup({
         </span>
 
         <span className="text-muted-foreground/60 truncate">
-          {summaryParts.join(' Â· ')}
+          {summaryParts.join(' · ')}
         </span>
 
         {/* Show running task description */}
@@ -628,7 +628,7 @@ export function ToolActionsGroup({
         />
       </button>
 
-      {/* Expanded list â?left vertical line like blockquote */}
+      {/* Expanded list — left vertical line like blockquote */}
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div

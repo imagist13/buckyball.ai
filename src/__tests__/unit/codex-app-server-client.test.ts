@@ -1,7 +1,7 @@
 /**
- * Phase 5 Phase 1 â€?Codex app-server JSON-RPC client contract.
+ * Phase 5 Phase 1 â€” Codex app-server JSON-RPC client contract.
  *
- * Tests run against a mocked `CodexTransport` â€?no real `codex`
+ * Tests run against a mocked `CodexTransport` â€” no real `codex`
  * binary required. Covers:
  *
  *   - initialize() round-trip + initialized notification
@@ -70,7 +70,7 @@ function makeMockTransport() {
   };
 }
 
-describe('CodexAppServerClient â€?initialize handshake', () => {
+describe('CodexAppServerClient â€” initialize handshake', () => {
   it('sends initialize with client name + version, then initialized notification', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '1.2.3' });
@@ -111,7 +111,7 @@ describe('CodexAppServerClient â€?initialize handshake', () => {
   });
 });
 
-describe('CodexAppServerClient â€?request / response', () => {
+describe('CodexAppServerClient â€” request / response', () => {
   it('resolves a typed request with the server result', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
@@ -223,7 +223,7 @@ describe('CodexAppServerClient â€?request / response', () => {
   });
 });
 
-describe('CodexAppServerClient â€?notifications', () => {
+describe('CodexAppServerClient â€” notifications', () => {
   it('routes notifications by method to registered handlers', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
@@ -254,7 +254,7 @@ describe('CodexAppServerClient â€?notifications', () => {
   });
 });
 
-describe('CodexAppServerClient â€?wildcard notifications (P2.2 fix)', () => {
+describe('CodexAppServerClient â€” wildcard notifications (P2.2 fix)', () => {
   it('onAnyNotification fires for every notification with (method, params)', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
@@ -314,7 +314,7 @@ describe('CodexAppServerClient â€?wildcard notifications (P2.2 fix)', () => {
   });
 });
 
-describe('CodexAppServerClient â€?server-originated requests (P1.1 fix)', () => {
+describe('CodexAppServerClient â€” server-originated requests (P1.1 fix)', () => {
   it('routes incoming request to onServerRequest handler + emits response', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
@@ -334,7 +334,7 @@ describe('CodexAppServerClient â€?server-originated requests (P1.1 fix)', () => 
     await client.dispose();
   });
 
-  it('no handler â†?auto-emits -32601 method not found so Codex does not hang', async () => {
+  it('no handler â†’ auto-emits -32601 method not found so Codex does not hang', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
     await client.notify('initialized', {});
@@ -351,7 +351,7 @@ describe('CodexAppServerClient â€?server-originated requests (P1.1 fix)', () => 
     await client.dispose();
   });
 
-  it('handler throw â†?-32603 internal error with the message', async () => {
+  it('handler throw â†’ -32603 internal error with the message', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });
     client.onServerRequest('item/commandExecution/requestApproval', () => {
@@ -392,7 +392,7 @@ describe('CodexAppServerClient â€?server-originated requests (P1.1 fix)', () => 
   });
 });
 
-describe('CodexAppServerClient â€?dispose', () => {
+describe('CodexAppServerClient â€” dispose', () => {
   it('rejects pending requests on dispose so callers do not hang', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0', requestTimeoutMs: 0 });
@@ -403,8 +403,8 @@ describe('CodexAppServerClient â€?dispose', () => {
   });
 });
 
-describe('CodexAppServerClient â€?transport close (P0: fast-fail, not 30s timeout)', () => {
-  it('rejects a pending request immediately when the process exits â€?NOT after the 30s timeout', async () => {
+describe('CodexAppServerClient â€” transport close (P0: fast-fail, not 30s timeout)', () => {
+  it('rejects a pending request immediately when the process exits â€” NOT after the 30s timeout', async () => {
     const mock = makeMockTransport();
     // Real 30s default: a regression that waits the timeout would make this
     // test slow AND fail the elapsed assertion below.
@@ -412,7 +412,7 @@ describe('CodexAppServerClient â€?transport close (P0: fast-fail, not 30s timeou
     const promise = client.initialize();
     await mock.flush();
     // Server never responds; the app-server dies (e.g. old binary rejecting
-    // ~/.codex/config.toml â†?exit 1).
+    // ~/.codex/config.toml â†’ exit 1).
     const start = Date.now();
     mock.emitClose(new Error('Codex app-server exited (code=1 signal=null)'));
     await assert.rejects(promise, /exited \(code=1/);
@@ -444,7 +444,7 @@ describe('CodexAppServerClient â€?transport close (P0: fast-fail, not 30s timeou
     await client.dispose();
   });
 
-  it('handles the exit-before-attach race â€?close before initialize still rejects fast', async () => {
+  it('handles the exit-before-attach race â€” close before initialize still rejects fast', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0', requestTimeoutMs: 30_000 });
     // Process dies BEFORE the client ever attaches / sends initialize.

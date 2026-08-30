@@ -7,7 +7,7 @@ import { DownloadSimple, CaretUp, CaretDown } from "@/components/ui/icon";
 import { cn } from "@/lib/utils";
 
 /*
- * DataTableViewer â€?Phase 5.4 minimum viable surface.
+ * DataTableViewer â€” Phase 5.4 minimum viable surface.
  *
  * Two entry points:
  *   - `csv` prop: raw CSV text, parsed via papaparse with header row
@@ -53,7 +53,7 @@ export function DataTableViewer({
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
-  // Derived (via useMemo) â€?not state â€?so we don't hit React's
+  // Derived (via useMemo) â€” not state â€” so we don't hit React's
   // "setState in effect" lint rule. Switching between rows+header and
   // csv-text input is a prop change; useMemo recomputes reactively.
   const { header, rows, parseError } = useMemo<{

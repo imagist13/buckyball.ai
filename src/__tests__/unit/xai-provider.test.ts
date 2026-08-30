@@ -119,10 +119,10 @@ describe('xAI API Key provider', () => {
     };
     assert.equal(findMatchingPresetForRecord(record)?.key, 'xai');
     const providerCompat = getProviderCompat(record);
-    assert.equal(providerCompat, 'bbagent_only');
+    assert.equal(providerCompat, 'codepilot_only');
     const modelCompat = getModelCompat({ modelId: 'grok-4.6', providerCompat });
     assert.deepEqual([...(modelCompat.supportedRuntimes ?? [])].sort(), [
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ]);
     assert.ok(modelCompat.unsupportedReasonByRuntime?.claude_code);

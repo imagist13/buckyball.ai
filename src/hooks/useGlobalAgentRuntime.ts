@@ -5,15 +5,15 @@ import { useEffect, useState } from "react";
 /**
  * Lightweight global-agent-runtime hook.
  *
- * Returns just `agent_runtime` from `/api/settings/app` â€?a single
+ * Returns just `agent_runtime` from `/api/settings/app` â€” a single
  * fetch, no fan-out, no transitive imports of `runtime/effective` /
  * provider catalog / `useClaudeStatus`. Use this for surfaces that
  * only need to display the current global runtime label (e.g.,
  * RuntimeSelector's fallback when the session has no explicit pin),
  * NOT for full health snapshots.
  *
- * For Settings â†?Overview / Health / Runtime full snapshot, keep
- * using `useOverviewData` â€?that hook fans out to 6+ endpoints and
+ * For Settings â†’ Overview / Health / Runtime full snapshot, keep
+ * using `useOverviewData` â€” that hook fans out to 6+ endpoints and
  * pulls in the runtime resolver, which is exactly what we want OUT
  * of the chat first-paint compile graph (see chat-static-graph.test.ts).
  *
@@ -22,12 +22,13 @@ import { useEffect, useState } from "react";
  * Settings page propagates back to chat surfaces consistently.
  */
 export interface GlobalAgentRuntimeState {
-  /** Stored `agent_runtime` setting. Defaults to `'claude-code-sdk'` â€?   *  matching the same default the resolver uses when the row is
-   *  missing â€?so the first paint never renders an empty label.
+  /** Stored `agent_runtime` setting. Defaults to `'claude-code-sdk'` â€”
+   *  matching the same default the resolver uses when the row is
+   *  missing â€” so the first paint never renders an empty label.
    *
    *  Phase 5 Phase 6 IA correction round 3 (2026-05-14): includes
    *  `'codex_runtime'` as a peer engine. The earlier binary union
-   *  silently coerced `'codex_runtime'` â†?`'claude-code-sdk'`, which
+   *  silently coerced `'codex_runtime'` â†’ `'claude-code-sdk'`, which
    *  made the chat composer's RuntimeSelector render "Claude Code"
    *  even when the user had picked Codex Runtime as the global
    *  default in Settings. Callers (chat/page.tsx + ChatView.tsx) use
@@ -56,7 +57,7 @@ export function useGlobalAgentRuntime(): GlobalAgentRuntimeState {
           // Preserve all three registry ids verbatim; coerce legacy
           // 'auto' / unknown / null to 'claude-code-sdk' (matches the
           // resolver's first-paint default). This stays a one-line
-          // coercion â€?we deliberately do NOT import `runtime/legacy`
+          // coercion â€” we deliberately do NOT import `runtime/legacy`
           // here to keep the hook's compile graph empty (the
           // chat-static-graph test pins that constraint).
           const agentRuntime: "claude-code-sdk" | "native" | "codex_runtime" =

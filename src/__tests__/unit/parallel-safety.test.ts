@@ -17,7 +17,7 @@ import {
 // Constants sanity
 // ───────────────────────────────────────────────────────────────
 
-describe('parallel-safety �?constants', () => {
+describe('parallel-safety — constants', () => {
   it('MAX_PARALLEL_TOOL_WORKERS matches Hermes (8)', () => {
     assert.equal(MAX_PARALLEL_TOOL_WORKERS, 8);
   });
@@ -43,7 +43,7 @@ describe('parallel-safety �?constants', () => {
 // isDestructiveCommand
 // ───────────────────────────────────────────────────────────────
 
-describe('parallel-safety �?isDestructiveCommand', () => {
+describe('parallel-safety — isDestructiveCommand', () => {
   it('empty string is not destructive', () => {
     assert.equal(isDestructiveCommand(''), false);
   });
@@ -105,7 +105,7 @@ describe('parallel-safety �?isDestructiveCommand', () => {
 // pathsOverlap
 // ───────────────────────────────────────────────────────────────
 
-describe('parallel-safety �?pathsOverlap', () => {
+describe('parallel-safety — pathsOverlap', () => {
   it('identical paths overlap', () => {
     assert.equal(pathsOverlap('/a/b/c', '/a/b/c'), true);
   });
@@ -136,7 +136,7 @@ describe('parallel-safety �?pathsOverlap', () => {
 // extractScopePath
 // ───────────────────────────────────────────────────────────────
 
-describe('parallel-safety �?extractScopePath', () => {
+describe('parallel-safety — extractScopePath', () => {
   const cwd = path.resolve(path.sep, 'tmp', 'testcwd');
 
   it('returns null for non-path-scoped tools', () => {
@@ -175,10 +175,10 @@ describe('parallel-safety �?extractScopePath', () => {
 });
 
 // ───────────────────────────────────────────────────────────────
-// shouldParallelizeToolBatch �?the main judgment function
+// shouldParallelizeToolBatch — the main judgment function
 // ───────────────────────────────────────────────────────────────
 
-describe('parallel-safety �?shouldParallelizeToolBatch', () => {
+describe('parallel-safety — shouldParallelizeToolBatch', () => {
   const cwd = path.resolve(path.sep, 'tmp', 'testcwd');
 
   // Layer 1
@@ -191,7 +191,7 @@ describe('parallel-safety �?shouldParallelizeToolBatch', () => {
     assert.equal(shouldParallelizeToolBatch(calls, { cwd }), false);
   });
 
-  // Layer 2 �?NEVER_PARALLEL_TOOLS via extraNeverParallelTools
+  // Layer 2 — NEVER_PARALLEL_TOOLS via extraNeverParallelTools
   it('extraNeverParallelTools forces batch to serialize', () => {
     const calls: ToolCallDescriptor[] = [
       { name: 'Read', args: { path: 'a.txt' } },
@@ -204,7 +204,7 @@ describe('parallel-safety �?shouldParallelizeToolBatch', () => {
     assert.equal(result, false);
   });
 
-  // Layer 3 �?path-scoped tools
+  // Layer 3 — path-scoped tools
   it('two Reads of different files parallelize', () => {
     const calls: ToolCallDescriptor[] = [
       { name: 'Read', args: { path: 'a.txt' } },
@@ -261,7 +261,7 @@ describe('parallel-safety �?shouldParallelizeToolBatch', () => {
     assert.equal(shouldParallelizeToolBatch(calls, { cwd }), false);
   });
 
-  // Layer 4 �?whitelist
+  // Layer 4 — whitelist
   it('two Grep calls parallelize (both in safe whitelist)', () => {
     const calls: ToolCallDescriptor[] = [
       { name: 'Grep', args: { pattern: 'foo' } },

@@ -71,7 +71,7 @@ const FALLBACK_DARK: ThemeColors = {
   sidebarRing: 'oklch(0.985 0.001 106.423)',
 };
 
-/** Every key in ThemeColors is required â€?must match types.ts exactly. */
+/** Every key in ThemeColors is required â€” must match types.ts exactly. */
 const REQUIRED_COLOR_KEYS: (keyof ThemeColors)[] = [
   'background', 'foreground', 'card', 'cardForeground',
   'popover', 'popoverForeground', 'primary', 'primaryForeground',

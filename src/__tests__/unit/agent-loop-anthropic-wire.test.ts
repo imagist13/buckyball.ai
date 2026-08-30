@@ -1,5 +1,5 @@
 /**
- * agent-loop-anthropic-wire.test.ts â€?executable behavior test for the native
+ * agent-loop-anthropic-wire.test.ts â€” executable behavior test for the native
  * Agent Loop's Anthropic `providerOptions` wire shape (model plan Phase 2 / s05,
  * 2026-07-18).
  *
@@ -48,8 +48,8 @@ function wireFor(opts: {
   });
 }
 
-describe('s05 â€?Sonnet 5 effort reaches the OFFICIAL Anthropic Native wire', () => {
-  it('sonnet-5 + xhigh â†?providerOptions.anthropic.effort=xhigh, no drop signal', () => {
+describe('s05 â€” Sonnet 5 effort reaches the OFFICIAL Anthropic Native wire', () => {
+  it('sonnet-5 + xhigh â†’ providerOptions.anthropic.effort=xhigh, no drop signal', () => {
     const wire = wireFor({ model: 'claude-sonnet-5', effort: 'xhigh', isThirdPartyProxy: false });
     // This IS the object assigned to providerOptions.anthropic in streamText.
     assert.equal(wire.anthropic?.effort, 'xhigh',
@@ -57,7 +57,7 @@ describe('s05 â€?Sonnet 5 effort reaches the OFFICIAL Anthropic Native wire', ()
     assert.equal(wire.effortDroppedForProxy, false,
       'official path never raises the proxy drop signal');
     assert.equal(wire.effortDroppedUnsupportedModel, false,
-      'sonnet-5 IS on the effort list â€?no unsupported-model toast');
+      'sonnet-5 IS on the effort list â€” no unsupported-model toast');
   });
 
   it('sonnet-5 sends adaptive thinking alongside effort (both survive)', () => {
@@ -68,25 +68,25 @@ describe('s05 â€?Sonnet 5 effort reaches the OFFICIAL Anthropic Native wire', ()
     assert.equal(wire.anthropic?.effort, 'high');
     // manual thinking is converted to adaptive/summarized by the sanitizer.
     assert.deepEqual(wire.anthropic?.thinking, { type: 'adaptive', display: 'summarized' });
-    // 1M is default for the adaptive family â†?no context-1m beta header.
+    // 1M is default for the adaptive family â†’ no context-1m beta header.
     assert.equal(wire.anthropic?.anthropicBeta, undefined);
   });
 
   // Codex review P1 round #7 (2026-07-18): Sonnet 4.6 IS on Anthropic's effort
   // list (low/medium/high/max) and the catalog offers the picker for it, but the
-  // allowlist had omitted it â€?the pick was dropped and the user was told the
+  // allowlist had omitted it â€” the pick was dropped and the user was told the
   // model "doesn't support effort", contradicting both UI and provider.
   // Effort and adaptive-thinking are separate axes: 4.6 gets effort AND keeps
   // manual extended thinking.
-  it('sonnet 4.6 + high â†?effort on the wire, no drop signal, manual thinking intact', () => {
+  it('sonnet 4.6 + high â†’ effort on the wire, no drop signal, manual thinking intact', () => {
     const wire = wireFor({
       model: 'claude-sonnet-4-6', effort: 'high',
       thinking: { type: 'enabled', budgetTokens: 4000 }, isThirdPartyProxy: false,
     });
     assert.equal(wire.anthropic?.effort, 'high',
-      'Sonnet 4.6 is effort-capable â€?the composer pick must reach the wire');
+      'Sonnet 4.6 is effort-capable â€” the composer pick must reach the wire');
     assert.equal(wire.effortDroppedUnsupportedModel, false,
-      'no drop â†?no contradictory "not supported" toast');
+      'no drop â†’ no contradictory "not supported" toast');
     // 4.6 is NOT in the adaptive family: manual extended thinking survives.
     assert.deepEqual(wire.anthropic?.thinking, { type: 'enabled', budgetTokens: 4000 });
   });
@@ -126,25 +126,25 @@ describe('s05 â€?Sonnet 5 effort reaches the OFFICIAL Anthropic Native wire', ()
   });
 });
 
-describe('s05 â€?models NOT on Anthropic\'s effort list omit effort officially', () => {
+describe('s05 â€” models NOT on Anthropic\'s effort list omit effort officially', () => {
   // Codex review P1 (2026-07-18) reproduced the regression this covers: the
   // official-path helper took no model, so claude-haiku-4-5-20251001 + max
   // reached the wire as {"effort":"max"} even though Haiku 4.5 is absent from
   // Anthropic's effort-capable model list.
-  it('haiku 4.5 + max â†?NO effort field on the wire, unsupported-model signal true', () => {
+  it('haiku 4.5 + max â†’ NO effort field on the wire, unsupported-model signal true', () => {
     const wire = wireFor({
       model: 'claude-haiku-4-5-20251001', effort: 'max', isThirdPartyProxy: false,
     });
     assert.equal(wire.anthropic?.effort, undefined,
-      'Haiku 4.5 is not effort-capable â€?effort must not reach the wire');
+      'Haiku 4.5 is not effort-capable â€” effort must not reach the wire');
     assert.ok(
       !wire.anthropic || !('effort' in wire.anthropic),
       'the key must be ABSENT, not present-and-undefined (it would serialize)',
     );
     assert.equal(wire.effortDroppedUnsupportedModel, true,
-      'the omission must raise RUNTIME_EFFORT_IGNORED â€?never a silent drop');
+      'the omission must raise RUNTIME_EFFORT_IGNORED â€” never a silent drop');
     assert.equal(wire.effortDroppedForProxy, false,
-      'this is the official path, not a proxy â€?the two signals stay distinct');
+      'this is the official path, not a proxy â€” the two signals stay distinct');
   });
 
   it('an unknown model fails closed the same way', () => {
@@ -158,13 +158,13 @@ describe('s05 â€?models NOT on Anthropic\'s effort list omit effort officially',
 
   // Codex review P1 round #7 (2026-07-18): near-miss IDs. An unbounded
   // `/sonnet-?5/i` matches `claude-sonnet-50`, and `/opus-?4[-.]?7/i` matches
-  // `claude-opus-4-70` â€?both would hand an unverified model a capability claim.
+  // `claude-opus-4-70` â€” both would hand an unverified model a capability claim.
   // Unknown must fail closed, so these omit effort and raise the drop signal.
   for (const model of ['claude-sonnet-50', 'claude-opus-4-70', 'claude-fable-55', 'claude-sonnet-46']) {
     it(`near-miss unknown ID ${model} is NOT treated as effort-capable`, () => {
       const wire = wireFor({ model, effort: 'high', isThirdPartyProxy: false });
       assert.equal(wire.anthropic?.effort, undefined,
-        `${model} is not on the official list â€?a boundary-less regex must not claim it`);
+        `${model} is not on the official list â€” a boundary-less regex must not claim it`);
       assert.equal(wire.effortDroppedUnsupportedModel, true);
     });
   }
@@ -172,17 +172,17 @@ describe('s05 â€?models NOT on Anthropic\'s effort list omit effort officially',
   it('no effort selected on an unsupported model raises no signal', () => {
     const wire = wireFor({ model: 'claude-haiku-4-5-20251001', isThirdPartyProxy: false });
     assert.equal(wire.effortDroppedUnsupportedModel, false,
-      'nothing was dropped â†?no misleading toast');
+      'nothing was dropped â†’ no misleading toast');
   });
 });
 
-describe('s05 â€?both native paths gate on the model and announce the drop', () => {
+describe('s05 â€” both native paths gate on the model and announce the drop', () => {
   const read = (rel: string) => readFileSync(join(process.cwd(), 'src/lib', rel), 'utf8');
 
   it('agent-loop passes the resolved model into the wire builder', () => {
     const src = read('agent-loop.ts');
     assert.match(src, /buildAnthropicProviderOptions\(\{[\s\S]{0,120}model: config\.modelId/,
-      'without a model the gate cannot exist â€?this is the exact P1 regression');
+      'without a model the gate cannot exist â€” this is the exact P1 regression');
     assert.match(src, /wire\.effortDroppedUnsupportedModel[\s\S]{0,600}RUNTIME_EFFORT_IGNORED/,
       'the omission must raise the one-shot notification, not vanish');
     assert.match(src, /wire\.effortDroppedUnsupportedTier[\s\S]{0,900}unsupported-tier/,
@@ -221,16 +221,16 @@ describe('s05 â€?both native paths gate on the model and announce the drop', () 
     // Every pattern must be bounded on both sides or near-miss IDs slip in.
     for (const p of entries.match(/pattern: \/[^/]+\//g) || []) {
       assert.ok(p.includes('(?:^|[^a-z0-9])') && p.includes('(?![0-9])'),
-        `allowlist pattern lacks token boundaries â€?unknown IDs would match: ${p}`);
+        `allowlist pattern lacks token boundaries â€” unknown IDs would match: ${p}`);
     }
   });
 });
 
-describe('s05 â€?third-party proxy still DROPS effort and raises the signal', () => {
-  it('sonnet-5 + xhigh on a proxy â†?no effort on the wire, drop signal true', () => {
+describe('s05 â€” third-party proxy still DROPS effort and raises the signal', () => {
+  it('sonnet-5 + xhigh on a proxy â†’ no effort on the wire, drop signal true', () => {
     const wire = wireFor({ model: 'claude-sonnet-5', effort: 'xhigh', isThirdPartyProxy: true });
     assert.equal(wire.anthropic?.effort, undefined,
-      'proxies may not accept effort â€?it must not reach the wire');
+      'proxies may not accept effort â€” it must not reach the wire');
     assert.equal(wire.effortDroppedForProxy, true,
       'the drop must raise RUNTIME_EFFORT_IGNORED via effortDroppedForProxy');
     assert.equal(wire.effortDroppedForProxyRequested, 'xhigh');
@@ -283,8 +283,8 @@ describe('s05 â€?third-party proxy still DROPS effort and raises the signal', ()
   it('a proxy with no effort selected raises no drop signal', () => {
     const wire = wireFor({ model: 'claude-sonnet-5', isThirdPartyProxy: true });
     assert.equal(wire.effortDroppedForProxy, false,
-      'nothing to drop â†?no misleading toast');
-    // no thinking / effort / beta assembled â†?undefined providerOptions.anthropic
+      'nothing to drop â†’ no misleading toast');
+    // no thinking / effort / beta assembled â†’ undefined providerOptions.anthropic
     assert.equal(wire.anthropic, undefined);
   });
 
@@ -295,7 +295,7 @@ describe('s05 â€?third-party proxy still DROPS effort and raises the signal', ()
     });
     // sonnet-4-6 is non-adaptive: manual thinking stays as enabled and a proxy
     // forwards it. Effort is dropped even though 4.6 IS effort-capable on the
-    // official API â€?the proxy axis is about the endpoint, not the model.
+    // official API â€” the proxy axis is about the endpoint, not the model.
     assert.deepEqual(wire.anthropic?.thinking, { type: 'enabled', budgetTokens: 4000 });
     assert.equal(wire.anthropic?.effort, undefined);
     assert.equal(wire.effortDroppedForProxy, true);

@@ -1,5 +1,5 @@
 /**
- * Phase 7.0 �?Runtime-agnostic Auto-Invoke Context Accounting contract tests.
+ * Phase 7.0 — Runtime-agnostic Auto-Invoke Context Accounting contract tests.
  *
  * Pins:
  *   - ToolInvocationAccumulator record/drain semantics
@@ -10,7 +10,7 @@
  *       * tools aggregation per-name with call counts
  *       * unsupported list passthrough
  *       * producedBy enum + providerBackend passthrough
- *       * empty records �?no entries (no fabrication)
+ *       * empty records → no entries (no fabrication)
  *       * badge selectedSkills merge + dedup with auto-invoke
  *   - Widget message golden fixture round-trip
  */
@@ -97,7 +97,7 @@ describe('ToolInvocationAccumulator', () => {
 });
 
 describe('classifyToolUse', () => {
-  it("'Skill' name �?category=skill, detail=input.skill", () => {
+  it("'Skill' name → category=skill, detail=input.skill", () => {
     const cls = classifyToolUse({
       toolUseId: 'x',
       toolName: 'Skill',
@@ -106,7 +106,7 @@ describe('classifyToolUse', () => {
     assert.deepEqual(cls, { category: 'skill', detail: 'humanizer-zh', fullName: 'Skill' });
   });
 
-  it("'mcp__server__tool' �?category=mcp, detail=server, fullName=full", () => {
+  it("'mcp__server__tool' → category=mcp, detail=server, fullName=full", () => {
     const cls = classifyToolUse({
       toolUseId: 'x',
       toolName: 'mcp__codepilot-widget__codepilot_load_widget_guidelines',
@@ -119,7 +119,7 @@ describe('classifyToolUse', () => {
     });
   });
 
-  it("built-in tool name �?category=tool, detail=name", () => {
+  it("built-in tool name → category=tool, detail=name", () => {
     const cls = classifyToolUse({
       toolUseId: 'x',
       toolName: 'Bash',
@@ -128,7 +128,7 @@ describe('classifyToolUse', () => {
     assert.deepEqual(cls, { category: 'tool', detail: 'Bash', fullName: 'Bash' });
   });
 
-  it('Skill with missing/non-string input.skill �?null (drop, no guess)', () => {
+  it('Skill with missing/non-string input.skill → null (drop, no guess)', () => {
     assert.equal(
       classifyToolUse({ toolUseId: 'x', toolName: 'Skill', input: {} }),
       null,
@@ -145,7 +145,7 @@ describe('classifyToolUse', () => {
 });
 
 describe('collectAutoInvokeSnapshot', () => {
-  it('empty records �?no entries (no fabrication)', () => {
+  it('empty records → no entries (no fabrication)', () => {
     const ws = setupWorkspace({});
     const snap = collectAutoInvokeSnapshot({
       workspacePath: ws,
@@ -158,7 +158,7 @@ describe('collectAutoInvokeSnapshot', () => {
     assert.deepEqual([...snap.unsupported].sort(), ['files_attachments', 'memory', 'system_prompt']);
   });
 
-  it('Skill auto-invoke �?entries.skills with SKILL.md filesize', () => {
+  it('Skill auto-invoke → entries.skills with SKILL.md filesize', () => {
     const skillBody = 'Humanizer skill body for testing';
     const ws = setupWorkspace({ skills: { 'humanizer-zh': skillBody } });
     const snap = collectAutoInvokeSnapshot({
@@ -231,7 +231,7 @@ describe('collectAutoInvokeSnapshot', () => {
     assert.ok(snap.entries.tools!.detail!.includes('Read × 1'));
   });
 
-  it('badge selectedSkills + auto-invoke Skill same name �?dedup, single entries.skills', () => {
+  it('badge selectedSkills + auto-invoke Skill same name → dedup, single entries.skills', () => {
     const ws = setupWorkspace({ skills: { 'humanizer-zh': 'body' } });
     const snap = collectAutoInvokeSnapshot({
       workspacePath: ws,
@@ -247,7 +247,7 @@ describe('collectAutoInvokeSnapshot', () => {
     assert.equal(snap.entries.skills.detail, 'humanizer-zh');
   });
 
-  it('selectedSkills alone (no Skill tool_use) �?entries.skills via badge merge', () => {
+  it('selectedSkills alone (no Skill tool_use) → entries.skills via badge merge', () => {
     const ws = setupWorkspace({ skills: { 'humanizer-zh': 'body' } });
     const snap = collectAutoInvokeSnapshot({
       workspacePath: ws,
@@ -260,12 +260,12 @@ describe('collectAutoInvokeSnapshot', () => {
     assert.equal(snap.entries.skills.detail, 'humanizer-zh');
   });
 
-  it('resolveRulesEntry injection �?entries.rules populated from helper', () => {
+  it('resolveRulesEntry injection → entries.rules populated from helper', () => {
     const ws = setupWorkspace({ claudeMdContent: 'project rules content' });
     const snap = collectAutoInvokeSnapshot({
       workspacePath: ws,
       records: [],
-      producedBy: 'bbagent',
+      producedBy: 'codepilot_runtime',
       unsupported: [],
       resolveRulesEntry: resolveWorkspaceClaudeMdRules,
     });
@@ -288,12 +288,12 @@ describe('collectAutoInvokeSnapshot', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // Golden fixture round-trip �?Widget message (DB row 487c190a)
+  // Golden fixture round-trip — Widget message (DB row 487c190a)
   // Reproduces v6 user-reported bug. Validates collectAutoInvokeSnapshot
   // produces non-empty entries.skills + entries.mcp + entries.tools from
   // the same input that previously produced only rules.
   // ──────────────────────────────────────────────────────────────────────
-  it('Widget message golden fixture: 5 tool_use �?skills (humanizer-zh) + mcp (×2 server) + tools (Bash×2)', () => {
+  it('Widget message golden fixture: 5 tool_use → skills (humanizer-zh) + mcp (×2 server) + tools (Bash×2)', () => {
     const fixturePath = path.join(__dirname, '..', 'fixtures', 'widget-message-tool-uses.json');
     const fixture = JSON.parse(fs.readFileSync(fixturePath, 'utf-8'));
 

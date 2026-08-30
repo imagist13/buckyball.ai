@@ -33,15 +33,17 @@ function PopoverContent({
           // bg routed through platform popover surface (Phase 7b / Phase 2).
           // Default `var(--popover)` matches the prior opaque `bg-popover`;
           // macOS profile drops alpha for a HIG popover material feel.
-          // Note: CSS-simulated, not an Electron native overlay window �?          // see docs/handover/macos-visual-profile.md "Reference Notes".
+          // Note: CSS-simulated, not an Electron native overlay window —
+          // see docs/handover/macos-visual-profile.md "Reference Notes".
           // Round 12 fix: animation selectors changed from
           // `data-open:` / `data-closed:` to `data-[state=open]:` /
           // `data-[state=closed]:`. Radix Popover only sets
-          // `data-state="open|closed"` �?the previous selectors looked
+          // `data-state="open|closed"` — the previous selectors looked
           // for a bare `data-open` / `data-closed` attribute that
           // never existed, so every popover content (RunCockpit
           // context card, model picker downstream, settings menus)
-          // mounted without animating. User reported it as "上下�?          // 部分没有动效".
+          // mounted without animating. User reported it as "上下文
+          // 部分没有动效".
           "z-50 flex w-72 origin-(--radix-popover-content-transform-origin) flex-col gap-4 rounded-3xl bg-[var(--platform-surface-popover)] backdrop-blur-md p-4 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/5 outline-hidden duration-100 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 dark:ring-foreground/10 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className
         )}

@@ -10,7 +10,7 @@ import Qwen from '@lobehub/icons/es/Qwen/components/Mono';
 import XAI from '@lobehub/icons/es/XAI/components/Mono';
 import XiaomiMiMo from '@lobehub/icons/es/XiaomiMiMo/components/Mono';
 import Zhipu from '@lobehub/icons/es/Zhipu/components/Mono';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { subagentModelBrand } from '@/lib/subagent-model-brand';
 
 export function SubagentModelIcon({ model, size = 20 }: { model?: string; size?: number }) {
@@ -25,5 +25,5 @@ export function SubagentModelIcon({ model, size = 20 }: { model?: string; size?:
   if (brand === 'doubao') return <Doubao size={size} aria-hidden />;
   if (brand === 'anthropic') return <Anthropic size={size} aria-hidden />;
   if (brand === 'openai') return <OpenAI size={size} aria-hidden />;
-  return <BuckyballIcon name="model" size={size <= 16 ? 'sm' : 'lg'} aria-hidden />;
+  return <CodePilotIcon name="model" size={size <= 16 ? 'sm' : 'lg'} aria-hidden />;
 }

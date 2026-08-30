@@ -33,7 +33,7 @@ export function buildXaiProviderOptions(model: string, effort?: string): {
 } {
   const reasoningEffort = mapXaiReasoningEffort(model, effort);
   return {
-    // @ai-sdk/xai defaults Responses `store` to true. buckyball.ai sends the
+    // @ai-sdk/xai defaults Responses `store` to true. CodePilot sends the
     // complete conversation and does not use previousResponseId, so retaining
     // an upstream response adds no continuity benefit. This is an xAI-specific
     // data-minimisation decision, not inherited from the Codex/OpenAI endpoint.

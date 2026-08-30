@@ -8,7 +8,7 @@ import {
   X,
   DotsThree,
 } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -106,9 +106,10 @@ export function SessionListItem({
                     : "text-sidebar-foreground hover:bg-sidebar-accent"
               )}
       >
-        {/* Left icon area â?streaming/approval indicators.
+        {/* Left icon area — streaming/approval indicators.
             Skip empty 14px slot for assistant (workspace) sessions when idle:
-            å©ç section æ?flat list,æ ç¶ folder,ç©?slot ççåæ æä¹ç¼©è¿ã?            é¡¹ç®ä¸çä¼è¯ä¿çä»¥ç»´æ?å?folder å?çå±çº§æã?*/}
+            助理 section 是 flat list,无父 folder,空 slot 看着像无意义缩进。
+            项目下的会话保留以维持"在 folder 内"的层级感。 */}
         {(isSessionStreaming || needsApproval || !isWorkspace) && (
           <span className="relative flex h-3.5 w-3.5 shrink-0 items-center justify-center">
             {isSessionStreaming && (
@@ -124,11 +125,11 @@ export function SessionListItem({
             )}
           </span>
         )}
-        {/* Title â?flex-1 + truncate ensures it shrinks */}
+        {/* Title — flex-1 + truncate ensures it shrinks */}
         <span className="flex-1 min-w-0 line-clamp-1 text-[13px] font-normal leading-tight break-all">
           {session.title}
         </span>
-        {/* Right area â?fixed width, time or dots swap via opacity */}
+        {/* Right area — fixed width, time or dots swap via opacity */}
         <span className="shrink-0 w-[38px] flex items-center justify-end">
           <span className={cn(
             "text-[11px] text-muted-foreground/40 truncate transition-opacity",
@@ -138,7 +139,7 @@ export function SessionListItem({
           </span>
         </span>
             </Link>
-            {/* Three-dot menu â?absolute over the right area */}
+            {/* Three-dot menu — absolute over the right area */}
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -163,15 +164,15 @@ export function SessionListItem({
                   <span>{t('chatList.splitScreen' as TranslationKey)}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={handleDropdownRenameSelect}>
-                  <BuckyballIcon name="edit" size="sm" aria-hidden />
+                  <CodePilotIcon name="edit" size="sm" aria-hidden />
                   <span>{t('chatList.renameConversation' as TranslationKey)}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => {
-                  // v11 fix â?see lib/clipboard.ts for why fire-and-forget
+                  // v11 fix — see lib/clipboard.ts for why fire-and-forget
                   // writeText fails in Electron renderers post-DropdownMenu blur.
                   void copyWithToast({ text: session.id, t });
                 }}>
-                  <BuckyballIcon name="copy" size="sm" aria-hidden />
+                  <CodePilotIcon name="copy" size="sm" aria-hidden />
                   <span>{t('chatList.copySessionId' as TranslationKey)}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -179,7 +180,7 @@ export function SessionListItem({
                   variant="destructive"
                   onClick={() => onDelete(session.id)}
                 >
-                  <BuckyballIcon name="delete" size="sm" aria-hidden />
+                  <CodePilotIcon name="delete" size="sm" aria-hidden />
                   <span>{t('chatList.deleteConversation' as TranslationKey)}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -202,13 +203,13 @@ export function SessionListItem({
             <span>{t('chatList.splitScreen' as TranslationKey)}</span>
           </ContextMenuItem>
           <ContextMenuItem onSelect={handleContextRenameSelect}>
-            <BuckyballIcon name="edit" size="sm" aria-hidden />
+            <CodePilotIcon name="edit" size="sm" aria-hidden />
             <span>{t('chatList.renameConversation' as TranslationKey)}</span>
           </ContextMenuItem>
           <ContextMenuItem
             onSelect={() => void copyWithToast({ text: session.id, t })}
           >
-            <BuckyballIcon name="copy" size="sm" aria-hidden />
+            <CodePilotIcon name="copy" size="sm" aria-hidden />
             <span>{t('chatList.copySessionId' as TranslationKey)}</span>
           </ContextMenuItem>
           <ContextMenuSeparator />
@@ -216,14 +217,14 @@ export function SessionListItem({
             variant="destructive"
             onSelect={() => onDelete(session.id)}
           >
-            <BuckyballIcon name="delete" size="sm" aria-hidden />
+            <CodePilotIcon name="delete" size="sm" aria-hidden />
             <span>{t('chatList.deleteConversation' as TranslationKey)}</span>
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-      {/* Rename dialog â?replaces window.prompt() which is unsupported in
+      {/* Rename dialog — replaces window.prompt() which is unsupported in
           Electron renderers (throws TypeError: prompt() is not supported).
-          See docs/exec-plans/active/v0.48-post-release-issues.md Â§5.6. */}
+          See docs/exec-plans/active/v0.48-post-release-issues.md §5.6. */}
       <PromptDialog
         open={renameOpen}
         onOpenChange={setRenameOpen}

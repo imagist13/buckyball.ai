@@ -1,5 +1,5 @@
 /**
- * Phase 5e Phase 0.5 P1 parity (2026-05-18) �?Native memory + tasks
+ * Phase 5e Phase 0.5 P1 parity (2026-05-18) — Native memory + tasks
  * runtime-level tests.
  *
  * Codex Phase 5e Phase 0.5 audit flagged four Native parity gaps:
@@ -18,7 +18,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
-describe('Native memory_recent �?authoritative memory layout', () => {
+describe('Native memory_recent — authoritative memory layout', () => {
   let workspacePath: string;
 
   before(() => {
@@ -67,7 +67,7 @@ describe('Native memory_recent �?authoritative memory layout', () => {
   });
 
   it('falls back to legacy daily/ + longterm/summary.md when authoritative layout absent', async () => {
-    // Legacy workspace shape �?pre-Phase-5e users still on old layout
+    // Legacy workspace shape — pre-Phase-5e users still on old layout
     fs.mkdirSync(path.join(workspacePath, 'daily'), { recursive: true });
     fs.writeFileSync(
       path.join(workspacePath, 'daily', '2026-05-18.md'),
@@ -83,8 +83,8 @@ describe('Native memory_recent �?authoritative memory layout', () => {
   });
 });
 
-describe('Native list_tasks �?runtime behaviour against session task fixtures', () => {
-  // Phase 5e review fix P1 #3 (2026-05-18) �?replaces the previous
+describe('Native list_tasks — runtime behaviour against session task fixtures', () => {
+  // Phase 5e review fix P1 #3 (2026-05-18) — replaces the previous
   // source-pin tests with real runtime invocations that fail when
   // either (a) the session task field shape is wrong, or (b) the
   // status filter is forgotten on session rows. We mock `fetch` for
@@ -190,7 +190,7 @@ describe('Native list_tasks �?runtime behaviour against session task fixtures',
     const listTasks = tools.codepilot_list_tasks as any;
     const result = (await listTasks.execute({ status: 'active' }, {})) as string;
 
-    // Active included, paused excluded �?status filter must apply to
+    // Active included, paused excluded — status filter must apply to
     // session tasks too (mirrors MCP authority notification-mcp.ts:228).
     assert.match(result, /Active task/);
     assert.equal(
@@ -247,7 +247,7 @@ describe('Native list_tasks �?runtime behaviour against session task fixtures',
     assert.equal(
       durableDeleteCalled,
       false,
-      'cancel_task must NOT hit /api/tasks/:id DELETE when a session-only task with the same id exists �?session-only removal is the first hit, durable is a fallback only',
+      'cancel_task must NOT hit /api/tasks/:id DELETE when a session-only task with the same id exists — session-only removal is the first hit, durable is a fallback only',
     );
 
     // After cancel, the session map should no longer contain the task.
@@ -281,7 +281,7 @@ describe('Native list_tasks �?runtime behaviour against session task fixtures',
   });
 });
 
-describe('Native memory_search �?tags + file_type real filtering', () => {
+describe('Native memory_search — tags + file_type real filtering', () => {
   it('memory_search applies file_type filter (source-pin)', async () => {
     const fsMod = await import('node:fs');
     const pathMod = await import('node:path');
@@ -328,7 +328,7 @@ describe('Native memory_search �?tags + file_type real filtering', () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const search = tools.codepilot_memory_search as any;
 
-      // file_type=daily �?only daily/ entries
+      // file_type=daily → only daily/ entries
       const dailyResult = (await search.execute({ query: 'apple', file_type: 'daily', limit: 10 }, {})) as string;
       // The result content varies based on the indexer state; the
       // key invariant: random.md must NOT appear when file_type=daily.
@@ -343,22 +343,22 @@ describe('Native memory_search �?tags + file_type real filtering', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e round 8 follow-up (2026-05-18) �?Native parity for the
+// Phase 5e round 8 follow-up (2026-05-18) — Native parity for the
 // assistant_buddy capability. The MCP authority
 // (`src/lib/notification-mcp.ts:287`) mounts `codepilot_hatch_buddy`
 // inside the same MCP server as notify / schedule / list / cancel.
-// Round 8 user direction: "我们自家 Runtime 是基础�?�?CodePilot
+// Round 8 user direction: "我们自家 Runtime 是基础盘 — CodePilot
 // 不能停在 7/8". This block pins the Native factory's mount and
 // blocks a catalog drift back to "claudecode-only".
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Native createNotificationTools �?assistant_buddy parity (round 8)', () => {
+describe('Native createNotificationTools — assistant_buddy parity (round 8)', () => {
   it('createNotificationTools mounts codepilot_hatch_buddy', async () => {
     const { createNotificationTools } = await import('@/lib/builtin-tools/notification');
     const tools = createNotificationTools();
     assert.ok(
       Object.prototype.hasOwnProperty.call(tools, 'codepilot_hatch_buddy'),
-      'Native factory must include codepilot_hatch_buddy alongside notify / schedule / list / cancel �?mirrors the MCP authority for assistant_buddy capability',
+      'Native factory must include codepilot_hatch_buddy alongside notify / schedule / list / cancel — mirrors the MCP authority for assistant_buddy capability',
     );
   });
 

@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * Lightweight JSON tree viewer â€?Phase 4.B Artifact richer preview.
+ * Lightweight JSON tree viewer â€” Phase 4.B Artifact richer preview.
  *
  * Used by PreviewPanel when the active PreviewSource is `inline-json`
  * (typically a ```json fenced code block clicked from chat). The
  * viewer parses the text once; on parse failure it falls back to a
  * pre-formatted block so the user can still see what they sent.
  *
- * No external dependency â€?this is a small recursive component that
+ * No external dependency â€” this is a small recursive component that
  * gives users a foldable, navigable structure without dragging in a
  * full JSON-viewer library. Default expansion depth is 2 levels which
  * covers most chat-pasted JSON payloads without a giant initial
@@ -20,7 +20,7 @@ import { CaretDown, CaretRight } from "@/components/ui/icon";
 
 interface JsonTreeViewerProps {
   text: string;
-  /** Initial expansion depth â€?children deeper than this start
+  /** Initial expansion depth â€” children deeper than this start
    *  collapsed. Defaults to 2 (top-level + first nested layer). */
   defaultDepth?: number;
 }

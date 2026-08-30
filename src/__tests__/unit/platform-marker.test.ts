@@ -1,5 +1,5 @@
 /**
- * Source pin â€?Phase 7b Phase 1 platform marker + token layer (2026-05-22).
+ * Source pin â€” Phase 7b Phase 1 platform marker + token layer (2026-05-22).
  *
  * Goals:
  *   1. `src/app/layout.tsx` ships the anti-FOUC platform script that
@@ -11,7 +11,7 @@
  *      under `:root` and a macOS override under
  *      `html[data-platform="darwin"][data-platform-style="auto"]`.
  *
- * This test is deliberately a source-grep (not a DOM render) â€?the
+ * This test is deliberately a source-grep (not a DOM render) â€” the
  * anti-FOUC inline script and CSS custom properties exist as plain
  * strings in source, and the failure mode we guard against is
  * accidental removal during a future refactor. A DOM-render test would
@@ -98,7 +98,7 @@ test("globals.css declares the --platform-* token layer", () => {
 });
 
 test("layout.tsx also stamps data-shell so web vs electron can be distinguished", () => {
-  // Round 17 (2026-05-23) â€?Codex P1 fix. The macOS-material CSS
+  // Round 17 (2026-05-23) â€” Codex P1 fix. The macOS-material CSS
   // gates on `data-shell="electron"` so a plain Safari / Playwright /
   // CDP session running on darwin doesn't trigger Electron-only
   // treatments (body transparency, traffic-light safe area).

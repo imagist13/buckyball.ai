@@ -10,7 +10,7 @@ import {
 
 const PENDING_SET = new Set<ContextBreakdownKind>(PENDING_BREAKDOWN_KINDS);
 
-describe('buildContextUsageBreakdown â€?shape and ordering', () => {
+describe('buildContextUsageBreakdown â€” shape and ordering', () => {
   it('returns 10 parts in stable CONTEXT_BREAKDOWN_KIND_ORDER', () => {
     const result = buildContextUsageBreakdown({});
     assert.equal(result.parts.length, 10);
@@ -63,8 +63,8 @@ describe('buildContextUsageBreakdown â€?shape and ordering', () => {
   });
 });
 
-describe('buildContextUsageBreakdown â€?usedTokens accounting', () => {
-  it('sums all USED (non-pending) parts to usedTokens when known parts â‰?used', () => {
+describe('buildContextUsageBreakdown â€” usedTokens accounting', () => {
+  it('sums all USED (non-pending) parts to usedTokens when known parts â‰¤ used', () => {
     const result = buildContextUsageBreakdown({
       baseline: {
         used: 10000,
@@ -103,7 +103,7 @@ describe('buildContextUsageBreakdown â€?usedTokens accounting', () => {
 
   it('when known parts exceed reported used, usedTokens promotes to match (Phase 7 fix)', () => {
     // Updated 2026-05-20: previously usedTokens stayed at baseline.used (1000)
-    // while breakdown summed to known parts (5000) â€?visually inconsistent
+    // while breakdown summed to known parts (5000) â€” visually inconsistent
     // ("header says 1K but rows total 5K"). The old behavior also broke
     // Native+Codex via provider proxies which report input_tokens=0; the
     // popover showed used=0 with empty dot-matrix even though entries had
@@ -127,7 +127,7 @@ describe('buildContextUsageBreakdown â€?usedTokens accounting', () => {
     assert.equal(result.usedTokens, 5000, 'usedTokens promoted to match breakdown sum');
   });
 
-  it('Native/Codex regression: reportedUsedTokens=0 + entries.tools > 0 â†?effective used = entries sum + output', () => {
+  it('Native/Codex regression: reportedUsedTokens=0 + entries.tools > 0 â†’ effective used = entries sum + output', () => {
     // Provider-proxy (Codex+GLM, Native+OpenRouter) reports input_tokens=0
     // even on substantive turns. Without this promotion, popover showed
     // "used: 0" + empty dot-matrix even when entries.tools surfaced real
@@ -174,7 +174,7 @@ describe('buildContextUsageBreakdown â€?usedTokens accounting', () => {
   });
 });
 
-describe('buildContextUsageBreakdown â€?pending parts do NOT pollute usedTokens', () => {
+describe('buildContextUsageBreakdown â€” pending parts do NOT pollute usedTokens', () => {
   it('files_attachments sums attachment + mention + directory', () => {
     const result = buildContextUsageBreakdown({
       baseline: {
@@ -213,7 +213,7 @@ describe('buildContextUsageBreakdown â€?pending parts do NOT pollute usedTokens'
   });
 });
 
-describe('buildContextUsageBreakdown â€?context window branches', () => {
+describe('buildContextUsageBreakdown â€” context window branches', () => {
   it('omits ratio and remainingTokens when contextWindow undefined', () => {
     const result = buildContextUsageBreakdown({
       baseline: {
@@ -284,7 +284,7 @@ describe('buildContextUsageBreakdown â€?context window branches', () => {
   });
 });
 
-describe('buildContextUsageBreakdown â€?cache accounting', () => {
+describe('buildContextUsageBreakdown â€” cache accounting', () => {
   it('cache_or_previous = cacheReadTokens + cacheCreationTokens', () => {
     const result = buildContextUsageBreakdown({
       baseline: {
@@ -298,7 +298,7 @@ describe('buildContextUsageBreakdown â€?cache accounting', () => {
     assert.equal(cache?.tokens, 4500);
   });
 
-  it('cache counts into usedTokens â€?conversation residual excludes cache', () => {
+  it('cache counts into usedTokens â€” conversation residual excludes cache', () => {
     const result = buildContextUsageBreakdown({
       baseline: {
         used: 10000,

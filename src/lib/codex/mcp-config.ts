@@ -1,16 +1,16 @@
 /**
  * Codex MCP config builder.
  *
- * Maps CodePilot `MCPServerConfig` â?Codex native `config.mcp_servers`
+ * Maps CodePilot `MCPServerConfig` → Codex native `config.mcp_servers`
  * entries, and builds the entry for the in-process CodePilot Memory MCP
- * (served as a streamable-HTTP Next route â?see
+ * (served as a streamable-HTTP Next route — see
  * `src/app/api/codex/mcp/memory/route.ts`).
  *
  * Phase 8 Phase 1. Validated against Codex 0.133 in
  * `docs/research/codex-mcp-injection-poc/`:
- *   - stdio â?{ command, args, env }   (Phase 0 main run)
- *   - http  â?{ url, http_headers }    (streamable_http; poc-streamable-http.mjs)
- *   - sse   â?UNSUPPORTED â?Codex has no native SSE transport; its
+ *   - stdio → { command, args, env }   (Phase 0 main run)
+ *   - http  → { url, http_headers }    (streamable_http; poc-streamable-http.mjs)
+ *   - sse   → UNSUPPORTED — Codex has no native SSE transport; its
  *             `McpServerTransportConfig` (codex-rs/config/src/mcp_types.rs)
  *             is only `Stdio` + `StreamableHttp`.
  *
@@ -19,7 +19,7 @@
  * builders emit one or the other, never a `type` discriminator.
  *
  * Security: the produced config can end up in persisted thread metadata,
- * so `redactCodexMcpConfigForLog` MUST be used before logging â?it strips
+ * so `redactCodexMcpConfigForLog` MUST be used before logging — it strips
  * stdio `env` values and `http_headers` values. The Memory MCP entry
  * itself never carries secrets (only a workspace path + session id).
  */
@@ -67,11 +67,11 @@ export function isStdioEntry(e: CodexMcpServerEntry): e is CodexStdioMcpServer {
 }
 
 /**
- * Map a buckyball.ai user MCP server map â?Codex `mcp_servers`.
+ * Map a CodePilot user MCP server map → Codex `mcp_servers`.
  *
  * Disabled servers (`enabled === false`) are skipped silently. A server
  * whose transport can't be mapped (sse; or missing command/url) is NOT
- * silently dropped â?it lands in `unsupported` with a reason.
+ * silently dropped — it lands in `unsupported` with a reason.
  */
 export function buildCodexMcpServersConfig(
   input: Record<string, MCPServerConfig>,
@@ -133,7 +133,7 @@ export const CODEX_TASKS_MCP_SERVER_NAME = 'codepilot_tasks';
 // Each capability is exposed under TWO server names: a safe-read MCP
 // (auto_accept on elicitation) and a mutating MCP (user_approval). Codex's
 // elicitation params identify the SERVER, not the individual tool, so
-// per-tool policy isn't possible from a single server entry â?splitting by
+// per-tool policy isn't possible from a single server entry — splitting by
 // server is the cleanest way to give read tools auto-accept while keeping
 // writes behind the user's approval card.
 export const CODEX_DASHBOARD_READ_MCP_SERVER_NAME = 'codepilot_dashboard_read';
@@ -154,13 +154,13 @@ export const CODEX_MCP_ROUTE_BASE = '/api/codex/mcp';
  *
  * The Memory MCP is an in-process Claude-SDK server (`memory-search-mcp.ts`)
  * that can't be spawned as a subprocess; instead we expose it as a
- * streamable-HTTP route on buckyball.ai's own Next server (already running in
+ * streamable-HTTP route on CodePilot's own Next server (already running in
  * dev AND packaged Electron) and point Codex at it. The workspace path
  * travels in a header (not a secret), mirroring the provider-proxy
  * injection pattern.
  */
 export function buildCodexMemoryMcpConfig(opts: {
-  /** Absolute URL buckyball.ai's Next server is reachable at from Codex. */
+  /** Absolute URL CodePilot's Next server is reachable at from Codex. */
   baseUrl: string;
   /** Assistant workspace whose memory files the tools read. */
   workspacePath: string;
@@ -182,7 +182,7 @@ export function buildCodexMemoryMcpConfig(opts: {
 
 /**
  * Build the Codex `mcp_servers` entry for the CodePilot Widget MCP
- * (`codepilot_load_widget_guidelines` â?static read-only guidelines text,
+ * (`codepilot_load_widget_guidelines` — static read-only guidelines text,
  * served by the same `/api/codex/mcp/[server]` route). No workspace header:
  * the widget server reads no files, so it isn't workspace-scoped.
  */
@@ -207,7 +207,7 @@ export function buildCodexWidgetMcpConfig(opts: {
  * (`codepilot_schedule_task` / `cancel_task` / `notify` / `list_tasks`).
  * Like Memory it carries workspace + session headers (the route's
  * `createNotificationMcpServer` scopes tasks by sessionId + working dir).
- * Mutating/side-effecting â?its tool-call approval is `user_approval`
+ * Mutating/side-effecting → its tool-call approval is `user_approval`
  * (see builtin-mcp-servers.ts), NOT auto-accepted.
  */
 export function buildCodexTasksMcpConfig(opts: {
@@ -338,7 +338,7 @@ export function fingerprintCodexMcpConfig(config: CodexMcpServersConfig | undefi
 /**
  * Log-safe view of an `mcp_servers` config: stdio `env` values and
  * streamable-HTTP `http_headers` values are replaced with `[redacted]`.
- * Use this before logging/persisting anything human-visible â?the real
+ * Use this before logging/persisting anything human-visible — the real
  * config (with secrets) only ever goes to Codex over the local channel.
  */
 export function redactCodexMcpConfigForLog(config: CodexMcpServersConfig): CodexMcpServersConfig {
@@ -367,11 +367,11 @@ function redactValues(rec: Record<string, string>): Record<string, string> {
 
 /**
  * True iff both paths resolve (realpath) to the same location. Normalizes
- * trailing slashes and symlinks (e.g. macOS `/tmp` â?`/private/tmp`). A
- * non-existent path â?false.
+ * trailing slashes and symlinks (e.g. macOS `/tmp` → `/private/tmp`). A
+ * non-existent path → false.
  *
  * Shared by the runtime injection gate (decide whether the current cwd IS
- * the assistant workspace â?inject Memory MCP) and the Memory MCP route
+ * the assistant workspace → inject Memory MCP) and the Memory MCP route
  * (authorize the requested workspace header). Using the SAME comparison in
  * both keeps "should inject" and "is authorized" in agreement, so a raw
  * string-equality drift (trailing slash / symlink) can't make the runtime

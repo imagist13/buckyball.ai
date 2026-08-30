@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { EGG_IMAGE_URL } from '@/lib/buddy';
 import { cn } from '@/lib/utils';
@@ -44,7 +44,7 @@ export function ChatEmptyState({
         <div className="grid gap-2 sm:grid-cols-2" data-assistant-onboarding-cards>
           <ChatEntryCard
             icon={(
-              <BuckyballIcon name="folder_open" size="lg" className="text-foreground/75" aria-hidden />
+              <CodePilotIcon name="folder_open" size="lg" className="text-foreground/75" aria-hidden />
             )}
             title={t('chat.empty.projectChat.title')}
             description={t('chat.empty.projectChat.description')}
@@ -132,13 +132,13 @@ function ChatEntryCard({
       </span>
       <span className="flex shrink-0 items-center gap-1 pl-1 text-[11px] font-medium text-muted-foreground transition-colors group-hover:text-foreground">
         <span className="hidden lg:inline">{actionLabel}</span>
-        <BuckyballIcon name="forward" size="sm" aria-hidden />
+        <CodePilotIcon name="forward" size="sm" aria-hidden />
       </span>
     </button>
   );
 }
 
-/* âââ Sidebar promo card âââââââââââââââââââââââââââââââââââââââââââ */
+/* ─── Sidebar promo card ─────────────────────────────────────────── */
 
 interface AssistantPromoCardProps {
   onSetup: () => void;
@@ -165,7 +165,8 @@ export function AssistantPromoCard({ onSetup, onDismiss, preview = false }: Assi
       try {
         localStorage.setItem('codepilot:assistant-promo-dismissed', '1');
       } catch {
-        // localStorage unavailable (private mode / restricted Electron) â?        // dismissal won't persist across sessions; degrade gracefully.
+        // localStorage unavailable (private mode / restricted Electron) —
+        // dismissal won't persist across sessions; degrade gracefully.
       }
       setDismissed(true);
     }
@@ -202,7 +203,7 @@ export function AssistantPromoCard({ onSetup, onDismiss, preview = false }: Assi
         onClick={onSetup}
       >
         {t('chat.empty.assistant.setup')}
-        <BuckyballIcon name="forward" size="sm" aria-hidden />
+        <CodePilotIcon name="forward" size="sm" aria-hidden />
       </Button>
     </div>
   );

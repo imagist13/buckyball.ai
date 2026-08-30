@@ -9,14 +9,14 @@
  *
  * Important: the actual gating logic lives in `src/lib/claude-client.ts`
  * (around the queryOptions assembly). This catalog is purely descriptive
- * â€?we **don't** read it to decide registration. The drift unit test
+ * â€” we **don't** read it to decide registration. The drift unit test
  * (`src/__tests__/unit/builtin-mcp-catalog.test.ts`) keeps `toolNames`
  * in sync with each MCP file's `tool('codepilot_...')` calls so a new
  * tool can't ship without a catalog entry.
  *
  * Why no live registration status: keyword-gating is per-message dynamic.
  * Surfacing "registered for the current session" would need a new event
- * stream from claude-client â†?renderer. That's Phase 2E+ scope; for now
+ * stream from claude-client â†’ renderer. That's Phase 2E+ scope; for now
  * we explicitly tell users the gating condition and disclaim that we
  * don't promise the MCP is loaded for any specific message.
  */

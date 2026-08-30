@@ -1,5 +1,5 @@
 /**
- * YAML frontmatter splitter for Markdown previews â€?Phase 4 Markdown data layer.
+ * YAML frontmatter splitter for Markdown previews â€” Phase 4 Markdown data layer.
  *
  * Frontmatter is the metadata block at the very top of a `.md` file
  * delimited by `---` lines, e.g.
@@ -12,7 +12,7 @@
  *
  *   Body content here.
  *
- * We don't need a full YAML 1.2 implementation â€?the typical CodePilot /
+ * We don't need a full YAML 1.2 implementation â€” the typical CodePilot /
  * Obsidian frontmatter is a flat map with strings, numbers, booleans,
  * dates, and one-level lists. A purpose-built tiny parser keeps us off
  * the js-yaml runtime cost for what's essentially a metadata sidecar.
@@ -20,7 +20,7 @@
  * Output:
  *  - `data`        : keyâ†’value map (string / number / boolean / string[])
  *  - `body`        : the rest of the markdown content (frontmatter stripped)
- *  - `lineOffset`  : how many lines the frontmatter occupied â€?used by
+ *  - `lineOffset`  : how many lines the frontmatter occupied â€” used by
  *                    line-anchor jumps so `:12` lands at the right place
  *                    even after we strip frontmatter for rendering.
  *
@@ -53,7 +53,7 @@ export function parseFrontmatter(source: string): ParsedFrontmatter {
   const afterOpen = source.replace(FRONTMATTER_OPEN, '');
   const closingMatch = afterOpen.match(/\r?\n---\s*(?:\r?\n|$)/);
   if (!closingMatch || closingMatch.index === undefined) {
-    // Unterminated â€?treat as if there's no frontmatter so we don't
+    // Unterminated â€” treat as if there's no frontmatter so we don't
     // accidentally strip the entire document.
     return { data: {}, body: source, lineOffset: 0 };
   }
@@ -149,7 +149,7 @@ function coerceScalar(raw: string): FrontmatterValue {
  * the parser produces.
  */
 export function formatFrontmatterValue(value: FrontmatterValue): string {
-  if (value === null) return 'â€?;
+  if (value === null) return 'â€”';
   if (Array.isArray(value)) return value.join(', ');
   return String(value);
 }

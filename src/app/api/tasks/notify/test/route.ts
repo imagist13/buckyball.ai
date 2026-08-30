@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getNotificationEvent, listNotificationDeliveries } from '@/lib/db';
-import { validateNotificationConsumerRequest } from '@/lib/notification-claim-policy';
+import { validateRendererNotificationTestRequest } from '@/lib/notification-claim-policy';
 import { sendNotification } from '@/lib/notification-manager';
 
 export async function POST(request: NextRequest) {
-  const policy = validateNotificationConsumerRequest(request, 'renderer-toast');
+  const policy = validateRendererNotificationTestRequest(request);
   if (!policy.ok) return NextResponse.json({ error: policy.error }, { status: policy.status });
 
   const result = await sendNotification({
     title: 'CodePilot · 测试系统通知',
-    body: '如果你看到并听到系统允许的提示音，说明本机原生通知链路正常�?,
+    body: '如果你看到并听到系统允许的提示音，说明本机原生通知链路正常。',
     priority: 'normal',
     source: 'codepilot',
     action: { type: 'route', payload: '/settings/assistant?notificationTest=1' },

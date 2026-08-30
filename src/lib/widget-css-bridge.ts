@@ -1,5 +1,5 @@
 /**
- * CSS variable bridge â?maps guideline variable names to buckyball.ai's OKLCH
+ * CSS variable bridge — maps guideline variable names to CodePilot's OKLCH
  * design tokens so model-generated widgets inherit the current theme.
  *
  * Also provides a scoped set of Tailwind-like utility classes inside
@@ -9,7 +9,7 @@
  */
 
 export const WIDGET_CSS_BRIDGE = /* css */ `
-/* ââ Backgrounds ââââââââââââââââââââââââââââââââââââ */
+/* ── Backgrounds ──────────────────────────────────── */
 --color-background-primary:   var(--background);
 --color-background-secondary: var(--muted);
 --color-background-tertiary:  color-mix(in oklch, var(--muted-foreground) 10%, var(--background));
@@ -18,7 +18,7 @@ export const WIDGET_CSS_BRIDGE = /* css */ `
 --color-background-success:   var(--status-success-muted);
 --color-background-warning:   var(--status-warning-muted);
 
-/* ââ Text âââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Text ─────────────────────────────────────────── */
 --color-text-primary:         var(--foreground);
 --color-text-secondary:       var(--muted-foreground);
 --color-text-tertiary:        color-mix(in oklch, var(--muted-foreground) 60%, transparent);
@@ -27,7 +27,7 @@ export const WIDGET_CSS_BRIDGE = /* css */ `
 --color-text-success:         var(--status-success-foreground);
 --color-text-warning:         var(--status-warning-foreground);
 
-/* ââ Borders ââââââââââââââââââââââââââââââââââââââââ */
+/* ── Borders ──────────────────────────────────────── */
 --color-border-tertiary:      var(--border);
 --color-border-secondary:     color-mix(in oklch, var(--border) 100%, transparent 0%);
 --color-border-primary:       color-mix(in oklch, var(--foreground) 40%, transparent);
@@ -36,17 +36,17 @@ export const WIDGET_CSS_BRIDGE = /* css */ `
 --color-border-success:       var(--status-success-border);
 --color-border-warning:       var(--status-warning-border);
 
-/* ââ Typography âââââââââââââââââââââââââââââââââââââ */
+/* ── Typography ───────────────────────────────────── */
 --font-sans:                  var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 --font-mono:                  var(--font-geist-mono), ui-monospace, monospace;
 --font-serif:                 Georgia, 'Times New Roman', serif;
 
-/* ââ Layout âââââââââââââââââââââââââââââââââââââââââ */
+/* ── Layout ───────────────────────────────────────── */
 --border-radius-md:           8px;
 --border-radius-lg:           12px;
 --border-radius-xl:           16px;
 
-/* ââ Chart palette (mapped from CodePilot chart-1~5) â */
+/* ── Chart palette (mapped from CodePilot chart-1~5) ─ */
 --color-chart-1:              var(--chart-1);
 --color-chart-2:              var(--chart-2);
 --color-chart-3:              var(--chart-3);
@@ -54,11 +54,11 @@ export const WIDGET_CSS_BRIDGE = /* css */ `
 --color-chart-5:              var(--chart-5);
 `;
 
-// ââ Scoped utility classes (replaces Tailwind CDN) ââââââââââââââââââââââ
+// ── Scoped utility classes (replaces Tailwind CDN) ──────────────────────
 // All rules are scoped to .widget-root so they cannot leak to the main app.
 
 const WIDGET_UTILITIES = /* css */ `
-/* ââ Display âââââââââââââââââââââââââââââââââââââââ */
+/* ── Display ─────────────────────────────────────── */
 .hidden { display: none; }
 .block { display: block; }
 .inline-block { display: inline-block; }
@@ -67,7 +67,7 @@ const WIDGET_UTILITIES = /* css */ `
 .inline-flex { display: inline-flex; }
 .grid { display: grid; }
 
-/* ââ Flex âââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Flex ─────────────────────────────────────────── */
 .flex-col { flex-direction: column; }
 .flex-row { flex-direction: row; }
 .flex-wrap { flex-wrap: wrap; }
@@ -89,7 +89,7 @@ const WIDGET_UTILITIES = /* css */ `
 .self-center { align-self: center; }
 .self-end { align-self: flex-end; }
 
-/* ââ Grid âââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Grid ─────────────────────────────────────────── */
 .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -98,7 +98,7 @@ const WIDGET_UTILITIES = /* css */ `
 .col-span-3 { grid-column: span 3 / span 3; }
 .col-span-full { grid-column: 1 / -1; }
 
-/* ââ Gap ââââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Gap ──────────────────────────────────────────── */
 .gap-1 { gap: 4px; }
 .gap-2 { gap: 8px; }
 .gap-3 { gap: 12px; }
@@ -107,7 +107,7 @@ const WIDGET_UTILITIES = /* css */ `
 .gap-6 { gap: 24px; }
 .gap-8 { gap: 32px; }
 
-/* ââ Spacing (margin) âââââââââââââââââââââââââââââââ */
+/* ── Spacing (margin) ─────────────────────────────── */
 .m-0 { margin: 0; }
 .m-1 { margin: 4px; }
 .m-2 { margin: 8px; }
@@ -132,7 +132,7 @@ const WIDGET_UTILITIES = /* css */ `
 .my-1 { margin-top: 4px; margin-bottom: 4px; }
 .my-2 { margin-top: 8px; margin-bottom: 8px; }
 
-/* ââ Spacing (padding) ââââââââââââââââââââââââââââââ */
+/* ── Spacing (padding) ────────────────────────────── */
 .p-0 { padding: 0; }
 .p-1 { padding: 4px; }
 .p-2 { padding: 8px; }
@@ -155,7 +155,7 @@ const WIDGET_UTILITIES = /* css */ `
 .pl-2 { padding-left: 8px; }
 .pl-4 { padding-left: 16px; }
 
-/* ââ Space between children âââââââââââââââââââââââââ */
+/* ── Space between children ───────────────────────── */
 .space-y-1 > * + * { margin-top: 4px; }
 .space-y-2 > * + * { margin-top: 8px; }
 .space-y-3 > * + * { margin-top: 12px; }
@@ -165,7 +165,7 @@ const WIDGET_UTILITIES = /* css */ `
 .space-x-3 > * + * { margin-left: 12px; }
 .space-x-4 > * + * { margin-left: 16px; }
 
-/* ââ Width / Height âââââââââââââââââââââââââââââââââ */
+/* ── Width / Height ───────────────────────────────── */
 .w-full { width: 100%; }
 .w-auto { width: auto; }
 .w-8 { width: 32px; }
@@ -199,7 +199,7 @@ const WIDGET_UTILITIES = /* css */ `
 .h-auto { height: auto; }
 .min-h-0 { min-height: 0; }
 
-/* ââ Typography âââââââââââââââââââââââââââââââââââââ */
+/* ── Typography ───────────────────────────────────── */
 .text-\\[10px\\] { font-size: 10px; line-height: 1.4; }
 .text-xs { font-size: 12px; line-height: 1.5; }
 .text-sm { font-size: 14px; line-height: 1.5; }
@@ -231,7 +231,7 @@ const WIDGET_UTILITIES = /* css */ `
 .break-words { overflow-wrap: break-word; }
 .font-mono { font-family: var(--font-mono); }
 
-/* ââ Border radius ââââââââââââââââââââââââââââââââââ */
+/* ── Border radius ────────────────────────────────── */
 .rounded { border-radius: 8px; }
 .rounded-md { border-radius: 8px; }
 .rounded-lg { border-radius: 12px; }
@@ -240,7 +240,7 @@ const WIDGET_UTILITIES = /* css */ `
 .rounded-full { border-radius: 9999px; }
 .rounded-none { border-radius: 0; }
 
-/* ââ Borders ââââââââââââââââââââââââââââââââââââââââ */
+/* ── Borders ──────────────────────────────────────── */
 .border { border: 1px solid var(--color-border-tertiary); }
 .border-0 { border-width: 0; }
 .border-2 { border-width: 2px; }
@@ -249,14 +249,14 @@ const WIDGET_UTILITIES = /* css */ `
 .border-l { border-left: 1px solid var(--color-border-tertiary); }
 .border-r { border-right: 1px solid var(--color-border-tertiary); }
 
-/* ââ Overflow âââââââââââââââââââââââââââââââââââââââ */
+/* ── Overflow ─────────────────────────────────────── */
 .overflow-hidden { overflow: hidden; }
 .overflow-auto { overflow: auto; }
 .overflow-x-auto { overflow-x: auto; }
 .overflow-y-auto { overflow-y: auto; }
 .overflow-visible { overflow: visible; }
 
-/* ââ Position âââââââââââââââââââââââââââââââââââââââ */
+/* ── Position ─────────────────────────────────────── */
 .relative { position: relative; }
 .absolute { position: absolute; }
 .sticky { position: sticky; }
@@ -266,7 +266,7 @@ const WIDGET_UTILITIES = /* css */ `
 .bottom-0 { bottom: 0; }
 .left-0 { left: 0; }
 
-/* ââ Misc âââââââââââââââââââââââââââââââââââââââââââ */
+/* ── Misc ─────────────────────────────────────────── */
 .opacity-50 { opacity: 0.5; }
 .opacity-75 { opacity: 0.75; }
 .cursor-pointer { cursor: pointer; }
@@ -276,7 +276,7 @@ const WIDGET_UTILITIES = /* css */ `
 .transition-opacity { transition: opacity 0.15s; }
 .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
-/* ââ Surface colors âââââââââââââââââââââââââââââââââ */
+/* ── Surface colors ───────────────────────────────── */
 .bg-surface-primary { background-color: var(--color-background-primary); }
 .bg-surface-secondary { background-color: var(--color-background-secondary); }
 .bg-surface-tertiary { background-color: var(--color-background-tertiary); }
@@ -284,7 +284,7 @@ const WIDGET_UTILITIES = /* css */ `
 .bg-white { background-color: #fff; }
 .bg-black { background-color: #000; }
 
-/* ââ Text semantic colors âââââââââââââââââââââââââââ */
+/* ── Text semantic colors ─────────────────────────── */
 .text-content-primary { color: var(--color-text-primary); }
 .text-content-secondary { color: var(--color-text-secondary); }
 .text-content-tertiary { color: var(--color-text-tertiary); }
@@ -295,14 +295,14 @@ const WIDGET_UTILITIES = /* css */ `
 .text-white { color: #fff; }
 .text-black { color: #000; }
 
-/* ââ Border semantic colors âââââââââââââââââââââââââ */
+/* ── Border semantic colors ───────────────────────── */
 .border-content-tertiary { border-color: var(--color-text-tertiary); }
 .border-info { border-color: var(--color-border-info); }
 .border-success { border-color: var(--color-border-success); }
 .border-warning { border-color: var(--color-border-warning); }
 .border-danger { border-color: var(--color-border-danger); }
 
-/* ââ Color ramps (indigo) âââââââââââââââââââââââââââ */
+/* ── Color ramps (indigo) ─────────────────────────── */
 .bg-indigo-50 { background-color: #EEF2FF; }
 .bg-indigo-100 { background-color: #E0E7FF; }
 .bg-indigo-200 { background-color: #C7D2FE; }
@@ -316,7 +316,7 @@ const WIDGET_UTILITIES = /* css */ `
 .border-indigo-200 { border-color: #C7D2FE; }
 .border-indigo-400 { border-color: #818CF8; }
 
-/* ââ Color ramps (emerald) ââââââââââââââââââââââââââ */
+/* ── Color ramps (emerald) ────────────────────────── */
 .bg-emerald-50 { background-color: #ECFDF5; }
 .bg-emerald-100 { background-color: #D1FAE5; }
 .bg-emerald-200 { background-color: #A7F3D0; }
@@ -327,7 +327,7 @@ const WIDGET_UTILITIES = /* css */ `
 .text-emerald-800 { color: #065F46; }
 .border-emerald-200 { border-color: #A7F3D0; }
 
-/* ââ Color ramps (amber) ââââââââââââââââââââââââââââ */
+/* ── Color ramps (amber) ──────────────────────────── */
 .bg-amber-50 { background-color: #FFFBEB; }
 .bg-amber-100 { background-color: #FEF3C7; }
 .bg-amber-200 { background-color: #FDE68A; }
@@ -338,7 +338,7 @@ const WIDGET_UTILITIES = /* css */ `
 .text-amber-800 { color: #92400E; }
 .border-amber-200 { border-color: #FDE68A; }
 
-/* ââ Color ramps (rose) âââââââââââââââââââââââââââââ */
+/* ── Color ramps (rose) ───────────────────────────── */
 .bg-rose-50 { background-color: #FFF1F2; }
 .bg-rose-100 { background-color: #FFE4E6; }
 .bg-rose-200 { background-color: #FECDD3; }
@@ -349,7 +349,7 @@ const WIDGET_UTILITIES = /* css */ `
 .text-rose-800 { color: #9F1239; }
 .border-rose-200 { border-color: #FECDD3; }
 
-/* ââ Color ramps (sky) ââââââââââââââââââââââââââââââ */
+/* ── Color ramps (sky) ────────────────────────────── */
 .bg-sky-50 { background-color: #F0F9FF; }
 .bg-sky-100 { background-color: #E0F2FE; }
 .bg-sky-200 { background-color: #BAE6FD; }
@@ -360,7 +360,7 @@ const WIDGET_UTILITIES = /* css */ `
 .text-sky-800 { color: #075985; }
 .border-sky-200 { border-color: #BAE6FD; }
 
-/* ââ Color ramps (slate) ââââââââââââââââââââââââââââ */
+/* ── Color ramps (slate) ──────────────────────────── */
 .bg-slate-50 { background-color: #F8FAFC; }
 .bg-slate-100 { background-color: #F1F5F9; }
 .bg-slate-200 { background-color: #E2E8F0; }
@@ -374,7 +374,7 @@ const WIDGET_UTILITIES = /* css */ `
 .border-slate-200 { border-color: #E2E8F0; }
 `;
 
-// ââ Shared form element styles ââââââââââââââââââââââââââââââââââââââââââ
+// ── Shared form element styles ──────────────────────────────────────────
 
 const FORM_STYLES = /* css */ `
 input[type="range"] {
@@ -459,9 +459,9 @@ export function getWidgetBridgeStyle(): string {
 .widget-root a:hover {
   text-decoration: underline;
 }
-/* ââ Scoped utility classes ââââââââââââââââââââââââ */
+/* ── Scoped utility classes ──────────────────────── */
 ${WIDGET_UTILITIES.replace(/^\./gm, '.widget-root .')}
-/* ââ Pre-styled form elements ââââââââââââââââââââââ */
+/* ── Pre-styled form elements ────────────────────── */
 ${FORM_STYLES.replace(/^([a-z])/gm, '.widget-root $1').replace(/^(\[)/gm, '.widget-root $1')}
 /* Fade-in animation for streaming new nodes */
 @keyframes widgetFadeIn {
@@ -471,7 +471,7 @@ ${FORM_STYLES.replace(/^([a-z])/gm, '.widget-root $1').replace(/^(\[)/gm, '.widg
 </style>`;
 }
 
-// ââ iframe theme resolution âââââââââââââââââââââââââââââââââââââââââââââ
+// ── iframe theme resolution ─────────────────────────────────────────────
 
 /** CSS variable names to resolve from the parent document for iframe srcdoc. */
 const THEME_VAR_NAMES = [

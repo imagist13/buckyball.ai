@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Phase 6 Phase 2a â€?10-row breakdown list for the chat Context popover.
+ * Phase 6 Phase 2a â€” 10-row breakdown list for the chat Context popover.
  *
  * Replaces the legacy ContextInputUsage / ContextOutputUsage / ContextCacheUsage
  * three-row block. Each row shows: color dot + user-facing label + token count
@@ -14,7 +14,7 @@
  * Dot colors come from `--context-dot-{kebab-kind}` CSS variables defined in
  * `src/app/globals.css`. Same OKLCH palette in light and dark theme.
  *
- * Subcomponent of ContextUsageIndicator / RunCockpitPopoverContent â€?not a
+ * Subcomponent of ContextUsageIndicator / RunCockpitPopoverContent â€” not a
  * standalone mount surface (Phase 6 design: no third parallel entry).
  *
  * i18n (Codex P1 finding 2026-05-19): labels go through useTranslation, not
@@ -35,7 +35,7 @@ import { cn } from '@/lib/utils';
 const PENDING_SET = new Set<ContextBreakdownPart['kind']>(PENDING_BREAKDOWN_KINDS);
 
 // Codex P1 (2026-05-19): UI labels must go through i18n. DEFAULT_LABELS in
-// context-breakdown.ts is fallback / debug only â€?see that file's docstring.
+// context-breakdown.ts is fallback / debug only â€” see that file's docstring.
 const LABEL_KEY: Record<ContextBreakdownPart['kind'], TranslationKey> = {
   system_prompt: 'runStatus.breakdownSystemPrompt' as TranslationKey,
   tools: 'runStatus.breakdownTools' as TranslationKey,
@@ -98,7 +98,7 @@ export function ContextBreakdownList({
                 aria-hidden
                 className={cn(
                   // rounded-[2px] (not rounded-sm) so the dot reads as a
-                  // crisp rounded-rect â€?same radius as the dot-matrix
+                  // crisp rounded-rect â€” same radius as the dot-matrix
                   // cells above. rounded-sm at size 10px shaved the
                   // corners enough to read as "åœ†å½¢" per Codex/user review.
                   'inline-block size-2.5 rounded-[2px] shrink-0',
@@ -107,7 +107,7 @@ export function ContextBreakdownList({
                 style={isPending ? undefined : { backgroundColor: dotVar(part.kind) }}
               />
               {/* Codex P2 (2026-05-19): label inherits row color, no forced
-                  text-foreground â€?otherwise the row's text-muted-foreground
+                  text-foreground â€” otherwise the row's text-muted-foreground
                   (applied when isPending) gets overridden and the pending
                   label never actually dims. */}
               <span className="truncate">{t(LABEL_KEY[part.kind])}</span>

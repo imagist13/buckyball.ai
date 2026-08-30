@@ -37,7 +37,7 @@ const tabsListVariants = cva(
         default: "bg-muted",
         line: "gap-1 bg-transparent",
       },
-      // Phase 4 UX â€?`size` extends the primitive in the same cva
+      // Phase 4 UX â€” `size` extends the primitive in the same cva
       // pattern shadcn uses for `variant`. `default` matches the
       // pre-existing h-9; `sm` is h-8 to align with SelectTrigger's
       // own `size="sm"` (32px) so the two can sit side-by-side in

@@ -1,23 +1,23 @@
 "use client";
 
 /**
- * Settings â?Health â?read-only daily health overview.
+ * Settings → Health — read-only daily health overview.
  *
- * Phase 2C.5. Health is the *æ¥å¸¸é®é¢å®ä½* page, not a wizard. It does
+ * Phase 2C.5. Health is the *日常问题定位* page, not a wizard. It does
  * not run probes on its own and does not write anything; instead it
  * reuses the data the rest of Settings already pulls (`useOverviewData`,
  * `useClaudeStatus`, the runtime resolver) and surfaces five concerns
  * in one place:
  *
  *   1. Provider connectivity
- *   2. æ§è¡å¼æ / CLI
+ *   2. 执行引擎 / CLI
  *   3. Default model validity
  *   4. Models exposure
  *   5. Assistant workspace / local environment
  *
- * Each row shows status + åå  + å½±å + a single primary CTA. Live
+ * Each row shows status + 原因 + 影响 + a single primary CTA. Live
  * probes / repair flows stay with Setup Center; Provider Doctor stays
- * with Providers. Health is the index â?it points the user at the
+ * with Providers. Health is the index — it points the user at the
  * right specialist surface, it doesn't try to be one.
  */
 
@@ -35,7 +35,7 @@ import {
   CaretRight,
   Info,
 } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import { useOverviewData } from "./useOverviewData";
 import type { TranslationKey } from "@/i18n";
@@ -67,10 +67,10 @@ const SEVERITY_ICON: Record<Severity, React.ReactNode> = {
 
 export function HealthSection() {
   const { t } = useTranslation();
-  const isZh = t("nav.chats") === "å¯¹è¯";
+  const isZh = t("nav.chats") === "对话";
   const state = useOverviewData();
   const { status: claudeStatus } = useClaudeStatus();
-  // Settings is route-level split â?cross-section CTAs must router.push
+  // Settings is route-level split — cross-section CTAs must router.push
   // a route path; otherwise clicking a Health row only mutates the URL
   // hash without switching pages. See `settings-link-migration.test.ts`.
   const router = useRouter();
@@ -95,7 +95,7 @@ export function HealthSection() {
           </p>
         </div>
         <div className="rounded-lg border border-dashed border-border/50 bg-card/50 p-10 text-center">
-          <p className="text-xs text-muted-foreground">{isZh ? "å è½½ä¸­â? : "Loadingâ?}</p>
+          <p className="text-xs text-muted-foreground">{isZh ? "加载中…" : "Loading…"}</p>
         </div>
       </div>
     );
@@ -103,42 +103,42 @@ export function HealthSection() {
 
   const rows: HealthRow[] = [];
 
-  // ââ 1. Provider connectivity âââââââââââââââââââââââââââââââââ
+  // ── 1. Provider connectivity ─────────────────────────────────
   rows.push((() => {
     const count = state.providersConfigured;
     if (count === 0) {
       return {
         id: "providers",
         icon: <Plug size={16} />,
-        title: isZh ? "æå¡åè¿æ? : "Provider connectivity",
+        title: isZh ? "服务商连接" : "Provider connectivity",
         severity: "error",
-        reason: isZh ? "å°æªéç½®ä»»ä½ provider" : "No providers configured",
+        reason: isZh ? "尚未配置任何 provider" : "No providers configured",
         impact: isZh
-          ? "chat æ æ³åé?â?éè¦è³å°æ·»å ä¸ä¸?provider"
+          ? "chat 无法发送 — 需要至少添加一个 provider"
           : "Chat cannot start without a connected provider",
-        ctaLabel: isZh ? "å?Providers" : "Open Providers",
+        ctaLabel: isZh ? "去 Providers" : "Open Providers",
         ctaOnClick: () => navToSection("providers"),
       };
     }
     return {
       id: "providers",
       icon: <Plug size={16} />,
-      title: isZh ? "æå¡åè¿æ? : "Provider connectivity",
+      title: isZh ? "服务商连接" : "Provider connectivity",
       severity: "ok",
       reason: isZh
-        ? `å·²éç½?${count} ä¸?provider`
+        ? `已配置 ${count} 个 provider`
         : `${count} provider${count === 1 ? "" : "s"} configured`,
-      // Phase 2C.6 follow-up: the CTA was "è¿è¡è¯æ­" but it just
+      // Phase 2C.6 follow-up: the CTA was "运行诊断" but it just
       // navigated to #providers (Provider Doctor lives behind a
       // separate button there). Renaming to match the actual destination
-      // â?the doctor flow is no longer the headline action since
+      // — the doctor flow is no longer the headline action since
       // health/issue-filing is now log-driven, not auto-diagnose-driven.
-      ctaLabel: isZh ? "æ¥ç Providers" : "Open Providers",
+      ctaLabel: isZh ? "查看 Providers" : "Open Providers",
       ctaOnClick: () => navToSection("providers"),
     };
   })());
 
-  // ââ 2. æ§è¡å¼æ / CLI âââââââââââââââââââââââââââââââââââââââââ
+  // ── 2. 执行引擎 / CLI ─────────────────────────────────────────
   rows.push((() => {
     const cliConnected = !!claudeStatus?.connected;
     const cliEnabled = state.cliEnabled;
@@ -147,214 +147,217 @@ export function HealthSection() {
     if (state.agentRuntime === "claude-code-sdk" && !cliEnabled) {
       return {
         id: "runtime",
-        icon: <BuckyballIcon name="runtime" size="md" />,
-        title: isZh ? "æ§è¡å¼æ / CLI" : "æ§è¡å¼æ / CLI",
+        icon: <CodePilotIcon name="runtime" size="md" />,
+        title: isZh ? "执行引擎 / CLI" : "执行引擎 / CLI",
         severity: "warn",
         reason: isZh
-          ? "Claude Code CLI å·²ç¦ç¨ï¼è¿è¡æ¶å·²éçº§å?CodePilot"
-          : "Claude Code CLI disabled â?runtime fell back to CodePilot",
+          ? "Claude Code CLI 已禁用，运行时已降级到 CodePilot"
+          : "Claude Code CLI disabled — runtime fell back to CodePilot",
         impact: isZh
-          ? "ä»?CodePilot å¼å®¹çæå¡å/æ¨¡åå¯æ§è¡?
+          ? "仅 CodePilot 兼容的服务商/模型可执行"
           : "Only CodePilot-compatible providers/models will run",
-        ctaLabel: isZh ? "å»æ§è¡å¼æ? : "Open Runtime",
+        ctaLabel: isZh ? "去执行引擎" : "Open Runtime",
         ctaOnClick: () => navToSection("runtime"),
       };
     }
     if (state.agentRuntime === "claude-code-sdk" && !cliConnected) {
       return {
         id: "runtime",
-        icon: <BuckyballIcon name="runtime" size="md" />,
-        title: isZh ? "æ§è¡å¼æ / CLI" : "æ§è¡å¼æ / CLI",
+        icon: <CodePilotIcon name="runtime" size="md" />,
+        title: isZh ? "执行引擎 / CLI" : "执行引擎 / CLI",
         severity: "error",
         reason: isZh
-          ? "Claude Code CLI æªæ£æµå°ï¼è¿è¡æ¶å·²éçº?
-          : "Claude Code CLI not detected â?runtime fell back",
+          ? "Claude Code CLI 未检测到，运行时已降级"
+          : "Claude Code CLI not detected — runtime fell back",
         impact: isZh
-          ? "æ°ä¼è¯ä½¿ç?CodePilotï¼ä½ Claude Code ä¸å±è½åä¸å¯ç?
+          ? "新会话使用 CodePilot，但 Claude Code 专属能力不可用"
           : "New chats use CodePilot; Claude Code-only features are unavailable",
-        ctaLabel: isZh ? "å»æ§è¡å¼æ? : "Open Runtime",
+        ctaLabel: isZh ? "去执行引擎" : "Open Runtime",
         ctaOnClick: () => navToSection("runtime"),
       };
     }
     if (warnCount > 0) {
       return {
         id: "runtime",
-        icon: <BuckyballIcon name="runtime" size="md" />,
-        title: isZh ? "æ§è¡å¼æ / CLI" : "æ§è¡å¼æ / CLI",
+        icon: <CodePilotIcon name="runtime" size="md" />,
+        title: isZh ? "执行引擎 / CLI" : "执行引擎 / CLI",
         severity: "warn",
         reason: isZh
-          ? `Claude Code æ¥å ${warnCount} æ¡å¼å®¹æ§æç¤º`
+          ? `Claude Code 报告 ${warnCount} 条兼容性提示`
           : `Claude Code reports ${warnCount} compatibility warning${warnCount === 1 ? "" : "s"}`,
-        ctaLabel: isZh ? "å»æ§è¡å¼æ? : "Open Runtime",
+        ctaLabel: isZh ? "去执行引擎" : "Open Runtime",
         ctaOnClick: () => navToSection("runtime"),
       };
     }
     return {
       id: "runtime",
-      icon: <BuckyballIcon name="runtime" size="md" strokeWidth={2} />,
-      title: isZh ? "æ§è¡å¼æ / CLI" : "æ§è¡å¼æ / CLI",
+      icon: <CodePilotIcon name="runtime" size="md" strokeWidth={2} />,
+      title: isZh ? "执行引擎 / CLI" : "执行引擎 / CLI",
       severity: "ok",
       reason: state.agentRuntime === "claude-code-sdk"
-        ? (isZh ? "Claude Code å·²å°±ç»? : "Claude Code ready")
-        : (isZh ? "CodePilot å·²å°±ç»? : "CodePilot ready"),
-      ctaLabel: isZh ? "å»æ§è¡å¼æ? : "Open Runtime",
+        ? (isZh ? "Claude Code 已就绪" : "Claude Code ready")
+        : (isZh ? "CodePilot 已就绪" : "CodePilot ready"),
+      ctaLabel: isZh ? "去执行引擎" : "Open Runtime",
       ctaOnClick: () => navToSection("runtime"),
     };
   })());
 
-  // ââ 3. Default model validity ââââââââââââââââââââââââââââââââ
+  // ── 3. Default model validity ────────────────────────────────
   rows.push((() => {
     if (state.noCompatibleProvider) {
       return {
         id: "default-model",
-        icon: <BuckyballIcon name="model" size="md" />,
-        title: isZh ? "é»è®¤æ¨¡åæææ? : "Default model validity",
+        icon: <CodePilotIcon name="model" size="md" />,
+        title: isZh ? "默认模型有效性" : "Default model validity",
         severity: "error",
         reason: isZh
-          ? "å½åæ§è¡å¼æ ä¸æ²¡æå¯ç?provider/model"
+          ? "当前执行引擎 下没有可用 provider/model"
           : "No compatible provider under current Runtime",
         impact: isZh
-          ? "æ°ä¼è¯è¿å?æ å¼å®¹æå?ç¶æï¼æ æ³åé?
+          ? "新会话进入'无兼容服务'状态，无法发送"
           : "New chats land in the 'no compatible provider' state",
-        ctaLabel: isZh ? "å»æ§è¡å¼æ? : "Open Runtime",
+        ctaLabel: isZh ? "去执行引擎" : "Open Runtime",
         ctaOnClick: () => navToSection("runtime"),
       };
     }
     if (state.defaultInvalid) {
       const provDisplay = state.defaultProviderName ?? "?";
       const modelDisplay = state.defaultModelLabel ?? "?";
-      // #27: pin-incomplete = åºå®ä¿¡æ¯åæªï¼ç¼º provider ç»å®ï¼ï¼æ¨¡åæ¬èº«å¯ç¨ï¼?      // ä¸æ¯ Runtime å¼å®¹é®é¢ãå¶ä½ï¼provider/model-missingï¼ææ¯åºå®ç®æ ä¸å?      // å½åå¼æå¯è¾¾èå´ãä¸¤èé½æ?*éé»æ?*ï¼chat ä¼èªå?fallbackï¼ï¼ç»ä¸éä¸º
-      // warningï¼ä¸åè¯´"é»æ­"ââä¸ RuntimePanel banner å£å¾ä¸è´ã?      if (state.defaultInvalidReason === "pin-incomplete") {
+      // #27: pin-incomplete = 固定信息半截（缺 provider 绑定），模型本身可用，
+      // 不是 Runtime 兼容问题。其余（provider/model-missing）才是固定目标不在
+      // 当前引擎可达范围。两者都是**非阻断**（chat 会自动 fallback），统一降为
+      // warning，不再说"阻断"——与 RuntimePanel banner 口径一致。
+      if (state.defaultInvalidReason === "pin-incomplete") {
         return {
           id: "default-model",
-          icon: <BuckyballIcon name="model" size="md" />,
-          title: isZh ? "é»è®¤æ¨¡åæææ? : "Default model validity",
+          icon: <CodePilotIcon name="model" size="md" />,
+          title: isZh ? "默认模型有效性" : "Default model validity",
           severity: "warn",
           reason: isZh
-            ? "é»è®¤æ¨¡ååºå®ä¿¡æ¯ä¸å®æ´ï¼ç¼?provider ç»å®ï¼?
+            ? "默认模型固定信息不完整（缺 provider 绑定）"
             : "Pinned default is incomplete (missing provider binding)",
           impact: isZh
-            ? "æ°ä¼è¯ä¼èªå¨ä½¿ç¨å½åç¯å¢ä¸çå¯ç¨æ¨¡åï¼å°ãæ¨¡åãé¡µéæ°åºå®å³å¯"
+            ? "新会话会自动使用当前环境下的可用模型；到「模型」页重新固定即可"
             : "New chats auto-use an available model; re-pin in Models to fix",
-          ctaLabel: isZh ? "å?Models" : "Open Models",
+          ctaLabel: isZh ? "去 Models" : "Open Models",
           ctaOnClick: () => navToSection("models"),
         };
       }
       return {
         id: "default-model",
-        icon: <BuckyballIcon name="model" size="md" />,
-        title: isZh ? "é»è®¤æ¨¡åæææ? : "Default model validity",
+        icon: <CodePilotIcon name="model" size="md" />,
+        title: isZh ? "默认模型有效性" : "Default model validity",
         severity: "warn",
         reason: isZh
-          ? `å·²åºå®?${provDisplay} / ${modelDisplay} â?ä¸å¨å½åæ§è¡å¼æçå¼å®¹èå´å`
-          : `Pinned ${provDisplay} / ${modelDisplay} â?not compatible with the current Runtime`,
+          ? `已固定 ${provDisplay} / ${modelDisplay} — 不在当前执行引擎的兼容范围内`
+          : `Pinned ${provDisplay} / ${modelDisplay} — not compatible with the current Runtime`,
         impact: isZh
-          ? "æ°ä¼è¯ä¼èªå¨ä½¿ç¨å½åç¯å¢ä¸çå¯ç¨æ¨¡åï¼å¯å»ãæ¨¡åãé¡µæ¹é»è®¤æåå Auto"
+          ? "新会话会自动使用当前环境下的可用模型；可去「模型」页改默认或切回 Auto"
           : "New chats fall back to an available model; change the default in Models or revert to Auto",
-        ctaLabel: isZh ? "å?Models" : "Open Models",
+        ctaLabel: isZh ? "去 Models" : "Open Models",
         ctaOnClick: () => navToSection("models"),
       };
     }
     if (state.defaultMode === "pinned") {
       return {
         id: "default-model",
-        icon: <BuckyballIcon name="model" size="md" />,
-        title: isZh ? "é»è®¤æ¨¡åæææ? : "Default model validity",
+        icon: <CodePilotIcon name="model" size="md" />,
+        title: isZh ? "默认模型有效性" : "Default model validity",
         severity: "ok",
         reason: isZh
-          ? `å·²åºå®?${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`
+          ? `已固定 ${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`
           : `Pinned ${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`,
-        ctaLabel: isZh ? "å?Models" : "Open Models",
+        ctaLabel: isZh ? "去 Models" : "Open Models",
         ctaOnClick: () => navToSection("models"),
       };
     }
     return {
       id: "default-model",
-      icon: <BuckyballIcon name="model" size="md" />,
-      title: isZh ? "é»è®¤æ¨¡åæææ? : "Default model validity",
+      icon: <CodePilotIcon name="model" size="md" />,
+      title: isZh ? "默认模型有效性" : "Default model validity",
       severity: "ok",
       reason: isZh
-        ? `Auto â?å½åè§£æå?${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`
-        : `Auto â?currently resolves to ${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`,
-      ctaLabel: isZh ? "å?Models" : "Open Models",
+        ? `Auto — 当前解析到 ${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`
+        : `Auto — currently resolves to ${state.defaultProviderName ?? "?"} / ${state.defaultModelLabel ?? "?"}`,
+      ctaLabel: isZh ? "去 Models" : "Open Models",
       ctaOnClick: () => navToSection("models"),
     };
   })());
 
-  // ââ 4. Models exposure âââââââââââââââââââââââââââââââââââââââ
+  // ── 4. Models exposure ───────────────────────────────────────
   rows.push((() => {
     if (state.providersConfigured === 0) {
       return {
         id: "models-exposure",
-        icon: <BuckyballIcon name="model" size="md" />,
-        title: isZh ? "æ¨¡åæ´é²" : "Models exposure",
+        icon: <CodePilotIcon name="model" size="md" />,
+        title: isZh ? "模型暴露" : "Models exposure",
         severity: "ok",
         reason: isZh
-          ? "å°æªéç½® provider â?è¯¦è§ä¸æ¹"
-          : "No providers configured yet â?see above",
-        ctaLabel: isZh ? "å?Models" : "Open Models",
+          ? "尚未配置 provider — 详见上方"
+          : "No providers configured yet — see above",
+        ctaLabel: isZh ? "去 Models" : "Open Models",
         ctaOnClick: () => navToSection("models"),
       };
     }
     if (state.modelsEnabled === 0) {
       return {
         id: "models-exposure",
-        icon: <BuckyballIcon name="model" size="md" />,
-        title: isZh ? "æ¨¡åæ´é²" : "Models exposure",
+        icon: <CodePilotIcon name="model" size="md" />,
+        title: isZh ? "模型暴露" : "Models exposure",
         severity: "error",
         reason: isZh
-          ? "å·²æ¥å?providerï¼ä½æ²¡æä»»ä½æ¨¡åå¯?picker å¯è§"
+          ? "已接入 provider，但没有任何模型对 picker 可见"
           : "Providers connected, but no models visible to the picker",
         impact: isZh
-          ? "chat picker ä¸ºç©ºï¼æ æ³éæ©æ¨¡å"
+          ? "chat picker 为空，无法选择模型"
           : "Chat picker is empty",
-        ctaLabel: isZh ? "å?Models" : "Open Models",
+        ctaLabel: isZh ? "去 Models" : "Open Models",
         ctaOnClick: () => navToSection("models"),
       };
     }
     const manualNote = (state.modelsManualEnabled > 0 || state.modelsManualHidden > 0)
       ? (isZh
-          ? `ï¼æå¨å¯ç?${state.modelsManualEnabled} Â· æå¨éè ${state.modelsManualHidden}ï¼`
-          : ` (${state.modelsManualEnabled} manual on Â· ${state.modelsManualHidden} manual off)`)
+          ? `（手动启用 ${state.modelsManualEnabled} · 手动隐藏 ${state.modelsManualHidden}）`
+          : ` (${state.modelsManualEnabled} manual on · ${state.modelsManualHidden} manual off)`)
       : "";
     return {
       id: "models-exposure",
-      icon: <BuckyballIcon name="model" size="md" />,
-      title: isZh ? "æ¨¡åæ´é²" : "Models exposure",
+      icon: <CodePilotIcon name="model" size="md" />,
+      title: isZh ? "模型暴露" : "Models exposure",
       severity: "ok",
       reason: isZh
-        ? `${state.modelsEnabled} / ${state.modelsTotal} ä¸ªæ¨¡åå·²å¯?picker æ´é²${manualNote}`
+        ? `${state.modelsEnabled} / ${state.modelsTotal} 个模型已对 picker 暴露${manualNote}`
         : `${state.modelsEnabled} of ${state.modelsTotal} models exposed to picker${manualNote}`,
-      ctaLabel: isZh ? "å?Models" : "Open Models",
+      ctaLabel: isZh ? "去 Models" : "Open Models",
       ctaOnClick: () => navToSection("models"),
     };
   })());
 
-  // ââ 5. Assistant workspace / local environment âââââââââââââââ
+  // ── 5. Assistant workspace / local environment ───────────────
   rows.push((() => {
     if (state.workspaceConfigured) {
       return {
         id: "workspace",
         icon: <UserCircle size={16} />,
-        title: isZh ? "å©çå·¥ä½ç©ºé´" : "Assistant workspace",
+        title: isZh ? "助理工作空间" : "Assistant workspace",
         severity: "ok",
         reason: state.workspaceName
-          ? (isZh ? `å·²éç½®ï¼${state.workspaceName}` : `Configured: ${state.workspaceName}`)
-          : (isZh ? "å·²éç½®å·¥ä½ç©ºé? : "Workspace configured"),
-        ctaLabel: isZh ? "å»å©ç? : "Open Assistant",
+          ? (isZh ? `已配置：${state.workspaceName}` : `Configured: ${state.workspaceName}`)
+          : (isZh ? "已配置工作空间" : "Workspace configured"),
+        ctaLabel: isZh ? "去助理" : "Open Assistant",
         ctaOnClick: () => navToSection("assistant"),
       };
     }
     return {
       id: "workspace",
       icon: <UserCircle size={16} />,
-      title: isZh ? "å©çå·¥ä½ç©ºé´" : "Assistant workspace",
+      title: isZh ? "助理工作空间" : "Assistant workspace",
       severity: "warn",
-      reason: isZh ? "å°æªéç½®å©çå·¥ä½ç©ºé´" : "Assistant workspace not configured",
+      reason: isZh ? "尚未配置助理工作空间" : "Assistant workspace not configured",
       impact: isZh
-        ? "å©çæ æ³å¨æ¬å°ç®å½ä¸åä½"
+        ? "助理无法在本地目录上协作"
         : "Assistant cannot collaborate on local files",
-      ctaLabel: isZh ? "å»å©ç? : "Open Assistant",
+      ctaLabel: isZh ? "去助理" : "Open Assistant",
       ctaOnClick: () => navToSection("assistant"),
     };
   })());
@@ -368,10 +371,10 @@ export function HealthSection() {
 
   const overallTone =
     overallSeverity === "ok"
-      ? (isZh ? "ä¸åæ­£å¸? : "All systems healthy")
+      ? (isZh ? "一切正常" : "All systems healthy")
       : overallSeverity === "warn"
-        ? (isZh ? "å­å¨ 1 é¡¹ä»¥ä¸æç¤? : "One or more warnings")
-        : (isZh ? "å­å¨é»å¡é®é¢" : "Blocking issues detected");
+        ? (isZh ? "存在 1 项以上提示" : "One or more warnings")
+        : (isZh ? "存在阻塞问题" : "Blocking issues detected");
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -398,8 +401,8 @@ export function HealthSection() {
         ))}
       </div>
 
-      {/* "Need to investigate further?" â?Phase 2C.6 reframing. The
-          previous wording ("æ·±åº¦è¯æ­ä¸ä¿®å¤?) promised auto-detection of
+      {/* "Need to investigate further?" — Phase 2C.6 reframing. The
+          previous wording ("深度诊断与修复") promised auto-detection of
           root causes and an auto-repair path; in practice the doctor
           can't always identify the root cause and "repair" sometimes
           misleads. Honest framing: Health gives status; if status
@@ -411,12 +414,12 @@ export function HealthSection() {
           <Info size={16} className="text-foreground/60 shrink-0 mt-0.5" />
           <div className="min-w-0">
             <h3 className="text-sm font-medium">
-              {isZh ? "éè¦è¿ä¸æ­¥ææ¥ï¼" : "Need to investigate further?"}
+              {isZh ? "需要进一步排查？" : "Need to investigate further?"}
             </h3>
             <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
               {isZh
-                ? "å¦æä¸æ¹ç¶ææ²¡æè§£éä½ éå°çé®é¢ï¼å?å³äº é¡µé¢å¯¼åºè¯æ­åï¼éé¢åå«è¿è¡æ¥å¿ãprovider è§£æé¾ä¸è¿æ¥æ¢æµç»æï¼ä¾¿äºæ¬å°ææ¥æé?issue ä¸èµ·åé¦ã?
-                : "If the rows above don't explain what you're seeing, head to About to export a diagnostic bundle â?it includes runtime logs, the provider-resolution chain, and probe results for local investigation or issue filing."}
+                ? "如果上方状态没有解释你遇到的问题，去 关于 页面导出诊断包，里面包含运行日志、provider 解析链与连接探测结果，便于本地排查或随 issue 一起反馈。"
+                : "If the rows above don't explain what you're seeing, head to About to export a diagnostic bundle — it includes runtime logs, the provider-resolution chain, and probe results for local investigation or issue filing."}
             </p>
           </div>
         </div>
@@ -426,7 +429,7 @@ export function HealthSection() {
           className="shrink-0 gap-1.5"
           onClick={() => navToSection("about")}
         >
-          {isZh ? "å?About" : "Open About"}
+          {isZh ? "去 About" : "Open About"}
           <CaretRight size={12} weight="bold" />
         </Button>
       </div>

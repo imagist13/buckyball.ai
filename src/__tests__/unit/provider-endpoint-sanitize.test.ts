@@ -3,7 +3,7 @@
  *
  * Some user records ended up with API keys / tokens stored in the
  * `base_url` column. The Provider Card was rendering the raw value as
- * "æŽ¥å…¥åœ°å€ sk-or-v1-â€?, which leaked credentials in screenshots /
+ * "æŽ¥å…¥åœ°å€ sk-or-v1-â€¦", which leaked credentials in screenshots /
  * recordings / logs. This test pins:
  *
  *   - High-confidence secret prefixes are flagged as suspicious and
@@ -11,7 +11,7 @@
  *   - Non-URL gibberish is also flagged (covers paste accidents that
  *     don't match a known prefix).
  *   - Normal HTTP(S) endpoints render as host/path with no tooltip leak.
- *   - Custom paths (e.g. `â€?anthropic`) and non-default ports are
+ *   - Custom paths (e.g. `â€¦/anthropic`) and non-default ports are
  *     preserved so users can still tell their proxies apart.
  *   - Trailing slashes are normalized.
  */
@@ -31,32 +31,32 @@ const stubT: SanitizeTranslator = (key, vars) => {
   return 'TOOLTIP:masked';
 };
 
-describe('sanitizeEndpointForDisplay â€?secret-prefix detection', () => {
-  it('OpenAI / Anthropic-compat sk- prefix â†?suspicious', () => {
+describe('sanitizeEndpointForDisplay â€” secret-prefix detection', () => {
+  it('OpenAI / Anthropic-compat sk- prefix â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('sk-ant-api03-AAAAfake-key-tail', stubT);
     assert.equal(r.suspicious, true);
     assert.match(r.display, /SUSPICIOUS:tail$/);
     assert.equal(r.tooltip, 'TOOLTIP:masked');
   });
 
-  it('OpenRouter sk-or- prefix â†?suspicious', () => {
+  it('OpenRouter sk-or- prefix â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('sk-or-v1-xxxxxxx1234', stubT);
     assert.equal(r.suspicious, true);
     assert.match(r.display, /SUSPICIOUS:1234$/);
   });
 
-  it('Bailian Coding Plan sk-sp- prefix â†?suspicious', () => {
+  it('Bailian Coding Plan sk-sp- prefix â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('sk-sp-aaaaaaaabbbb', stubT);
     assert.equal(r.suspicious, true);
   });
 
-  it('GitHub PAT ghp_ prefix â†?suspicious', () => {
+  it('GitHub PAT ghp_ prefix â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('ghp_AAAABBBBccccDDDD1234', stubT);
     assert.equal(r.suspicious, true);
     assert.match(r.display, /SUSPICIOUS:1234$/);
   });
 
-  it('GitHub fine-grained PAT (gh_pat_) â†?suspicious', () => {
+  it('GitHub fine-grained PAT (gh_pat_) â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('gh_pat_xxxxxxxxxxxx', stubT);
     assert.equal(r.suspicious, true);
   });
@@ -67,48 +67,48 @@ describe('sanitizeEndpointForDisplay â€?secret-prefix detection', () => {
   });
 });
 
-describe('sanitizeEndpointForDisplay â€?invalid URL fallthrough', () => {
-  it('non-URL gibberish â†?suspicious', () => {
+describe('sanitizeEndpointForDisplay â€” invalid URL fallthrough', () => {
+  it('non-URL gibberish â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('not a url at all 1234', stubT);
     assert.equal(r.suspicious, true);
     // Last-4 still shown for identification.
     assert.match(r.display, /SUSPICIOUS:1234$/);
   });
 
-  it('non-http(s) protocol (file://) â†?suspicious', () => {
+  it('non-http(s) protocol (file://) â†’ suspicious', () => {
     // `base_url` should always be HTTP(S); other protocols are
     // misconfiguration. Bedrock/Vertex use env_overrides, not base_url.
     const r = sanitizeEndpointForDisplay('file:///etc/passwd', stubT);
     assert.equal(r.suspicious, true);
   });
 
-  it('javascript: pseudo-URL â†?suspicious', () => {
+  it('javascript: pseudo-URL â†’ suspicious', () => {
     const r = sanitizeEndpointForDisplay('javascript:alert(1)', stubT);
     assert.equal(r.suspicious, true);
   });
 
-  it('empty string â†?not suspicious, empty display', () => {
+  it('empty string â†’ not suspicious, empty display', () => {
     const r = sanitizeEndpointForDisplay('', stubT);
     assert.equal(r.suspicious, false);
     assert.equal(r.display, '');
   });
 });
 
-describe('sanitizeEndpointForDisplay â€?normal endpoints', () => {
-  it('Anthropic official â†?host/path without protocol', () => {
+describe('sanitizeEndpointForDisplay â€” normal endpoints', () => {
+  it('Anthropic official â†’ host/path without protocol', () => {
     const r = sanitizeEndpointForDisplay('https://api.anthropic.com', stubT);
     assert.equal(r.suspicious, false);
     assert.equal(r.display, 'api.anthropic.com');
     assert.equal(r.tooltip, undefined);
   });
 
-  it('OpenRouter Anthropic skin â†?keeps `/api` path', () => {
+  it('OpenRouter Anthropic skin â†’ keeps `/api` path', () => {
     const r = sanitizeEndpointForDisplay('https://openrouter.ai/api', stubT);
     assert.equal(r.suspicious, false);
     assert.equal(r.display, 'openrouter.ai/api');
   });
 
-  it('Bailian Coding Plan â†?keeps deep path', () => {
+  it('Bailian Coding Plan â†’ keeps deep path', () => {
     const r = sanitizeEndpointForDisplay(
       'https://coding.dashscope.aliyuncs.com/apps/anthropic',
       stubT,
@@ -129,7 +129,7 @@ describe('sanitizeEndpointForDisplay â€?normal endpoints', () => {
     assert.equal(r.display, 'api.example.com');
   });
 
-  it('http (not https) â†?still rendered, not suspicious', () => {
+  it('http (not https) â†’ still rendered, not suspicious', () => {
     // Self-hosted Ollama / LiteLLM are http-only; not a security concern
     // for the masking gate (which is about secret leakage, not transport).
     const r = sanitizeEndpointForDisplay('http://192.168.1.10:4000', stubT);

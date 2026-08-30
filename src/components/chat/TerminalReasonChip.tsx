@@ -1,9 +1,9 @@
 /**
- * TerminalReasonChip â€?renders a contextual end-of-turn status chip based on
+ * TerminalReasonChip â€” renders a contextual end-of-turn status chip based on
  * `SDKResultMessage.terminal_reason` (SDK 0.2.111+).
  *
  * Phase 1 of agent-sdk-0-2-111-adoption: additive display layer. Does NOT
- * replace error-classifier.ts â€?errors without a result message continue to
+ * replace error-classifier.ts â€” errors without a result message continue to
  * flow through the existing classifier pipeline.
  *
  * Only renders for reasons that carry information users can act on or interpret.

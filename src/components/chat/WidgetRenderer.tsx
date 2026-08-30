@@ -4,7 +4,7 @@ import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { resolveThemeVars, getWidgetIframeStyleBlock } from '@/lib/widget-css-bridge';
 import { sanitizeForStreaming, sanitizeForIframe, buildReceiverSrcdoc } from '@/lib/widget-sanitizer';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { WidgetErrorBoundary } from './WidgetErrorBoundary';
 
 interface WidgetRendererProps {
@@ -29,8 +29,8 @@ const CDN_PATTERN = /cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|unpkg\.com|esm\.s
 /**
  * Module-level height cache: preserves widget heights across component remounts.
  * When StreamingMessage is replaced by MessageItem, the WidgetRenderer is remounted.
- * Without this cache, iframe height would reset to 0 â?scroll jump.
- * Keyed by first 200 chars of widgetCode (stable across streamingâpersisted).
+ * Without this cache, iframe height would reset to 0 → scroll jump.
+ * Keyed by first 200 chars of widgetCode (stable across streaming→persisted).
  */
 const _heightCache = new Map<string, number>();
 function getHeightCacheKey(code: string): string {
@@ -44,7 +44,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
   const lastSentRef = useRef<string>('');
   const [iframeReady, setIframeReady] = useState(false);
   const [iframeHeight, setIframeHeight] = useState(() => {
-    // Restore cached height to avoid 0âactual jump on remount
+    // Restore cached height to avoid 0→actual jump on remount
     return _heightCache.get(getHeightCacheKey(widgetCode)) || 0;
   });
   const [showCode, setShowCode] = useState(false);
@@ -56,7 +56,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
   // Lock height during finalization to prevent flash (innerHTML swap briefly empties DOM)
   const heightLockedRef = useRef(false);
 
-  // Detect if this widget has CDN scripts (Chart.js, etc.) â?only these get a loading overlay
+  // Detect if this widget has CDN scripts (Chart.js, etc.) — only these get a loading overlay
   const hasCDN = useMemo(() => CDN_PATTERN.test(widgetCode), [widgetCode]);
 
   // Build receiver srcdoc once
@@ -68,7 +68,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
     return buildReceiverSrcdoc(styleBlock, isDark);
   }, []);
 
-  // ââ postMessage handler ââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── postMessage handler ────────────────────────────────────────────────
   useEffect(() => {
     function handleMessage(e: MessageEvent) {
       if (!e.data || typeof e.data.type !== 'string') return;
@@ -80,7 +80,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
           break;
 
         case 'widget:hatch-buddy':
-          // Widget requested buddy hatching â?call API from parent (widgets can't fetch due to sandbox)
+          // Widget requested buddy hatching — call API from parent (widgets can't fetch due to sandbox)
           fetch('/api/workspace/hatch-buddy', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -171,7 +171,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // ââ Streaming updates ââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Streaming updates ──────────────────────────────────────────────────
   const sendUpdate = useCallback((html: string) => {
     const iframe = iframeRef.current;
     if (!iframe?.contentWindow) return;
@@ -188,7 +188,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [widgetCode, isStreaming, iframeReady, sendUpdate]);
 
-  // ââ Finalize âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Finalize ───────────────────────────────────────────────────────────
   // Track which widgetCode was last finalized to detect prop changes (dashboard refresh).
   const finalizedCodeRef = useRef('');
   useEffect(() => {
@@ -210,7 +210,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
     }, 400);
   }, [isStreaming, iframeReady, widgetCode]);
 
-  // ââ Theme sync âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ── Theme sync ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!iframeReady) return;
     const observer = new MutationObserver(() => {
@@ -241,7 +241,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
     <div
       className="group/widget relative my-1 rounded-xl p-4 bg-muted/20"
       style={{
-        // Project theme uses oklch() not HSL â?`hsl(var(--muted-foreground) / 0.12)`
+        // Project theme uses oklch() not HSL — `hsl(var(--muted-foreground) / 0.12)`
         // would produce an invalid color and the browser silently drops
         // the gradient. Use the same `color-mix(in oklch, ...)` pattern
         // that the rest of globals.css applies (see lines 255-265).
@@ -250,7 +250,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
         backgroundSize: '14px 14px',
       }}
     >
-      {/* iframe â?always visible, no skeleton, no hiding */}
+      {/* iframe — always visible, no skeleton, no hiding */}
       <iframe
         ref={iframeRef}
         sandbox="allow-scripts"
@@ -272,7 +272,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
         }}
       />
 
-      {/* Shimmer overlay â?shown for CDN script loading OR when parent requests it (script streaming phase) */}
+      {/* Shimmer overlay — shown for CDN script loading OR when parent requests it (script streaming phase) */}
       {(showLoadingOverlay || showOverlay) && (
         <div
           className="absolute inset-4 pointer-events-none rounded-lg"
@@ -290,14 +290,14 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
         </pre>
       )}
 
-      {/* Toolbar â?top-right, **always visible** (round 12 design
+      {/* Toolbar — top-right, **always visible** (round 12 design
           refresh). Previously `opacity-0 group-hover/widget:opacity-100`
           hid the actions until the cursor entered the card, which
           made them feel like a hidden affordance. They're now
           permanent at full opacity.
           Button geometry bumped from `text-[10px] px-1.5 py-0.5` to
           `text-xs h-7 px-2 gap-1` to match the size the Markdown table
-          / code block action buttons will share â?readable hit target
+          / code block action buttons will share — readable hit target
           without overwhelming the card. */}
       <div className="absolute top-2 right-2 flex items-center gap-1">
         {extraButtons}
@@ -305,7 +305,7 @@ function WidgetRendererInner({ widgetCode, isStreaming, title, showOverlay, extr
           onClick={() => setShowCode(!showCode)}
           className="h-7 px-2 gap-1 inline-flex items-center justify-center rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          <BuckyballIcon name="code" size="sm" aria-hidden />
+          <CodePilotIcon name="code" size="sm" aria-hidden />
           {showCode ? t('widget.hideCode') : t('widget.showCode')}
         </button>
       </div>

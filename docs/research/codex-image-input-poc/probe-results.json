@@ -1,0 +1,245 @@
+{
+  "codexBin": "/Applications/Codex.app/Contents/Resources/codex",
+  "codexHome": "/tmp/codex-image-poc/home",
+  "version": "codepilot-image-poc/0.142.0-alpha.1 (Mac OS 26.5.0; arm64) ghostty/1.3.2-HEAD-_05c3e29 (codepilot-image-poc; 0.0.1)",
+  "auth": {
+    "authMethod": null,
+    "authToken": null,
+    "requiresOpenaiAuth": true
+  },
+  "threadId": "019ee0fd-63e6-7a23-ad41-0b4a279b3d86",
+  "probes": [
+    {
+      "candidate": "bogus-variant (enumerate valid types)",
+      "block": {
+        "type": "__codepilot_probe_unknown__"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: unknown variant `__codepilot_probe_unknown__`, expected one of `text`, `image`, `localImage`, `skill`, `mention`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: unknown variant `__codepilot_probe_unknown__`, expected one of `text`, `image`, `localImage`, `skill`, `mention`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "image + image_url(dataUrl)",
+      "block": {
+        "type": "image",
+        "image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: missing field `url`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: missing field `url`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "image + image_url{url}",
+      "block": {
+        "type": "image",
+        "image_url": {
+          "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+        }
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: missing field `url`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: missing field `url`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "image + image(dataUrl)",
+      "block": {
+        "type": "image",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: missing field `url`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: missing field `url`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "input_image + image_url(dataUrl)",
+      "block": {
+        "type": "input_image",
+        "image_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: unknown variant `input_image`, expected one of `text`, `image`, `localImage`, `skill`, `mention`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: unknown variant `input_image`, expected one of `text`, `image`, `localImage`, `skill`, `mention`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "image + url(dataUrl)",
+      "block": {
+        "type": "image",
+        "url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQDJ/pLvAAAAAElFTkSuQmCC"
+      },
+      "outcome": {
+        "ok": true,
+        "result": {
+          "turn": {
+            "id": "019ee0fd-69de-7f42-b9c1-670e810f145f",
+            "items": [],
+            "itemsView": "notLoaded",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": null,
+            "completedAt": null,
+            "durationMs": null
+          }
+        }
+      },
+      "verdict": {
+        "accepted": true,
+        "why": "turn/start returned (turn started) → input schema accepted"
+      }
+    },
+    {
+      "candidate": "localImage + path",
+      "block": {
+        "type": "localImage",
+        "path": "/tmp/codex-image-poc/home/ws/probe.png"
+      },
+      "outcome": {
+        "ok": true,
+        "result": {
+          "turn": {
+            "id": "019ee0fd-6b0c-7ed1-b1e9-72f413d3e452",
+            "items": [],
+            "itemsView": "notLoaded",
+            "status": "inProgress",
+            "error": null,
+            "startedAt": null,
+            "completedAt": null,
+            "durationMs": null
+          }
+        }
+      },
+      "verdict": {
+        "accepted": true,
+        "why": "turn/start returned (turn started) → input schema accepted"
+      }
+    },
+    {
+      "candidate": "local_image + path",
+      "block": {
+        "type": "local_image",
+        "path": "/tmp/codex-image-poc/home/ws/probe.png"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: unknown variant `local_image`, expected one of `text`, `image`, `localImage`, `skill`, `mention`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: unknown variant `local_image`, expected one of `text`, `image`, `localImage`, `skill`, `mention`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    },
+    {
+      "candidate": "image + path",
+      "block": {
+        "type": "image",
+        "path": "/tmp/codex-image-poc/home/ws/probe.png"
+      },
+      "outcome": {
+        "ok": false,
+        "error": "Invalid request: missing field `url`",
+        "rpc": {
+          "code": -32600,
+          "message": "Invalid request: missing field `url`"
+        }
+      },
+      "verdict": {
+        "accepted": false,
+        "why": "params/deserialize error → image block shape rejected by schema"
+      }
+    }
+  ],
+  "threadStartRaw": {
+    "thread": {
+      "id": "019ee0fd-63e6-7a23-ad41-0b4a279b3d86",
+      "sessionId": "019ee0fd-63e6-7a23-ad41-0b4a279b3d86",
+      "forkedFromId": null,
+      "parentThreadId": null,
+      "preview": "",
+      "ephemeral": false,
+      "modelProvider": "openai",
+      "createdAt": 1781891163,
+      "updatedAt": 1781891163,
+      "recencyAt": 1781891163,
+      "status": {
+        "type": "idle"
+      },
+      "path": "/private/tmp/codex-image-poc/home/sessions/2026/06/20/rollout-2026-06-20T01-46-03-019ee0fd-63e6-7a23-ad41-0b4a279b3d86.jsonl",
+      "cwd": "/tmp/codex-image-poc/home/ws",
+      "cliVersion": "0.142.0-alpha.1",
+      "source": "vscode",
+      "threadSource": null,
+      "agentNickname": null,
+      "agentRole": null,
+      "gitInfo": null,
+      "name": null,
+      "turns": []
+    },
+    "model": "gpt-5.5",
+    "modelProvider": "openai",
+    "serviceTier": null,
+    "cwd": "/tmp/codex-image-poc/home/ws",
+    "runtimeWorkspaceRoots": [
+      "/tmp/codex-image-poc/home/ws"
+    ],
+    "instructionSources": [],
+    "approvalPolicy": "on-request",
+    "approvalsReviewer": "user",
+    "sandbox": {
+      "type": "readOnly",
+      "networkAccess": false
+    },
+    "activePermissionProfile": {
+      "id": ":read-only",
+      "extends": null
+    },
+    "reasoningEffort": null
+  }
+}

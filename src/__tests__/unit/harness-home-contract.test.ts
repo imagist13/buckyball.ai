@@ -63,7 +63,7 @@ describe('Harness Home contract', () => {
     assert.doesNotMatch(sources, /\.(?:claude|codex)(?:[\\/`'"]|$)/i);
     assert.doesNotMatch(
       sources,
-      /readonly\s+(?:claude_code|bbagent|codex_runtime)\s*:/,
+      /readonly\s+(?:claude_code|codepilot_runtime|codex_runtime)\s*:/,
     );
   });
 

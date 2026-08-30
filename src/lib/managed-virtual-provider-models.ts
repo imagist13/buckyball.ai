@@ -7,7 +7,7 @@ import { getXaiOAuthStatus } from './xai-oauth-manager';
  * Static models reachable through the legacy ChatGPT Plus/Pro OAuth login.
  *
  * This list necessarily lags upstream. Do not add a model merely because it
- * exists in Codex Account: an entry here is a claim that buckyball.ai's separate
+ * exists in Codex Account: an entry here is a claim that CodePilot's separate
  * `openai-oauth` transport can serve it.
  */
 export const OPENAI_OAUTH_CATALOG_MODELS: CatalogModel[] = [
@@ -58,7 +58,7 @@ const MANAGED_VIRTUAL_PROVIDER_DEFINITIONS: Record<
     providerType: 'openai-oauth',
     presetKey: 'openai-oauth',
     protocol: 'openai-compatible',
-    compat: 'bbagent_only',
+    compat: 'codepilot_only',
     models: OPENAI_OAUTH_CATALOG_MODELS,
   },
   'xai-oauth': {
@@ -67,7 +67,7 @@ const MANAGED_VIRTUAL_PROVIDER_DEFINITIONS: Record<
     providerType: 'xai-oauth',
     presetKey: 'xai-oauth',
     protocol: 'xai',
-    compat: 'bbagent_only',
+    compat: 'codepilot_only',
     models: XAI_OAUTH_CATALOG_MODELS,
   },
 };

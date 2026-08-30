@@ -1,29 +1,29 @@
 /**
- * Phase 3 Step 4 �?architecture-level invariants.
+ * Phase 3 Step 4 — architecture-level invariants.
  *
  * Source-grep contracts for the non-obvious architectural decisions
  * the v2 plan locked down. Each invariant maps to a specific user
  * fix from the v2 review:
  *
- *   #1 �?heartbeat is `kind='ai_task' + source='assistant_heartbeat'`,
+ *   #1 — heartbeat is `kind='ai_task' + source='assistant_heartbeat'`,
  *        not a new kind. (also covered in agent-task-runner.test.ts;
  *        here we pin the call sites that wire it)
  *
- *   #2 �?waiting_for_permission has no durable resume in v1: code
+ *   #2 — waiting_for_permission has no durable resume in v1: code
  *        does NOT contain phrases like "agent resume" or "continue
  *        stream from checkpoint". The state exists; the auto-resume
  *        path does not.
  *
- *   #3 �?`task_run_logs.status` migration does NOT use `ALTER CHECK`
+ *   #3 — `task_run_logs.status` migration does NOT use `ALTER CHECK`
  *        (SQLite would reject; the v2 plan dropped this approach in
  *        favor of app-layer validation).
  *
- *   #4 �?`messages.task_run_id` is the marker association mechanism.
+ *   #4 — `messages.task_run_id` is the marker association mechanism.
  *        Source-grep ensures no `[__TASK_RUN__]` / `[__HEARTBEAT_RUN__]`
  *        sentinel strings exist anywhere in the codebase, AND the
  *        prompt builder doesn't read `task_run_id`.
  *
- *   #5 �?Task-bound chat sessions default to hidden in the main list.
+ *   #5 — Task-bound chat sessions default to hidden in the main list.
  *        `/api/chat/sessions` GET filters `source='user'` by default.
  */
 
@@ -60,7 +60,7 @@ function* walkSrc(dir: string): Generator<string> {
   }
 }
 
-describe('Phase 3 Step 4 �?architecture invariants', () => {
+describe('Phase 3 Step 4 — architecture invariants', () => {
   // ── #1 / heartbeat is source-driven ────────────────────────────
   it('ScheduledTaskKind union has only `reminder | ai_task` (no `heartbeat` kind)', () => {
     const types = read('types/index.ts');
@@ -69,7 +69,7 @@ describe('Phase 3 Step 4 �?architecture invariants', () => {
     const union = m![1];
     assert.match(union, /['"]reminder['"]/, 'ScheduledTaskKind must include `"reminder"`');
     assert.match(union, /['"]ai_task['"]/, 'ScheduledTaskKind must include `"ai_task"`');
-    assert.doesNotMatch(union, /['"]heartbeat['"]/, 'ScheduledTaskKind must NOT include `"heartbeat"` �?heartbeat is identified by `source`, not `kind`');
+    assert.doesNotMatch(union, /['"]heartbeat['"]/, 'ScheduledTaskKind must NOT include `"heartbeat"` — heartbeat is identified by `source`, not `kind`');
   });
 
   it('ScheduledTaskSource union is exactly `user | assistant_heartbeat`', () => {
@@ -84,7 +84,7 @@ describe('Phase 3 Step 4 �?architecture invariants', () => {
   // ── #2 / no durable resume language ─────────────────────────────
   it('agent-task-runner does NOT claim to resume permission-paused runs', () => {
     const code = stripComments(read('lib/agent-task-runner.ts'));
-    // Phrases that would imply durable resume �?explicitly forbidden
+    // Phrases that would imply durable resume — explicitly forbidden
     // by user fix #2. v1 only supports re-run from scratch (new
     // runId) or abandon (cancelled). Comments are stripped first so
     // the docstring's explanation of WHY we don't do this isn't
@@ -97,7 +97,7 @@ describe('Phase 3 Step 4 �?architecture invariants', () => {
       assert.doesNotMatch(
         code,
         phrase,
-        `agent-task-runner code must not suggest durable resume (matched ${phrase}) �?v1 only supports manual "Re-run" / "Abandon" from the user side.`,
+        `agent-task-runner code must not suggest durable resume (matched ${phrase}) — v1 only supports manual "Re-run" / "Abandon" from the user side.`,
       );
     }
   });
@@ -112,7 +112,7 @@ describe('Phase 3 Step 4 �?architecture invariants', () => {
     assert.doesNotMatch(
       dbCode,
       /ALTER\s+TABLE\s+task_run_logs[\s\S]{0,200}CHECK/i,
-      'db.ts must not try to ALTER a CHECK constraint on task_run_logs �?SQLite does not support this. Use app-layer validation (see ALLOWED_TASK_RUN_STATUSES).',
+      'db.ts must not try to ALTER a CHECK constraint on task_run_logs — SQLite does not support this. Use app-layer validation (see ALLOWED_TASK_RUN_STATUSES).',
     );
     // And we DO have the app-layer whitelist.
     assert.match(
@@ -158,7 +158,7 @@ describe('Phase 3 Step 4 �?architecture invariants', () => {
     assert.doesNotMatch(
       marker,
       /useEffect[\s\S]*?fetch\(/,
-      'TaskRunMarker must NOT fetch inside useEffect �?that would be N+1 per marker. Inline-join via MessagesResponse.taskRuns instead.',
+      'TaskRunMarker must NOT fetch inside useEffect — that would be N+1 per marker. Inline-join via MessagesResponse.taskRuns instead.',
     );
   });
 

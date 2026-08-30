@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } fr
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { X, Check, SpinnerGap } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { exportHtmlAsLongShot, ArtifactExportError } from "@/lib/artifact-export";
 import { archiveHtmlAsset } from "@/lib/archive-html-asset-client";
 import { Button } from "@/components/ui/button";
@@ -57,12 +57,13 @@ import {
   remapMutationPath,
   type FileMutationTransaction,
 } from "@/lib/file-mutation";
-// MarkdownOutlineRail removed from the UI per Codex UX feedback â?// outline rail ate too much sidebar width and its partial background
+// MarkdownOutlineRail removed from the UI per Codex UX feedback —
+// outline rail ate too much sidebar width and its partial background
 // looked broken. The post-render heading + callout helpers stay
 // imported because the rendered Markdown still uses them.
 import { injectHeadingIds, applyCalloutClasses } from "@/components/editor/MarkdownOutlineRail";
 import { MarkdownFrontmatterPanel } from "@/components/editor/MarkdownFrontmatterPanel";
-// Phase 4 UX â?PresentationPicker no longer mounted in this surface;
+// Phase 4 UX — PresentationPicker no longer mounted in this surface;
 // the explicit HTML artifact action is a one-click save button.
 // import { PresentationPicker } from "@/components/editor/PresentationPicker";
 
@@ -98,7 +99,7 @@ const DataTableViewer = dynamic(
   { ssr: false, loading: () => <div className="flex h-full items-center justify-center py-12"><SpinnerGap size={20} className="animate-spin text-muted-foreground" /></div> },
 );
 
-// Lazy-load Streamdown and plugins â?only loaded when rendered markdown is needed
+// Lazy-load Streamdown and plugins — only loaded when rendered markdown is needed
 let _StreamdownComponent: typeof import("streamdown").Streamdown | null = null;
 let _streamdownPlugins: Record<string, unknown> | null = null;
 let _streamdownPromise: Promise<void> | null = null;
@@ -113,7 +114,7 @@ function loadStreamdown(): Promise<void> {
     import("@/components/ai-elements/code-block"),
   ]).then(([sd, cjkMod, mathMod, mermaidMod, codeBlockMod]) => {
     _StreamdownComponent = sd.Streamdown;
-    // Phase 5.5 â?rendered-markdown preview uses the same shared code
+    // Phase 5.5 — rendered-markdown preview uses the same shared code
     // plugin the chat path uses (createSharedCodePlugin from
     // code-block.tsx). Previous implementation imported @streamdown/code
     // and used its default plugin, which maintains its own unbounded
@@ -211,11 +212,11 @@ function isMarkdown(filePath: string): boolean {
 
 /**
  * Whether the file's extension already implies the language label
- * the preview API reports. Used to suppress the redundant `Â· {lang}`
+ * the preview API reports. Used to suppress the redundant `· {lang}`
  * suffix in the breadcrumb when, e.g., `notes.md` would otherwise
- * render as `â?notes.md Â· markdown`.
+ * render as `…/notes.md · markdown`.
  *
- * Mapping is one-way (extension â?expected language string). Unknown
+ * Mapping is one-way (extension → expected language string). Unknown
  * extensions fall through to false, so we keep showing the language
  * when it adds information (e.g. for log files where the parser
  * picked plain-text).
@@ -257,12 +258,12 @@ const PREVIEW_DEFAULT_WIDTH = 480;
 /**
  * localStorage key for the persistent Interactive Scripts mode
  * preference (Phase 4 UX v6). Stored value: `"static"` or
- * `"interactive"`. Missing or other â?default to interactive.
+ * `"interactive"`. Missing or other → default to interactive.
  */
 const INTERACTIVE_SCRIPTS_PREF_KEY = "codepilot.preview.interactiveScripts";
 
 /**
- * Markdown / Artifact / file preview surface â?rendered exclusively
+ * Markdown / Artifact / file preview surface — rendered exclusively
  * as a Workspace Sidebar dynamic Tab. The shell owns resize and the
  * Tab strip's X owns close, so this component renders just the
  * header (filename / breadcrumb / view-mode toggle / save / copy /
@@ -287,7 +288,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   const [width, setWidth] = useState(PREVIEW_DEFAULT_WIDTH);
   const { registerParticipant } = useFileMutation();
 
-  // Phase 4 Phase 1 â?trust-tier derivation.
+  // Phase 4 Phase 1 — trust-tier derivation.
   // Default missing `trust` to 'workspace' so pre-Phase-4 callers and
   // persisted Tabs keep working without an upgrade step. Fresh code
   // sets trust explicitly via classifyPath().
@@ -303,7 +304,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   // baseDir the fetch must use. Workspace tier passes the working
   // directory; user-selected tier intentionally leaves baseDir undefined
   // so /api/files/preview falls back to homeDir scoping. We never trust
-  // workingDirectory context when the source is external â?that would
+  // workingDirectory context when the source is external — that would
   // try to scope a /Users/foo/Desktop/x.md path to the project root and
   // fail the safety check.
   const sourceBaseDir =
@@ -313,18 +314,18 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         : previewSource.baseDir
       : undefined;
 
-  // Reload pulse â?incremented when the file-changed listener (or the
-  // disk-conflict "éæ°è½½å¥" button) wants the load effect to re-run
+  // Reload pulse — incremented when the file-changed listener (or the
+  // disk-conflict "重新载入" button) wants the load effect to re-run
   // against the same filePath. Wiring it through a state counter is
   // cleaner than refetching inline because the existing useEffect
   // already owns "show spinner, clear stale state, race-cancel" logic.
   const [reloadTick, setReloadTick] = useState(0);
-  // Conflict banner state â?set when a file-changed event arrives while
+  // Conflict banner state — set when a file-changed event arrives while
   // the editor buffer is dirty. We don't silently clobber edits; the
   // user picks between [Reload from disk] and [Keep my edits].
   const [diskConflict, setDiskConflict] = useState(false);
 
-  // Phase 4 UX v6 â?Interactive Scripts is a PERSISTENT user
+  // Phase 4 UX v6 — Interactive Scripts is a PERSISTENT user
   // preference, not a per-file flag. Default = true (interactive)
   // because that's the common case for previewing AI-generated
   // pages with scripts. If the user explicitly flips to "Static"
@@ -353,14 +354,14 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             resolved ? "interactive" : "static",
           );
         } catch {
-          // ignore â?storage not available
+          // ignore — storage not available
         }
       }
       return resolved;
     });
   }, []);
 
-  // Phase 4 UX â?quiet refresh feedback. Set true for ~1.5s when a
+  // Phase 4 UX — quiet refresh feedback. Set true for ~1.5s when a
   // same-file file-changed event successfully fetched new content and
   // the content actually differed from what we had. The Markdown
   // toolbar surfaces an "Updated" badge that fades out.
@@ -381,20 +382,20 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
 
   const filePath = previewFile || "";
 
-  // Phase 4 UX v6 â?interactive-scripts is now a PERSISTENT user
+  // Phase 4 UX v6 — interactive-scripts is now a PERSISTENT user
   // preference (default: enabled). The previous per-file reset was
   // removed: switching files no longer zeroes the choice, and the
   // setting survives reloads via localStorage (see
   // INTERACTIVE_SCRIPTS_PREF_KEY).
 
-  // Phase 4 Phase 1.5 â?same-origin preview URL for HTML files.
+  // Phase 4 Phase 1.5 — same-origin preview URL for HTML files.
   // null for non-HTML, agent-referenced (no fetch until confirm), or
   // missing scope info. Workspace tier encodes baseDir into the URL;
   // user-selected tier uses the home scope.
   //
   // `interactive` query controls the document CSP at the route level
   // (subresources don't carry it but their behaviour is governed by
-  // the document's CSP anyway). `_t` is a reload nonce â?bumping it
+  // the document's CSP anyway). `_t` is a reload nonce — bumping it
   // changes the iframe src so the browser re-fetches the document
   // and all its subresources, which is how a sibling-resource edit
   // (./style.css, ./logo.svg) propagates into the live preview.
@@ -418,7 +419,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         );
       }
     } catch {
-      // Non-absolute path or other URL-building error â?fall back to
+      // Non-absolute path or other URL-building error → fall back to
       // null, which makes the rendered branch use the safe srcDoc
       // path (strict sandbox, no relative resources).
       return null;
@@ -426,7 +427,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     return null;
   }, [previewSource, sourceTrust, sourceBaseDir, isAgentReferenced, interactiveScripts, reloadTick]);
 
-  // Phase 4 UX â?quiet refresh discipline. Distinguish "filePath
+  // Phase 4 UX — quiet refresh discipline. Distinguish "filePath
   // changed" (cold load: clear state, show loading, fetch) from
   // "same-file reloadTick bump" (warm refresh: background fetch,
   // content-equality short-circuit, no spinner, no DOM blank).
@@ -451,7 +452,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
 
     const isFilePathChange = prevFilePathRef.current !== filePath;
     if (isFilePathChange) {
-      // Cold load â?flip to loading state synchronously so the
+      // Cold load — flip to loading state synchronously so the
       // SandpackPreview / RenderedView branches don't see stale
       // (newPath + oldContent) pairs. See the loadedPath anchor +
       // freshPreview gating below.
@@ -482,17 +483,18 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         const data = await res.json();
         if (cancelled) return;
         const newPreview = data.preview as FilePreviewType;
-        // Phase 4 UX â?content equality short-circuit on warm refresh.
+        // Phase 4 UX — content equality short-circuit on warm refresh.
         // If the route returned bytes identical to what we already
         // have rendered, swallow the update entirely. No setPreview
-        // call â?no React reconciliation â?no DOM swap â?no flash.
+        // call → no React reconciliation → no DOM swap → no flash.
         // Cold loads always commit (preview was null).
         setPreview((prev) => {
           if (!isFilePathChange && prev && prev.content === newPreview.content) {
             return prev;
           }
           if (!isFilePathChange) {
-            // Warm refresh that actually advanced the content â?            // surface a brief "Updated" indicator in the Markdown
+            // Warm refresh that actually advanced the content —
+            // surface a brief "Updated" indicator in the Markdown
             // toolbar. Cold loads don't trigger the flash; the user
             // already knows they opened a new file.
             triggerUpdatedFlash();
@@ -507,7 +509,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         // stale), `loadedMatchesActive` stays false, `freshPreview`
         // stays null, and the rendered view sits on the fallback
         // spinner forever. The seed effect downstream calls
-        // setLoadedPath only on preview-content/path changes â?so
+        // setLoadedPath only on preview-content/path changes — so
         // when we short-circuit setPreview, the seed effect never
         // fires, and loadedPath would never catch up without this
         // explicit advance.
@@ -522,8 +524,8 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         // `isFilePathChange`, which races against StrictMode's
         // double-effect cycle: the first run sets
         // prevFilePathRef.current = filePath, the second run sees
-        // isFilePathChange = false and skips clearing â?loading
-        // stays true â?spinner forever, even though the data
+        // isFilePathChange = false and skips clearing — loading
+        // stays true → spinner forever, even though the data
         // arrived. For warm refresh `setLoading(false)` is a no-op
         // (loading was never set true), so unconditional clearing
         // is safe both ways.
@@ -570,14 +572,14 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     resolve: () => void;
   } | null>(null);
   const [mutationResumeTick, setMutationResumeTick] = useState(0);
-  // Phase 5.6 â?the "loaded path" anchor for every stale-content check in
+  // Phase 5.6 — the "loaded path" anchor for every stale-content check in
   // this panel. Populated when loadPreview successfully seats a new
   // preview.content; cleared synchronously on filePath changes before
   // the fetch starts. Every consumer that derives from preview.content
   // (editor buffer, export button, source/render fallbacks) gates on
   // `loadedPath === previewSource.filePath` so a freshly-mounted
   // previewSource can never be paired with the previous file's
-  // content â?catches autosave cross-file writes, stale Sandpack first
+  // content — catches autosave cross-file writes, stale Sandpack first
   // frames, and export-button-during-switch races in one place.
   const [loadedPath, setLoadedPath] = useState<string | null>(null);
   const loadedMatchesActive =
@@ -611,8 +613,8 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
 
   // Whether the current preview source is an HTML document we can ship
   // to the Phase 3 long-shot IPC. Lit up when:
-  //   â?inline-html kind (html lives on the source itself), or
-  //   â?file kind, extension is HTML, AND the loaded-path anchor
+  //   • inline-html kind (html lives on the source itself), or
+  //   • file kind, extension is HTML, AND the loaded-path anchor
   //     confirms preview.content belongs to the active filePath.
   // The second clause prevents a stale Export click during a mid-switch
   // frame from shipping the outgoing file's content under the incoming
@@ -644,7 +646,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     if (mutationGuardRef.current) return Promise.resolve(false);
     if (!editDirty || savingEdit) return Promise.resolve(true);
     if (previewSource?.kind !== "file") return Promise.resolve(false);
-    // Second hard gate â?editDirty already bakes this in, but the save
+    // Second hard gate — editDirty already bakes this in, but the save
     // path is sensitive enough that duplicating the check against
     // loadedPath is cheap insurance for future refactors.
     if (loadedPath !== previewSource.filePath) return Promise.resolve(false);
@@ -675,7 +677,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         // Only mark clean if the current previewSource is still the file
         // we were saving. A mid-save file switch would otherwise leave
         // savedContent pointing at content that belongs to the previous
-        // file â?benign for persistence (the target file on disk is
+        // file — benign for persistence (the target file on disk is
         // correct) but would mislabel dirty state on the new file.
         setSavedContent((prev) =>
           previewPathRef.current === targetPath ? editContent : prev,
@@ -706,14 +708,14 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   // long as the buffer is dirty, we're not already saving, and the
   // buffer still belongs to the active file. `editDirty` already has
   // the editContentFile === previewSource.filePath gate baked in, so
-  // switching files short-circuits autosave immediately â?no race
+  // switching files short-circuits autosave immediately — no race
   // where the new filePath + old content could land in /api/files/write.
   useEffect(() => {
     if (!editDirty || savingEdit) return;
     if (previewSource?.kind !== "file") return;
     if (!isEditable(filePath)) return;
     // Phase 4: readonly sources never autosave. Mirror of the explicit
-    // gate inside handleSaveEdit â?without this we'd queue a save timer
+    // gate inside handleSaveEdit — without this we'd queue a save timer
     // that fires into the readonly guard and silently no-ops.
     if (isReadonlySource) return;
     if (mutationGuardRef.current) return;
@@ -801,13 +803,13 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   // Phase 4: listen for codepilot:file-changed events.
   //
   // Match rules:
-  //  1. The event's paths include the active filePath itself â?handle
+  //  1. The event's paths include the active filePath itself → handle
   //     same-file change (existing contract). For editable files with
   //     a dirty buffer this surfaces the conflict banner; otherwise
   //     it bumps reloadTick so the load effect re-fetches.
   //  2. The active source is an HTML file with a same-origin preview
   //     URL AND a changed path is a static-resource dependency under
-  //     the HTML's reload scope (see shouldReloadHtmlForPath) â?bump
+  //     the HTML's reload scope (see shouldReloadHtmlForPath) → bump
   //     reloadTick. The bump changes the iframe `src` (via the URL
   //     reloadNonce param), forcing a browser-level reload of the
   //     document AND every relative subresource it pulls. Without
@@ -815,10 +817,10 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   //     open would silently leave the live preview stale.
   //
   // Reload scope:
-  //   - workspace HTML â?workspace baseDir (the broadest reasonable
+  //   - workspace HTML → workspace baseDir (the broadest reasonable
   //     floor; CSS / images can legitimately live anywhere in the
   //     project root)
-  //   - user-selected (external) HTML â?the active HTML's own
+  //   - user-selected (external) HTML → the active HTML's own
   //     directory. sourceBaseDir is undefined for user-selected, so
   //     using it directly would silently skip the dep-reload path for
   //     every external HTML. Codex Round 2 flagged exactly this gap.
@@ -828,7 +830,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
   //
   // HTML files don't have an editable buffer (EDITABLE_EXTENSIONS is
   // Markdown-only), so the dirty-buffer conflict path doesn't apply
-  // to the HTML-dep case â?we go straight to reload.
+  // to the HTML-dep case — we go straight to reload.
   //
   // Self-saves are skipped via originId.
   const htmlDepScope = useMemo<string | null>(() => {
@@ -841,13 +843,13 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     return null;
   }, [previewSource, sourceTrust, sourceBaseDir]);
 
-  // Phase 4 UX â?HTML dep-reload debounce. When the user saves a
+  // Phase 4 UX — HTML dep-reload debounce. When the user saves a
   // workspace that triggers multiple file-changed events in rapid
   // succession (CSS + JS + image touch each fire separately), we
   // coalesce them into a single reload nonce bump so the iframe
   // doesn't strobe through 3-4 reloads in 100ms.
   //
-  // Markdown self-file changes still bump immediately â?the quiet
+  // Markdown self-file changes still bump immediately — the quiet
   // refresh logic above absorbs the cost without a visible flash, so
   // there's no benefit to delaying user-perceptible content updates.
   const htmlReloadDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -908,7 +910,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     setExporting(true);
     try {
       // Compute basename locally so this callback doesn't depend on the
-      // `fileName` variable declared later in the component â?avoids
+      // `fileName` variable declared later in the component — avoids
       // a TDZ (let/const before initialization) error at mount time.
       const virtualName =
         previewSource?.kind === 'inline-html' ? previewSource.virtualName ?? 'preview.html' :
@@ -923,8 +925,8 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
       if (err instanceof ArtifactExportError) {
         // Surface the code so users know whether it was a transient busy
         // state or a hard limit. Full toast/i18n wiring is Phase 3
-        // polish â?for now, alert() is acceptable for this short flow.
-        alert(`Export failed: ${err.code} â?${err.message}`);
+        // polish — for now, alert() is acceptable for this short flow.
+        alert(`Export failed: ${err.code} — ${err.message}`);
       } else {
         alert(`Export failed: ${String(err)}`);
       }
@@ -968,7 +970,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     t,
   ]);
 
-  // No `handleClose` here â?the Workspace Sidebar Tab strip's X owns
+  // No `handleClose` here — the Workspace Sidebar Tab strip's X owns
   // close, and there's no panel chrome on this surface for the user
   // to close from.
 
@@ -1016,7 +1018,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     setPreviewSource(null);
   }, [setPreviewSource]);
 
-  // Reload from disk after a conflict banner â?drop the conflict flag
+  // Reload from disk after a conflict banner — drop the conflict flag
   // and bump reloadTick so the load effect runs. Keeping the buffer
   // is just clearing the flag; editDirty stays true so the next
   // file-changed event re-opens the banner.
@@ -1041,7 +1043,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     filePath.split("/").pop() || filePath;
 
   const breadcrumb = useMemo(() => {
-    // Inline sources have no filesystem path â?show a zero-width breadcrumb
+    // Inline sources have no filesystem path — show a zero-width breadcrumb
     // so the row layout stays consistent without misleading virtual paths.
     if (previewSource && previewSource.kind !== "file") return "";
     const segments = filePath.split("/").filter(Boolean);
@@ -1062,15 +1064,15 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
       : `/api/files/raw?path=${encodeURIComponent(filePath)}`
     : '';
 
-  // Outer wrapper â?fills the Workspace Sidebar's Tab body. Resize +
+  // Outer wrapper — fills the Workspace Sidebar's Tab body. Resize +
   // width are owned by the sidebar shell so we don't ResizeHandle here.
   //
-  // NOTE (Phase 4 UX v6 â?flicker root cause): this used to be defined
+  // NOTE (Phase 4 UX v6 — flicker root cause): this used to be defined
   // as `const Outer = ({ children }) => (...)` INSIDE the function
   // body, which created a fresh component identity on every render.
   // React sees a different component type per render and tears down
-  // + remounts the entire subtree â?including the Markdown body
-  // streamdown tree â?producing a visible flash on every quiet
+  // + remounts the entire subtree — including the Markdown body
+  // streamdown tree — producing a visible flash on every quiet
   // refresh. The fix is to use a plain JSX element below (no
   // intermediate component). Same DOM, stable identity, no remount.
 
@@ -1082,7 +1084,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
     const backlink = previewSource.sourceBacklink;
     if (!backlink) return;
     try {
-      // Phase 4 P2.2 â?use the source's original baseDir via the
+      // Phase 4 P2.2 — use the source's original baseDir via the
       // shared builder. For workspace sources the stored baseDir is
       // used; for user-selected externals baseDir is intentionally
       // omitted so the route falls back to home scoping (matching
@@ -1107,7 +1109,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
         sourceBacklink: backlink,
       });
     } catch {
-      // Silent â?refresh failure leaves the existing artifact in place.
+      // Silent — refresh failure leaves the existing artifact in place.
     }
   }, [previewSource, workingDirectory, setPreviewSource]);
   const sourceBacklink =
@@ -1115,25 +1117,25 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
-      {/* Header â?Luma style (April 2026):
+      {/* Header — Luma style (April 2026):
           - Single row instead of two (filename row + breadcrumb row).
             Filename + dimmer breadcrumb stack vertically inside one
             min-w-0 column so long paths truncate without pushing the
             action buttons off-screen.
-          - NO `border-b` here â?the Workspace Sidebar TabBar above
+          - NO `border-b` here — the Workspace Sidebar TabBar above
             this header already draws a divider. A second border 8px
             below the first looked cluttered (user feedback). The
             header just floats on the same `bg-background` surface as
             the content, so the only horizontal rule in the right rail
             is the one under the Tab strip.
           - Action buttons all `text-muted-foreground/80 hover:text-foreground
-            hover:bg-muted/50` â?same hover idiom as the Tab strip and
+            hover:bg-muted/50` — same hover idiom as the Tab strip and
             chat composer (no border, no fill, surfaces only on hover). */}
       <div className="flex h-12 shrink-0 items-center gap-1 border-b border-border/40 bg-background px-3 pb-1">
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-xs font-medium text-foreground flex items-center gap-1.5">
             <span className="truncate">{fileName}</span>
-            {/* Phase 4: external readonly chip â?surfaces when the source's
+            {/* Phase 4: external readonly chip — surfaces when the source's
                 trust tier is user-selected (or readonly is otherwise set),
                 so the user can see at a glance that this file isn't in
                 the workspace and the editor surface is intentionally
@@ -1147,7 +1149,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
                 {t("filePreview.external.chip")}
               </span>
             )}
-            {/* Phase 4 UX v5 â?"å·²æ´æ? badge sits next to the
+            {/* Phase 4 UX v5 — "已更新" badge sits next to the
                 filename, NOT between the Select and the view-mode
                 Tabs. Same pill idiom as the external chip but in
                 emerald; fades in for ~1.5s after a quiet refresh
@@ -1165,7 +1167,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             </span>
           </p>
           {breadcrumb && (
-            // Phase 4 UX v2 â?cap breadcrumb width so long absolute
+            // Phase 4 UX v2 — cap breadcrumb width so long absolute
             // paths don't push the action controls off the right
             // edge. `truncate` clips with an ellipsis; the hover
             // title surfaces the full path when needed.
@@ -1174,9 +1176,9 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
               title={breadcrumb}
             >
               {breadcrumb}
-              {/* Drop the `Â· {language}` suffix when the file's
+              {/* Drop the `· {language}` suffix when the file's
                   extension already implies the language. E.g. for
-                  `notes.md` we don't add `Â· markdown` â?that's
+                  `notes.md` we don't add `· markdown` — that's
                   redundant and eats horizontal space. Keep the
                   suffix for inline/unknown sources where the
                   filename doesn't disclose the language. */}
@@ -1184,7 +1186,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
               !isMedia &&
               freshPreview.language &&
               !filenameImpliesLanguage(filePath, freshPreview.language) ? (
-                <span className="ml-1.5 text-muted-foreground/40">Â· {freshPreview.language}</span>
+                <span className="ml-1.5 text-muted-foreground/40">· {freshPreview.language}</span>
               ) : null}
             </p>
           )}
@@ -1201,7 +1203,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
           />
         )}
 
-        {/* Save button â?only visible in edit mode. Mirrors the unsaved-
+        {/* Save button — only visible in edit mode. Mirrors the unsaved-
             dot + label affordance from SkillEditor so the two editing
             surfaces feel consistent. Cmd+S inside the editor triggers the
             same handler, so this is an alternate path for mouse users. */}
@@ -1232,7 +1234,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
           </>
         )}
 
-        {/* Phase 4.C â?Markdown source-backlink chip. When the active
+        {/* Phase 4.C — Markdown source-backlink chip. When the active
             preview is an inline-html artifact generated from a Markdown
             file, surface the source path + a refresh action so the user
             always knows the Markdown is authoritative and can re-render
@@ -1261,14 +1263,14 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
           </>
         )}
 
-        {/* Phase 4 UX v3 â?HTML interactive mode collapsed into a
+        {/* Phase 4 UX v3 — HTML interactive mode collapsed into a
             single Select instead of a separate chip + toggle button
-            (those were redundant â?both encoded the same state).
-            Default option is "éæ? (scripts off; https resources
+            (those were redundant — both encoded the same state).
+            Default option is "静态" (scripts off; https resources
             allowed for img/style/font/media); user can switch to
-            "äº¤äº" (scripts on; all https resources blocked to prevent
+            "交互" (scripts on; all https resources blocked to prevent
             URL-shaped exfiltration). The Select trigger itself
-            surfaces the current mode â?no second chip needed. */}
+            surfaces the current mode — no second chip needed. */}
         {htmlPreviewUrl && previewViewMode === "rendered" && (
           <Select
             value={interactiveScripts ? "interactive" : "static"}
@@ -1304,12 +1306,12 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             {copied ? (
               <Check size={14} className="text-status-success-foreground" />
             ) : (
-              <BuckyballIcon name="copy" size="sm" aria-hidden />
+              <CodePilotIcon name="copy" size="sm" aria-hidden />
             )}
           </Button>
         )}
 
-        {/* Long-shot export â?only surfaces when we have concrete HTML
+        {/* Long-shot export — only surfaces when we have concrete HTML
             to ship to the IPC. Markdown and Sandpack/JSX variants need
             a serialization step (Phase 3 follow-up). */}
         {exportableHtml && (
@@ -1325,7 +1327,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             {exporting ? (
               <SpinnerGap size={14} className="animate-spin" />
             ) : (
-              <BuckyballIcon name="image" size="sm" aria-hidden />
+              <CodePilotIcon name="image" size="sm" aria-hidden />
             )}
           </Button>
         )}
@@ -1357,21 +1359,21 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             ) : archiveState === 'archived' ? (
               <Check size={14} className="text-status-success-foreground" />
             ) : (
-              <BuckyballIcon name="archive" size="sm" aria-hidden />
+              <CodePilotIcon name="archive" size="sm" aria-hidden />
             )}
           </Button>
         )}
 
-        {/* No close button here â?the Tab strip's X owns close. */}
+        {/* No close button here — the Tab strip's X owns close. */}
       </div>
 
-      {/* Content â?dispatch on previewSource.kind. The file branch preserves
+      {/* Content — dispatch on previewSource.kind. The file branch preserves
           the pre-Phase-1.5 behavior (fetch via API + render via
           MediaView/RenderedView/SourceView). inline-html delegates to a
           sandboxed iframe. inline-jsx / inline-datatable render placeholders
           that Phase 2.1 / Phase 5.4 will fill in with real renderers. */}
       <div className="flex-1 min-h-0 overflow-auto">
-        {/* Phase 4: conflict banner â?sticks to the top of the content
+        {/* Phase 4: conflict banner — sticks to the top of the content
             region when a file-changed event arrived while the editor
             buffer was dirty. The body keeps the user's edits visible
             underneath; the banner only adds affordances for reload vs
@@ -1425,15 +1427,15 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
             filename={previewSource.virtualName ?? "table"}
           />
         ) : previewSource?.kind === "inline-json" ? (
-          // Phase 4.B â?JSON tree viewer for ```json code-fence Previews
+          // Phase 4.B — JSON tree viewer for ```json code-fence Previews
           // and any other inline-json source. Falls back to a syntax-
           // highlighted text view internally if the payload is malformed.
           <JsonTreeViewer text={previewSource.text} />
         ) : previewSource?.kind === "inline-diff" ? (
-          // Phase 4.B â?unified-diff viewer for ```diff code-fence Previews.
+          // Phase 4.B — unified-diff viewer for ```diff code-fence Previews.
           <DiffViewer diff={previewSource.diff} />
         ) : previewSource?.kind === "inline-markdown" ? (
-          // Phase 4.B â?Markdown content with no file source. Reuses the
+          // Phase 4.B — Markdown content with no file source. Reuses the
           // same rendering surface as file-kind Markdown but skips the
           // FrontmatterPanel + OutlineRail since chat-pasted snippets
           // typically don't carry frontmatter and the navigation rail
@@ -1484,7 +1486,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
           </>
         ) : (
           // When previewSource is a file but loadedPath hasn't caught up
-          // yet (mid-switch frame â?loading is already set true by the
+          // yet (mid-switch frame — loading is already set true by the
           // synchronous effect below, but React may render once more with
           // stale state between the event and the effect). Fall back to
           // the spinner instead of rendering stale content to the
@@ -1499,7 +1501,7 @@ export function PreviewPanel(_: { variant?: 'sidebar' } = {}) {
 }
 
 /**
- * View-mode toggle â?now a shadcn `Tabs` variant for visual
+ * View-mode toggle — now a shadcn `Tabs` variant for visual
  * consistency with the rest of the app (settings tabs, runtime
  * tabs, etc.). Same value contract as before:
  *  - editable files (.md/.mdx/.txt) show [Edit | Preview]
@@ -1520,10 +1522,10 @@ function ViewModeToggle({
   editable: boolean;
 }) {
   const { t } = useTranslation();
-  // Normalize legacy "source" on editable files â?"edit" so Tabs has
+  // Normalize legacy "source" on editable files → "edit" so Tabs has
   // a value to attach to.
   const tabValue = editable && value === "source" ? "edit" : value;
-  // Phase 4 UX v2 â?uses the Tabs primitive's built-in `size="sm"`
+  // Phase 4 UX v2 — uses the Tabs primitive's built-in `size="sm"`
   // (added to `src/components/ui/tabs.tsx` cva variants table).
   // No hand-rolled h-N / px-N / text-[Npx] overrides; the trigger
   // padding + text size live in the primitive.
@@ -1580,13 +1582,13 @@ function SourceView({ preview, isDark }: { preview: FilePreviewType; isDark: boo
 }
 
 /**
- * Inline HTML preview â?Phase 1.5 + Phase 4 CSP injection.
+ * Inline HTML preview — Phase 1.5 + Phase 4 CSP injection.
  *
  * Renders caller-provided HTML inside a fully sandboxed iframe with
  * `sandbox=""` (no scripts, no same-origin) AND a Round 4 CSP meta
  * injected into the document head. The route-served file previews
  * get their CSP via response headers; inline-html srcDoc didn't
- * inherit those, so a code-fence Preview / MarkdownâHTML artifact
+ * inherit those, so a code-fence Preview / Markdown→HTML artifact
  * / localhost redirector all needed the same protection in-band.
  * See `src/lib/inline-html-csp.ts` for the directive table.
  *
@@ -1618,14 +1620,14 @@ function InlineHtmlView({
  *
  * Shown when an AI tool reported writing or referencing a file that
  * lives outside the session's working directory. We don't auto-fetch
- * the bytes â?the path could be a sensitive location (~/.ssh, system
+ * the bytes — the path could be a sensitive location (~/.ssh, system
  * config) and the AI's mention alone isn't authorization. The user
  * sees the full path and explicitly confirms before the panel calls
  * /api/files/preview.
  *
- * Confirm â?caller probes the path. Files transition to user-selected
+ * Confirm → caller probes the path. Files transition to user-selected
  * (readonly); directories are revealed in the system file manager.
- * Cancel  â?caller clears the preview source, closing the rail entry.
+ * Cancel  → caller clears the preview source, closing the rail entry.
  */
 function AgentReferencedConfirm({
   filePath,
@@ -1637,10 +1639,10 @@ function AgentReferencedConfirm({
   onCancel: () => void;
 }) {
   const { t } = useTranslation();
-  // Phase 4 UX â?restructured as a permission gate with three distinct
+  // Phase 4 UX — restructured as a permission gate with three distinct
   // rows: title, full path, then source + permission chips, then
   // explicit "Open read-only" + Cancel buttons. The previous copy
-  // ("ç¡®è®¤æå¼") didn't tell the user what they were authorizing.
+  // ("确认打开") didn't tell the user what they were authorizing.
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
       <p className="text-sm font-medium text-foreground">
@@ -1687,13 +1689,13 @@ function InlinePlaceholder({ phase, kind }: { phase: string; kind: string }) {
         {kind} preview lands in {phase}
       </p>
       <p className="text-xs text-muted-foreground/60">
-        The data channel (PreviewSource â?PreviewPanel) is wired; renderer is pending.
+        The data channel (PreviewSource → PreviewPanel) is wired; renderer is pending.
       </p>
     </div>
   );
 }
 
-/** Direct media preview â?no API fetch needed */
+/** Direct media preview — no API fetch needed */
 function MediaView({ filePath, fileServeUrl }: { filePath: string; fileServeUrl: string }) {
   if (isImagePreview(filePath)) {
     return (
@@ -1743,7 +1745,7 @@ function RenderedView({
   content: string;
   filePath: string;
   /**
-   * Phase 4 Phase 1.5 â?when provided, the HTML branch loads from this
+   * Phase 4 Phase 1.5 — when provided, the HTML branch loads from this
    * same-origin route URL instead of `srcDoc={content}`. The browser
    * uses the URL as the document base, so relative resources
    * (`./style.css`, `<img src="logo.png">`) resolve back through the
@@ -1760,7 +1762,7 @@ function RenderedView({
    * read parent cookies, localStorage, or call other API routes.
    */
   interactiveScripts: boolean;
-  /** Phase 4.A â?optional anchor target. Heading slug or line marker;
+  /** Phase 4.A — optional anchor target. Heading slug or line marker;
    *  the Markdown branch scrolls to the matching heading after render. */
   anchor?: string;
   workingDirectory: string | null | undefined;
@@ -1778,7 +1780,7 @@ function RenderedView({
     // The interactive toggle gates allow-scripts; allow-forms is
     // bundled because forms-without-scripts is a common static-page
     // affordance the user already trusts when they click "enable
-    // scripts." Same-origin is NEVER added â?that's the load-bearing
+    // scripts." Same-origin is NEVER added — that's the load-bearing
     // security guarantee for this preview surface.
     const sandbox = interactiveScripts ? "allow-scripts allow-forms" : "";
     if (htmlPreviewUrl) {
@@ -1791,7 +1793,7 @@ function RenderedView({
         />
       );
     }
-    // Fallback path â?scope info is missing (agent-referenced or
+    // Fallback path — scope info is missing (agent-referenced or
     // build error). Show the raw HTML in a strict srcDoc so the user
     // can still see content; relative resources won't resolve but
     // that's the cost of not having an authorized scope.
@@ -1805,7 +1807,7 @@ function RenderedView({
     );
   }
 
-  // .jsx / .tsx â?Sandpack (React in iframe). See POC 0.5 for the s4
+  // .jsx / .tsx → Sandpack (React in iframe). See POC 0.5 for the s4
   // default-sandbox security posture and the upgrade path to s2 if
   // Phase 2.5 demands stricter iframe isolation.
   //
@@ -1816,7 +1818,7 @@ function RenderedView({
     return <SandpackPreview key={filePath} filePath={filePath} content={content} />;
   }
 
-  // .csv / .tsv â?DataTable viewer (Phase 5.4). Delimiter picked from
+  // .csv / .tsv → DataTable viewer (Phase 5.4). Delimiter picked from
   // the extension so tab-separated files get the right split behavior;
   // papaparse inside the viewer handles column detection.
   if (isDataTable(filePath)) {
@@ -1825,8 +1827,8 @@ function RenderedView({
     return <DataTableViewer key={filePath} csv={content} delimiter={delimiter} filename={basename} />;
   }
 
-  // Markdown / MDX â?Phase 4 data layer.
-  // Parse frontmatter â?strip from body; rewrite Obsidian-style
+  // Markdown / MDX — Phase 4 data layer.
+  // Parse frontmatter → strip from body; rewrite Obsidian-style
   // wikilinks and callouts before handing to streamdown; build an
   // outline from headings; inject heading ids after render so
   // anchor-jump + outline-rail clicks land precisely. The dispatcher
@@ -1853,7 +1855,7 @@ function RenderedView({
 }
 
 /**
- * Phase 4.A â?Markdown rendered view with frontmatter + outline +
+ * Phase 4.A — Markdown rendered view with frontmatter + outline +
  * wikilink + callout + heading-anchor support.
  *
  * Stages:
@@ -1891,7 +1893,7 @@ function MarkdownRenderedView({
   // Stage 1: frontmatter split.
   const { data: frontmatter, body } = useMemo(() => parseFrontmatter(content), [content]);
 
-  // Stages 2â? in one memo so we don't re-rewrite on every render.
+  // Stages 2–4 in one memo so we don't re-rewrite on every render.
   const { processedBody, outline } = useMemo(() => {
     const afterCallouts = rewriteCallouts(body);
     const afterWikilinks = rewriteWikilinks(afterCallouts);
@@ -1907,10 +1909,11 @@ function MarkdownRenderedView({
   // emits sentinel text in the first paragraph of each callout
   // blockquote that this pass converts into the styling class).
   //
-  // Phase 4 UX v5 â?useLayoutEffect (not useEffect) so the walks run
+  // Phase 4 UX v5 — useLayoutEffect (not useEffect) so the walks run
   // SYNCHRONOUSLY after React commits but BEFORE the browser paints.
   // With useEffect there's a frame where the new DOM is committed
-  // but heading ids / callout classes haven't been stamped yet â?  // that frame contributes to the quiet-refresh "flicker" because
+  // but heading ids / callout classes haven't been stamped yet —
+  // that frame contributes to the quiet-refresh "flicker" because
   // a callout block briefly renders as a plain blockquote before
   // its color class lands.
   useLayoutEffect(() => {
@@ -1920,7 +1923,7 @@ function MarkdownRenderedView({
 
   // Stage 7: scroll to anchor when present.
   //
-  // Phase 4 UX â?anchor jump fires only on (filePath Ã anchor) change,
+  // Phase 4 UX — anchor jump fires only on (filePath × anchor) change,
   // NOT on every processedBody change. Reason: quiet-refresh updates
   // re-run the rewriter + outline parser whenever AI edits the file,
   // which used to cause scrollIntoView to retrigger and yank the
@@ -1949,7 +1952,7 @@ function MarkdownRenderedView({
   }, [filePath, anchor]);
 
   // Wikilink click interception. Streamdown turns
-  // [[Foo]] â?<a href="#codepilot-wikilink-Foo">Foo</a> (fragment URL,
+  // [[Foo]] → <a href="#codepilot-wikilink-Foo">Foo</a> (fragment URL,
   // which streamdown's sanitizer allows). The browser would try to
   // scroll to an id of that name on the current page; we intercept
   // and route to setPreviewSource instead. Workspace-internal targets
@@ -2005,7 +2008,7 @@ function MarkdownRenderedView({
             plugins={_streamdownPlugins!}
             components={PREVIEW_MARKDOWN_COMPONENTS}
             linkSafety={{ enabled: false }}
-            // Phase 4 UX v5 â?mode="static" instead of the default
+            // Phase 4 UX v5 — mode="static" instead of the default
             // "streaming". Streaming mode wraps each parse cycle in
             // useTransition, which lets React keep showing the old
             // parsed blocks while the new ones are computed. For a
@@ -2024,13 +2027,13 @@ function MarkdownRenderedView({
   );
 }
 
-// MarkdownRenderedViewToolbar removed â?its Select moved into the
+// MarkdownRenderedViewToolbar removed — its Select moved into the
 // main panel header next to the view-mode Tabs, and the Updated
 // badge moved alongside it (Codex UX feedback: three stacked toolbar
 // rows looked busy in the narrow right rail).
 
 /**
- * Phase 4.A â?Add-to-chat affordance. Shown only when the user has a
+ * Phase 4.A — Add-to-chat affordance. Shown only when the user has a
  * non-empty text selection inside the markdown body. Click dispatches
  * the codepilot:add-to-chat event; MessageInput picks it up and
  * prefills the composer with a quoted blockquote + source path.
@@ -2111,7 +2114,7 @@ function closestHeading(node: Element | null | undefined): string | undefined {
 
 /**
  * Inline-markdown viewer for ```md/```markdown code-fence Previews.
- * No file scope â?no frontmatter / outline / wikilink resolution
+ * No file scope → no frontmatter / outline / wikilink resolution
  * (chat-pasted snippets typically don't carry any of those).
  */
 function InlineMarkdownView({ markdown }: { markdown: string }) {
@@ -2133,7 +2136,7 @@ function InlineMarkdownView({ markdown }: { markdown: string }) {
         className="size-full [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&_ul]:pl-6 [&_ol]:pl-6"
         plugins={_streamdownPlugins}
         components={PREVIEW_MARKDOWN_COMPONENTS}
-        // Phase 4 UX v5 â?mode="static" same reasoning as
+        // Phase 4 UX v5 — mode="static" same reasoning as
         // MarkdownRenderedView: code-fence Preview is a one-shot
         // snapshot, not a streaming AI turn, so the useTransition
         // deferral that the streaming default applies is just

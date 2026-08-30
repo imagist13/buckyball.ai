@@ -1,7 +1,7 @@
 /**
  * WeChat HTTP protocol client.
  *
- * Pure protocol layer â€?no business logic or state management.
+ * Pure protocol layer â€” no business logic or state management.
  * Derived from OpenClaw weixin plugin reference (protocol only, not runtime dependency).
  */
 
@@ -108,7 +108,7 @@ export async function getUpdates(
       timeoutMs + 5_000, // client timeout slightly longer than server timeout
     );
   } catch (err) {
-    // Timeout is normal for long-polling â€?return empty response
+    // Timeout is normal for long-polling â€” return empty response
     if (err instanceof Error && err.name === 'TimeoutError') {
       return { msgs: [], get_updates_buf: getUpdatesBuf };
     }
@@ -228,7 +228,7 @@ export async function sendTyping(
       CONFIG_TIMEOUT_MS,
     );
   } catch {
-    // Typing indicator is best-effort â€?never block the main flow
+    // Typing indicator is best-effort â€” never block the main flow
   }
 }
 
@@ -238,7 +238,7 @@ const QR_LOGIN_BASE_URL = 'https://ilinkai.weixin.qq.com';
 const QR_LOGIN_TIMEOUT_MS = 40_000;
 
 /**
- * Start QR code login â€?returns base64 QR image and qrcode identifier.
+ * Start QR code login â€” returns base64 QR image and qrcode identifier.
  */
 export async function startLoginQr(): Promise<QrCodeStartResponse> {
   const url = `${QR_LOGIN_BASE_URL}/ilink/bot/get_bot_qrcode?bot_type=3`;

@@ -140,7 +140,7 @@ test.describe('Chat UI Enhanced (V2)', () => {
     test('textarea renders with the default placeholder', async ({ page }) => {
       await goToChat(page);
       const input = chatInput(page);
-      // Placeholder is i18n-driven; the idle default is "Message Claudeâ€?
+      // Placeholder is i18n-driven; the idle default is "Message Claudeâ€¦"
       // in en and a Chinese equivalent in zh. Match leniently.
       const placeholder = await input.getAttribute('placeholder');
       expect(placeholder).toMatch(/message\s*claude/i);

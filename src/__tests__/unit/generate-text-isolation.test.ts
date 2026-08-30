@@ -10,7 +10,7 @@
  * skills, hooks and CLAUDE.md.
  *
  * So these cases assert the built `Options` object itself rather than the call
- * site's intent â€?a comment saying "no tools" is not evidence, the wire is.
+ * site's intent â€” a comment saying "no tools" is not evidence, the wire is.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ import {
 } from '../../lib/claude-client';
 import type { ResolvedProvider } from '../../lib/provider-resolver';
 
-/** A DB-backed provider resolution â€?settingSources ['user'], as production. */
+/** A DB-backed provider resolution â€” settingSources ['user'], as production. */
 const resolved = {
   provider: { id: 'provider-a', name: 'Vendor A' },
   protocol: 'anthropic',
@@ -43,7 +43,7 @@ function build(params: Parameters<typeof buildGenerateTextQueryOptions>[0]) {
   return buildGenerateTextQueryOptions(params, resolved, {}, new AbortController());
 }
 
-describe('generateTextViaSdk isolation â€?isolate: true', () => {
+describe('generateTextViaSdk isolation â€” isolate: true', () => {
   const opts = build({ ...base, isolate: true });
 
   it('disables built-in tools with `tools: []`, not just `allowedTools`', () => {
@@ -53,7 +53,7 @@ describe('generateTextViaSdk isolation â€?isolate: true', () => {
     assert.deepEqual(opts.allowedTools, [], 'allowedTools stays empty too, belt and braces');
   });
 
-  it('loads no setting sources â€?no user MCP, plugins, skills, hooks or CLAUDE.md', () => {
+  it('loads no setting sources â€” no user MCP, plugins, skills, hooks or CLAUDE.md', () => {
     // The resolver handed us ['user']; the isolated call must drop it. That one
     // layer is what pulls in the user's whole Claude Code environment.
     assert.deepEqual(resolved.settingSources, ['user'], 'precondition: resolver supplies user layer');
@@ -83,7 +83,7 @@ describe('generateTextViaSdk isolation â€?isolate: true', () => {
   });
 });
 
-describe('generateTextViaSdk isolation â€?legacy callers are untouched', () => {
+describe('generateTextViaSdk isolation â€” legacy callers are untouched', () => {
   // dashboard/refresh, cli-tools/describe and context-compressor all want the
   // normal Claude Code surface. Isolation is strictly opt-in.
   const opts = build({ ...base });
@@ -101,7 +101,7 @@ describe('generateTextViaSdk isolation â€?legacy callers are untouched', () => {
   });
 });
 
-describe('generateTextViaSdk isolation â€?reasoning policy reaches the subprocess env', () => {
+describe('generateTextViaSdk isolation â€” reasoning policy reaches the subprocess env', () => {
   it('keeps the original low-cost default for providers that can disable thinking', () => {
     const env = buildGenerateTextSdkEnv(
       { ...base, isolate: true, maxOutputTokens: 16 },

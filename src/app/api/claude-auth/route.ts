@@ -4,7 +4,7 @@ import path from 'path';
 import os from 'os';
 
 /**
- * GET /api/claude-auth â€?Check Claude Code login status.
+ * GET /api/claude-auth â€” Check Claude Code login status.
  *
  * Reads ~/.claude/.credentials to determine if the user is authenticated.
  * Returns { authenticated, email?, accountType? }.

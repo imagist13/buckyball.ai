@@ -5,13 +5,13 @@
  *
  * Why this hook exists separately from `useSearchParams`:
  *   - Next App Router's `useSearchParams` does NOT include `#fragment`.
- *   - The server never sees the hash â€?it's a client-only construct.
+ *   - The server never sees the hash â€” it's a client-only construct.
  *
  * Behavior:
  *   1. On mount, parse `window.location.hash` and adopt it if it's one
  *      of the allowed values; otherwise fall back to `defaultTab`.
  *   2. Switching the tab calls `history.replaceState` so we don't push
- *      a new entry per click â€?the back button still goes "back to
+ *      a new entry per click â€” the back button still goes "back to
  *      where you came from", not "back through your tab clicks".
  *   3. We listen for `hashchange` (browser back / forward, paste-link
  *      from another tab) and update the active tab accordingly.
@@ -49,8 +49,8 @@ export function useTabFromHash<T extends string>({
   // Mount: read hash; subscribe to subsequent hash changes (browser
   // back/forward + paste-link from another window).
   // Note: `history.replaceState` does NOT fire `hashchange` per spec,
-  // so an internal setTab â†?replaceState won't bounce back here. We
-  // therefore don't need any "ignore self-trigger" flag â€?earlier
+  // so an internal setTab â†’ replaceState won't bounce back here. We
+  // therefore don't need any "ignore self-trigger" flag â€” earlier
   // versions had one and silently swallowed the user's first real
   // back/forward after a click. (Phase 2D.4 P2 fix, 2026-05-01.)
   useEffect(() => {

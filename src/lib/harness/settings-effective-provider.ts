@@ -1,23 +1,23 @@
 /**
- * Settings effective provider resolver â€?Phase 5e Phase 3 review
+ * Settings effective provider resolver â€” Phase 5e Phase 3 review
  * round 4 fix P2 #2 (2026-05-18).
  *
- * Scope (narrowed 2026-05-18 review round 5 P2 â€?match implementation):
+ * Scope (narrowed 2026-05-18 review round 5 P2 â€” match implementation):
  *
  *   **Provider-level fallback only.** This helper resolves the
  *   effective PROVIDER id when the user's pinned provider id is
- *   missing / inactive â€?same chain `resolveProvider()` walks at
- *   chat send time (pinned â†?default_provider_id setting â†?active
+ *   missing / inactive â€” same chain `resolveProvider()` walks at
+ *   chat send time (pinned â†’ default_provider_id setting â†’ active
  *   provider). It does NOT walk model-level fallback (model not in
  *   the catalog under the active Runtime, role-model overrides,
- *   etc.) â€?that lives in `resolveNewChatDefault()` on the client
+ *   etc.) â€” that lives in `resolveNewChatDefault()` on the client
  *   side and would require feeding full ProviderGroup data here.
  *
  *   Today the only downstream consumer is the **codex_runtime
  *   capability matrix downgrade**: when the resolved provider id is
  *   `codex_account`, bridge-only capabilities demote to
- *   perception_only. That decision is provider-level â€?`codex_account`
- *   is a virtual provider id, not a model id â€?so provider-level
+ *   perception_only. That decision is provider-level â€” `codex_account`
+ *   is a virtual provider id, not a model id â€” so provider-level
  *   resolution is sufficient for the current Settings clipboard.
  *
  *   If a future feature needs "Settings capability matrix matches
@@ -37,7 +37,7 @@ import { resolveProvider } from '@/lib/provider-resolver';
 /**
  * Returns the effective provider id chat send path would use, with
  * `undefined` when no provider is reachable at all (Settings matrix
- * then degrades gracefully â€?no provider-specific demotion fires).
+ * then degrades gracefully â€” no provider-specific demotion fires).
  */
 export function resolveEffectiveProviderId(): string | undefined {
   try {
@@ -45,7 +45,7 @@ export function resolveEffectiveProviderId(): string | undefined {
 
     // Virtual providers are NOT stored in `api_providers`. The chat
     // send path (`provider-resolver.ts:143-156`) treats them as the
-    // effective id directly â€?short-circuit here so we don't accidentally
+    // effective id directly â€” short-circuit here so we don't accidentally
     // try to look them up as DB rows.
     if (
       pinned === 'codex_account' ||
@@ -56,7 +56,8 @@ export function resolveEffectiveProviderId(): string | undefined {
       return pinned;
     }
 
-    // Real DB provider id, undefined (auto mode), or empty string â€?    // defer to the canonical resolver. Same helper claude-client.ts +
+    // Real DB provider id, undefined (auto mode), or empty string â€”
+    // defer to the canonical resolver. Same helper claude-client.ts +
     // codex/proxy/adapter.ts use at send time.
     const resolved = resolveProvider({
       ...(pinned ? { providerId: pinned } : {}),

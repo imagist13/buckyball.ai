@@ -1,5 +1,5 @@
 /**
- * Phase 8 Phase 5 â€?Codex dynamic tool-call bridge (item/tool/call).
+ * Phase 8 Phase 5 â€” Codex dynamic tool-call bridge (item/tool/call).
  *
  * Run: npx tsx --test src/__tests__/unit/codex-dynamic-tool-bridge.test.ts
  *
@@ -57,7 +57,7 @@ describe('handleCodexDynamicToolCall', () => {
     assert.deepEqual(res.contentItems, [{ type: 'inputText', text: 'MEMTEST recent memory' }]);
   });
 
-  it('maps MCP isError:true â†?success:false (still returns the error text)', async () => {
+  it('maps MCP isError:true â†’ success:false (still returns the error text)', async () => {
     const forward = async (): Promise<McpToolCallResultLike> => ({
       content: [{ type: 'text', text: 'boom' }],
       isError: true,
@@ -110,7 +110,7 @@ describe('handleCodexDynamicToolCall', () => {
     );
   });
 
-  it('null namespace â†?graceful success:false', async () => {
+  it('null namespace â†’ graceful success:false', async () => {
     const res = await handleCodexDynamicToolCall(
       params({ namespace: null, tool: 'whatever' }),
       async () => ({}),
@@ -138,7 +138,7 @@ describe('handleCodexDynamicToolCall', () => {
   });
 });
 
-describe('dispatchCodexDynamicToolCall â€?thread ownership + local managed tools', () => {
+describe('dispatchCodexDynamicToolCall â€” thread ownership + local managed tools', () => {
   it('routes a non-namespaced managed tool by thread id and preserves call id + abort signal', async () => {
     const controller = new AbortController();
     const calls: unknown[] = [];
@@ -248,7 +248,7 @@ describe('isManagedLocalDynamicToolLifecycle', () => {
   });
 });
 
-describe('runtime.ts â€?dynamic tool call wiring (source pin)', () => {
+describe('runtime.ts â€” dynamic tool call wiring (source pin)', () => {
   const runtimeSrc = fs.readFileSync(path.resolve(__dirname, '../../lib/codex/runtime.ts'), 'utf-8');
 
   it('registers item/tool/call and forwards via mcpServer/tool/call', () => {

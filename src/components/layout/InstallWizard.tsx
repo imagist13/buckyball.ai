@@ -179,7 +179,7 @@ export function InstallWizard({
       const result = await api.checkPrerequisites();
       setPrereqs(result);
 
-      // Windows requires Git for Windows â€?check FIRST, even if Claude is already installed,
+      // Windows requires Git for Windows â€” check FIRST, even if Claude is already installed,
       // because Claude Code won't actually work without Git Bash on Windows.
       if (result.platform === "win32" && result.hasGit === false) {
         setLogs((prev) => [
@@ -320,7 +320,7 @@ export function InstallWizard({
             </div>
           )}
 
-          {/* Phase: needs-git â€?Windows requires Git for Windows */}
+          {/* Phase: needs-git â€” Windows requires Git for Windows */}
           {phase === "needs-git" && (
             <div className="space-y-3">
               <div className="rounded-lg bg-status-warning-muted px-4 py-3 text-sm space-y-1.5">
@@ -345,12 +345,12 @@ export function InstallWizard({
             </div>
           )}
 
-          {/* Phase: confirm â€?ask user before installing */}
+          {/* Phase: confirm â€” ask user before installing */}
           {phase === "confirm" && (
             <div className="space-y-3">
               <div className="rounded-lg bg-status-warning-muted px-4 py-3 text-sm space-y-1.5">
                 <p className="text-status-warning-foreground">
-                  Claude Code CLI â€?{t('install.notDetected')}
+                  Claude Code CLI â€” {t('install.notDetected')}
                 </p>
               </div>
               <p className="text-sm text-muted-foreground">

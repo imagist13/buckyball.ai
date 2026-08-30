@@ -1,5 +1,5 @@
 /**
- * event-bus.ts â€?Runtime lifecycle event bus.
+ * event-bus.ts â€” Runtime lifecycle event bus.
  *
  * Inspired by open-agent-sdk's HookRegistry.
  * Provides a simple pub/sub for runtime lifecycle events.

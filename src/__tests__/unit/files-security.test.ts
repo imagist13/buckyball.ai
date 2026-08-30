@@ -120,7 +120,7 @@ describe('File API path traversal scenarios', () => {
 
 describe('baseDir validation', () => {
   it('should reject baseDir set to root (bypass attempt)', () => {
-    // If baseDir=/, every path would pass isPathSafe â€?must be blocked
+    // If baseDir=/, every path would pass isPathSafe â€” must be blocked
     const homeDir = os.homedir();
     assert.equal(isPathSafe(homeDir, '/'), false);
   });

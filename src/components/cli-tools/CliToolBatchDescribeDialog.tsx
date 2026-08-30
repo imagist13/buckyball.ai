@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { SpinnerGap, CheckCircle, XCircle } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
 
@@ -76,7 +76,7 @@ export function CliToolBatchDescribeDialog({
       .then(r => r.json())
       .then(data => {
         const allGroups: ProviderModelGroup[] = data.groups || [];
-        // All providers are supported â?describe uses the same SDK path as chat
+        // All providers are supported — describe uses the same SDK path as chat
         const groups = allGroups;
         const defaultPid: string = data.default_provider_id || '';
         setProviderGroups(groups);
@@ -195,7 +195,7 @@ export function CliToolBatchDescribeDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <BuckyballIcon name="assistant" size={18} aria-hidden />
+            <CodePilotIcon name="assistant" size={18} aria-hidden />
             {t('cliTools.batchDescribe')}
           </DialogTitle>
           <DialogDescription>
@@ -330,7 +330,7 @@ export function CliToolBatchDescribeDialog({
                 disabled={!selectedModel || toolsToProcessCount === 0}
                 className="gap-1.5"
               >
-                <BuckyballIcon name="assistant" size="sm" aria-hidden />
+                <CodePilotIcon name="assistant" size="sm" aria-hidden />
                 {t('cliTools.batchStart')}
               </Button>
               )}

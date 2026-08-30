@@ -1,5 +1,5 @@
 /**
- * Memory Extractor �?automatically extracts memorable information from conversations.
+ * Memory Extractor — automatically extracts memorable information from conversations.
  *
  * Inspired by Claude Code's extractMemories service (forked agent pattern).
  * We can't fork agents (SDK limitation), so we use generateTextFromProvider instead.
@@ -149,7 +149,7 @@ If nothing is worth remembering, output exactly: NOTHING`,
             const emoji = st.buddy?.emoji || '🎉';
             const name = st.buddy?.buddyName || '';
             addMessage(session.id, 'assistant',
-              `${emoji} ${name ? name + '�? : ''}**里程碑！** 我们一起积累了 ${milestone} 条记忆！🎉\n\n感谢你的信任，让我们继续创造更多美好的记忆。`
+              `${emoji} ${name ? name + '：' : ''}**里程碑！** 我们一起积累了 ${milestone} 条记忆！🎉\n\n感谢你的信任，让我们继续创造更多美好的记忆。`
             );
           }
           break; // Only one milestone per extraction

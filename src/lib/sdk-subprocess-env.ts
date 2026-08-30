@@ -1,12 +1,12 @@
 /**
- * sdk-subprocess-env.ts â?Single-source-of-truth env builder for every SDK
+ * sdk-subprocess-env.ts — Single-source-of-truth env builder for every SDK
  * subprocess spawn (main chat stream, generateTextViaSdk, provider-doctor
  * live probe, future callers).
  *
  * Why this exists: the per-request shadow `~/.claude/` (claude-home-shadow.ts)
  * implements the "provider-group ownership of credentials" rule. Multiple
  * code paths spawn the SDK, and every one of them must apply the same rule
- * â?otherwise auxiliary requests (compression, doctor probes, sub-agent
+ * — otherwise auxiliary requests (compression, doctor probes, sub-agent
  * delegations) silently bypass the shadow and pick up cc-switch credentials,
  * making the diagnostic and main flows disagree. See P2 reviews on
  * claude-client.ts:332 (`generateTextViaSdk`) and provider-doctor.ts:758
@@ -43,11 +43,17 @@ export interface SdkSubprocessSetup {
  *   returns a pass-through real-HOME setup. cc-switch settings.json supplies
  *   credentials normally.
  *
- * In both cases, the returned env has buckyball.ai's PATH expansion, Git Bash
+ * In both cases, the returned env has CodePilot's PATH expansion, Git Bash
  * detection (Windows), and the provider's auth/baseUrl/model env applied via
  * `toClaudeCodeEnv()`.
  */
 export function prepareSdkSubprocessEnv(resolved: ResolvedProvider): SdkSubprocessSetup {
+  // Fail before creating a shadow directory. Besides avoiding a temp-dir leak,
+  // this ensures a selected DB provider with an unreadable/missing key cannot
+  // inherit Claude OAuth or ANTHROPIC_* values from the host environment.
+  if (resolved.provider && !resolved.hasCredentials) {
+    throw new Error('provider_credentials_unavailable');
+  }
   const sdkEnv: Record<string, string> = { ...process.env as Record<string, string> };
 
   // Provider-group ownership: only build a shadow when an explicit DB
@@ -69,7 +75,7 @@ export function prepareSdkSubprocessEnv(resolved: ResolvedProvider): SdkSubproce
   // calls unchanged.
   applyMacosKeychainGuard(sdkEnv);
 
-  // Drop CLAUDECODE so a buckyball.ai launched from inside a `claude` session
+  // Drop CLAUDECODE so a CodePilot launched from inside a `claude` session
   // doesn't trip the SDK's "nested session" guard.
   delete sdkEnv.CLAUDECODE;
 

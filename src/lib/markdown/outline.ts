@@ -1,15 +1,15 @@
 /**
- * Markdown outline parser â€?Phase 4 Markdown data layer.
+ * Markdown outline parser â€” Phase 4 Markdown data layer.
  *
  * Produces a flat heading list with slug ids that the outline rail
  * uses to render entries and that the post-render anchor jump uses
  * to scrollIntoView. The slug must match what the rendered Markdown
- * heading element ends up with â€?we generate the slug here AND inject
+ * heading element ends up with â€” we generate the slug here AND inject
  * it onto the heading DOM node after streamdown renders, so the two
  * sides agree without depending on a specific markdown library's
  * built-in slug behaviour.
  *
- * Headings inside fenced code blocks must NOT be collected â€?a `#`
+ * Headings inside fenced code blocks must NOT be collected â€” a `#`
  * line inside ```bash isn't a heading. The parser tracks a fence
  * state so it can skip those.
  */
@@ -19,7 +19,7 @@ export interface OutlineHeading {
   level: number;
   /** Raw heading text after stripping leading `#`s */
   text: string;
-  /** GitHub-style slug â€?lowercase, alphanumerics + dashes */
+  /** GitHub-style slug â€” lowercase, alphanumerics + dashes */
   slug: string;
   /** 1-indexed line number in the source body the heading was parsed
    *  from. Useful for line-based anchor jumps. */
@@ -28,14 +28,14 @@ export interface OutlineHeading {
 
 /**
  * Parse Markdown body into an ordered heading list. The body should
- * already have frontmatter stripped â€?passing raw source with `---`
+ * already have frontmatter stripped â€” passing raw source with `---`
  * frontmatter is fine too, but the line numbers won't include the
  * frontmatter offset (callers compose this themselves if needed).
  */
 export function parseOutline(body: string): OutlineHeading[] {
   const lines = body.split(/\r?\n/);
   const headings: OutlineHeading[] = [];
-  // Slug collision counter â€?duplicate text gets `-2`, `-3`, etc., the
+  // Slug collision counter â€” duplicate text gets `-2`, `-3`, etc., the
   // same convention rehype-slug uses.
   const seen = new Map<string, number>();
   let inFence = false;

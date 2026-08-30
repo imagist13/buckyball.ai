@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  // Derive baseDir from the session's DB record â€?never trust client-provided paths
+  // Derive baseDir from the session's DB record â€” never trust client-provided paths
   const session = getSession(sessionId);
   if (!session?.working_directory) {
     return new Response(JSON.stringify({ error: 'Session not found or has no working directory' }), {
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
   // For large files, stream the response instead of buffering into memory.
-  // Small files (â‰?0 MB) are still read in full for simplicity.
+  // Small files (â‰¤10 MB) are still read in full for simplicity.
   const MAX_BUFFERED_SIZE = 10 * 1024 * 1024;
 
   if (stat.size > MAX_BUFFERED_SIZE) {

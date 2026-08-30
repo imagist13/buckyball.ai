@@ -1,5 +1,5 @@
 /**
- * Phase 5d Phase 2 slice 2b (2026-05-17) �?Equivalence harness with
+ * Phase 5d Phase 2 slice 2b (2026-05-17) — Equivalence harness with
  * Expected Differences Ledger.
  *
  * For each capability the compiler emits, check that the source file
@@ -66,7 +66,7 @@ function exportLooksReal(rel: string, exportName: string): boolean {
 // (A) Compiler source reachability
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Equivalence harness �?compiler source reachability', () => {
+describe('Equivalence harness — compiler source reachability', () => {
   it('every compiler source file referenced by a ledger entry is readable', () => {
     for (const entry of EXPECTED_DIFFERENCES) {
       const full = path.join(REPO_ROOT, entry.compilerSource.sourceFile);
@@ -91,7 +91,7 @@ describe('Equivalence harness �?compiler source reachability', () => {
 // (B) Runtime source drift is honest
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Equivalence harness �?runtime drift is honest', () => {
+describe('Equivalence harness — runtime drift is honest', () => {
   it('every runtimeSource file in the ledger is readable', () => {
     for (const entry of EXPECTED_DIFFERENCES) {
       if (!entry.runtimeSource) continue;
@@ -108,7 +108,7 @@ describe('Equivalence harness �?runtime drift is honest', () => {
       if (!entry.runtimeSource) continue;
       assert.ok(
         exportLooksReal(entry.runtimeSource.sourceFile, entry.runtimeSource.sourceExport),
-        `${entry.runtimeId}.${entry.capability}: runtimeSource export ${entry.runtimeSource.sourceExport} not found in ${entry.runtimeSource.sourceFile} �?if the migration removed it, also remove the ledger entry`,
+        `${entry.runtimeId}.${entry.capability}: runtimeSource export ${entry.runtimeSource.sourceExport} not found in ${entry.runtimeSource.sourceFile} — if the migration removed it, also remove the ledger entry`,
       );
     }
   });
@@ -123,7 +123,7 @@ describe('Equivalence harness �?runtime drift is honest', () => {
       assert.equal(
         same,
         false,
-        `${entry.runtimeId}.${entry.capability}: capability_fragment_replaced but both sides point at the same source �?there is no drift to record`,
+        `${entry.runtimeId}.${entry.capability}: capability_fragment_replaced but both sides point at the same source — there is no drift to record`,
       );
     }
   });
@@ -133,7 +133,7 @@ describe('Equivalence harness �?runtime drift is honest', () => {
 // (C) Ledger / plan correspondence
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Equivalence harness �?ledger �?slice ownership', () => {
+describe('Equivalence harness — ledger ↔ slice ownership', () => {
   it('no Codex-runtime entries currently in slice_2d (slice 2d is Native scope)', () => {
     // Phase 2 slice ownership: 2c = claude_code, 2d = codepilot_runtime,
     // 2e = codex_runtime. A Codex entry tagged slice_2d would be a
@@ -143,14 +143,14 @@ describe('Equivalence harness �?ledger �?slice ownership', () => {
       assert.notEqual(
         entry.plannedResolution,
         'slice_2d',
-        `${entry.capability} is a Codex Runtime drift but tagged slice_2d (Native scope) �?fix the ledger`,
+        `${entry.capability} is a Codex Runtime drift but tagged slice_2d (Native scope) — fix the ledger`,
       );
     }
   });
 
-  it('no Native entries tagged slice_2e and no ClaudeCode entries tagged slice_2c�?e ownership mismatch', () => {
+  it('no Native entries tagged slice_2e and no ClaudeCode entries tagged slice_2c→2e ownership mismatch', () => {
     for (const entry of EXPECTED_DIFFERENCES) {
-      if (entry.runtimeId === 'bbagent') {
+      if (entry.runtimeId === 'codepilot_runtime') {
         assert.notEqual(entry.plannedResolution, 'slice_2e');
       }
       if (entry.runtimeId === 'claude_code') {
@@ -170,12 +170,12 @@ describe('Equivalence harness �?ledger �?slice ownership', () => {
     // (`@/lib/harness/builtin-event-bus`); `agent-loop.ts` splices the
     // blocks into the SSE `tool_result.media` field. Codex bridge +
     // Native + (ClaudeCode SDK marker path) all surface MediaBlock
-    // consistently �?no remaining tool_result_shape drift.
+    // consistently — no remaining tool_result_shape drift.
     //
     // Pin shifted from "exactly 1 entry (the follow_up)" to "empty";
     // any future drift must add a NEW ledger entry with explicit
     // plannedResolution + slice owner.
-    const native = expectedDifferencesFor('bbagent');
+    const native = expectedDifferencesFor('codepilot_runtime');
     assert.equal(
       native.length,
       0,
@@ -188,7 +188,7 @@ describe('Equivalence harness �?ledger �?slice ownership', () => {
 // (D) Compiler outputs the canonical for every live capability
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Equivalence harness �?compiler output sources align with capability-contract authority', () => {
+describe('Equivalence harness — compiler output sources align with capability-contract authority', () => {
   it('every capability fragment the compiler emits points at a real file + export (no <unknown>)', () => {
     const out = compileContext({
       sessionId: 'eq-test',

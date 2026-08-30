@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import type { MarkdownEditorProps } from "./MarkdownEditor";
 
 /*
- * Dynamic wrapper for MarkdownEditor â€?keeps CodeMirror's ~135 KB
+ * Dynamic wrapper for MarkdownEditor â€” keeps CodeMirror's ~135 KB
  * gzipped bundle out of the first-paint chunk. Only resolves when the
  * SkillEditor / file-edit surface actually renders this component.
  *

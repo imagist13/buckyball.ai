@@ -1,5 +1,5 @@
 /**
- * runtime-selection.test.ts â€?Tests for runtime selection and OAuth status.
+ * runtime-selection.test.ts â€” Tests for runtime selection and OAuth status.
  *
  * - OAuth status: inlined (real getOAuthStatus reads host DB, non-deterministic)
  * - Runtime selection: inlined because registry.ts depends on runtime
@@ -11,8 +11,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-// â”€â”€ Suite 1: predictNativeRuntime (inlined â€?registry.ts has side effects) â”€â”€
-// Mirrors registry.ts predictNativeRuntime() â€?update if source changes.
+// â”€â”€ Suite 1: predictNativeRuntime (inlined â€” registry.ts has side effects) â”€â”€
+// Mirrors registry.ts predictNativeRuntime() â€” update if source changes.
 //
 // Phase 6 IA correction round 2 (2026-05-14): codex_account provider AND
 // `agent_runtime='codex_runtime'` setting both route to Codex Runtime,
@@ -25,21 +25,21 @@ function predictNativeRuntime(
   sdkAvailable: boolean,
   hasAnyCreds: boolean,
 ): boolean {
-  // Phase 6 IA correction round 2 (2026-05-14) â€?Codex Runtime is its
+  // Phase 6 IA correction round 2 (2026-05-14) â€” Codex Runtime is its
   // own subprocess. cli_enabled=false doesn't mean "force native" for
   // Codex. Both the provider-level signal (`codex_account`) and the
   // engine-level signal (`agent_runtime=codex_runtime`) must short-
   // circuit BEFORE the cli_enabled check so Codex doesn't get
   // downgraded.
   //
-  // Phase 5b smoke follow-up (2026-05-15) â€?the codex_runtime setting
-  // check ALSO has to beat the legacy openai-oauth â†?native heuristic.
+  // Phase 5b smoke follow-up (2026-05-15) â€” the codex_runtime setting
+  // check ALSO has to beat the legacy openai-oauth â†’ native heuristic.
   // openai-oauth speaks OpenAI Responses-API which is exactly what
   // Codex's proxy supports, so under a global Codex default the user's
   // openai-oauth selection should route through Codex, not Native.
   if (providerId === 'codex_account') return false;
   if (agentRuntime === 'codex_runtime') return false;
-  // Only AFTER the Codex short-circuits does the openai-oauth â†?native
+  // Only AFTER the Codex short-circuits does the openai-oauth â†’ native
   // heuristic apply (it's the right default when Codex Runtime isn't
   // the active engine).
   if (providerId === 'openai-oauth') return true;
@@ -52,41 +52,41 @@ function predictNativeRuntime(
 }
 
 describe('predictNativeRuntime (mirrors registry.ts)', () => {
-  it('openai-oauth â†?native when no Codex pin/default', () => {
+  it('openai-oauth â†’ native when no Codex pin/default', () => {
     assert.equal(predictNativeRuntime('openai-oauth', true, 'auto', true, true), true);
   });
-  it('openai-oauth UNDER codex_runtime default â†?NOT native (routes through Codex proxy)', () => {
+  it('openai-oauth UNDER codex_runtime default â†’ NOT native (routes through Codex proxy)', () => {
     // Phase 5b: Codex's wire format matches openai-oauth, so the
     // proxy adapter handles it. Forcing Native here was the pre-fix
     // bug that broke openai-oauth sends under Codex Runtime.
     assert.equal(predictNativeRuntime('openai-oauth', true, 'codex_runtime', true, true), false);
   });
-  it('cli disabled â†?always native', () => {
+  it('cli disabled â†’ always native', () => {
     assert.equal(predictNativeRuntime(undefined, false, 'auto', true, true), true);
   });
-  it('setting=native â†?native', () => {
+  it('setting=native â†’ native', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'native', true, true), true);
   });
-  it('setting=claude-code-sdk + CLI â†?not native', () => {
+  it('setting=claude-code-sdk + CLI â†’ not native', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'claude-code-sdk', true, true), false);
   });
-  it('setting=claude-code-sdk + no CLI â†?native (fallback)', () => {
+  it('setting=claude-code-sdk + no CLI â†’ native (fallback)', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'claude-code-sdk', false, true), true);
   });
-  it('auto + SDK + has creds â†?not native', () => {
+  it('auto + SDK + has creds â†’ not native', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'auto', true, true), false);
   });
-  it('auto + SDK + no creds â†?native (#456)', () => {
+  it('auto + SDK + no creds â†’ native (#456)', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'auto', true, false), true);
   });
-  it('auto + no SDK â†?native', () => {
+  it('auto + no SDK â†’ native', () => {
     assert.equal(predictNativeRuntime(undefined, true, 'auto', false, true), true);
   });
-  // Phase 6 IA correction round 2 â€?Codex Runtime is sticky.
-  it('codex_account provider â†?NOT native (routes to Codex Runtime)', () => {
+  // Phase 6 IA correction round 2 â€” Codex Runtime is sticky.
+  it('codex_account provider â†’ NOT native (routes to Codex Runtime)', () => {
     assert.equal(predictNativeRuntime('codex_account', true, 'auto', true, true), false);
   });
-  it('setting=codex_runtime â†?NOT native (even with cli_enabled=false)', () => {
+  it('setting=codex_runtime â†’ NOT native (even with cli_enabled=false)', () => {
     assert.equal(predictNativeRuntime(undefined, false, 'codex_runtime', true, true), false);
     assert.equal(predictNativeRuntime(undefined, true, 'codex_runtime', false, false), false);
   });
@@ -96,10 +96,10 @@ describe('predictNativeRuntime (mirrors registry.ts)', () => {
 //
 // Phase 6 IA correction round 2 (2026-05-14): codex_runtime explicit
 // (override OR stored setting) beats cli_enabled. Selecting Codex
-// Runtime in Settings â†?Runtime saves agent_runtime='codex_runtime' +
+// Runtime in Settings â†’ Runtime saves agent_runtime='codex_runtime' +
 // cli_enabled='false' (Codex doesn't need the Claude CLI), and the
-// old "cli_enabled=false â†?always native" rule would hijack the
-// resolution back to native â€?the misroute that left Models filtering
+// old "cli_enabled=false â†’ always native" rule would hijack the
+// resolution back to native â€” the misroute that left Models filtering
 // on codepilot_runtime instead of codex_runtime.
 
 function resolveRuntime(
@@ -110,13 +110,13 @@ function resolveRuntime(
   hasAnyCreds: boolean,
   codexAvailable: boolean = false,
 ): string {
-  // 0. Codex Runtime explicit â€?beats cli_enabled.
+  // 0. Codex Runtime explicit â€” beats cli_enabled.
   const wantsCodex =
     overrideId === 'codex_runtime'
     || ((!overrideId || overrideId === 'auto') && settingId === 'codex_runtime');
   if (wantsCodex && codexAvailable) return 'codex_runtime';
 
-  // 1. Explicit override (Phase 5e round 8 â€?runs BEFORE cli_enabled).
+  // 1. Explicit override (Phase 5e round 8 â€” runs BEFORE cli_enabled).
   //    If override targets SDK and SDK is unavailable, mirror throws.
   if (overrideId && overrideId !== 'auto' && overrideId !== 'codex_runtime') {
     if (overrideId === 'native') return 'native';
@@ -126,10 +126,10 @@ function resolveRuntime(
     }
   }
 
-  // 2. cli_enabled=false short-circuit â€?only when no explicit override above.
+  // 2. cli_enabled=false short-circuit â€” only when no explicit override above.
   if (cliDisabled) return 'native';
 
-  // 3. Explicit setting â€?try, fall through if unavailable (legacy
+  // 3. Explicit setting â€” try, fall through if unavailable (legacy
   //    semantics, intentionally NOT fail-closed; that's reserved for
   //    explicit overrides in step 1).
   if (settingId && settingId !== 'auto') {
@@ -143,24 +143,24 @@ function resolveRuntime(
 }
 
 describe('resolveRuntime (mirrors registry.ts)', () => {
-  // Phase 5e round 8 (2026-05-18) â€?session pin / explicit override now
+  // Phase 5e round 8 (2026-05-18) â€” session pin / explicit override now
   // beats cli_enabled=false. Previously this returned 'native' (the
-  // bug). Now: explicit SDK override + SDK available â†?SDK, regardless
+  // bug). Now: explicit SDK override + SDK available â†’ SDK, regardless
   // of cli_enabled. This is the headline regression pin.
-  it('explicit claude-code-sdk override + cli_enabled=false + SDK available â†?claude-code-sdk (NOT native)', () => {
+  it('explicit claude-code-sdk override + cli_enabled=false + SDK available â†’ claude-code-sdk (NOT native)', () => {
     assert.equal(
       resolveRuntime(true, 'claude-code-sdk', 'claude-code-sdk', true, true),
       'claude-code-sdk',
     );
   });
-  // Phase 5e round 8 â€?fail-closed when explicit SDK pin can't be honored.
-  it('explicit claude-code-sdk override + SDK NOT available â†?THROWS (never silently demotes to native)', () => {
+  // Phase 5e round 8 â€” fail-closed when explicit SDK pin can't be honored.
+  it('explicit claude-code-sdk override + SDK NOT available â†’ THROWS (never silently demotes to native)', () => {
     assert.throws(
       () => resolveRuntime(false, 'claude-code-sdk', undefined, false, true),
       /Claude Code is pinned/,
     );
   });
-  it('explicit claude-code-sdk override + cli_enabled=false + SDK NOT available â†?THROWS', () => {
+  it('explicit claude-code-sdk override + cli_enabled=false + SDK NOT available â†’ THROWS', () => {
     // The other half of the round 8 fix: even when cli_enabled=false is
     // set globally, a session pinned to SDK gets a fail-closed error
     // instead of a silent demotion. UI must surface this to the user.
@@ -172,10 +172,10 @@ describe('resolveRuntime (mirrors registry.ts)', () => {
   it('explicit override takes precedence', () => {
     assert.equal(resolveRuntime(false, 'native', 'claude-code-sdk', true, true), 'native');
   });
-  it('global setting=claude-code-sdk + cli_enabled=false (no session pin) â†?native (LEGACY behavior preserved)', () => {
+  it('global setting=claude-code-sdk + cli_enabled=false (no session pin) â†’ native (LEGACY behavior preserved)', () => {
     // Phase 5e round 8 deliberately preserves this case as-is. The
     // round 8 fix only narrows behavior for EXPLICIT session pin /
-    // override (step 1) â€?not for a stale global setting. Reason:
+    // override (step 1) â€” not for a stale global setting. Reason:
     // global preference is a stored value that may be out of sync
     // with cli_enabled (Settings page auto-flips them together, but
     // legacy DB rows could drift); the long-standing UX is that an
@@ -183,42 +183,42 @@ describe('resolveRuntime (mirrors registry.ts)', () => {
     // is a strong signal for THIS request and gets fail-closed.
     assert.equal(resolveRuntime(true, undefined, 'claude-code-sdk', true, true), 'native');
   });
-  it('global setting=claude-code-sdk + no CLI + cli_enabled=true â†?native (fallback, no throw â€?legacy)', () => {
+  it('global setting=claude-code-sdk + no CLI + cli_enabled=true â†’ native (fallback, no throw â€” legacy)', () => {
     assert.equal(resolveRuntime(false, undefined, 'claude-code-sdk', false, true), 'native');
   });
-  it('cli_enabled=false + no explicit override + no SDK pref â†?native (legacy gate still works for auto)', () => {
+  it('cli_enabled=false + no explicit override + no SDK pref â†’ native (legacy gate still works for auto)', () => {
     // The cli_enabled gate STILL applies when there's no explicit
-    // override / SDK setting â€?typical case: global default is
+    // override / SDK setting â€” typical case: global default is
     // CodePilot/Codex, no session pin. We still want native then.
     assert.equal(resolveRuntime(true, undefined, undefined, true, true), 'native');
   });
   it('setting takes precedence over auto', () => {
     assert.equal(resolveRuntime(false, undefined, 'native', true, true), 'native');
   });
-  it('auto + SDK + has creds â†?sdk', () => {
+  it('auto + SDK + has creds â†’ sdk', () => {
     assert.equal(resolveRuntime(false, undefined, undefined, true, true), 'claude-code-sdk');
   });
-  it('auto + SDK + no creds â†?native (#456)', () => {
+  it('auto + SDK + no creds â†’ native (#456)', () => {
     assert.equal(resolveRuntime(false, undefined, undefined, true, false), 'native');
   });
-  it('auto + no SDK â†?native', () => {
+  it('auto + no SDK â†’ native', () => {
     assert.equal(resolveRuntime(false, undefined, undefined, false, true), 'native');
   });
-  // Phase 6 IA correction round 2 â€?codex_runtime stickiness.
-  it('codex_runtime override + codex available â†?codex_runtime', () => {
+  // Phase 6 IA correction round 2 â€” codex_runtime stickiness.
+  it('codex_runtime override + codex available â†’ codex_runtime', () => {
     assert.equal(resolveRuntime(false, 'codex_runtime', undefined, true, true, true), 'codex_runtime');
   });
-  it('codex_runtime override + cli_enabled=false â†?STILL codex_runtime (not native)', () => {
+  it('codex_runtime override + cli_enabled=false â†’ STILL codex_runtime (not native)', () => {
     // The P1 misroute pre-fix: this used to short-circuit to native
     // because cli_enabled=false was treated as the absolute override.
     assert.equal(resolveRuntime(true, 'codex_runtime', undefined, true, true, true), 'codex_runtime');
   });
-  it('setting=codex_runtime + cli_enabled=false â†?STILL codex_runtime', () => {
+  it('setting=codex_runtime + cli_enabled=false â†’ STILL codex_runtime', () => {
     // The user-spec scenario: RuntimePanel saves agent_runtime=codex_runtime
     // + cli_enabled=false. Settings page should agree with the resolver.
     assert.equal(resolveRuntime(true, undefined, 'codex_runtime', true, true, true), 'codex_runtime');
   });
-  it('codex_runtime explicit + codex NOT available â†?falls through (claude-client guardrail catches it)', () => {
+  it('codex_runtime explicit + codex NOT available â†’ falls through (claude-client guardrail catches it)', () => {
     // If codex isn't registered, resolution falls through to the legacy
     // chain. The chat send path's Round 5 fail-closed throws BEFORE the
     // resolution is acted on, so users get a clear "Codex Runtime not
@@ -227,11 +227,11 @@ describe('resolveRuntime (mirrors registry.ts)', () => {
   });
 });
 
-// â”€â”€ Suite 3: OpenAI OAuth status (inlined â€?real impl reads host DB) â”€â”€
+// â”€â”€ Suite 3: OpenAI OAuth status (inlined â€” real impl reads host DB) â”€â”€
 
 describe('OpenAI OAuth status (inlined logic)', () => {
   // All OAuth status tests are inlined because the real getOAuthStatus()
-  // reads from the host machine's DB â€?test results would depend on
+  // reads from the host machine's DB â€” test results would depend on
   // whether the developer has logged into OpenAI, making it non-deterministic.
 
   function deriveOAuthStatus(
@@ -248,30 +248,30 @@ describe('OpenAI OAuth status (inlined logic)', () => {
     return { authenticated: true, needsRefresh };
   }
 
-  it('valid token â†?authenticated', () => {
+  it('valid token â†’ authenticated', () => {
     const r = deriveOAuthStatus('tok', Date.now() + 3600_000, null);
     assert.equal(r.authenticated, true);
     assert.equal(r.needsRefresh, false);
   });
 
-  it('expired + no refresh â†?not authenticated', () => {
+  it('expired + no refresh â†’ not authenticated', () => {
     const r = deriveOAuthStatus('tok', Date.now() - 1000, null);
     assert.equal(r.authenticated, false);
   });
 
-  it('expired + has refresh â†?authenticated + needsRefresh', () => {
+  it('expired + has refresh â†’ authenticated + needsRefresh', () => {
     const r = deriveOAuthStatus('tok', Date.now() - 1000, 'ref');
     assert.equal(r.authenticated, true);
     assert.equal(r.needsRefresh, true);
   });
 
-  it('near expiry (within 5min buffer) â†?needsRefresh', () => {
+  it('near expiry (within 5min buffer) â†’ needsRefresh', () => {
     const r = deriveOAuthStatus('tok', Date.now() + 60_000, 'ref');
     assert.equal(r.authenticated, true);
     assert.equal(r.needsRefresh, true);
   });
 
-  it('expiresAt=0 â†?no expiry check', () => {
+  it('expiresAt=0 â†’ no expiry check', () => {
     const r = deriveOAuthStatus('tok', 0, null);
     assert.equal(r.authenticated, true);
     assert.equal(r.needsRefresh, false);
@@ -282,18 +282,18 @@ describe('OpenAI OAuth status (inlined logic)', () => {
 
 describe('SDK isAvailable matrix (inlined logic)', () => {
   // Mirrors the 3-layer check in sdk-runtime.ts:76-97.
-  // Mirrors sdk-runtime.ts isAvailable() â€?now a simple CLI binary check.
+  // Mirrors sdk-runtime.ts isAvailable() â€” now a simple CLI binary check.
   // Auth is managed by the CLI itself; availability only depends on binary.
 
   function sdkIsAvailable(cliBinaryExists: boolean): boolean {
     return cliBinaryExists;
   }
 
-  it('no CLI binary â†?unavailable', () => {
+  it('no CLI binary â†’ unavailable', () => {
     assert.equal(sdkIsAvailable(false), false);
   });
 
-  it('CLI binary exists â†?available', () => {
+  it('CLI binary exists â†’ available', () => {
     assert.equal(sdkIsAvailable(true), true);
   });
 });
@@ -304,7 +304,7 @@ describe('Announcement dismiss persistence (inlined logic)', () => {
   // Mirrors the dismiss check in FeatureAnnouncementDialog.tsx:24-39.
   // LIMITATION: tests the decision matrix only, not the actual API persistence
   // path (settings/app whitelist, localStorage sync). The whitelist regression
-  // we fixed requires a running Next.js server to exercise â€?belongs in smoke/e2e.
+  // we fixed requires a running Next.js server to exercise â€” belongs in smoke/e2e.
 
   function shouldShowAnnouncement(opts: {
     localStorageDismissed: boolean;
@@ -314,39 +314,39 @@ describe('Announcement dismiss persistence (inlined logic)', () => {
     // Fast check: localStorage says dismissed
     if (opts.localStorageDismissed) return { show: false, syncLocalStorage: false };
 
-    // DB says dismissed (localStorage was lost) â†?don't show, sync back
+    // DB says dismissed (localStorage was lost) â†’ don't show, sync back
     if (opts.dbSettingDismissed) return { show: false, syncLocalStorage: true };
 
     // Only show if setup is completed (existing user)
     if (opts.setupCompleted) return { show: true, syncLocalStorage: false };
 
-    // New user (setup not done) â†?don't show
+    // New user (setup not done) â†’ don't show
     return { show: false, syncLocalStorage: false };
   }
 
-  it('localStorage dismissed â†?do not show', () => {
+  it('localStorage dismissed â†’ do not show', () => {
     const r = shouldShowAnnouncement({ localStorageDismissed: true, dbSettingDismissed: false, setupCompleted: true });
     assert.equal(r.show, false);
     assert.equal(r.syncLocalStorage, false);
   });
 
-  it('DB dismissed but localStorage lost â†?do not show + sync localStorage', () => {
+  it('DB dismissed but localStorage lost â†’ do not show + sync localStorage', () => {
     const r = shouldShowAnnouncement({ localStorageDismissed: false, dbSettingDismissed: true, setupCompleted: true });
     assert.equal(r.show, false);
     assert.equal(r.syncLocalStorage, true);
   });
 
-  it('neither dismissed + setup completed â†?show (existing user upgrading)', () => {
+  it('neither dismissed + setup completed â†’ show (existing user upgrading)', () => {
     const r = shouldShowAnnouncement({ localStorageDismissed: false, dbSettingDismissed: false, setupCompleted: true });
     assert.equal(r.show, true);
   });
 
-  it('neither dismissed + setup not completed â†?do not show (new user)', () => {
+  it('neither dismissed + setup not completed â†’ do not show (new user)', () => {
     const r = shouldShowAnnouncement({ localStorageDismissed: false, dbSettingDismissed: false, setupCompleted: false });
     assert.equal(r.show, false);
   });
 
-  it('both dismissed â†?do not show (redundant but safe)', () => {
+  it('both dismissed â†’ do not show (redundant but safe)', () => {
     const r = shouldShowAnnouncement({ localStorageDismissed: true, dbSettingDismissed: true, setupCompleted: true });
     assert.equal(r.show, false);
   });

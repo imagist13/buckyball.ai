@@ -1,11 +1,11 @@
 /**
- * Task Scheduler �?polls SQLite for due scheduled tasks and executes them.
+ * Task Scheduler — polls SQLite for due scheduled tasks and executes them.
  *
  * Architecture:
  * - Runs in Next.js server process via setInterval (10s poll)
  * - Uses globalThis to survive HMR in development
  * - Lightweight execution via generateTextFromProvider (no streaming UI)
- * - Exponential backoff on failure (30s �?1m �?5m �?15m)
+ * - Exponential backoff on failure (30s → 1m → 5m → 15m)
  * - Auto-disables after 10 consecutive failures
  */
 
@@ -38,7 +38,7 @@ export function removeSessionTask(id: string): void {
 
 /**
  * Ensure the scheduler polling loop is running.
- * Safe to call multiple times �?only starts once.
+ * Safe to call multiple times — only starts once.
  */
 export function ensureSchedulerRunning(): void {
   // App-route modules are evaluated while Next collects production build
@@ -53,7 +53,7 @@ export function ensureSchedulerRunning(): void {
   // One-time missed task recovery on startup
   handleMissedTasks().catch(err => console.error('[scheduler] Missed task recovery failed:', err));
 
-  // Phase 3 Step 3 �?recover any task left in `last_status='running'`
+  // Phase 3 Step 3 — recover any task left in `last_status='running'`
   // by a previous crash. Without this, those rows never get picked up
   // by `getDueTasks` (which excludes running) and stay stuck forever.
   recoverStaleRunningTasks().catch(err =>
@@ -122,7 +122,7 @@ export function ensureSchedulerRunning(): void {
               if (cronNext) {
                 task.next_run = cronNext.toISOString();
               } else {
-                // No valid next occurrence �?pause this session task
+                // No valid next occurrence — pause this session task
                 task.status = 'paused' as ScheduledTask['status'];
                 console.warn(`[scheduler] Session cron task ${id} paused: no match within 4 years`);
                 continue;
@@ -156,7 +156,7 @@ export function stopScheduler(): void {
 /**
  * Execute a single due task.
  *
- * Phase 3 Step 3 �?kind dispatch + single-row lifecycle.
+ * Phase 3 Step 3 — kind dispatch + single-row lifecycle.
  *
  * `kind === 'reminder'`: prompt text IS the notification body. No AI
  *   provider is called. This is what makes "5-minute reminder to drink
@@ -168,7 +168,7 @@ export function stopScheduler(): void {
  *
  * Run row lifecycle (v3 plan): one execution = one row. Insert
  * `task_run_logs` with status='running' up front, get `runId`, do the
- * work, then `updateTaskRunLog(runId, �?` flips to 'success' / 'error'
+ * work, then `updateTaskRunLog(runId, …)` flips to 'success' / 'error'
  * IN PLACE. No second insert.
  *
  * @param isSessionTask If true, skip SQLite writes and re-throw errors for caller handling.
@@ -188,7 +188,7 @@ async function executeDueTask(
   } = await import('@/lib/db');
   const startTime = Date.now();
 
-  // Codex P1 �?heartbeat stale-check guard. Earlier rev: when the app
+  // Codex P1 — heartbeat stale-check guard. Earlier rev: when the app
   // started after being closed for a few minutes, any heartbeat row
   // with `next_run <= now` was picked up by the next 10s poll and
   // executed immediately. So restarting the app at 3:01pm (right after
@@ -207,7 +207,7 @@ async function executeDueTask(
     const lastRunMs = new Date(task.last_run).getTime();
     const sinceLastMs = Date.now() - lastRunMs;
     if (Number.isFinite(intervalMs) && sinceLastMs < intervalMs) {
-      // Not stale �?push next_run forward instead of running.
+      // Not stale — push next_run forward instead of running.
       const nextDue = new Date(lastRunMs + intervalMs).toISOString();
       try {
         updateScheduledTask(task.id, { next_run: nextDue });
@@ -220,7 +220,7 @@ async function executeDueTask(
   }
 
   // Mark task as running on the scheduled_tasks row. last_status keeps
-  // its legacy enum (success/error/skipped/running) �?Phase 3 Step 4
+  // its legacy enum (success/error/skipped/running) — Phase 3 Step 4
   // intentionally does NOT extend last_status to 5 states (the column
   // has a SQLite CHECK constraint we'd have to rebuild the table to
   // change). The 5-state machine lives only on `task_run_logs.status`,
@@ -229,12 +229,12 @@ async function executeDueTask(
     updateScheduledTask(task.id, { last_status: 'running' });
   }
 
-  // Phase 3 Step 4 �?`ai_task` (both `source='user'` and
+  // Phase 3 Step 4 — `ai_task` (both `source='user'` and
   // `source='assistant_heartbeat'`) goes through the agent task
   // runner. Reminder still uses the cheap text-only path since it
   // doesn't need a chat session. `providedRunId` (from
   // `runScheduledTaskNow`) is forwarded so the caller's pre-allocated
-  // running row gets the terminal status update �?without this,
+  // running row gets the terminal status update — without this,
   // manual "Run now" callers would see their runId stuck at
   // `'running'` forever while the runner used a separate runId.
   if (task.kind === 'ai_task' && !isSessionTask) {
@@ -245,7 +245,7 @@ async function executeDueTask(
 
       if (out.status === 'succeeded') {
         // Update scheduled_tasks. last_status stays in its legacy
-        // alphabet �?'success' here is the correct legacy mapping.
+        // alphabet — 'success' here is the correct legacy mapping.
         updateScheduledTask(task.id, {
           last_status: 'success',
           last_result: (out.result || '').slice(0, 2000),
@@ -263,7 +263,7 @@ async function executeDueTask(
         const shouldNotify = !isSilentHeartbeat
           && (isHeartbeat || !!task.notify_on_complete);
         if (shouldNotify) {
-          const titlePrefix = isHeartbeat ? '💬' : '�?;
+          const titlePrefix = isHeartbeat ? '💬' : '✅';
           const notificationSessionId = out.sessionId || task.session_id;
           const eventId = await sendTaskNotification(
             `${titlePrefix} ${task.name}`,
@@ -294,7 +294,7 @@ async function executeDueTask(
         });
         await computeNextRun(task);
       } else if (out.status === 'waiting_for_permission') {
-        // Phase 3 Step 4 �?paused state: scheduler must NOT re-trigger
+        // Phase 3 Step 4 — paused state: scheduler must NOT re-trigger
         // this task on the next due tick. Park `scheduled_tasks.status`
         // at 'paused'; user resumes by entering the task-bound session
         // and choosing "Re-run this task" (creates a new runId from
@@ -306,7 +306,7 @@ async function executeDueTask(
         });
         const eventId = await sendTaskNotification(
           `⚠️ ${task.name}`,
-          'Background task paused �?open the session to decide whether to re-run or abandon.',
+          'Background task paused — open the session to decide whether to re-run or abandon.',
           'urgent',
           { taskId: task.id, sessionId: out.sessionId || task.session_id },
         );
@@ -324,7 +324,7 @@ async function executeDueTask(
         });
         if (task.notify_on_complete || isHeartbeat) {
           const eventId = await sendTaskNotification(
-            `�?${task.name}`,
+            `❌ ${task.name}`,
             (out.error || 'Task failed').slice(0, 200),
             'urgent',
             { taskId: task.id, sessionId: out.sessionId || task.session_id },
@@ -336,7 +336,7 @@ async function executeDueTask(
         computeNextRun(task);
       }
 
-      console.log(`[scheduler] Task ${task.id} (${task.name}, ${task.kind}, ${task.source}) �?${out.status}`);
+      console.log(`[scheduler] Task ${task.id} (${task.name}, ${task.kind}, ${task.source}) → ${out.status}`);
       return;
     } catch (err) {
       // Defensive: agent-task-runner shouldn't throw (it returns a
@@ -348,13 +348,13 @@ async function executeDueTask(
 
   // Pre-insert the running row so a concurrent UI poll of /runs sees
   // the in-flight execution. Session tasks skip DB entirely. (Reminder
-  // path / fallback only �?ai_task already has a row from the runner.)
+  // path / fallback only — ai_task already has a row from the runner.)
   let runId: string | null = providedRunId ?? null;
   if (!isSessionTask && !runId) {
     try {
       runId = insertTaskRunLog({ task_id: task.id, status: 'running' }).runId;
     } catch {
-      runId = null; // best effort �?we still finish the task
+      runId = null; // best effort — we still finish the task
     }
   }
 
@@ -365,7 +365,7 @@ async function executeDueTask(
       // Reminder path: the prompt IS the notification body. No AI
       // provider call, so this works even when the user hasn't
       // configured any model. `notify_on_complete` is implicitly true
-      // for reminders �?a reminder that doesn't notify is meaningless.
+      // for reminders — a reminder that doesn't notify is meaningless.
       result = task.prompt;
     } else {
       // ai_task fallback (only reached on agent-runner exceptions or
@@ -387,7 +387,7 @@ async function executeDueTask(
       });
     }
 
-    // Success �?update SQLite (skip for session tasks)
+    // Success — update SQLite (skip for session tasks)
     if (!isSessionTask) {
       updateScheduledTask(task.id, {
         last_status: 'success',
@@ -398,7 +398,7 @@ async function executeDueTask(
       });
 
       // v3 plan: ONE row per execution. Update the row we inserted at
-      // the top of this function from 'running' �?'success'.
+      // the top of this function from 'running' → 'success'.
       if (runId) {
         try {
           updateTaskRunLog(runId, {
@@ -416,7 +416,7 @@ async function executeDueTask(
     // notification); ai_task fallback respects `notify_on_complete`.
     const shouldNotify = task.kind === 'reminder' || !!task.notify_on_complete;
     if (shouldNotify) {
-      const titlePrefix = task.kind === 'reminder' ? '�? : '�?;
+      const titlePrefix = task.kind === 'reminder' ? '⏰' : '✅';
       const eventId = await sendTaskNotification(
         `${titlePrefix} ${task.name}`,
         result.slice(0, 200),
@@ -440,7 +440,7 @@ async function executeDueTask(
       // Notify on failure (best effort)
       if (task.notify_on_complete || task.kind === 'reminder') {
         await sendTaskNotification(
-          `�?${task.name}`,
+          `❌ ${task.name}`,
           errorMsg.slice(0, 200),
           'urgent',
           { taskId: task.id, sessionId: task.session_id },
@@ -459,7 +459,7 @@ async function executeDueTask(
 
     // v3 plan: same row, terminal flip. If for some reason runId is
     // null (insert failed earlier), fall back to a fresh terminal row
-    // �?preserves history at the cost of skipping the running row.
+    // — preserves history at the cost of skipping the running row.
     if (runId) {
       try {
         updateTaskRunLog(runId, {
@@ -483,11 +483,12 @@ async function executeDueTask(
     applyBackoff(task.id, errors);
 
     // Notify on failure. v6 fix (P1): same event_id linkage as the
-    // success path so failed runs surface their delivery log too �?    // otherwise users see "task errored" with no record of which
+    // success path so failed runs surface their delivery log too —
+    // otherwise users see "task errored" with no record of which
     // notification channels did/didn't carry the failure notice.
     if (task.notify_on_complete || task.kind === 'reminder') {
       const failureEventId = await sendTaskNotification(
-        `�?${task.name}`,
+        `❌ ${task.name}`,
         errorMsg.slice(0, 200),
         'urgent',
         { taskId: task.id, sessionId: task.session_id },
@@ -499,14 +500,14 @@ async function executeDueTask(
       }
     }
 
-    // Codex P2 �?earlier rev fell back to "latest workspace session"
+    // Codex P2 — earlier rev fell back to "latest workspace session"
     // here when task.session_id was empty, then wrote the failure as
     // an assistant message there. Same cross-project bleed shape as
     // handleMissedTasks before its fix: a project-A ai_task that
     // crashed could land its error message in project-B's assistant
     // chat (whichever workspace session sorted as latest). The
     // failure is already surfaced to the user via:
-    //   1. sendTaskNotification(�?task.name, errorMsg, urgent) above
+    //   1. sendTaskNotification(❌ task.name, errorMsg, urgent) above
     //   2. task_run_logs row terminal-flipped to 'error' with the
     //      error column populated
     //   3. /settings/tasks "View runs" surfaces (1) + (2) in the
@@ -514,7 +515,7 @@ async function executeDueTask(
     //
     // For tasks that already have a task-bound execution session
     // (task.session_id pointing at source='task'), it's still useful
-    // to drop a record of the failure into THAT session �?the user
+    // to drop a record of the failure into THAT session — the user
     // opens the task to see what went wrong. So we keep the write
     // when task.session_id is set, but DROP the latest-workspace
     // fallback. ensureTaskBoundSession was supposed to populate
@@ -527,11 +528,11 @@ async function executeDueTask(
         // Only write when the session is actually a task-bound execution
         // surface. A stale `session_id` pointing at a `source='user'`
         // chat (legacy dirty rows) must NOT receive the failure
-        // message �?same guard the runner's ensureTaskBoundSession
+        // message — same guard the runner's ensureTaskBoundSession
         // applies. Notification + run row remain the user's view.
         if (targetSession && targetSession.source === 'task') {
           const workspacePath = getSetting('assistant_workspace_path');
-          let buddyPrefix = '�?;
+          let buddyPrefix = '❌';
           try {
             const { loadState } = await import('@/lib/assistant-workspace');
             if (workspacePath) {
@@ -544,7 +545,7 @@ async function executeDueTask(
           addMessage(
             targetSession.id,
             'assistant',
-            `${buddyPrefix} �?**${task.name}** (定时任务失败)\n\n${errorMsg}`,
+            `${buddyPrefix} ❌ **${task.name}** (定时任务失败)\n\n${errorMsg}`,
           );
         }
       } catch { /* best effort */ }
@@ -555,12 +556,12 @@ async function executeDueTask(
 }
 
 /**
- * Phase 3 Step 3 �?controlled execution entry. Used by `/api/tasks/[id]/run`
+ * Phase 3 Step 3 — controlled execution entry. Used by `/api/tasks/[id]/run`
  * (the "Run Now" button) and by anywhere else that wants to trigger a task
  * outside the poll cycle.
  *
  * Behavior:
- *   - Atomically takes a "running" lock on the task via UPDATE �?WHERE
+ *   - Atomically takes a "running" lock on the task via UPDATE … WHERE
  *     last_status != 'running'. Concurrent calls (poll-cycle + Run Now
  *     racing) cooperate: only one wins the lock; the other gets back
  *     `{ status: 'already_running', runId }` referencing the in-flight row.
@@ -582,7 +583,7 @@ export async function runScheduledTaskNow(taskId: string): Promise<
   if (!task) return { status: 'not_found' };
 
   // Row-level lock. The UPDATE only matches when last_status isn't
-  // already 'running' �?concurrent invocations get back changes=0 and
+  // already 'running' — concurrent invocations get back changes=0 and
   // we report `already_running`. We intentionally do NOT use a separate
   // mutex column because last_status already encodes the in-flight
   // state and the WHERE clause is atomic in SQLite.
@@ -614,7 +615,7 @@ export async function runScheduledTaskNow(taskId: string): Promise<
 }
 
 /**
- * Phase 3 Step 3 �?startup recovery for stale `running` rows. A crash
+ * Phase 3 Step 3 — startup recovery for stale `running` rows. A crash
  * mid-execution leaves a task with `last_status='running'` and
  * `getDueTasks()` will skip it forever. Walk all `running` tasks at
  * startup and reset to `error` with an exponential backoff `next_run`
@@ -659,7 +660,7 @@ async function recoverStaleRunningTasks(): Promise<void> {
       }
     } catch { /* best effort */ }
 
-    console.warn(`[scheduler] Recovered stale running task ${task.id} (${task.name}) �?backoff ${backoffMs}ms`);
+    console.warn(`[scheduler] Recovered stale running task ${task.id} (${task.name}) — backoff ${backoffMs}ms`);
     void getDb; // keep the import live in case we add a transaction later
   }
 }
@@ -703,7 +704,7 @@ async function computeNextRun(task: ScheduledTask): Promise<void> {
       if (nextRun) {
         updateScheduledTask(task.id, { next_run: nextRun.toISOString() });
       } else {
-        // No valid next occurrence within 4 years �?pause the task
+        // No valid next occurrence within 4 years — pause the task
         updateScheduledTask(task.id, { status: 'paused', last_error: 'No valid cron match within 4 years' });
         console.warn(`[scheduler] Task ${task.id} paused: cron "${task.schedule_value}" has no match within 4 years`);
       }
@@ -731,13 +732,13 @@ async function applyBackoff(taskId: string, errors: number): Promise<void> {
 /**
  * Send a notification via the notify API (which handles Toast + Electron + Telegram).
  *
- * Phase 3 Step 3 �?payload extension. The fourth arg carries `taskId`
+ * Phase 3 Step 3 — payload extension. The fourth arg carries `taskId`
  * and `sessionId` so the notification-manager can stamp the resulting
  * `notification_events` row with the source task, and Electron can put
  * them in the OS notification's click payload to drive
- * `router.push('/settings/tasks?focus=�?)` when the user clicks.
+ * `router.push('/settings/tasks?focus=…')` when the user clicks.
  *
- * v6 fix (P1) �?returns the new `event_id` so the caller can write
+ * v6 fix (P1) — returns the new `event_id` so the caller can write
  * `task_run_logs.notification_event_id = event_id`, which is what
  * `/api/tasks/[id]/runs` joins on to surface delivery details. Without
  * that link, the runs API would always return `event=null` and the
@@ -746,7 +747,7 @@ async function applyBackoff(taskId: string, errors: number): Promise<void> {
  *
  * Returns `null` only on a hard send failure (sendNotification threw);
  * a fired notification with zero successful channels still returns
- * its event_id �?the per-channel statuses are visible via the link.
+ * its event_id — the per-channel statuses are visible via the link.
  */
 async function sendTaskNotification(
   title: string,
@@ -775,7 +776,7 @@ async function sendTaskNotification(
     console.log(`[notify] enqueued event_id=${result.event_id ?? 'null'} priority=${priority} title=${JSON.stringify(title)}`);
     return result.event_id;
   } catch (err) {
-    // #34: previously swallowed silently �?surface it so a failed enqueue is
+    // #34: previously swallowed silently — surface it so a failed enqueue is
     // visible in logs (still best-effort: never block task execution).
     console.error('[notify] enqueue FAILED (task notification not queued):', err);
     return null;
@@ -812,21 +813,21 @@ async function handleMissedTasks(): Promise<void> {
   console.log(`[scheduler] Found ${missedOnce.length} missed one-shot task(s)`);
 
   for (const task of missedOnce) {
-    // Codex P1 �?earlier rev wrote a "过期提醒" assistant message
+    // Codex P1 — earlier rev wrote a "过期提醒" assistant message
     // into the latest workspace session as a fallback when
     // task.session_id was empty. That fallback was the same
     // cross-project-bleed pattern the origin_session_id fix closed
     // for the main runner path: a missed ai_task created from
     // project A could land its "missed" notice in project B's
     // assistant chat (whichever workspace session sorted as
-    // latest). We now ONLY send a notification �?the executeDueTask
+    // latest). We now ONLY send a notification — the executeDueTask
     // call below routes through agent-task-runner which creates a
     // proper task-bound session via ensureTaskBoundSession +
     // origin_session_id inheritance, so the run result lands where
     // it should.
     sendTaskNotification(
-      `�?${task.name}`,
-      `Missed during downtime �?running now. Open the task to view the result.`,
+      `⏰ ${task.name}`,
+      `Missed during downtime — running now. Open the task to view the result.`,
       'normal',
       { taskId: task.id, sessionId: task.session_id },
     ).catch(() => { /* best effort */ });
@@ -858,7 +859,7 @@ async function checkExpiredTasks(): Promise<void> {
 
       // Notify
       try {
-        await sendTaskNotification(`�?${task.name}`, 'This recurring task has auto-expired after 7 days. Recreate it if needed.', 'low');
+        await sendTaskNotification(`⏰ ${task.name}`, 'This recurring task has auto-expired after 7 days. Recreate it if needed.', 'low');
       } catch { /* best effort */ }
     }
   }
@@ -867,7 +868,7 @@ async function checkExpiredTasks(): Promise<void> {
 // ── Utility functions ──────────────────────────────────────────────
 
 /**
- * Phase 3 Step 4 �?system-injected heartbeat task management.
+ * Phase 3 Step 4 — system-injected heartbeat task management.
  *
  * Heartbeat is **NOT** a separate kind. It's an `ai_task` with
  * `source='assistant_heartbeat'`. The runner branches on `source` to
@@ -876,9 +877,9 @@ async function checkExpiredTasks(): Promise<void> {
  * normal ai_task path.
  *
  * `ensureHeartbeatTask({ enabled, intervalHours })` is idempotent:
- *   - `enabled === false` (or `intervalHours <= 0`) �?delete any
+ *   - `enabled === false` (or `intervalHours <= 0`) → delete any
  *     existing heartbeat row (no-op if none).
- *   - `enabled === true` �?ensure exactly one row with the given
+ *   - `enabled === true` → ensure exactly one row with the given
  *     interval. If a row exists with a different interval, update it
  *     in place (don't churn the id).
  *
@@ -912,7 +913,7 @@ export async function ensureHeartbeatTask(opts: {
     const scheduleDrift = cadenceChanged || existing.status !== 'active';
     const workspaceDrift = !!opts.workspacePath && existing.working_directory !== opts.workspacePath;
     if (promptDrift || scheduleDrift || workspaceDrift) {
-      // Codex P1 �?DON'T move next_run forward to the next cron
+      // Codex P1 — DON'T move next_run forward to the next cron
       // boundary just because we touched the row. If the existing
       // row's next_run is already in the future, leave it alone; if
       // it's overdue we still let the scheduler stale-check guard
@@ -978,13 +979,13 @@ export function heartbeatCronForInterval(intervalHours?: number): string {
 }
 
 /**
- * Heartbeat prompt �?exported so the runner's heartbeat-branch
+ * Heartbeat prompt — exported so the runner's heartbeat-branch
  * systemPrompt can reuse it / append to it. Phrased as instructions
  * to the model:
  *
  *   - Only HEARTBEAT.md + (optional) memory_recent are legal data
  *     sources for this turn. Do NOT call codepilot_list_tasks or any
- *     other scheduler-introspection tool �?heartbeat would recurse
+ *     other scheduler-introspection tool — heartbeat would recurse
  *     into the scheduling system it lives inside.
  *   - At most ONE tool call. If HEARTBEAT.md is empty / says nothing
  *     needs attention, respond with exactly `HEARTBEAT_OK` and stop.
@@ -992,7 +993,7 @@ export function heartbeatCronForInterval(intervalHours?: number): string {
  *     `HEARTBEAT_OK\n\nfoo`) is a speak-up.
  */
 /**
- * Codex P1 �?derive heartbeat cadence (in ms) from the task's cron
+ * Codex P1 — derive heartbeat cadence (in ms) from the task's cron
  * expression. ensureHeartbeatTask writes either "0 [slash][star]N * * *"
  * (every Nth hour) or "0 9 * * *" (daily 9am for intervals >= 24h).
  * We back the chosen N out of the cron string for the stale-check
@@ -1002,7 +1003,7 @@ export function heartbeatCronForInterval(intervalHours?: number): string {
  * here because it closes the JSDoc block.
  *
  * Returns 24h as a conservative default when the cron doesn't match
- * either heartbeat shape (legacy rows, manual overrides) �?that's
+ * either heartbeat shape (legacy rows, manual overrides) — that's
  * the upper bound, so the worst case is "we run once a day instead
  * of catching every interval boundary", which is still safer than
  * the pre-fix "run on every app start".
@@ -1010,13 +1011,13 @@ export function heartbeatCronForInterval(intervalHours?: number): string {
 export function heartbeatIntervalMsForTask(task: ScheduledTask): number {
   const HOUR_MS = 3_600_000;
   const cron = task.schedule_value || '';
-  // "0 */N * * *" cron pattern �?every N hours
+  // "0 */N * * *" cron pattern → every N hours
   const everyNHours = cron.match(/^\s*0\s+\*\/(\d+)\s+\*\s+\*\s+\*\s*$/);
   if (everyNHours) {
     const n = parseInt(everyNHours[1], 10);
     if (Number.isFinite(n) && n >= 1) return n * HOUR_MS;
   }
-  // 0 9 * * *  �?daily 9am (interval >= 24h)
+  // 0 9 * * *  → daily 9am (interval >= 24h)
   if (/^\s*0\s+\d+\s+\*\s+\*\s+\*\s*$/.test(cron)) return 24 * HOUR_MS;
   return 24 * HOUR_MS;
 }
@@ -1025,7 +1026,7 @@ export const HEARTBEAT_TASK_PROMPT =
   '[Heartbeat check]\n\n' +
   'You are doing a periodic background check. Strict rules for this turn:\n' +
   '1. HEARTBEAT.md content is already injected as context below. Read it.\n' +
-  '2. You MAY make AT MOST ONE tool call �?and only `codepilot_memory_recent` if you genuinely need recent memory context to interpret HEARTBEAT.md. Do NOT call: codepilot_list_tasks, codepilot_schedule_task, codepilot_cancel_task, codepilot_hatch_buddy, codepilot_notify, any shell command, Bash, or other agent / web / search tools. Heartbeat introspecting the scheduler would recurse.\n' +
+  '2. You MAY make AT MOST ONE tool call — and only `codepilot_memory_recent` if you genuinely need recent memory context to interpret HEARTBEAT.md. Do NOT call: codepilot_list_tasks, codepilot_schedule_task, codepilot_cancel_task, codepilot_hatch_buddy, codepilot_notify, any shell command, Bash, or other agent / web / search tools. Heartbeat introspecting the scheduler would recurse.\n' +
   '3. If HEARTBEAT.md is empty, missing, or its content does not require user attention right now: respond with EXACTLY the literal string `HEARTBEAT_OK` and nothing else. No prefix, no suffix, no markdown.\n' +
   '4. Otherwise, write a SHORT (<= 2 sentence) message to the user about what needs attention. Do not invent items not grounded in HEARTBEAT.md.';
 
@@ -1072,7 +1073,7 @@ export function getNextCronTime(expression: string): Date | null {
       continue;
     }
 
-    // Day matches �?scan minutes
+    // Day matches — scan minutes
     for (let m = 0; m < 1440; m++) {
       const candidate = new Date(y, mo, d, Math.floor(m / 60), m % 60, 0, 0);
       if (candidate <= now) continue;
@@ -1083,7 +1084,7 @@ export function getNextCronTime(expression: string): Date | null {
     }
   }
 
-  // No match found within 4 years �?expression is either impossible (e.g. Feb 30)
+  // No match found within 4 years — expression is either impossible (e.g. Feb 30)
   // or extremely sparse (e.g. Feb 29 on a specific weekday). Return null so
   // callers can pause the task instead of scheduling a fake execution time.
   console.warn(`[scheduler] No cron match for "${expression}" within 4 years`);

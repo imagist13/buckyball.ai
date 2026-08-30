@@ -9,7 +9,7 @@
  *   - "user": user messages with metadata (cwd, git branch, etc.)
  *   - "assistant": assistant responses with structured content blocks
  *
- * Messages are threaded via parentUuid â†?uuid chains.
+ * Messages are threaded via parentUuid â†’ uuid chains.
  */
 
 import fs from 'fs';
@@ -143,9 +143,9 @@ export function getClaudeProjectsDir(): string {
  * Decode a Claude Code project directory name back to a filesystem path.
  *
  * Claude Code encodes absolute paths by replacing each '/' with '-'.
- * e.g., "/root/clawd" â†?"-root-clawd"
+ * e.g., "/root/clawd" â†’ "-root-clawd"
  *
- * NOTE: This is lossy â€?directory names containing hyphens are ambiguous.
+ * NOTE: This is lossy â€” directory names containing hyphens are ambiguous.
  * e.g., "-root-my-project" could be "/root/my-project" or "/root/my/project".
  * The `cwd` field inside JSONL entries is the authoritative working directory;
  * this function is only used as a fallback for display purposes.

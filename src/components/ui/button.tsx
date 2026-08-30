@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // `[&_svg]:!text-current` forces nested icons to follow the
-        // button's foreground color. Without this, <BuckyballIcon>'s
+        // button's foreground color. Without this, <CodePilotIcon>'s
         // default `text-muted-foreground` (light/secondary) leaks onto
         // dark primary buttons and the icon visually fades into the
         // dark background (user-reported: "深色按钮里图标灰色辨识度

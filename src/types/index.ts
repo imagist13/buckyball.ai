@@ -22,12 +22,12 @@ export type { TitleOrigin };
 export type { SessionPermissionProfile };
 
 /**
- * Phase 3 Step 4 ‚Ä?chat session origin. Default `'user'` for normal
+ * Phase 3 Step 4 ‚Äî chat session origin. Default `'user'` for normal
  * user-opened conversations; `'task'` for sessions created by the
  * agent task runner (one per ai_task). Used by `ChatListPanel` to
  * filter task-bound sessions out of the main list (only reachable
  * from `/settings/tasks` or notification click). Heartbeat doesn't
- * create new sessions ‚Ä?it reuses the user's buddy session ‚Ä?so
+ * create new sessions ‚Äî it reuses the user's buddy session ‚Äî so
  * heartbeat does NOT introduce an `'assistant'` value here; that
  * dimension lives on the heartbeat task itself (`source` field).
  */
@@ -37,7 +37,7 @@ export interface ChatSession {
   id: string;
   title: string;
   /**
-   * Provenance of `title` ‚Ä?who wrote it and therefore who may overwrite it.
+   * Provenance of `title` ‚Äî who wrote it and therefore who may overwrite it.
    * See `TitleOrigin` in `src/lib/conversation-title.ts` for the state machine;
    * `src/lib/db.ts#updateSessionTitle` is the only writer. Optional here because
    * rows read back from a pre-migration DB snapshot may predate the column.
@@ -50,23 +50,24 @@ export interface ChatSession {
   working_directory: string;
   sdk_session_id: string; // Claude Agent SDK session ID for resume
   /**
-   * Phase 5 Phase 3 (2026-05-13) ‚Ä?Codex Runtime thread id for
+   * Phase 5 Phase 3 (2026-05-13) ‚Äî Codex Runtime thread id for
    * `thread/resume`. Mirrors `sdk_session_id` semantics but scoped
    * to the codex_runtime adapter. Empty string = no Codex thread
-   * established yet. UI / API code MUST NOT read this directly ‚Ä?   * route through `src/lib/runtime/session-store.ts`.
+   * established yet. UI / API code MUST NOT read this directly ‚Äî
+   * route through `src/lib/runtime/session-store.ts`.
    */
   codex_thread_id?: string;
   /**
-   * Phase 5b (2026-05-15) ‚Ä?provider id the Codex thread was bound
+   * Phase 5b (2026-05-15) ‚Äî provider id the Codex thread was bound
    * to at start time. `thread/start` injects `model_providers.
-   * codepilot_proxy` for one specific buckyball.ai provider; resuming
+   * codepilot_proxy` for one specific CodePilot provider; resuming
    * under a different provider would smuggle a stale injection back
    * in. Empty string = unknown (legacy thread or codex_account).
    * Same access discipline as `codex_thread_id`.
    */
   codex_thread_provider_id?: string;
   /**
-   * Phase 8 Phase 2 (2026-05-27) ‚Ä?fingerprint of the `config.mcp_servers`
+   * Phase 8 Phase 2 (2026-05-27) ‚Äî fingerprint of the `config.mcp_servers`
    * the Codex thread was started with. Resume re-checks it; a changed
    * fingerprint forces a fresh thread so a continuation can't bind to a
    * stale MCP tool set. Empty string = no MCP injected / legacy thread.
@@ -74,7 +75,7 @@ export interface ChatSession {
   codex_thread_mcp_fingerprint?: string;
   project_name: string;
   /**
-   * Phase 3 Step 4 ‚Ä?see `ChatSessionSource`. Stored as TEXT (default
+   * Phase 3 Step 4 ‚Äî see `ChatSessionSource`. Stored as TEXT (default
    * `'user'`); ChatListPanel filters out `'task'` by default so
    * task-bound sessions don't pollute the user-facing list.
    */
@@ -87,7 +88,7 @@ export interface ChatSession {
   /**
    * Phase 2 Step 2: per-session execution-engine pin. Empty string =
    * "follow global agent_runtime setting" (the today-default behavior).
-   * `'claude_code'` / `'bbagent'` = "this session is locked
+   * `'claude_code'` / `'codepilot_runtime'` = "this session is locked
    * to that runtime regardless of subsequent global changes". The
    * send route / streamClaude / picker hook will start consuming this
    * in subsequent Phase 2 steps; today only the schema, accessor, and
@@ -150,9 +151,9 @@ export type SkillKind = 'agent_skill' | 'slash_command' | 'sdk_command' | 'codep
 
 import type { TranslationKey } from '@/i18n';
 import type { ComponentType, SVGAttributes, RefAttributes } from 'react';
-import type { BuckyballIconName } from '@/components/ui/semantic-icon';
+import type { CodePilotIconName } from '@/components/ui/semantic-icon';
 
-/** Generic icon component type ‚Ä?compatible with Phosphor, Lucide, or any SVG icon. */
+/** Generic icon component type ‚Äî compatible with Phosphor, Lucide, or any SVG icon. */
 export type IconComponent = ComponentType<
   SVGAttributes<SVGSVGElement> & RefAttributes<SVGSVGElement> & { size?: number | string; className?: string }
 >;
@@ -173,11 +174,11 @@ export interface PopoverItem {
   kind?: SkillKind;
   /**
    * Phase 7 (2026-05-21): replaced `icon: IconComponent` (Phosphor
-   * function reference) with `iconName: BuckyballIconName` (semantic
+   * function reference) with `iconName: CodePilotIconName` (semantic
    * alias string). Keeps the vendor identity out of the data layer and
-   * funnels rendering through BuckyballIcon ‚Ü?HugeIcons.
+   * funnels rendering through CodePilotIcon ‚Üí HugeIcons.
    */
-  iconName?: BuckyballIconName;
+  iconName?: CodePilotIconName;
   nodeType?: MentionNodeType;
 }
 
@@ -239,16 +240,16 @@ export interface Message {
   stream_status?: 'streaming' | 'completed' | 'interrupted' | 'error';
   is_heartbeat_ack?: number; // 1 = heartbeat ack (prunable from transcript), 0 = normal
   /**
-   * Phase 3 Step 4 ‚Ä?link this message to a `task_run_logs` row. When
+   * Phase 3 Step 4 ‚Äî link this message to a `task_run_logs` row. When
    * non-null the message was authored by a scheduled task / heartbeat
    * run; MessageList uses this to render an inline TaskRunMarker
    * before the run's first message. Critically NOT included in the
-   * LLM prompt context ‚Ä?it's a render-side join only, never written
+   * LLM prompt context ‚Äî it's a render-side join only, never written
    * into `content`. NULL for normal user-authored messages.
    */
   task_run_id?: string | null;
   /**
-   * SQLite rowid, monotonically increasing per insert ‚Ä?used as the compact
+   * SQLite rowid, monotonically increasing per insert ‚Äî used as the compact
    * coverage boundary (see `context_summary_boundary_rowid`). Populated by
    * `getMessages()` which does `SELECT *, rowid as _rowid`. Optional here
    * because some code paths synthesize Message-like objects without DB origin.
@@ -267,7 +268,7 @@ export interface SubagentRunRecord {
   logical_run_id: string;
   attempt_number: number;
   parent_session_id: string;
-  runtime: 'bbagent' | 'claude_code' | 'codex_runtime';
+  runtime: 'codepilot_runtime' | 'claude_code' | 'codex_runtime';
   tool_name: string;
   agent_name: string;
   provider_id: string;
@@ -432,7 +433,7 @@ export interface MediaBlock {
 /**
  * A provider-reported URL source used to support a model response.
  * `trust: external` is intentionally carried into persistence/UI so retrieved
- * post text can never be confused with buckyball.ai instructions.
+ * post text can never be confused with CodePilot instructions.
  */
 export interface ExternalSource {
   id: string;
@@ -476,7 +477,7 @@ export interface ApiProvider {
   provider_type: string; // legacy: 'anthropic' | 'openrouter' | 'bedrock' | 'vertex' | 'custom'
   /** Stable catalog identity selected by the user. Empty only for legacy/ambiguous rows. */
   preset_key: string;
-  /** Wire protocol ‚Ä?new field, takes precedence over provider_type for dispatch */
+  /** Wire protocol ‚Äî new field, takes precedence over provider_type for dispatch */
   protocol: string; // 'anthropic' | 'openai-compatible' | 'xai' | 'openrouter' | 'bedrock' | 'vertex' | 'google' | 'gemini-image' | 'openai-image'
   base_url: string;
   api_key: string;
@@ -485,13 +486,13 @@ export interface ApiProvider {
   is_active: number; // SQLite boolean: 0 or 1
   sort_order: number;
   extra_env: string; // JSON string of Record<string, string> (legacy, prefer env_overrides_json)
-  /** Extra headers to send with API requests ‚Ä?JSON string of Record<string, string> */
+  /** Extra headers to send with API requests ‚Äî JSON string of Record<string, string> */
   headers_json: string;
-  /** Environment overrides for Claude Code SDK subprocess ‚Ä?JSON string of Record<string, string> */
+  /** Environment overrides for Claude Code SDK subprocess ‚Äî JSON string of Record<string, string> */
   env_overrides_json: string;
-  /** Semantic model role mapping ‚Ä?JSON string of { default?, reasoning?, small?, haiku?, sonnet?, opus? } */
+  /** Semantic model role mapping ‚Äî JSON string of { default?, reasoning?, small?, haiku?, sonnet?, opus? } */
   role_models_json: string;
-  /** Per-provider options ‚Ä?JSON string of { thinking_mode?, context_1m? } */
+  /** Per-provider options ‚Äî JSON string of { thinking_mode?, context_1m? } */
   options_json: string;
   notes: string;
   created_at: string;
@@ -519,7 +520,7 @@ export interface ProviderModelGroup {
    * source of truth across Provider Card / Models page / chat picker. */
   compat?: ProviderRuntimeCompat;
   /**
-   * #632 item 1 ‚Ä?whether a `token_usage.context_window` persisted for a
+   * #632 item 1 ‚Äî whether a `token_usage.context_window` persisted for a
    * session on this provider reflects a REAL capacity. `false` only for an
    * anthropic-protocol provider on a third-party base_url: the Claude Agent
    * SDK reports a generic ~200K default there (the GLM "200K" the user
@@ -542,7 +543,7 @@ export interface ProviderModelGroup {
     capabilities?: Record<string, unknown>;
     variants?: Record<string, unknown>;
     /**
-     * Phase 6 UIÊî∂Âè£ P2 (2026-05-14) ‚Ä?per-row runtime compat surfaced
+     * Phase 6 UIÊî∂Âè£ P2 (2026-05-14) ‚Äî per-row runtime compat surfaced
      * to the chat picker so it can render incompatible rows disabled
      * + tooltip instead of hiding them. Empty array (or missing
      * field) = picker treats as unrestricted (legacy fallback).
@@ -556,7 +557,7 @@ export interface ProviderModelGroup {
     /**
      * Optional per-runtime "why" string. Key is a `RuntimeId`; value
      * is a short human-readable reason the picker tooltips. Matching
-     * key absent ‚Ü?picker falls back to a generic "not supported by
+     * key absent ‚Üí picker falls back to a generic "not supported by
      * current engine" message.
      */
     unsupportedReasonByRuntime?: Record<string, string>;
@@ -564,7 +565,7 @@ export interface ProviderModelGroup {
 }
 
 /**
- * Runtime compatibility matrix ‚Ä?Provider layer.
+ * Runtime compatibility matrix ‚Äî Provider layer.
  *
  * Drives consumer behavior across Provider Card / Models page / chat picker
  * / resolver:
@@ -578,48 +579,48 @@ export interface ProviderModelGroup {
  *                               alias mapping have been confirmed in practice.
  *                               UI uses "Claude Code ÂÖºÂÆπ" + info tone.
  *  - `claude_code_experimental` Anthropic-compat protocol but no verified
- *                               flag ‚Ä?generic third-party templates and
+ *                               flag ‚Äî generic third-party templates and
  *                               unverified custom URLs. UI uses "Claude Code
  *                               ÂÆûÈ™å" + warning tone to flag uncertainty
  *                               around tool / thinking / alias behavior.
  *  - `openrouter_anthropic_skin` OpenRouter base_url WITHOUT `/v1`
  *                               (`https://openrouter.ai/api`). Per OpenRouter's
  *                               own Claude Code integration docs, this skin
- *                               speaks the Anthropic wire protocol ‚Ä?so it is
+ *                               speaks the Anthropic wire protocol ‚Äî so it is
  *                               reachable from Claude Code Runtime even
  *                               though `protocol === 'openrouter'`. Keep it
  *                               distinct from `claude_code_verified` so the
  *                               label can mention OpenRouter explicitly and
  *                               nudge users toward `anthropic/claude-*` SKUs
  *                               (the skin is most reliable for those).
- *  - `bbagent_only`           Non-Anthropic protocol (OpenRouter `/v1`
+ *  - `codepilot_only`           Non-Anthropic protocol (OpenRouter `/v1`
  *                               OpenAI-compat skin, OpenAI-compat chat, Google
- *                               chat). Flows through bb-agent Runtime AND
+ *                               chat). Flows through CodePilot Runtime AND
  *                               Codex Runtime (via the provider proxy); not
  *                               Claude Code Runtime (Anthropic wire only).
  *  - `media_only`               Image / video / embedding services. Never enters
  *                               the chat picker.
  *  - `unknown`                  Custom URL with no matched preset. UI uses
- *                               "ÈúÄÈ™åËØÅ" copy ‚Ä?not "‰∏çÂèØÁî?.
+ *                               "ÈúÄÈ™åËØÅ" copy ‚Äî not "‰∏çÂèØÁî®".
  */
 export type ProviderRuntimeCompat =
   | 'claude_code_ready'
   | 'claude_code_verified'
   | 'claude_code_experimental'
   | 'openrouter_anthropic_skin'
-  | 'bbagent_only'
+  | 'codepilot_only'
   | 'codex_account'
   | 'media_only'
   | 'unknown';
 
 /**
- * Runtime compatibility matrix ‚Ä?Model layer. A bag of capability flags;
+ * Runtime compatibility matrix ‚Äî Model layer. A bag of capability flags;
  * a model can carry several at once.
  *
- * Phase 0.5 Slice A (2026-05-13) ‚Ä?new canonical contract is
+ * Phase 0.5 Slice A (2026-05-13) ‚Äî new canonical contract is
  * `supportedRuntimes[] + unsupportedReasonByRuntime?`. The two boolean
  * fields (`claude_code_compatible` / `codepilot_runtime_compatible`)
- * are kept for back-compat input only ‚Ä?new code MUST write
+ * are kept for back-compat input only ‚Äî new code MUST write
  * `supportedRuntimes`. Slice B migrates all readers. Adding a third
  * `*_runtime_compatible` boolean is explicitly prohibited by
  * `runtime-contract-shape.test.ts`.
@@ -640,8 +641,8 @@ export interface ModelRuntimeCompat {
    * @deprecated use `supportedRuntimes`. Kept for back-compat input.
    * Old code may still write this; new code MUST NOT.
    */
-  bbagent_compatible?: boolean;
-  /** Image / video / embedding only ‚Ä?does NOT belong in chat pickers. */
+  codepilot_runtime_compatible?: boolean;
+  /** Image / video / embedding only ‚Äî does NOT belong in chat pickers. */
   media?: boolean;
   /**
    * Phase 0.5 Slice A canonical compat field. The set of runtime ids
@@ -672,20 +673,20 @@ export type ProviderModelSource =
 
 /**
  * Why this model row is currently `enabled` / hidden. Distinct from
- * `ProviderModelSource` (which records data origin) ‚Ä?this records the
+ * `ProviderModelSource` (which records data origin) ‚Äî this records the
  * intent layer: did the system pick this row for the user, or did the
  * user override it?
  *
  * Refresh apply uses this to decide what's safe to flip:
- *   - `recommended` / `discovered` / `catalog` ‚Ü?system-managed, may
+ *   - `recommended` / `discovered` / `catalog` ‚Üí system-managed, may
  *     be re-evaluated on each refresh
- *   - `manual_enabled` / `manual_hidden` ‚Ü?user-managed, never touched
+ *   - `manual_enabled` / `manual_hidden` ‚Üí user-managed, never touched
  *     by refresh (would otherwise silently undo the user's choice)
  */
 export type ModelEnableSource =
   | 'recommended'      // system auto-enabled per catalog recommendation
   | 'manual_enabled'   // user explicitly toggled on
-  | 'manual_hidden'    // user explicitly toggled off ‚Ä?never auto-enable again
+  | 'manual_hidden'    // user explicitly toggled off ‚Äî never auto-enable again
   | 'discovered'       // discovery probe found it but recommended logic said "not by default"
   | 'catalog';         // initial seed from preset's defaultModels
 
@@ -756,10 +757,10 @@ export interface ProviderOptions {
   /**
    * Global default mode (Phase 2C contract).
    *
-   * - `'auto'`  ‚Ä?system picks via the resolver's fallback chain. `default_model`
+   * - `'auto'`  ‚Äî system picks via the resolver's fallback chain. `default_model`
    *               and `default_model_provider` are unused; UI may show the
    *               last-resolved auto pick but it is not a promise.
-   * - `'pinned'` ‚Ä?user explicitly committed to `default_model` + `default_model_provider`.
+   * - `'pinned'` ‚Äî user explicitly committed to `default_model` + `default_model_provider`.
    *                If unavailable under the effective Runtime, the resolver
    *                returns `'invalid-default'` and chat must block the send;
    *                no silent substitution is allowed.
@@ -767,9 +768,9 @@ export interface ProviderOptions {
    * Only meaningful for `__global__` provider id. Stored in `settings.global_default_mode`.
    */
   default_mode?: 'auto' | 'pinned';
-  /** Global default model ID ‚Ä?used when `default_mode === 'pinned'`. */
+  /** Global default model ID ‚Äî used when `default_mode === 'pinned'`. */
   default_model?: string;
-  /** Global default model's provider ID ‚Ä?used when `default_mode === 'pinned'`. */
+  /** Global default model's provider ID ‚Äî used when `default_mode === 'pinned'`. */
   default_model_provider?: string;
 }
 
@@ -787,15 +788,15 @@ export interface ProviderResponse {
 
 /**
  * @deprecated Phase 0 (Context Accounting Runtime Contract, 2026-05-20):
- * all fields made optional so the "ÂÅáÊï∞Êç? code path that filled this in
+ * all fields made optional so the "ÂÅáÊï∞ÊçÆ" code path that filled this in
  * `claude-client.ts` (commit a4fa2d4) can be safely deleted without
  * breaking persisted token_usage rows.
  *
  * Real-source per-Runtime accounting lives in
  * `src/lib/harness/context-accounting.ts` as
  * `RuntimeContextAccountingSnapshot` (Phase 1+). Old rows that still
- * carry this shape are fine ‚Ä?every field is now optional and the hook
- * treats undefined as "no data ‚Ü?hide row".
+ * carry this shape are fine ‚Äî every field is now optional and the hook
+ * treats undefined as "no data ‚Üí hide row".
  */
 export interface ContextBreakdownSnapshot {
   systemPromptTokens?: number;
@@ -807,23 +808,23 @@ export interface ContextBreakdownSnapshot {
 }
 
 /**
- * Phase 1 ‚Ä?Context Accounting Runtime Contract (2026-05-20).
+ * Phase 1 ‚Äî Context Accounting Runtime Contract (2026-05-20).
  *
- * Each Runtime adapter (ClaudeCode / bb-agent / Codex) produces a
+ * Each Runtime adapter (ClaudeCode / CodePilot / Codex) produces a
  * RuntimeContextAccountingSnapshot during send-path; persisted alongside
  * the assistant message via `TokenUsage.context_accounting`.
  *
  * Why this exists: Phase 6 Tier 2 (a4fa2d4) persisted a JSON-uniform
  * `context_breakdown` snapshot that fed Skills/MCP/Tools rows from fixed
  * compiler outputs. Users saw "Skills 1.5K" on every message including
- * plain "‰Ω†Â•Ω" ‚Ä?same value as humanizer-zh invocation ‚Ä?because the
+ * plain "‰Ω†Â•Ω" ‚Äî same value as humanizer-zh invocation ‚Äî because the
  * data source was hardcoded `capabilityFragments` not real Skill turn
  * injection. The contract here enforces:
  *
- *   1. `source` breadcrumb REQUIRED ‚Ä?distinguishes available (every
+ *   1. `source` breadcrumb REQUIRED ‚Äî distinguishes available (every
  *      turn) vs invoked (this turn's actual injection). UI uses source
  *      to decide whether the row counts as user-visible.
- *   2. `unsupported` is first-class ‚Ä?a Runtime says "I cannot count
+ *   2. `unsupported` is first-class ‚Äî a Runtime says "I cannot count
  *      MCP tokens" rather than report 0; UI hides those rows.
  *   3. `producedBy: ContextAccountingRuntimeId` (no 'native' alias).
  *   4. `providerBackend` encodes Codex sub-modes (codex_account /
@@ -834,11 +835,11 @@ export interface ContextBreakdownSnapshot {
 
 export type ContextAccountingRuntimeId =
   | 'claude_code'
-  | 'bbagent'
+  | 'codepilot_runtime'
   | 'codex_runtime';
 
 /** Kinds a Runtime adapter can report. Excludes conversation / cache /
- *  pending_next_turn ‚Ä?those come from baseline / composer, not the
+ *  pending_next_turn ‚Äî those come from baseline / composer, not the
  *  Runtime. */
 export type ContextAccountingKind =
   | 'system_prompt'
@@ -853,36 +854,37 @@ export interface ContextAccountingEntry {
   /** Token count for this kind in THIS turn. */
   tokens: number;
   /**
-   * Trace source ‚Ä?MUST distinguish "available" vs "loaded/invoked":
-   *   'sdk-init/available-skills'    ‚Ä?every-turn list (NOT user-visible Skills)
-   *   'sdk-turn/loaded-skill'        ‚Ä?this turn's actual injection
-   *   'mcp-server-schemas/available' ‚Ä?all loaded schemas
-   *   'mcp-turn/invoked-tool'        ‚Ä?this turn's MCP tool call
-   *   'workspace-rules-fs/CLAUDE.md' ‚Ä?file-system source
-   *   'sdk-actual-system-prompt'     ‚Ä?SDK's real system prompt char/4
-   *   'assistant-memory-snapshot'    ‚Ä?adapter assistantMemory char/4
+   * Trace source ‚Äî MUST distinguish "available" vs "loaded/invoked":
+   *   'sdk-init/available-skills'    ‚Äî every-turn list (NOT user-visible Skills)
+   *   'sdk-turn/loaded-skill'        ‚Äî this turn's actual injection
+   *   'mcp-server-schemas/available' ‚Äî all loaded schemas
+   *   'mcp-turn/invoked-tool'        ‚Äî this turn's MCP tool call
+   *   'workspace-rules-fs/CLAUDE.md' ‚Äî file-system source
+   *   'sdk-actual-system-prompt'     ‚Äî SDK's real system prompt char/4
+   *   'assistant-memory-snapshot'    ‚Äî adapter assistantMemory char/4
    *
    * NEVER use post-Phase-0:
-   *   'compiled.budget.capabilityFragments' ‚Ä?hardcoded; Phase 6 Tier 2 ÂÅáÊï∞Êç?   */
+   *   'compiled.budget.capabilityFragments' ‚Äî hardcoded; Phase 6 Tier 2 ÂÅáÊï∞ÊçÆ
+   */
   source: string;
   /** Optional sub-detail (e.g. each loaded Skill name + size). */
   detail?: string;
 }
 
 export interface RuntimeContextAccountingSnapshot {
-  /** Real entries ‚Ä?only kinds with verified source. */
+  /** Real entries ‚Äî only kinds with verified source. */
   entries: Partial<Record<ContextAccountingKind, ContextAccountingEntry>>;
   /** Kinds this Runtime+backend cannot count. UI hides these rows. */
   unsupported: readonly ContextAccountingKind[];
-  /** Project RuntimeId ‚Ä?no aliases (no 'native'). */
+  /** Project RuntimeId ‚Äî no aliases (no 'native'). */
   producedBy: ContextAccountingRuntimeId;
   /**
    * Sub-classification for Runtimes with multiple backends.
    * - Codex Runtime split:
-   *     'codex_account'    ‚Ä?OAuthÁôªÂΩïÊÄ? many kinds unsupported
- *     'codepilot_proxy'  ‚Ä?user-supplied provider via buckyball.ai bridge (Phase 5e)
- *     'native_app_server' ‚Ä?app-server self-managed
- * - bb-agent / ClaudeCode: typically omitted (single backend)
+   *     'codex_account'    ‚Äî OAuthÁôªÂΩïÊÄÅ, many kinds unsupported
+   *     'codepilot_proxy'  ‚Äî user-supplied provider via CodePilot bridge (Phase 5e)
+   *     'native_app_server' ‚Äî app-server self-managed
+   * - CodePilot / ClaudeCode: typically omitted (single backend)
    */
   providerBackend?: 'codex_account' | 'codepilot_proxy' | 'native_app_server' | string;
 }
@@ -894,14 +896,14 @@ export interface TokenUsage {
   cache_creation_input_tokens?: number;
   cost_usd?: number;
   /**
-   * Phase 1 ‚Ä?per-turn RuntimeContextAccountingSnapshot. Source of
+   * Phase 1 ‚Äî per-turn RuntimeContextAccountingSnapshot. Source of
    * truth for the popover breakdown. Older rows that carry the
    * deprecated `context_breakdown` field are ignored (those held Phase
-   * 6 Tier 2 ÂÅáÊï∞Êç? Phase 0 commit 4fcc09e stopped writing them).
+   * 6 Tier 2 ÂÅáÊï∞ÊçÆ; Phase 0 commit 4fcc09e stopped writing them).
    */
   context_accounting?: RuntimeContextAccountingSnapshot;
   /**
-   * Phase 6 ‚Ä?per-turn context breakdown snapshot. Captured in the send
+   * Phase 6 ‚Äî per-turn context breakdown snapshot. Captured in the send
    * path, persisted JSON-nested. Optional for backward compatibility:
    * older assistant rows + non-ClaudeCode runtimes (native / codex) won't
    * carry this field, and the popover handles that by showing 0 across
@@ -911,7 +913,7 @@ export interface TokenUsage {
   /**
    * Context window the SDK reports for the model that handled this turn.
    * Source: `SDKResultMessage.modelUsage[<key>].contextWindow` (Claude
-   * Agent SDK ‚â?0.2.111) ‚Ä?but it's the SDK's BUNDLED-catalog value, not the
+   * Agent SDK ‚â• 0.2.111) ‚Äî but it's the SDK's BUNDLED-catalog value, not the
    * provider's API. #632: claude-client only persists this for a first-party
    * Anthropic endpoint; for third-party Anthropic-compatible proxies (GLM /
    * Bailian / Volcengine / MiniMax / Kimi via custom base_url) the SDK reports
@@ -1080,7 +1082,7 @@ export interface MessagesResponse {
   messages: Message[];
   hasMore?: boolean;
   /**
-   * Phase 3 Step 4 ‚Ä?inline-join of `task_run_logs` for messages whose
+   * Phase 3 Step 4 ‚Äî inline-join of `task_run_logs` for messages whose
    * `task_run_id` is non-null. Keyed by run id. Lets MessageList
    * render `<TaskRunMarker />` without per-marker N+1 fetches. Empty
    * (or omitted) when no message in this page has a task_run_id.
@@ -1164,22 +1166,23 @@ export type SSEEventType =
   | 'result'             // final result with usage stats
   | 'error'              // error occurred
   | 'permission_request' // permission approval needed
-  | 'permission_resolved' // permission auto-resolved server-side (timeout) ‚Ä?A5 Step 2
-  | 'permission_review'  // canonical review decision made WITHOUT a prompt ‚Ä?                         // currently the auto_review classifier denying a tool
+  | 'permission_resolved' // permission auto-resolved server-side (timeout) ‚Äî A5 Step 2
+  | 'permission_review'  // canonical review decision made WITHOUT a prompt ‚Äî
+                         // currently the auto_review classifier denying a tool
                          // (reviewerSource: 'sdk-reviewer'). Distinct from
                          // permission_resolved, which closes a prompt the user
                          // was actually shown. See lib/permission/review-event.ts.
-  | 'mode_changed'       // SDK permission mode changed (e.g. plan ‚Ü?code)
+  | 'mode_changed'       // SDK permission mode changed (e.g. plan ‚Üí code)
   | 'task_update'        // SDK TodoWrite task sync
   | 'keep_alive'         // SDK keep-alive heartbeat (resets idle timer)
   | 'rewind_point'       // SDK user message with rewind checkpoint
   | 'rate_limit'         // SDK 0.2.111 subscription rate-limit telemetry
   | 'context_usage'      // SDK 0.2.111 post-turn context usage snapshot
-  | 'file_changed'       // Phase 5 Phase 4 (2026-05-13) ‚Ä?Codex Runtime
+  | 'file_changed'       // Phase 5 Phase 4 (2026-05-13) ‚Äî Codex Runtime
                          // (and any future runtime) explicit file-change
                          // event. Routes to `codepilot:file-changed`
                          // window event so PreviewPanel quiet-refreshes.
-                         // SDK doesn't emit this ‚Ä?file changes inside
+                         // SDK doesn't emit this ‚Äî file changes inside
                          // tool_result events still flow through the
                          // existing isWriteTool inspection path.
   | 'done';              // stream complete
@@ -1224,7 +1227,7 @@ export interface PermissionRequestEvent {
 
 export interface PermissionResponseRequest {
   permissionRequestId: string;
-  /** Echo of PermissionRequestEvent.approvalToken ‚Ä?required by the route. */
+  /** Echo of PermissionRequestEvent.approvalToken ‚Äî required by the route. */
   approvalToken?: string;
   decision: {
     behavior: 'allow';
@@ -1318,7 +1321,7 @@ export interface AssistantWorkspaceState {
   dailyCheckInEnabled?: boolean;
   heartbeatEnabled: boolean;
   /**
-   * Phase 3 Step 4 ‚Ä?interval (in hours) between background heartbeat
+   * Phase 3 Step 4 ‚Äî interval (in hours) between background heartbeat
    * runs when `heartbeatEnabled` is true. Drives `ensureHeartbeatTask`
    * to derive a cron expression. Default 24 (once daily). Zero or
    * undefined falls back to default; values < 1 are rejected at the
@@ -1498,11 +1501,11 @@ export interface FileAttachment {
   size: number;
   data: string; // base64 encoded content
   filePath?: string; // persisted disk path (for messages reloaded from DB)
-  /** #628 ‚Ä?real in-tree source path for an @-mention of a project file
+  /** #628 ‚Äî real in-tree source path for an @-mention of a project file
    *  (cwd-relative). When set AND server-validated inside cwd, the chat route
    *  references the real file instead of writing a `.codepilot-uploads` copy, so
    *  the AI's Read/Edit lands on the user's actual file. Absent for true uploads
-   *  (no in-tree path) ‚Ä?those still get copied. Never trusted server-side: it is
+   *  (no in-tree path) ‚Äî those still get copied. Never trusted server-side: it is
    *  re-resolved + containment-checked against the working dir. */
   originPath?: string;
 }
@@ -1777,7 +1780,7 @@ export interface SessionStreamSnapshot {
   // manual 'deny' so the user knows they didn't click it.
   permissionResolved: 'allow' | 'deny' | 'timeout' | null;
   /**
-   * Review decisions made without prompting the user ‚Ä?today, the auto_review
+   * Review decisions made without prompting the user ‚Äî today, the auto_review
    * classifier denying a tool. Distinct from `pendingPermission` (a question
    * for the user) and `permissionResolved` (the answer to one). Carries
    * `reviewerSource` so the UI can say who decided. See
@@ -1794,7 +1797,7 @@ export interface SessionStreamSnapshot {
    * Optional terminal reason emitted by SDK 0.2.111 on SDKResultMessage.
    * Used by ChatView to render a contextual end-of-turn chip (Phase 1 of
    * agent-sdk-0-2-111-adoption). Absent for error paths without a result
-   * message ‚Ä?those continue to flow through error-classifier.ts.
+   * message ‚Äî those continue to flow through error-classifier.ts.
    */
   terminalReason?: string;
   /**
@@ -1843,7 +1846,7 @@ export type StreamEventListener = (event: StreamEvent) => void;
  * `_rowid` is the SQLite rowid of the original DB row, propagated so that
  * reactive compact (claude-client.ts) can write a correct
  * context_summary_boundary_rowid on CONTEXT_TOO_LONG retry. Synthesized /
- * non-DB-origin rows may omit it ‚Ä?callers that only have {role, content}
+ * non-DB-origin rows may omit it ‚Äî callers that only have {role, content}
  * pairs (e.g. bridge transports, fallback paths) don't need to fabricate a
  * rowid; the boundary helper falls back to the existing session boundary.
  */
@@ -1866,7 +1869,7 @@ export interface ClaudeStreamOptions {
   abortController?: AbortController;
   permissionMode?: string;
   /**
-   * Phase 2 ‚Ä?Context Accounting Runtime Contract (2026-05-20). Names of
+   * Phase 2 ‚Äî Context Accounting Runtime Contract (2026-05-20). Names of
    * Agent Skills selected via MessageInput badges. Producer looks up via
    * discoverSkills() to compute real SKILL.md filesizes; no prompt-text
    * guessing.
@@ -1875,28 +1878,28 @@ export interface ClaudeStreamOptions {
   files?: FileAttachment[];
   toolTimeoutSeconds?: number;
   provider?: ApiProvider;
-  /** Explicit provider ID (e.g. 'env') ‚Ä?passed to resolveForClaudeCode */
+  /** Explicit provider ID (e.g. 'env') ‚Äî passed to resolveForClaudeCode */
   providerId?: string;
-  /** Session's stored provider ID ‚Ä?passed to resolveForClaudeCode */
+  /** Session's stored provider ID ‚Äî passed to resolveForClaudeCode */
   sessionProviderId?: string;
   /**
    * Phase 2 Step 3: session's `runtime_pin` value (chat-runtime label,
-   * e.g. `'claude_code'` / `'bbagent'`). When non-empty, the
+   * e.g. `'claude_code'` / `'codepilot_runtime'`). When non-empty, the
    * runtime selection in `streamClaude` prefers this over the global
-   * `agent_runtime` setting ‚Ä?that's the headline immunity behavior
+   * `agent_runtime` setting ‚Äî that's the headline immunity behavior
    * Phase 2 promises. Empty / undefined = "follow global", which is
    * the today-default for any session not explicitly pinned.
    */
   sessionRuntimePin?: string;
-  /** Recent conversation history from DB ‚Ä?used as fallback context when SDK resume is unavailable or fails */
+  /** Recent conversation history from DB ‚Äî used as fallback context when SDK resume is unavailable or fails */
   conversationHistory?: ConversationHistoryItem[];
-  /** Compressed session summary ‚Ä?used as context skeleton in fallback mode */
+  /** Compressed session summary ‚Äî used as context skeleton in fallback mode */
   sessionSummary?: string;
   /** Existing compact coverage boundary (rowid). Reactive compact preserves this
    *  rather than resetting to 0 when it cannot derive a new boundary from _rowid
    *  metadata in conversationHistory. */
   sessionSummaryBoundaryRowid?: number;
-  /** Token budget for fallback history ‚Ä?messages beyond this budget are truncated */
+  /** Token budget for fallback history ‚Äî messages beyond this budget are truncated */
   fallbackTokenBudget?: number;
   onRuntimeStatusChange?: (status: string) => void;
   /** Per-session bypass: when true, skip all permission checks for this session */
@@ -1933,14 +1936,14 @@ export interface ClaudeStreamOptions {
   agent?: string;
   /** Enable file checkpointing for rewind support */
   enableFileCheckpointing?: boolean;
-  /** When true, this is an auto-trigger turn (invisible to user) ‚Ä?skip rewind point emission */
+  /** When true, this is an auto-trigger turn (invisible to user) ‚Äî skip rewind point emission */
   autoTrigger?: boolean;
   /** Enable 1M context window (beta header: context-1m-2025-08-07) */
   context1m?: boolean;
   /** Enable generative UI widget guidelines MCP server (default: true) */
   generativeUI?: boolean;
   /**
-   * Codex P1 ‚Ä?Phase 3 Step 4 follow-up. Marks this run as a special-
+   * Codex P1 ‚Äî Phase 3 Step 4 follow-up. Marks this run as a special-
    * purpose agent invocation so the runtime can apply tighter
    * defaults than a normal user chat. Today only one value is
    * defined:
@@ -1962,7 +1965,7 @@ export interface ClaudeStreamOptions {
    * Session-lock ownership token (the per-request `lockId` minted in the chat
    * route via crypto.randomBytes). Plumbed through so this turn's Query is
    * registered under the token that owns the session lock, and unregister is
-   * gated on it ‚Ä?the I1 ownership gate that keeps a superseded turn's late
+   * gated on it ‚Äî the I1 ownership gate that keeps a superseded turn's late
    * teardown from evicting the turn that took over. Optional/additive: legacy
    * callers that omit it register/unregister under `undefined` as before.
    */
@@ -2005,7 +2008,7 @@ export interface CliToolDefinition {
   guideSteps: { zh: string[]; en: string[] };
   examplePrompts: CliToolExamplePrompt[];
   /** Commands that MUST be run after install (e.g. skills install, dependency install).
-   *  These are injected into the chat prefill ‚Ä?only include machine-executable commands,
+   *  These are injected into the chat prefill ‚Äî only include machine-executable commands,
    *  not human-readable guidance. */
   postInstallCommands?: string[];
   /** Tool is designed for AI agents (non-interactive flags, structured output, skills) */
@@ -2141,7 +2144,7 @@ export interface WeixinContextTokenRecord {
 // ==========================================
 
 /**
- * Phase 3 Step 3 ‚Ä?task kind.
+ * Phase 3 Step 3 ‚Äî task kind.
  *
  *   - 'reminder'  : the prompt text IS the notification body. Scheduler
  *                   does NOT call any AI provider; to-the-minute fire
@@ -2159,7 +2162,7 @@ export interface WeixinContextTokenRecord {
 export type ScheduledTaskKind = 'reminder' | 'ai_task';
 
 /**
- * Phase 3 Step 4 ‚Ä?`scheduled_tasks.source` distinguishes user-created
+ * Phase 3 Step 4 ‚Äî `scheduled_tasks.source` distinguishes user-created
  * tasks from the system-injected assistant heartbeat task. Heartbeat is
  * NOT a separate `kind` (kind stays `'ai_task'`); only `source` differs.
  * The agent task runner branches on `source` to decide buddy-session vs
@@ -2168,21 +2171,21 @@ export type ScheduledTaskKind = 'reminder' | 'ai_task';
 export type ScheduledTaskSource = 'user' | 'assistant_heartbeat';
 
 /**
- * Phase 3 Step 4 ‚Ä?`task_run_logs.status` is a 5-state app-layer enum.
+ * Phase 3 Step 4 ‚Äî `task_run_logs.status` is a 5-state app-layer enum.
  * Validated in `insertTaskRunLog` / `updateTaskRunLog` (no DB CHECK,
  * since SQLite doesn't support modifying CHECK on existing tables and
  * a table-rebuild migration is out of Step 4 scope). Legacy rows still
  * carry `'success'` / `'error'`; UI maps those to succeeded / failed
  * for display.
  *
- *   - `running` ‚Ä?the task is in flight.
- *   - `succeeded` ‚Ä?completed normally (replaces legacy `'success'`).
- *   - `failed` ‚Ä?terminated with an error (replaces legacy `'error'`).
- *   - `waiting_for_permission` ‚Ä?agent hit a permission gate while
+ *   - `running` ‚Äî the task is in flight.
+ *   - `succeeded` ‚Äî completed normally (replaces legacy `'success'`).
+ *   - `failed` ‚Äî terminated with an error (replaces legacy `'error'`).
+ *   - `waiting_for_permission` ‚Äî agent hit a permission gate while
  *     running headless; stream cleanly cancelled with partial output
  *     persisted. User must enter the task-bound session and choose
- *     "Re-run" or "Abandon" ‚Ä?there is no durable resume in v1.
- *   - `cancelled` ‚Ä?user explicitly abandoned a paused run.
+ *     "Re-run" or "Abandon" ‚Äî there is no durable resume in v1.
+ *   - `cancelled` ‚Äî user explicitly abandoned a paused run.
  *
  * `scheduled_tasks.last_status` is INTENTIONALLY NOT extended to 5
  * states (the column has a SQLite CHECK constraint that would need a
@@ -2235,10 +2238,10 @@ export interface ScheduledTask {
   prompt: string;
   schedule_type: 'cron' | 'interval' | 'once';
   schedule_value: string;
-  /** Phase 3 Step 3 ‚Ä?see ScheduledTaskKind. */
+  /** Phase 3 Step 3 ‚Äî see ScheduledTaskKind. */
   kind: ScheduledTaskKind;
   /**
-   * Phase 3 Step 4 ‚Ä?see ScheduledTaskSource. Optional on the type so
+   * Phase 3 Step 4 ‚Äî see ScheduledTaskSource. Optional on the type so
    * existing test fixtures and API callsites that don't care about
    * heartbeat distinction still type-check. DB column is `NOT NULL
    * DEFAULT 'user'`, so reads from DB always populate this field;
@@ -2257,14 +2260,14 @@ export interface ScheduledTask {
   notify_on_complete: number;
   session_id?: string;
   /**
-   * Phase 3 Step 4 follow-up ‚Ä?origin chat session this task was
+   * Phase 3 Step 4 follow-up ‚Äî origin chat session this task was
    * created from (when the model called `codepilot_schedule_task` from
    * inside a user chat). Used by the runner to inherit working
    * directory + provider/model/runtime_pin/permission_profile into the
    * task-bound execution session on first fire. Distinct from
    * `session_id`, which is the runner's lazily-created execution
    * session. Undefined for legacy rows and for tasks created from
-   * non-chat UI surfaces (Settings ‚Ü?Tasks ‚Ü?Add).
+   * non-chat UI surfaces (Settings ‚Üí Tasks ‚Üí Add).
    */
   origin_session_id?: string;
   working_directory?: string;
@@ -2274,16 +2277,18 @@ export interface ScheduledTask {
 }
 
 /**
- * Phase 3 Step 3 ‚Ä?notification delivery channels (canonical set).
+ * Phase 3 Step 3 ‚Äî notification delivery channels (canonical set).
  * The `notification_deliveries` table uses a string column so future
  * channels can be added without schema migrations, but the test
  * suite asserts these values against the canonical type to catch
  * typos.
  */
 export type NotificationChannel =
+  // Legacy audit/migration literal. New notification events never target the
+  // renderer; every priority is owned by Electron Main's native channel.
   | 'renderer-toast'
   // `electron-native` is exclusively claimed and displayed by Electron Main,
-  // independent of BrowserWindow visibility.
+  // independent of BrowserWindow visibility and notification priority.
   // The retired `electron-bg-native` literal is intentionally NOT
   // listed here so a future regression can't smuggle it back in.
   | 'electron-native'
@@ -2293,16 +2298,16 @@ export type NotificationChannel =
   | 'bridge-qq';
 
 /**
- * Phase 3 Step 3 ‚Ä?delivery row state machine.
+ * Phase 3 Step 3 ‚Äî delivery row state machine.
  *
- *   queued        ‚Ü?channel was a candidate, ack pending
- *   delivered     ‚Ü?channel ack'd success
- *   error         ‚Ü?channel ack'd failure (with `error` text)
- *   not_configured‚Ü?channel was a candidate but lacks credentials
+ *   queued        ‚Üí channel was a candidate, ack pending
+ *   delivered     ‚Üí channel ack'd success
+ *   error         ‚Üí channel ack'd failure (with `error` text)
+ *   not_configured‚Üí channel was a candidate but lacks credentials
  *                   (e.g. urgent + bridge-telegram with no token);
  *                   written immediately by `sendNotification`, no ack
- *   skipped       ‚Ü?channel was a candidate but user disabled it
- *                   (e.g. Bridge configured but Settings ‚Ü?Bridge off);
+ *   skipped       ‚Üí channel was a candidate but user disabled it
+ *                   (e.g. Bridge configured but Settings ‚Üí Bridge off);
  *                   also written immediately
  */
 export type NotificationDeliveryStatus =

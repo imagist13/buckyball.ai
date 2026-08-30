@@ -1,9 +1,9 @@
 /**
- * Phase 0.5 Slice A guardrail â€?Runtime run-event union must cover
+ * Phase 0.5 Slice A guardrail â€” Runtime run-event union must cover
  * the 8 canonical types + the mandatory `unknown_item` fallback.
  *
  * Adapters translate their native events into this union. Items the
- * adapter doesn't recognize MUST land in `unknown_item` â€?never be
+ * adapter doesn't recognize MUST land in `unknown_item` â€” never be
  * silently dropped. UI renders `unknown_item` as a generic block so
  * future Codex plugins / extensions stay visible even before
  * CodePilot has bespoke renderers for them.
@@ -40,12 +40,12 @@ describe('RuntimeRunEvent contract', () => {
   it('includes the unknown_item fallback as a first-class member', () => {
     assert.ok(
       RUNTIME_RUN_EVENT_TYPES.includes('unknown_item'),
-      'unknown_item must be in the canonical list â€?it is the mandatory ' +
+      'unknown_item must be in the canonical list â€” it is the mandatory ' +
         'fallback channel for adapter-side payloads that do not fit the 8 main types.',
     );
   });
 
-  it('union is exhaustive â€?assertNever guards future drift', () => {
+  it('union is exhaustive â€” assertNever guards future drift', () => {
     function visit(t: RuntimeRunEventType): string {
       switch (t) {
         case 'assistant_delta':
@@ -94,7 +94,7 @@ describe('RuntimeRunEvent contract', () => {
     };
     const usage: RuntimeRunEvent = {
       type: 'usage_updated',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       sessionId: 's',
       inputTokens: 100,
       outputTokens: 50,

@@ -1,12 +1,12 @@
 /**
- * Workspace Sidebar �?pure state model.
+ * Workspace Sidebar — pure state model.
  *
  * The sidebar always carries two fixed Tabs (`git`, `widget`) plus zero
  * or more dynamic Tabs (markdown/artifact/file/files-pinned). Dynamic
  * Tabs are deduped by a `key` so the same `.md` file opened twice
  * surfaces the existing Tab instead of creating a second.
  *
- * No React here �?every helper is referentially transparent so the
+ * No React here — every helper is referentially transparent so the
  * tests in `unit/workspace-sidebar.test.ts` can drive them directly.
  *
  * See `docs/exec-plans/active/workspace-sidebar-tabs.md` for product
@@ -16,6 +16,7 @@
 import type { PreviewSource } from '@/hooks/usePanel';
 import type { PreviewTrust } from '@/lib/preview-source';
 import type { SubagentRunDetailsResponse } from '@/types';
+import type { ThreadSurfaceStateV1 } from '@/lib/workspace-surfaces';
 import type {
   DelegatedAgentResult,
   SubagentDispatchState,
@@ -29,7 +30,7 @@ import {
 
 export type FixedTabId = 'git' | 'widget';
 
-export type DynamicTabKind = 'markdown' | 'artifact' | 'file' | 'files-pinned' | 'agent-run';
+export type DynamicTabKind = 'markdown' | 'artifact' | 'file' | 'files-pinned' | 'agent-run' | 'browser';
 
 export interface FixedTab {
   id: FixedTabId;
@@ -77,6 +78,14 @@ export interface FilesPinnedTab {
   title: string;
 }
 
+export interface BrowserSurfaceTab {
+  id: string;
+  kind: 'browser';
+  key: string;
+  title: string;
+  initialUrl?: string;
+}
+
 export interface AgentRunTab {
   id: string;
   kind: 'agent-run';
@@ -96,7 +105,7 @@ export interface AgentRunTab {
     workflowId?: string;
     taskKey?: string;
     dependencyTaskKeys: string[];
-    runtime?: 'bbagent' | 'claude_code' | 'codex_runtime';
+    runtime?: 'codepilot_runtime' | 'claude_code' | 'codex_runtime';
     status: 'queued' | 'running' | 'completed' | 'partial' | 'failed' | 'cancelled' | 'timed_out';
     phase: SubagentRunPhase;
     dispatchState: SubagentDispatchState;
@@ -116,7 +125,7 @@ export interface AgentRunTab {
   };
 }
 
-export type DynamicTab = MarkdownTab | ArtifactTab | FilePreviewTab | FilesPinnedTab | AgentRunTab;
+export type DynamicTab = MarkdownTab | ArtifactTab | FilePreviewTab | FilesPinnedTab | AgentRunTab | BrowserSurfaceTab;
 export type Tab = FixedTab | DynamicTab;
 
 export interface WorkspaceSidebarState {
@@ -128,6 +137,14 @@ export interface WorkspaceSidebarState {
   width: number;
   /** Currently active Tab `id`. Always points at a Tab in `tabs`. */
   activeTabId: string;
+  /** Primary module remains mounted while inspector content opens beside it. */
+  activePrimaryId: FixedTabId | 'files-pinned' | 'browser' | 'agents';
+  /** Browser is a repeatable Primary. Keep its concrete sidebar Tab identity
+   *  while an Inspector temporarily owns activeTabId. */
+  activeBrowserTabId?: string;
+  /** Active temporary detail. Undefined means the inspector lane is closed. */
+  activeInspectorId?: string;
+  inspectorOpen: boolean;
   /** Fixed first, then dynamic in insertion order. */
   tabs: Tab[];
 }
@@ -137,6 +154,7 @@ export interface WorkspaceSidebarState {
 export const SIDEBAR_MIN_WIDTH = 320;
 export const SIDEBAR_MAX_WIDTH = 800;
 export const SIDEBAR_DEFAULT_WIDTH = 480;
+export const MAX_BROWSER_SURFACE_TABS = 8;
 
 const FIXED_TABS: ReadonlyArray<FixedTab> = [
   { id: 'git', kind: 'fixed' },
@@ -158,6 +176,8 @@ export function initialState(opts?: { open?: boolean; width?: number }): Workspa
     open: opts?.open ?? false,
     width: opts?.width ?? SIDEBAR_DEFAULT_WIDTH,
     activeTabId: 'git',
+    activePrimaryId: 'git',
+    inspectorOpen: false,
     tabs: [...FIXED_TABS],
   };
 }
@@ -172,21 +192,47 @@ export function dynamicTabId(kind: DynamicTabKind, key: string): string {
   return `${kind}:${key}`;
 }
 
+export function createBrowserSurfaceTab(key: string, initialUrl?: string): BrowserSurfaceTab {
+  return {
+    id: dynamicTabId('browser', key),
+    kind: 'browser',
+    key,
+    title: 'Browser',
+    ...(initialUrl ? { initialUrl } : {}),
+  };
+}
+
+export function renameBrowserSurfaceTab(
+  state: WorkspaceSidebarState,
+  id: string,
+  title: string,
+): WorkspaceSidebarState {
+  const normalized = title.trim().slice(0, 80);
+  if (!normalized) return state;
+  let changed = false;
+  const tabs = state.tabs.map((tab) => {
+    if (tab.id !== id || tab.kind !== 'browser' || tab.title === normalized) return tab;
+    changed = true;
+    return { ...tab, title: normalized };
+  });
+  return changed ? { ...state, tabs } : state;
+}
+
 // ─── Mutations (returns new state) ─────────────────────────────────
 
 /**
  * Open or focus a dynamic Tab.
- * - If a Tab with the same id already exists �?activate it AND replace
+ * - If a Tab with the same id already exists → activate it AND replace
  *   the existing tab's metadata in place. This matters for the Phase 4
- *   agent-referenced �?user-selected promotion: PreviewPanel calls
+ *   agent-referenced → user-selected promotion: PreviewPanel calls
  *   setPreviewSource with the upgraded trust tier on confirm, which
  *   funnels back through this reducer. If we kept the old tab object,
  *   the persisted tab list (localStorage) would still carry the
  *   agent-referenced marker and the user would re-see the confirm
  *   card after every page reload. Replacing in place is safe because
- *   the key (filePath / artifact id) is the same �?we're updating
+ *   the key (filePath / artifact id) is the same — we're updating
  *   trust / baseDir / readonly / title, not creating a duplicate.
- * - Otherwise �?append at the end of the dynamic list and activate it.
+ * - Otherwise → append at the end of the dynamic list and activate it.
  *
  * Always sets `open: true` (caller wants the sidebar surfaced).
  */
@@ -198,12 +244,63 @@ export function openDynamicTab(
   if (existingIdx >= 0) {
     const nextTabs = state.tabs.slice();
     nextTabs[existingIdx] = tab;
-    return { ...state, open: true, activeTabId: tab.id, tabs: nextTabs };
+    if (tab.kind === 'browser') {
+      return {
+        ...state,
+        open: true,
+        activeTabId: tab.id,
+        activePrimaryId: 'browser',
+        activeBrowserTabId: tab.id,
+        activeInspectorId: undefined,
+        inspectorOpen: false,
+        tabs: nextTabs,
+      };
+    }
+    if (tab.kind === 'files-pinned') {
+      return {
+        ...state,
+        open: true,
+        activeTabId: tab.id,
+        activePrimaryId: 'files-pinned',
+        tabs: nextTabs,
+      };
+    }
+    return {
+      ...state,
+      open: true,
+      activeTabId: tab.id,
+      activeInspectorId: tab.id,
+      inspectorOpen: true,
+      tabs: nextTabs,
+    };
+  }
+  if (tab.kind === 'browser') {
+    return {
+      ...state,
+      open: true,
+      activeTabId: tab.id,
+      activePrimaryId: 'browser',
+      activeBrowserTabId: tab.id,
+      activeInspectorId: undefined,
+      inspectorOpen: false,
+      tabs: [...state.tabs, tab],
+    };
+  }
+  if (tab.kind === 'files-pinned') {
+    return {
+      ...state,
+      open: true,
+      activeTabId: tab.id,
+      activePrimaryId: 'files-pinned',
+      tabs: [...state.tabs, tab],
+    };
   }
   return {
     ...state,
     open: true,
     activeTabId: tab.id,
+    activeInspectorId: tab.id,
+    inspectorOpen: true,
     tabs: [...state.tabs, tab],
   };
 }
@@ -222,17 +319,166 @@ export function closeTab(
   const target = state.tabs[idx];
   if (isFixedTab(target)) return state;
   const nextTabs = state.tabs.filter((t) => t.id !== id);
+  if (target.kind === 'browser') {
+    const browserPosition = state.tabs
+      .filter((tab): tab is BrowserSurfaceTab => tab.kind === 'browser')
+      .findIndex((tab) => tab.id === id);
+    const remainingBrowsers = nextTabs.filter((tab): tab is BrowserSurfaceTab => tab.kind === 'browser');
+    const closingActiveBrowser = state.activeBrowserTabId === id || state.activeTabId === id;
+    const replacement = closingActiveBrowser
+      ? remainingBrowsers[Math.min(browserPosition, remainingBrowsers.length - 1)]
+      : remainingBrowsers.find((tab) => tab.id === state.activeBrowserTabId);
+    const noBrowserRemains = remainingBrowsers.length === 0;
+    const activePrimaryId = noBrowserRemains && state.activePrimaryId === 'browser'
+      ? 'git'
+      : state.activePrimaryId;
+    const activeBrowserTabId = replacement?.id;
+    const activeTabId = state.inspectorOpen
+      ? state.activeTabId
+      : closingActiveBrowser
+        ? replacement?.id ?? activePrimaryId
+        : state.activeTabId;
+    return {
+      ...state,
+      tabs: nextTabs,
+      activeTabId,
+      activePrimaryId,
+      activeBrowserTabId,
+    };
+  }
   let nextActive = state.activeTabId;
   if (state.activeTabId === id) {
     // Prefer the Tab that was sitting to the left, else the first one.
     nextActive = nextTabs[Math.max(0, idx - 1)]?.id ?? nextTabs[0]?.id ?? 'git';
   }
-  return { ...state, tabs: nextTabs, activeTabId: nextActive };
+  const activeInspectorId = state.activeInspectorId === id
+    ? nextTabs.find((tab) => isDynamicTab(tab)
+        && tab.kind !== 'files-pinned'
+        && tab.kind !== 'browser')?.id
+    : state.activeInspectorId;
+  const inspectorOpen = Boolean(activeInspectorId);
+  const activePrimaryId = target.kind === 'files-pinned' && state.activePrimaryId === 'files-pinned'
+    ? 'git'
+    : state.activePrimaryId;
+  return {
+    ...state,
+    tabs: nextTabs,
+    activeTabId: nextActive,
+    activePrimaryId,
+    activeInspectorId,
+    inspectorOpen,
+  };
 }
 
 export function setActiveTab(state: WorkspaceSidebarState, id: string): WorkspaceSidebarState {
-  if (!state.tabs.some((t) => t.id === id)) return state;
-  return { ...state, activeTabId: id, open: true };
+  const tab = state.tabs.find((candidate) => candidate.id === id);
+  if (!tab) return state;
+  if (tab.kind === 'browser') {
+    return {
+      ...state,
+      activeTabId: id,
+      activePrimaryId: 'browser',
+      activeBrowserTabId: id,
+      activeInspectorId: undefined,
+      inspectorOpen: false,
+      open: true,
+    };
+  }
+  if (tab.kind === 'fixed' || tab.kind === 'files-pinned') {
+    return {
+      ...state,
+      activeTabId: id,
+      activePrimaryId: tab.id,
+      open: true,
+    };
+  }
+  return {
+    ...state,
+    activeTabId: id,
+    activeInspectorId: id,
+    inspectorOpen: true,
+    open: true,
+  };
+}
+
+export function setActivePrimary(
+  state: WorkspaceSidebarState,
+  id: WorkspaceSidebarState['activePrimaryId'],
+): WorkspaceSidebarState {
+  if (id === 'files-pinned') {
+    const existing = state.tabs.find((tab) => tab.id === 'files-pinned');
+    return existing
+      ? { ...state, open: true, activePrimaryId: id, activeTabId: id }
+      : openDynamicTab(state, {
+          id: 'files-pinned',
+          kind: 'files-pinned',
+          key: 'files',
+          title: 'Files',
+        });
+  }
+  if (id === 'browser') {
+    const existing = state.tabs.find((tab): tab is BrowserSurfaceTab =>
+      tab.kind === 'browser' && tab.id === state.activeBrowserTabId)
+      ?? state.tabs.find((tab): tab is BrowserSurfaceTab => tab.kind === 'browser');
+    return existing
+      ? setActiveTab(state, existing.id)
+      : openDynamicTab(state, createBrowserSurfaceTab('restored'));
+  }
+  if (id === 'git' || id === 'widget') return setActiveTab(state, id);
+  return { ...state, open: true, activePrimaryId: id, activeTabId: id };
+}
+
+/**
+ * User-driven Primary activation is a lane switch: the selected Primary must
+ * become visible and the current Inspector becomes inactive, while its tab is
+ * retained so the user can switch back. Hydration deliberately continues to
+ * call `setActivePrimary` directly because restoring a thread must preserve an
+ * Inspector that was open before reload.
+ */
+export function activatePrimaryInteractively(
+  state: WorkspaceSidebarState,
+  id: WorkspaceSidebarState['activePrimaryId'],
+): WorkspaceSidebarState {
+  return closeInspector(setActivePrimary(state, id));
+}
+
+/**
+ * Apply workspace-owned preferences without erasing thread-owned active state.
+ *
+ * Interactive activation deliberately opens the shell. Hydration is different:
+ * it must restore the active Primary while preserving the persisted collapsed
+ * state. A thread's active Primary wins when it is still pinned; otherwise the
+ * workspace default is used. Applying `open` last prevents `setActivePrimary`
+ * from turning a persisted `false` back into `true`.
+ */
+export function hydrateWorkspaceSidebarState(
+  state: WorkspaceSidebarState,
+  options: {
+    open: boolean;
+    width: number;
+    pinnedPrimaryIds: WorkspaceSidebarState['activePrimaryId'][];
+    defaultPrimaryId: WorkspaceSidebarState['activePrimaryId'];
+    preferredPrimaryId?: WorkspaceSidebarState['activePrimaryId'];
+  },
+): WorkspaceSidebarState {
+  const candidate = options.preferredPrimaryId ?? state.activePrimaryId;
+  const activePrimaryId = options.pinnedPrimaryIds.includes(candidate)
+    ? candidate
+    : options.defaultPrimaryId;
+  const activated = setActivePrimary(state, activePrimaryId);
+  return setOpen(setWidth(activated, options.width), options.open);
+}
+
+export function closeInspector(state: WorkspaceSidebarState): WorkspaceSidebarState {
+  if (!state.inspectorOpen) return state;
+  return {
+    ...state,
+    inspectorOpen: false,
+    activeInspectorId: undefined,
+    activeTabId: state.activePrimaryId === 'browser'
+      ? state.activeBrowserTabId ?? 'git'
+      : state.activePrimaryId,
+  };
 }
 
 export function setOpen(state: WorkspaceSidebarState, open: boolean): WorkspaceSidebarState {
@@ -269,7 +515,14 @@ export function commitWorkspaceFileMutation(
     const activeTabId = activeWasDeleted
       ? tabs[Math.max(0, activeIndex - 1)]?.id ?? tabs[0]?.id ?? 'git'
       : state.activeTabId;
-    return { ...state, tabs, activeTabId };
+    return {
+      ...state,
+      tabs,
+      activeTabId,
+      ...(state.activeInspectorId && !tabs.some((tab) => tab.id === state.activeInspectorId)
+        ? { activeInspectorId: undefined, inspectorOpen: false }
+        : {}),
+    };
   }
 
   if (!transaction.newPath) return state;
@@ -295,7 +548,10 @@ export function commitWorkspaceFileMutation(
       title: filePath.split(/[\\/]/).filter(Boolean).pop() ?? filePath,
     };
   });
-  return changed ? { ...state, tabs, activeTabId: nextActiveId } : state;
+  const activeInspectorId = state.activeInspectorId === state.activeTabId
+    ? nextActiveId
+    : state.activeInspectorId;
+  return changed ? { ...state, tabs, activeTabId: nextActiveId, activeInspectorId } : state;
 }
 
 // ─── Persistence ───────────────────────────────────────────────────
@@ -304,7 +560,7 @@ export function commitWorkspaceFileMutation(
  * localStorage key. Scoped by workspace + session so two projects
  * (or two sessions in the same workspace) don't share Tab lists.
  *
- * `null` workingDirectory or sessionId �?'global' bucket so the user
+ * `null` workingDirectory or sessionId → 'global' bucket so the user
  * gets a sensible default before a chat is selected.
  */
 export function storageKey(workingDirectory: string | null | undefined, sessionId: string | null | undefined): string {
@@ -323,6 +579,9 @@ interface SerializedState {
   open: boolean;
   width: number;
   activeTabId: string;
+  activePrimaryId: FixedTabId | 'files-pinned' | 'browser' | 'agents';
+  activeInspectorId?: string;
+  inspectorOpen: boolean;
   dynamicTabs: DynamicTab[];
 }
 
@@ -331,9 +590,13 @@ export function serialize(state: WorkspaceSidebarState): SerializedState {
     open: state.open,
     width: state.width,
     activeTabId: state.activeTabId,
+    activePrimaryId: state.activePrimaryId,
+    activeInspectorId: state.activeInspectorId,
+    inspectorOpen: state.inspectorOpen,
     // Agent transcripts are reconstructed from the durable chat message on
     // demand. Do not duplicate prompt/result content into localStorage.
-    dynamicTabs: state.tabs.filter(isDynamicTab).filter(tab => tab.kind !== 'agent-run'),
+    dynamicTabs: state.tabs.filter(isDynamicTab).filter(tab =>
+      tab.kind !== 'agent-run' && tab.kind !== 'browser'),
   };
 }
 
@@ -352,17 +615,112 @@ export function parse(raw: string | null | undefined): WorkspaceSidebarState {
     const fallbackActive = 'git';
     const desired = typeof data.activeTabId === 'string' ? data.activeTabId : fallbackActive;
     const activeTabId = tabs.some((t) => t.id === desired) ? desired : fallbackActive;
+    const persistedPrimary = data.activePrimaryId;
+    const activePrimaryId = (persistedPrimary === 'git'
+      || persistedPrimary === 'widget'
+      || persistedPrimary === 'browser'
+      || persistedPrimary === 'agents'
+      || (persistedPrimary === 'files-pinned' && tabs.some((tab) => tab.id === 'files-pinned')))
+      ? persistedPrimary
+      : activeTabId === 'git' || activeTabId === 'widget' || activeTabId === 'files-pinned'
+        ? activeTabId
+        : 'git';
+    const activeInspectorId = typeof data.activeInspectorId === 'string'
+      && tabs.some((tab) => tab.id === data.activeInspectorId && isDynamicTab(tab) && tab.kind !== 'files-pinned')
+      ? data.activeInspectorId
+      : (activeTabId !== 'git' && activeTabId !== 'widget' && activeTabId !== 'files-pinned'
+          ? activeTabId
+          : undefined);
     return {
       open: typeof data.open === 'boolean' ? data.open : false,
       width: typeof data.width === 'number'
         ? Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, data.width))
         : SIDEBAR_DEFAULT_WIDTH,
       activeTabId,
+      activePrimaryId,
+      activeInspectorId,
+      inspectorOpen: typeof data.inspectorOpen === 'boolean'
+        ? data.inspectorOpen && Boolean(activeInspectorId)
+        : Boolean(activeInspectorId),
       tabs,
     };
   } catch {
     return initialState();
   }
+}
+
+/** Thread-scoped persistence deliberately excludes workspace preferences,
+ * Files pin state, and agent transcripts. */
+export function serializeThreadSurfaceState(
+  state: WorkspaceSidebarState,
+  sessionId: string,
+): ThreadSurfaceStateV1 {
+  const activePrimary = state.activePrimaryId === 'files-pinned'
+    ? 'files'
+    : state.activePrimaryId;
+  const inspectorTabs = state.tabs.filter((tab): tab is DynamicTab =>
+    isDynamicTab(tab)
+      && tab.kind !== 'files-pinned'
+      && tab.kind !== 'agent-run'
+      && tab.kind !== 'browser');
+  const activeInspectorId = state.inspectorOpen
+    && state.activeInspectorId
+    && inspectorTabs.some((tab) => tab.id === state.activeInspectorId)
+    ? state.activeInspectorId
+    : undefined;
+  return {
+    version: 1,
+    sessionId,
+    activePrimary,
+    inspectorTabs,
+    ...(activeInspectorId ? { activeInspectorId } : {}),
+  };
+}
+
+/** Restore thread previews on top of workspace-owned open/width preferences. */
+export function restoreThreadSurfaceState(
+  base: WorkspaceSidebarState,
+  thread: ThreadSurfaceStateV1 | null,
+): WorkspaceSidebarState {
+  if (!thread) return base;
+  const primaryId: WorkspaceSidebarState['activePrimaryId'] = thread.activePrimary === 'files'
+    ? 'files-pinned'
+    : thread.activePrimary ?? base.activePrimaryId;
+  const filesTab: FilesPinnedTab = {
+    id: 'files-pinned',
+    kind: 'files-pinned',
+    key: 'files',
+    title: 'Files',
+  };
+  const preserved = base.tabs.filter((tab) =>
+    isFixedTab(tab) || tab.kind === 'agent-run' || tab.kind === 'files-pinned');
+  const withPrimary = primaryId === 'files-pinned'
+    && !preserved.some((tab) => tab.id === 'files-pinned')
+    ? [...preserved, filesTab]
+    : preserved;
+  const browserTab = createBrowserSurfaceTab('restored');
+  const withRepeatablePrimary = primaryId === 'browser'
+    ? [...withPrimary, browserTab]
+    : withPrimary;
+  const tabs: Tab[] = [
+    ...withRepeatablePrimary,
+    ...thread.inspectorTabs.filter((tab) => !withRepeatablePrimary.some((existing) => existing.id === tab.id)),
+  ];
+  const activeInspectorId = thread.activeInspectorId
+    && tabs.some((tab) => tab.id === thread.activeInspectorId)
+    ? thread.activeInspectorId
+    : undefined;
+  const inspectorOpen = Boolean(activeInspectorId);
+  return {
+    ...base,
+    open: base.open || inspectorOpen,
+    tabs,
+    activePrimaryId: primaryId,
+    activeBrowserTabId: primaryId === 'browser' ? browserTab.id : undefined,
+    activeInspectorId,
+    inspectorOpen,
+    activeTabId: activeInspectorId ?? (primaryId === 'browser' ? browserTab.id : primaryId),
+  };
 }
 
 /**
@@ -404,9 +762,9 @@ const MARKDOWN_EXTENSIONS = new Set(['md', 'mdx']);
  * call to `setPreviewSource(...)` on a chat-detail route surfaces in
  * the Workspace Sidebar as a Tab.
  *
- * - file kind, .md/.mdx �?markdown Tab keyed by filePath
- * - file kind, anything else �?file Tab keyed by filePath
- * - inline-* kinds �?artifact Tab keyed by virtualName or generated id
+ * - file kind, .md/.mdx → markdown Tab keyed by filePath
+ * - file kind, anything else → file Tab keyed by filePath
+ * - inline-* kinds → artifact Tab keyed by virtualName or generated id
  */
 export function tabFromPreviewSource(source: PreviewSource): DynamicTab {
   if (source.kind === 'file') {
@@ -440,12 +798,12 @@ export function tabFromPreviewSource(source: PreviewSource): DynamicTab {
       ...provenance,
     };
   }
-  // inline-* �?artifact Tab. Phase 4 UX: fingerprint includes a fast
+  // inline-* — artifact Tab. Phase 4 UX: fingerprint includes a fast
   // content hash so multiple Preview clicks on the same code fence
   // reuse one tab. The kind prefix prevents collisions across
   // inline-html / inline-json / etc. with the same content. Falls
   // back to virtualName + content-length when content isn't readable
-  // (defensive �?every concrete kind below has a content field).
+  // (defensive — every concrete kind below has a content field).
   const contentForHash = readInlineContent(source);
   const hashSuffix = djb2Hex(contentForHash);
   const fingerprint = `${source.kind}:${hashSuffix}`;
@@ -482,7 +840,8 @@ function readInlineContent(source: PreviewSource): string {
 }
 
 /**
- * djb2 32-bit hash as zero-padded hex. Sufficient for tab dedup �? * collision probability is effectively zero at typical content
+ * djb2 32-bit hash as zero-padded hex. Sufficient for tab dedup —
+ * collision probability is effectively zero at typical content
  * volumes (dozens of artifacts per session), and the hash is
  * deterministic so the SAME content always produces the SAME tab id.
  */
@@ -500,7 +859,7 @@ export function djb2Hex(input: string): string {
  * return the PreviewSource that PreviewPanel should render.
  *
  * Returns `null` for fixed Tabs (`git`, `widget`) and the Files Pinned
- * Tab �?those don't render the preview surface, so callers should
+ * Tab — those don't render the preview surface, so callers should
  * leave `previewSource` untouched (the previously-shown file stays
  * loaded but invisible until the user re-activates a preview Tab).
  *
@@ -523,6 +882,6 @@ export function previewSourceFromTab(tab: Tab): PreviewSource | null {
   if (tab.kind === 'artifact') {
     return tab.source;
   }
-  // 'fixed' / 'files-pinned' / 'agent-run' �?preview surface isn't theirs.
+  // 'fixed' / 'files-pinned' / 'agent-run' — preview surface isn't theirs.
   return null;
 }

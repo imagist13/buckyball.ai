@@ -1,0 +1,40 @@
+{
+  "date": "2026-08-25",
+  "platform": "darwin-arm64",
+  "electron": "40.10.6",
+  "probe": "harness/ready-probe.cjs",
+  "userData": "isolated-temporary-directory",
+  "events": [
+    {
+      "event": "script-started",
+      "elapsedMs": 1,
+      "ready": false
+    },
+    {
+      "event": "will-finish-launching",
+      "elapsedMs": 13,
+      "ready": false
+    },
+    {
+      "event": "ready-timeout",
+      "elapsedMs": 15006,
+      "ready": false
+    },
+    {
+      "event": "ready-event",
+      "elapsedMs": 15032,
+      "ready": true
+    },
+    {
+      "event": "when-ready-resolved",
+      "elapsedMs": 15032,
+      "ready": true
+    }
+  ],
+  "termination": {
+    "watchdogAppExitReturned": true,
+    "processExited": false,
+    "manualSignalRequired": "SIGINT"
+  },
+  "interpretation": "The isolated Electron host did not become ready within the 15 second watchdog and did not exit after app.exit(2). The ready event arrived immediately after the watchdog. This local host anomaly occurs before any BrowserWindow or WebContentsView is created, so it blocks the POC but is not evidence that WebContentsView crashes the CodePilot product."
+}

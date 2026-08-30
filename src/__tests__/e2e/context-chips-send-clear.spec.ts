@@ -3,20 +3,20 @@ import { goToChat, goToConversation } from '../helpers';
 
 /**
  * Coverage for the directory-chip lifecycle:
- *   1. `attach-directory-to-chat` event â†?composer chip
- *   2. User-removed â†?chip gone
- *   3. Real form submit (Codex P2.2) â†?chip cleared from DOM,
+ *   1. `attach-directory-to-chat` event â†’ composer chip
+ *   2. User-removed â†’ chip gone
+ *   3. Real form submit (Codex P2.2) â†’ chip cleared from DOM,
  *      POST body has `[Referenced Directories]` + `inode/directory`
  *      file entry, and the user message bubble shows the raw typed
  *      text WITHOUT the LLM-context block (proves displayOverride
  *      reached the bubble).
  *
- * Pairs with `unit/context-chips-send-clear.test.ts` â€?that file
+ * Pairs with `unit/context-chips-send-clear.test.ts` â€” that file
  * pins down the pure payload composition; this file pins down that
  * MessageInput's React state-clearing branches actually fire when
  * the user submits.
  */
-test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
+test.describe('Context chips â€” directory chip lifecycle @smoke', () => {
   test('attach-directory-to-chat dispatches a chip + remove button clears it', async ({ page }) => {
     await goToChat(page);
 
@@ -57,7 +57,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     await expect(removeButton).toBeVisible();
     await removeButton.click();
 
-    // Chip is gone â€?proxy for `directoryRefs === []`.
+    // Chip is gone â€” proxy for `directoryRefs === []`.
     await expect(folderChip).toHaveCount(0);
   });
 
@@ -82,7 +82,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     await expect(page.locator('span.font-mono', { hasText: 'src/app' })).toBeVisible();
     await expect(page.locator('span.font-mono', { hasText: /^docs$/ })).toBeVisible();
 
-    // Remove only the first one â€?the other must persist.
+    // Remove only the first one â€” the other must persist.
     await page.locator('button[aria-label*="src/app"]').first().click();
     await expect(page.locator('span.font-mono', { hasText: 'src/app' })).toHaveCount(0);
     await expect(page.locator('span.font-mono', { hasText: /^docs$/ })).toBeVisible();
@@ -97,7 +97,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     }
     await expect(input).toBeVisible();
 
-    // The handler in MessageInput strips trailing slashes â€?verify the chip
+    // The handler in MessageInput strips trailing slashes â€” verify the chip
     // rendered without it so the user sees a clean path.
     await page.evaluate(() => {
       window.dispatchEvent(
@@ -111,9 +111,9 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
 
   // â”€â”€ New-chat submit pipeline (POST body coverage only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // This test proves the /chat first-message flow really submits to
-  // /api/chat with the right serialisation (chips â†?inode/directory
+  // /api/chat with the right serialisation (chips â†’ inode/directory
   // file + [Referenced Directories] in content). It intentionally does
-  // NOT assert "chip cleared" or "textarea empty" â€?those would be
+  // NOT assert "chip cleared" or "textarea empty" â€” those would be
   // tested on the post-redirect ChatView, which is a fresh component
   // that never owned the chip in the first place. That trap was
   // flagged by Codex as masking the regression risk; the
@@ -149,7 +149,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
       });
     });
 
-    // Capture the /api/chat POST body â€?this is where we prove the
+    // Capture the /api/chat POST body â€” this is where we prove the
     // submit reached the network layer with the correct payload (chips
     // serialised as `inode/directory` files, content carries
     // `[Referenced Directories]`).
@@ -191,7 +191,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     const folderChip = page.locator('span.font-mono', { hasText: 'src/app' });
     await expect(folderChip).toBeVisible();
 
-    // User types and submits via Enter â€?same path as the real composer.
+    // User types and submits via Enter â€” same path as the real composer.
     await input.fill('please review this folder');
     await input.press('Enter');
 
@@ -200,7 +200,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     // (composeSubmitPayload, mentionAppend, etc.) AND proves submit
     // actually fired in the new-chat pipeline (proxy for "onSend was
     // called"). State-clearance regressions on the SAME composer are
-    // tested by the existing-session test below â€?not here.
+    // tested by the existing-session test below â€” not here.
     await expect.poll(() => chatRequestBody !== null, { timeout: 5_000 }).toBeTruthy();
     const payload = (chatRequestBody ?? {}) as { content?: unknown; files?: unknown };
     const content = typeof payload.content === 'string' ? payload.content : '';
@@ -212,7 +212,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
   // â”€â”€ Existing-session submit (Codex P2 final closure) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // The /chat first-message test above is real-submit, but it redirects
   // to /chat/[id] post-submit, so the "chip gone" assertion ends up on
-  // a freshly-mounted ChatView â€?which would pass even if MessageInput
+  // a freshly-mounted ChatView â€” which would pass even if MessageInput
   // forgot to call `setDirectoryRefs([])`. This test pins the same
   // composer instance through the submit cycle by using an existing
   // session route (no redirect). If anyone drops the setX([]) calls
@@ -240,14 +240,14 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
                 {
                   value: 'sonnet',
                   label: 'Sonnet',
-                  supportedRuntimes: ['claude_code', 'bbagent', 'codex_runtime'],
+                  supportedRuntimes: ['claude_code', 'codepilot_runtime', 'codex_runtime'],
                   unsupportedReasonByRuntime: {},
                 },
               ],
             },
           ],
           default_provider_id: 'mock',
-          runtime_applied: 'bbagent',
+          runtime_applied: 'codepilot_runtime',
         }),
       });
     });
@@ -265,7 +265,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
               model: 'sonnet',
               mode: 'code',
               provider_id: 'mock',
-              runtime_pin: 'bbagent',
+              runtime_pin: 'codepilot_runtime',
               working_directory: '/tmp',
               permission_profile: 'default',
               context_summary: null,
@@ -274,7 +274,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
         });
         return;
       }
-      // PATCH (e.g. on permission change) â€?no-op success.
+      // PATCH (e.g. on permission change) â€” no-op success.
       if (route.request().method() === 'PATCH') {
         await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
         return;
@@ -282,7 +282,7 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
       await route.continue();
     });
 
-    // Mock initial messages load â€?empty session.
+    // Mock initial messages load â€” empty session.
     await page.route(`**/api/chat/sessions/${fixtureId}/messages**`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -347,12 +347,12 @@ test.describe('Context chips â€?directory chip lifecycle @smoke', () => {
     expect(content).toContain('[Referenced Directories]');
     expect(files.some((f) => f.type === 'inode/directory' && f.filePath === 'src/lib')).toBe(true);
 
-    // (b) The chip element on this same /chat/[id] page is gone â€?and
+    // (b) The chip element on this same /chat/[id] page is gone â€” and
     // because there's no redirect, the only way it can be gone is if
     // MessageInput.handleSubmit actually called `setDirectoryRefs([])`.
     await expect(folderChip).toHaveCount(0, { timeout: 5_000 });
 
-    // (c) Same composer's textarea is empty â€?proves `setInputValue('')`.
+    // (c) Same composer's textarea is empty â€” proves `setInputValue('')`.
     // Asserting on `composerTextarea` (the captured handle) instead of
     // re-locating, so a remount-then-empty escape would fail the assert.
     await expect(composerTextarea).toHaveValue('', { timeout: 5_000 });

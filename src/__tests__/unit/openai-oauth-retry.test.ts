@@ -3,7 +3,7 @@
  *
  * Background: Issue #464 reports users hitting "Token exchange failed: 403"
  * on macOS + Windows while the maintainer's machines never reproduce.
- * Strong network-stability dependence â€?the upstream OpenCode reference
+ * Strong network-stability dependence â€” the upstream OpenCode reference
  * implementation handles this with retries on 403/5xx/network errors.
  *
  * These tests pin the retry classification logic so the regression doesn't
@@ -44,7 +44,7 @@ describe('isRetryableTokenExchangeFailure', () => {
   });
 
   describe('HTTP status retry classification', () => {
-    it('retries 403 â€?OpenAI auth-code propagation race (issue #464)', () => {
+    it('retries 403 â€” OpenAI auth-code propagation race (issue #464)', () => {
       assert.equal(isRetryableTokenExchangeFailure(403), true);
     });
 
@@ -68,7 +68,7 @@ describe('isRetryableTokenExchangeFailure', () => {
       assert.equal(isRetryableTokenExchangeFailure(200), false);
     });
 
-    it('does NOT retry 400 (bad request â€?code is malformed, retrying won\'t help)', () => {
+    it('does NOT retry 400 (bad request â€” code is malformed, retrying won\'t help)', () => {
       assert.equal(isRetryableTokenExchangeFailure(400), false);
     });
 
@@ -76,7 +76,7 @@ describe('isRetryableTokenExchangeFailure', () => {
       assert.equal(isRetryableTokenExchangeFailure(401), false);
     });
 
-    it('does NOT retry 404 (endpoint wrong â€?config bug, not transient)', () => {
+    it('does NOT retry 404 (endpoint wrong â€” config bug, not transient)', () => {
       assert.equal(isRetryableTokenExchangeFailure(404), false);
     });
 

@@ -110,7 +110,7 @@ describe('automatic title provider snapshot survives deletion without cross-prov
     }
   });
 
-  it('bb-agent Runtime model factory uses captured A config, never default B', () => {
+  it('CodePilot Runtime model factory uses captured A config, never default B', () => {
     const { providerA, providerB, captured } = seedRace();
     const created = createModel({
       callScene: 'automatic_title',

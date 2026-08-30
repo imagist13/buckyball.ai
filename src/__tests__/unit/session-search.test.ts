@@ -86,7 +86,7 @@ describe('searchMessages (db)', () => {
     }
     try {
       const results = searchMessages('authentication');
-      assert.ok(results.length <= 5, `expected â‰? with default limit, got ${results.length}`);
+      assert.ok(results.length <= 5, `expected â‰¤5 with default limit, got ${results.length}`);
     } finally {
       // clean up the extra messages
       clearSessionMessages(sessionA);

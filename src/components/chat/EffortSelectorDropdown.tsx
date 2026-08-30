@@ -20,7 +20,7 @@ interface EffortSelectorDropdownProps {
   onEffortChange: (effort: string) => void;
   supportedEffortLevels?: string[];
   /**
-   * Phase 1 (2026-07-17) â€?i18n key for a note under the tiers, set by the
+   * Phase 1 (2026-07-17) â€” i18n key for a note under the tiers, set by the
    * catalog when the list alone misreads: GLM shows two tiers because it
    * collapses Claude Code's six onto two, and Kimi distinguishes Auto from
    * its Low/High/Max vendor tiers. Without the note the user reads the list as
@@ -45,13 +45,13 @@ export function EffortSelectorDropdown({
   // a specific level (e.g. 'High') while the request actually sent
   // undefined, which user-visibly lied about what was being paid for.
   //
-  // Phase 0 (2026-07-17) â€?levels come ONLY from a real capability source.
+  // Phase 0 (2026-07-17) â€” levels come ONLY from a real capability source.
   // This used to `||` into a hardcoded five-tier ladder whenever discovery
   // returned nothing, so the menu offered tiers no model had claimed. Now a
   // null resolution hides the control. Rule lives in resolveEffortMenuLevels.
   const levels = resolveEffortMenuLevels(supportedEffortLevels);
 
-  // No sourced capability info â†?render nothing. Hiding is honest; a menu of
+  // No sourced capability info â†’ render nothing. Hiding is honest; a menu of
   // guessed tiers is not.
   if (!levels) return null;
 

@@ -1,5 +1,5 @@
 /**
- * Phase 5e Phase 0.5 P1 (2026-05-17) �?Native Runtime MediaBlock
+ * Phase 5e Phase 0.5 P1 (2026-05-17) — Native Runtime MediaBlock
  * side-channel integration tests.
  *
  * The Phase 0.5 audit identified `codepilot_generate_image` /
@@ -7,7 +7,8 @@
  * tool runs, returns localPath, model says "done", but the chat UI's
  * `MediaPreview` (which reads SSE `tool_result.media`) never gets a
  * MediaBlock because `builtin-tools/media.ts:execute()` only returned
- * a plain string. The user explicitly named this gap "Native 基础�? * 不完�? �?the highest-priority post-止血 follow-up.
+ * a plain string. The user explicitly named this gap "Native 基础盘
+ * 不完整" — the highest-priority post-止血 follow-up.
  *
  * Fix:
  *   - `builtin-tools/media.ts` emits MediaBlock[] via the harness
@@ -40,6 +41,7 @@ import { createMediaTools } from '@/lib/builtin-tools/media';
 import type { RuntimeRunEvent } from '@/lib/runtime/contract';
 import { promptNeedsMedia } from '@/lib/media-capability-prompt';
 import { extractMcpAbortSignal } from '@/lib/image-gen-mcp';
+import { isTelemetryFailureHandled } from '@/lib/telemetry/provider-marker';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const readSrc = (rel: string): string =>
@@ -51,7 +53,7 @@ describe('Claude SDK media intent gate', () => {
     'Use the Image model to generate a kitten',
     'Draw me a poster for the launch',
     'Create a short video from this photo',
-    '帮我画一张小猫图�?,
+    '帮我画一张小猫图片',
   ]) {
     it(`mounts media tools for: ${prompt}`, () => {
       assert.equal(promptNeedsMedia(prompt), true);
@@ -119,10 +121,10 @@ function stripComments(src: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// (1) Tool factory �?execute() shape contract
+// (1) Tool factory — execute() shape contract
 // ─────────────────────────────────────────────────────────────────────
 
-describe('createMediaTools �?tool factory shape', () => {
+describe('createMediaTools — tool factory shape', () => {
   it('returns import + image + video media tools with execute()', () => {
     const tools = createMediaTools({ sessionId: 's1', grokVideoAvailable: true });
     assert.ok(tools.codepilot_import_media);
@@ -151,7 +153,7 @@ describe('createMediaTools �?tool factory shape', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (2) codepilot_import_media �?side-channel emit contract
+// (2) codepilot_import_media — side-channel emit contract
 //
 // We don't have a real file at the input path; the importFileToLibrary
 // helper will surface an error. The test pins the failure-mode contract
@@ -160,7 +162,7 @@ describe('createMediaTools �?tool factory shape', () => {
 // instead pin the source-level behaviour via the wiring tests in (5)).
 // ─────────────────────────────────────────────────────────────────────
 
-describe('codepilot_import_media �?side-channel emit on failure', () => {
+describe('codepilot_import_media — side-channel emit on failure', () => {
   it('rejects import failures so the runtime emits a real tool error; emits no MediaBlock event', async () => {
     __resetBuiltinEventBusForTests();
     const sessionId = 'sess-import-fail';
@@ -170,11 +172,18 @@ describe('codepilot_import_media �?side-channel emit on failure', () => {
     const tools = createMediaTools({ sessionId });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const importTool = tools.codepilot_import_media as any;
-    await assert.rejects(
-      () => importTool.execute(
+    const failure = await importTool.execute(
         { filePath: '/non/existent/file.png' },
         { toolCallId: 'call-1' },
-      ),
+      ).then(
+        () => undefined,
+        (error: unknown) => error,
+      );
+    assert.ok(failure, 'the tool must still reject the user-visible failure');
+    assert.equal(
+      isTelemetryFailureHandled(failure),
+      true,
+      'missing local media is product-owned and must not create an automatic Sentry Issue',
     );
 
     // No side-channel emit on failure (the importFileToLibrary call
@@ -190,7 +199,7 @@ describe('codepilot_import_media �?side-channel emit on failure', () => {
 // (3) Side-channel listener subscription / unsubscription contract
 // ─────────────────────────────────────────────────────────────────────
 
-describe('side-channel bus �?sessionId isolation', () => {
+describe('side-channel bus — sessionId isolation', () => {
   it('events on session A never reach session B listener', () => {
     __resetBuiltinEventBusForTests();
     const aEvents: RuntimeRunEvent[] = [];
@@ -199,13 +208,13 @@ describe('side-channel bus �?sessionId isolation', () => {
     const unsubB = subscribeBuiltinEvents('sess-B', (e) => bEvents.push(e));
 
     // Emit directly using internal `emitBuiltinEvent` import is the
-    // contract �?we re-import here to avoid bringing in the heavy
+    // contract — we re-import here to avoid bringing in the heavy
     // media tool just to test bus isolation.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { emitBuiltinEvent } = require('@/lib/harness/builtin-event-bus');
     emitBuiltinEvent('sess-A', {
       type: 'tool_completed',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       sessionId: 'sess-A',
       toolId: 'call-X',
       output: 'A',
@@ -228,7 +237,7 @@ describe('side-channel bus �?sessionId isolation', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (4) agent-loop wiring �?source-level pin
+// (4) agent-loop wiring — source-level pin
 //
 // Full end-to-end test of agent-loop.runAgentLoop would require
 // stubbing the model + provider creation, which is overkill for a
@@ -238,7 +247,7 @@ describe('side-channel bus �?sessionId isolation', () => {
 // tool-result handler splices `media` into the SSE.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('agent-loop �?side-channel wiring source pins', () => {
+describe('agent-loop — side-channel wiring source pins', () => {
   const SRC = readSrc('src/lib/agent-loop.ts');
   const CODE = stripComments(SRC);
 
@@ -265,7 +274,7 @@ describe('agent-loop �?side-channel wiring source pins', () => {
     assert.ok(tryIdx > 0, 'try { must exist');
     assert.ok(
       subIdx < tryIdx,
-      `subscribeBuiltinEvents (idx=${subIdx}) must run BEFORE try { (idx=${tryIdx}) �?emit-before-subscribe contract drops events`,
+      `subscribeBuiltinEvents (idx=${subIdx}) must run BEFORE try { (idx=${tryIdx}) — emit-before-subscribe contract drops events`,
     );
   });
 
@@ -301,10 +310,10 @@ describe('agent-loop �?side-channel wiring source pins', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (5) builtin-tools/media.ts source pin �?emit shape
+// (5) builtin-tools/media.ts source pin — emit shape
 // ─────────────────────────────────────────────────────────────────────
 
-describe('builtin-tools/media.ts �?side-channel emit source pins', () => {
+describe('builtin-tools/media.ts — side-channel emit source pins', () => {
   const SRC = readSrc('src/lib/builtin-tools/media.ts');
   const CODE = stripComments(SRC);
 
@@ -344,10 +353,10 @@ describe('builtin-tools/media.ts �?side-channel emit source pins', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (6) Defensive �?no MediaBlock emit when toolCallId is missing
+// (6) Defensive — no MediaBlock emit when toolCallId is missing
 // ─────────────────────────────────────────────────────────────────────
 
-describe('codepilot_import_media �?no double emit when toolCallId missing', () => {
+describe('codepilot_import_media — no double emit when toolCallId missing', () => {
   it('does not emit MediaBlock when toolCallId is empty (defensive)', async () => {
     __resetBuiltinEventBusForTests();
     const captured: RuntimeRunEvent[] = [];
@@ -356,7 +365,7 @@ describe('codepilot_import_media �?no double emit when toolCallId missing', () 
     const tools = createMediaTools({ sessionId: 'sess-no-callid' });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const importTool = tools.codepilot_import_media as any;
-    // Pass execOptions WITHOUT toolCallId �?emit must skip
+    // Pass execOptions WITHOUT toolCallId — emit must skip
     await assert.rejects(
       () => importTool.execute(
         { filePath: '/some/path.png' },
@@ -370,7 +379,7 @@ describe('codepilot_import_media �?no double emit when toolCallId missing', () 
     assert.equal(
       mediaEmits.length,
       0,
-      'must not emit MediaBlock without a toolCallId �?listener cannot pair the splice to a tool_result event',
+      'must not emit MediaBlock without a toolCallId — listener cannot pair the splice to a tool_result event',
     );
   });
 });
@@ -381,7 +390,7 @@ describe('codepilot_import_media �?no double emit when toolCallId missing', () 
 //     that on SUCCESS the side-channel emits a well-formed MediaBlock
 //     with all four fields populated (type / mimeType / localPath /
 //     mediaId) AND that execute()'s return value remains plain text
-//     �?no base64-bearing JSON the model would otherwise see.
+//     — no base64-bearing JSON the model would otherwise see.
 //
 //     Phase 5e Phase 0.5 P1 review fix (2026-05-17). Codex review
 //     observed (correctly) that the earlier coverage only had source-
@@ -393,7 +402,7 @@ describe('codepilot_import_media �?no double emit when toolCallId missing', () 
 //     rows across runs.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('codepilot_import_media �?SUCCESS path emits MediaBlock end-to-end', () => {
+describe('codepilot_import_media — SUCCESS path emits MediaBlock end-to-end', () => {
   it('imports a real PNG, emits MediaBlock with all fields, returns plain text', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const fsMod = require('node:fs');
@@ -421,7 +430,7 @@ describe('codepilot_import_media �?SUCCESS path emits MediaBlock end-to-end', (
         { toolCallId: 'success-call-1' },
       );
 
-      // Return value: plain text. Critical contract �?model must NOT
+      // Return value: plain text. Critical contract — model must NOT
       // see a JSON blob containing the MediaBlock. Match the text
       // shape produced by builtin-tools/media.ts:
       //   `Media imported: <localPath> (type=<mediaType>)`
@@ -435,7 +444,7 @@ describe('codepilot_import_media �?SUCCESS path emits MediaBlock end-to-end', (
       assert.equal(
         /"type"\s*:\s*"image"/.test(result as string),
         false,
-        'return value must not contain a JSON MediaBlock �?emit goes via side-channel, not text',
+        'return value must not contain a JSON MediaBlock — emit goes via side-channel, not text',
       );
 
       // Side-channel emit: exactly one tool_completed event carrying
@@ -450,7 +459,7 @@ describe('codepilot_import_media �?SUCCESS path emits MediaBlock end-to-end', (
       );
       const event = mediaEvents[0];
       if (event.type !== 'tool_completed') throw new Error('type narrowing');
-      assert.equal(event.runtimeId, 'bbagent');
+      assert.equal(event.runtimeId, 'codepilot_runtime');
       assert.equal(event.sessionId, sessionId);
       assert.equal(event.toolId, 'success-call-1');
       assert.ok(event.media && event.media.length === 1);
@@ -473,7 +482,7 @@ describe('codepilot_import_media �?SUCCESS path emits MediaBlock end-to-end', (
       importedLocalPath = block.localPath as string;
       importedMediaId = block.mediaId as string;
     } finally {
-      // Cleanup �?same pattern Codex used in the manual smoke. Best
+      // Cleanup — same pattern Codex used in the manual smoke. Best
       // effort; failures here are logged but don't fail the test
       // because the assertions above are what we care about.
       if (importedLocalPath) {

@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { getDb } from '@/lib/db';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
 import { sanitizeDisplayText } from '@/lib/display-text-sanitizer';
 import type { AssetRecord } from '@/types';
 import { addAssetLineage, getAssetRecord } from './service';
@@ -46,10 +46,7 @@ const PNG_SIGNATURE = Buffer.from([
 const MAX_HTML_THUMBNAIL_BYTES = 8 * 1024 * 1024;
 
 function assetsRoot(): string {
-  const dataDir =
-    process.env.CLAUDE_GUI_DATA_DIR
-    || path.join(os.homedir(), '.codepilot');
-  return path.resolve(dataDir, '.codepilot-assets');
+  return path.resolve(resolveCodePilotDataDir(), '.codepilot-assets');
 }
 
 function isWithin(target: string, root: string): boolean {

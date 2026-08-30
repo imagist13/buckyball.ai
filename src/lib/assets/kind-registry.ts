@@ -53,8 +53,8 @@ const video: AssetKindDescriptor = {
 
 /**
  * Audio is registered only because the conformance suite provides an actual
- * WAV fixture through import â†?hash â†?Gallery/MediaPreview consumer â†?typed
- * reference â†?permanent delete. It was intentionally absent before that chain
+ * WAV fixture through import â†’ hash â†’ Gallery/MediaPreview consumer â†’ typed
+ * reference â†’ permanent delete. It was intentionally absent before that chain
  * existed.
  */
 const audio: AssetKindDescriptor = {
@@ -83,7 +83,7 @@ const htmlBundle: AssetKindDescriptor = {
   ],
   materializer: 'src/lib/assets/html-bundle-materializer.ts',
   validator: 'inspectHtmlBundle',
-  previewConsumer: 'GalleryGrid/GalleryDetail â†?static PNG thumbnail',
+  previewConsumer: 'GalleryGrid/GalleryDetail â†’ static PNG thumbnail',
   inputConsumers: ['creative-method reference', 'Harness AssetRef'],
   trustPolicy: 'stable bundle + aggregate hash + sandbox + strict CSP + source scope',
   conformanceSuite: 'html-bundle-conformance.test.ts',

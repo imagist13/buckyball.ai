@@ -17,7 +17,7 @@ import {
   waitForPageReady,
 } from '../helpers';
 
-// Skills editor moved out of the Settings shell â€?it lives under its own
+// Skills editor moved out of the Settings shell â€” it lives under its own
 // top-level /skills route now, not under /settings?tab=skills, so these
 // `goToSettingsTab('skills')` based tests can't find the expected headings
 // and buttons. Skipped with the rest of the layout/plugins rewrite

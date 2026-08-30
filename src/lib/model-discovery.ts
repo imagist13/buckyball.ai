@@ -15,10 +15,10 @@
  *   - `fullModelIds` carries the uncapped upstream list (apply/diff
  *     source); `sampleModels` is a 500-cap UI-display slice
  *
- * Apply-layer policy (Phase B â€?DOES write silently when invoked from
+ * Apply-layer policy (Phase B â€” DOES write silently when invoked from
  * the new conservative-apply helpers):
  *   - `runAutoDiscoverForProvider` (single-provider) and the page-top
- *     `åˆ·æ–°å…¨éƒ¨` driver (batch) both probe â†?apply without a preview
+ *     `åˆ·æ–°å…¨éƒ¨` driver (batch) both probe â†’ apply without a preview
  *     dialog. Safe because `applyDiscoveryDiff` consults each row's
  *     `enable_source` and refuses to flip `manual_enabled` /
  *     `manual_hidden`. So "silent write" never overrides a user choice.
@@ -27,7 +27,7 @@
  *     case.
  *
  * If you're tempted to "fix" a caller that auto-applies after probing,
- * read `docs/research/provider-model-discovery.md` first â€?auto-apply
+ * read `docs/research/provider-model-discovery.md` first â€” auto-apply
  * is the intended design, not a regression. The protection lives in
  * `applyDiscoveryDiff`'s manual_* guard, not at the discovery layer.
  */
@@ -37,9 +37,9 @@ import { isCatalogOnlyPlanProvider, isCatalogOnlyDiscoveryProvider, isOpenRouter
 export type DiscoveryClassification =
   /** Reliable public/compat endpoint we can probe with provided creds. */
   | 'api'
-  /** Endpoint exists but auth is quirky / coverage uneven â€?try, mark experimental. */
+  /** Endpoint exists but auth is quirky / coverage uneven â€” try, mark experimental. */
   | 'experimental'
-  /** No probe path â€?must use catalog or manual entry (OAuth web sessions, env-only, etc.). */
+  /** No probe path â€” must use catalog or manual entry (OAuth web sessions, env-only, etc.). */
   | 'unsupported';
 
 export type DiscoveryProtocol =
@@ -58,7 +58,7 @@ export interface DiscoveryError {
 }
 
 export interface DiscoveryResult {
-  /** Static classification â€?what kind of probe is even feasible. */
+  /** Static classification â€” what kind of probe is even feasible. */
   classification: DiscoveryClassification;
   /** Probe protocol that was attempted (or would be). */
   protocol: DiscoveryProtocol;
@@ -67,13 +67,13 @@ export interface DiscoveryResult {
   /** Did the probe succeed? Only meaningful when classification !== 'unsupported'. */
   ok?: boolean;
   modelCount?: number;
-  /** Complete list of upstream model ids â€?used by `/discover-models` to
+  /** Complete list of upstream model ids â€” used by `/discover-models` to
    *  build the apply/diff payload. NEVER read this from a UI (it can run
    *  to thousands of entries on aggregator providers); use `sampleModels`
    *  for display. Empty when `ok=false`. */
   fullModelIds?: string[];
   /** Capped slice of `fullModelIds` (first SAMPLE_CAP entries) for UI
-   *  display â€?the diff dialog header, classification log, etc. The cap
+   *  display â€” the diff dialog header, classification log, etc. The cap
    *  is just for response size; never use this slice as an authoritative
    *  set when computing what to write to DB or what counts as orphan. */
   sampleModels?: string[];
@@ -89,7 +89,7 @@ export interface DiscoveryResult {
 export interface DiscoveryInput {
   /** The catalog protocol of the provider. */
   protocol: string;
-  /** Base URL â€?already trimmed of trailing slash. */
+  /** Base URL â€” already trimmed of trailing slash. */
   baseUrl: string;
   /** API key. Pass undefined when there is no real key (env-only, OAuth, etc.). */
   apiKey?: string;
@@ -106,7 +106,7 @@ export interface DiscoveryInput {
    * a clean catalog even though the gate marks the provider as
    * unsupported for *write* paths. Empirically GLM, MiniMax, etc.
    * return clean GLM-only / MiniMax-only model lists from their plan
-   * `/v1/models` â€?the gate exists to protect the auto-write apply
+   * `/v1/models` â€” the gate exists to protect the auto-write apply
    * path from polluting DB with mixed Ark / DashScope catalogs
    * (Volcengine / Bailian), not because every plan provider lacks an
    * endpoint. The `canReliablyFetchModels` helper in `provider-catalog`
@@ -120,12 +120,12 @@ const DEFAULT_TIMEOUT = 8_000;
 // Cap on the model id list returned to the caller. Used both for the dialog
 // display and for the auto-persist path in the discover route, so it must be
 // generous enough that most real catalogues come through unchopped (Aiberm
-// returns ~131, OpenRouter > 200). Response stays small â€?these are short
+// returns ~131, OpenRouter > 200). Response stays small â€” these are short
 // strings.
 const SAMPLE_CAP = 500;
 
 /**
- * Static classification â€?answers "is this provider even probable?" without
+ * Static classification â€” answers "is this provider even probable?" without
  * making a network call. Used to render the three-category breakdown in the
  * docs and to decide whether the route should attempt a live probe.
  */
@@ -143,7 +143,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
     return {
       classification: 'unsupported',
       protocol: 'unknown',
-      notes: 'OAuth web session / env-driven entry â€?no public model list endpoint.',
+      notes: 'OAuth web session / env-driven entry â€” no public model list endpoint.',
       suggestedFallback: 'Use SDK-built-in model defaults or curated catalog entries.',
     };
   }
@@ -151,7 +151,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
   // Coding Plan / Token Plan gate. These vendors (ç«å±± Coding Plan, ç™¾ç‚¼
   // Coding Plan, GLM CN/Global, MiniMax CN/Global, Xiaomi MiMo Token Plan)
   // sell access to a SKU whitelist, which is NOT the same set as what
-  // their `/v1/models` returns at the same domain â€?that endpoint exposes
+  // their `/v1/models` returns at the same domain â€” that endpoint exposes
   // the full upstream inference catalogue (text + embedding + audio + image
   // + deprecated variants). Probing and writing that list silently into
   // provider_models would surface non-plan models on the Models page,
@@ -160,13 +160,13 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
   // "Coding Plan Model Name" (what goes in ANTHROPIC_MODEL) from the much
   // larger online-inference Model ID set.
   //
-  // Trigger: `sdkProxyOnly && billingModel âˆ?{coding_plan, token_plan}`,
+  // Trigger: `sdkProxyOnly && billingModel âˆˆ {coding_plan, token_plan}`,
   // exposed through `isCatalogOnlyPlanProvider` so the same condition
   // drives Add-Service success-toast suppression and Models-page refresh
-  // filtering â€?drift between layers would re-create the original symptom
+  // filtering â€” drift between layers would re-create the original symptom
   // (probe writes 100+ inference SKUs into a Coding Plan provider).
   // Pay-as-you-go anthropic-compat (kimi, moonshot, xiaomi-mimo, deepseek)
-  // is NOT gated â€?their full inference catalogue is the genuine offering.
+  // is NOT gated â€” their full inference catalogue is the genuine offering.
   // OpenRouter sits outside this gate too: 300+ aggregator entries are
   // legitimately on offer; the search-and-add UX is tracked as a separate
   // tech-debt item in `docs/exec-plans/tech-debt-tracker.md`.
@@ -188,16 +188,16 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
     return {
       classification: 'unsupported',
       protocol: 'unknown',
-      notes: 'Subscription gateway with catalog_only discovery â€?the model endpoint is key-gated or mixes wire protocols, so the shipped whitelist is authoritative.',
+      notes: 'Subscription gateway with catalog_only discovery â€” the model endpoint is key-gated or mixes wire protocols, so the shipped whitelist is authoritative.',
       suggestedFallback: 'Use the curated catalog list shipped with the preset.',
     };
   }
 
-  // OpenRouter gate â€?same answer as `isOpenRouterProviderRecord`, by-key
+  // OpenRouter gate â€” same answer as `isOpenRouterProviderRecord`, by-key
   // because callers of `discoverModels` already pass `presetKey` derived
   // from `findMatchingPresetForRecord`. OpenRouter ships 300+ aggregator
   // entries through /v1/models; auto-materializing them was the original
-  // tech-debt #13 â€?Models page got drowned. New flow is search-and-add
+  // tech-debt #13 â€” Models page got drowned. New flow is search-and-add
   // (`POST /search-models`) for additions and a separate validate route
   // (`POST /validate-models`) for refresh; this branch ensures any caller
   // that *would* have probed and applied the full list now bails out
@@ -207,8 +207,8 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
     return {
       classification: 'unsupported',
       protocol: 'unknown',
-      notes: 'OpenRouter â€?full /v1/models materialization is no longer the auto-discover path. Use /search-models for additions, /validate-models for refresh.',
-      suggestedFallback: 'Open Models page â†?æ·»åŠ æ¨¡åž‹ to search OpenRouter\'s catalog.',
+      notes: 'OpenRouter â€” full /v1/models materialization is no longer the auto-discover path. Use /search-models for additions, /validate-models for refresh.',
+      suggestedFallback: 'Open Models page â†’ æ·»åŠ æ¨¡åž‹ to search OpenRouter\'s catalog.',
     };
   }
 
@@ -236,7 +236,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
       return {
         classification: 'unsupported',
         protocol: 'unknown',
-        notes: 'Image providers â€?upstream model lists mix text/embedding/audio entries, so discovery is disabled. Use the curated catalog list.',
+        notes: 'Image providers â€” upstream model lists mix text/embedding/audio entries, so discovery is disabled. Use the curated catalog list.',
         suggestedFallback: 'Catalog defaults seeded into provider_models on the Models page.',
       };
     case 'google':
@@ -246,7 +246,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
         notes: 'Gemini API exposes models.list (https://generativelanguage.googleapis.com/v1beta/models).',
       };
     case 'anthropic': {
-      // Anthropic protocol is the ambiguous bucket â€?split by preset.
+      // Anthropic protocol is the ambiguous bucket â€” split by preset.
       if (key === 'ollama') {
         return {
           classification: 'api',
@@ -258,7 +258,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
         return {
           classification: 'api',
           protocol: 'openai-compatible',
-          notes: 'LiteLLM proxy is OpenAI-compat â€?/v1/models works on most deployments.',
+          notes: 'LiteLLM proxy is OpenAI-compat â€” /v1/models works on most deployments.',
         };
       }
       if (key === 'anthropic-thirdparty') {
@@ -278,12 +278,12 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
         };
       }
       // Brand-specific anthropic-compat (kimi, moonshot, glm, minimax, volcengine, bailian, xiaomi-mimo*)
-      // â€?most of these brand vendors also run an OpenAI-compat surface that exposes /v1/models
+      // â€” most of these brand vendors also run an OpenAI-compat surface that exposes /v1/models
       // on the same host, but this isn't guaranteed in catalog config and varies per region.
       return {
         classification: 'experimental',
         protocol: 'openai-compatible',
-        notes: 'Brand-specific Anthropic-compat preset â€?try OpenAI-compat /v1/models on the same host; not all vendors expose it.',
+        notes: 'Brand-specific Anthropic-compat preset â€” try OpenAI-compat /v1/models on the same host; not all vendors expose it.',
         suggestedFallback: 'Curated catalog model list is the reliable source.',
       };
     }
@@ -305,7 +305,7 @@ export function classifyProvider(input: Pick<DiscoveryInput, 'protocol' | 'prese
       return {
         classification: 'unsupported',
         protocol: 'unknown',
-        notes: `Unknown protocol "${protocol}" â€?no probe path defined.`,
+        notes: `Unknown protocol "${protocol}" â€” no probe path defined.`,
       };
   }
 }
@@ -375,7 +375,7 @@ export async function discoverModels(input: DiscoveryInput): Promise<DiscoveryRe
 }
 
 // ---------------------------------------------------------------------------
-// Probes â€?each returns a partial DiscoveryResult that the caller merges with
+// Probes â€” each returns a partial DiscoveryResult that the caller merges with
 // classification metadata. Errors are caught and converted into structured
 // fields; secrets are never echoed.
 // ---------------------------------------------------------------------------
@@ -389,7 +389,7 @@ async function probeOpenAICompat(
   if (!apiKey) {
     return {
       ok: false,
-      error: { code: 'missing-credentials', message: 'No API key on file â€?cannot probe.' },
+      error: { code: 'missing-credentials', message: 'No API key on file â€” cannot probe.' },
     };
   }
   // Some catalog base_urls already include /v1 (e.g. openrouter.ai/api/v1),
@@ -399,7 +399,7 @@ async function probeOpenAICompat(
   if (authStyle === 'auth_token') {
     headers.Authorization = `Bearer ${apiKey}`;
   } else {
-    // OpenAI-compat default â€?most vendors accept Bearer; a few want X-Api-Key.
+    // OpenAI-compat default â€” most vendors accept Bearer; a few want X-Api-Key.
     headers.Authorization = `Bearer ${apiKey}`;
   }
   return fetchAndParse(url, { headers }, timeoutMs, parseOpenAIModelsBody);
@@ -428,7 +428,7 @@ async function probeGemini(
   if (!apiKey) {
     return {
       ok: false,
-      error: { code: 'missing-credentials', message: 'No API key on file â€?cannot probe.' },
+      error: { code: 'missing-credentials', message: 'No API key on file â€” cannot probe.' },
     };
   }
   const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(apiKey)}`;
@@ -455,7 +455,7 @@ async function probeAnthropic(
   if (!apiKey) {
     return {
       ok: false,
-      error: { code: 'missing-credentials', message: 'No API key on file â€?cannot probe.' },
+      error: { code: 'missing-credentials', message: 'No API key on file â€” cannot probe.' },
     };
   }
   const url = `${baseUrl}/v1/models`;
@@ -519,9 +519,9 @@ async function fetchAndParse(
       endpoint: url,
       ok: true,
       modelCount: ids.length,
-      // `fullModelIds` is the apply/diff source of truth â€?never trim it.
+      // `fullModelIds` is the apply/diff source of truth â€” never trim it.
       // `sampleModels` is just the UI-visible cap so the JSON response
-      // doesn't bloat for aggregators (OpenRouter â‰?280, future ones may
+      // doesn't bloat for aggregators (OpenRouter â‰ˆ 280, future ones may
       // exceed SAMPLE_CAP).
       fullModelIds: ids,
       sampleModels: ids.slice(0, SAMPLE_CAP),

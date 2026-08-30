@@ -1,8 +1,8 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { getDb } from '@/lib/db';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
 import type {
   AssetIntegrityState,
   AssetLineageRecord,
@@ -53,17 +53,11 @@ export class AssetInUseError extends Error {
 }
 
 function canonicalMediaDir(): string {
-  const dataDir =
-    process.env.CLAUDE_GUI_DATA_DIR
-    || path.join(os.homedir(), '.codepilot');
-  return path.resolve(dataDir, '.codepilot-media');
+  return path.resolve(resolveCodePilotDataDir(), '.codepilot-media');
 }
 
 function canonicalAssetsDir(): string {
-  const dataDir =
-    process.env.CLAUDE_GUI_DATA_DIR
-    || path.join(os.homedir(), '.codepilot');
-  return path.resolve(dataDir, '.codepilot-assets');
+  return path.resolve(resolveCodePilotDataDir(), '.codepilot-assets');
 }
 
 function safeJsonObject(value: string): Record<string, unknown> {

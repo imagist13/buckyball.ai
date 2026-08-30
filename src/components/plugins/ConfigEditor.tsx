@@ -41,7 +41,7 @@ export function ConfigEditor({ value, onSave, label, saving = false }: ConfigEdi
   }
 
   // Dirty when the user has typed but not yet saved. Invalid JSON
-  // (error !== null) keeps the button enabled â€?clicking re-validates
+  // (error !== null) keeps the button enabled â€” clicking re-validates
   // and surfaces the parse error in the inline message.
   const dirty = text !== value;
 

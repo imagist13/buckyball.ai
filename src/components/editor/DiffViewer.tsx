@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Unified-diff viewer â€?Phase 4.B Artifact richer preview.
+ * Unified-diff viewer â€” Phase 4.B Artifact richer preview.
  *
  * Used by PreviewPanel when the active PreviewSource is `inline-diff`,
  * typically from a ```diff fenced code block. Highlights +/- lines and
@@ -11,7 +11,7 @@
  * format, no expand/collapse of hunks, no inline word diff. The goal
  * is "I can read this diff comfortably without manual visual triage,"
  * not a full diff IDE. A power-user diff editor lives outside this
- * surface â€?this is for the chat-side glance-then-act case.
+ * surface â€” this is for the chat-side glance-then-act case.
  */
 
 import { useMemo } from "react";
@@ -56,11 +56,11 @@ export function DiffViewer({ diff }: DiffViewerProps) {
 /**
  * Classify each line of a unified-diff string. Recognized prefixes:
  *
- *   diff / --- / +++ / index â†?meta (the file-level header rows)
- *   @@ â€?@@                   â†?header (hunk markers)
- *   +                         â†?added (excluding the +++ file header)
- *   -                         â†?removed (excluding the --- file header)
- *   anything else             â†?context
+ *   diff / --- / +++ / index â†’ meta (the file-level header rows)
+ *   @@ â€¦ @@                   â†’ header (hunk markers)
+ *   +                         â†’ added (excluding the +++ file header)
+ *   -                         â†’ removed (excluding the --- file header)
+ *   anything else             â†’ context
  *
  * Exported so unit tests can pin the classification table without
  * mounting React.

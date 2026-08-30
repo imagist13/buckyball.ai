@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Dev-output reference chips â€?Phase 4.D, fence-safe rewrite (P1.1).
+ * Dev-output reference chips â€” Phase 4.D, fence-safe rewrite (P1.1).
  *
  * Previous approach: tokenize the raw assistant markdown and render
  * each text token through its own MessageResponse. That sliced
@@ -19,7 +19,7 @@
  * The chip elements carry their target metadata on `data-*`
  * attributes; one container-level click listener probes and routes each
  * target to PreviewPanel or the system file manager. No React portals,
- * no innerHTML rewrites â€?we
+ * no innerHTML rewrites â€” we
  * mutate plain DOM nodes that React doesn't manage (they live inside
  * a ref'd div and the tree underneath comes from streamdown's
  * dangerouslySetInnerHTML / its react renderer of static markdown
@@ -49,7 +49,7 @@ import {
 import { inspectLocalPath, revealPathWithSystem } from "@/lib/local-path-navigation";
 import { resolveToolPath } from "@/lib/file-write-tools";
 
-/** Tag names whose subtree we never tokenize â€?letting markdown
+/** Tag names whose subtree we never tokenize â€” letting markdown
  *  structure stand. Code (fenced or inline) and existing links must
  *  not be sliced into multiple text fragments. */
 const SKIP_TAGS = new Set(["PRE", "CODE", "A", "BUTTON"]);
@@ -103,7 +103,7 @@ export function DevOutputMarkdownLink(
       </a>
     );
   }
-  // Anything else (javascript:, data:, unknown schemes) â†?inert span.
+  // Anything else (javascript:, data:, unknown schemes) â†’ inert span.
   return <span title="Blocked URL">{children}</span>;
 }
 
@@ -171,7 +171,7 @@ export function DevOutputSegment({ text }: { text: string }) {
     [workingDirectory, sessionId, setPreviewSource, t],
   );
 
-  // Click delegation â€?single listener at the container catches every
+  // Click delegation â€” single listener at the container catches every
   // chip + intercepted markdown-link click.
   const onClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -231,19 +231,19 @@ export function DevOutputSegment({ text }: { text: string }) {
     enrichDevOutputInDom(root);
   });
 
-  // Phase 4 P1.2 â€?custom link renderer for THIS DevOutputSegment only.
+  // Phase 4 P1.2 â€” custom link renderer for THIS DevOutputSegment only.
   // Streamdown's default link safety converts unknown / unrecognised
   // hrefs into inert <button> elements; that prevents our
   // post-render <a[href]> walker from finding local-file Markdown
   // links like `[label](README.md#L12)`. Rather than disable chat
   // link safety globally (which would unwrap arbitrary http links),
   // we provide a `components.a` override that handles three cases:
-  //   1. Local filesystem path â†?render <a> with data-* attributes so
+  //   1. Local filesystem path â†’ render <a> with data-* attributes so
   //      the click handler can inspect and route it (resolved against
   //      workingDirectory).
-  //   2. Safe remote scheme (http/https/mailto/tel) â†?render an
+  //   2. Safe remote scheme (http/https/mailto/tel) â†’ render an
   //      anchor with target=_blank + rel="noopener noreferrer".
-  //   3. Anything else â†?render a plain span so the URL never
+  //   3. Anything else â†’ render a plain span so the URL never
   //      navigates the browser.
   return (
     <div ref={containerRef} onClick={onClick}>
@@ -285,7 +285,7 @@ function enrichTextNodes(root: HTMLElement): void {
   const doc = root.ownerDocument ?? document;
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
-      // Skip empty / whitespace-only nodes â€?nothing to tokenize.
+      // Skip empty / whitespace-only nodes â€” nothing to tokenize.
       const value = (node as Text).nodeValue;
       if (!value || !value.trim()) return NodeFilter.FILTER_REJECT;
       // Skip if any ancestor is a skip tag or already processed.

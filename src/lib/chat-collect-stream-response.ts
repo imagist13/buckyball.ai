@@ -20,11 +20,16 @@ import {
   updateMessageStreamStatus,
 } from '@/lib/db';
 import { notifySessionComplete, notifySessionError } from '@/lib/telegram-bot';
+import {
+  notifyInteractiveChatApproval,
+  notifyInteractiveChatCompleted,
+} from '@/lib/interactive-chat-notifications';
 import { extractCompletion } from '@/lib/onboarding-completion';
 import { saveMediaToLibrary } from '@/lib/media-saver';
 import type { SSEEvent, TokenUsage, MessageContentBlock, MediaBlock, ExternalSource } from '@/types';
 
 const ASSISTANT_CHECKPOINT_INTERVAL_MS = 120;
+const NON_SUCCESSFUL_TERMINAL_FINISH_REASONS = new Set(['interrupted', 'inProgress']);
 /**
  * Serialize assistant blocks with the same shape used by historical rendering.
  * Checkpoints and terminal persistence must share this helper so refreshing
@@ -68,7 +73,7 @@ function buildAssistantSnapshot(
  *
  * Session ownership (I1/DP1 ownership gate): `lockId` is this turn's
  * session-lock owner token (minted at route.ts :85). EVERY session-level write
- * below â€?sdk_session_id / model / SDK tasks / the assistant `addMessage` â€?is
+ * below â€” sdk_session_id / model / SDK tasks / the assistant `addMessage` â€” is
  * gated on `isLockOwner(sessionId, lockId)`. A superseded turn (its lock taken
  * over by a newer send after Stopâ†’watchdog release) reaches here LATE and must
  * NOT write: its writes would clobber the new owner's state and (DP1) splice its
@@ -109,11 +114,14 @@ export async function collectStreamResponse(
   let tokenUsage: TokenUsage | null = null;
   let hasError = false;
   let errorMessage = '';
+  let sawSuccessfulResult = false;
+  let sawNonSuccessfulTerminalResult = false;
   let lastSavedAssistantMsgId: string | null = null;
   let checkpointMessageId: string | null = null;
   let lastCheckpointAt = 0;
   // Dedup layer: skip duplicate tool_result events by tool_use_id
   const seenToolResultIds = new Set<string>();
+  const notifiedPermissionRequestIds = new Set<string>();
 
   const persistCheckpoint = (force = false): void => {
     const now = Date.now();
@@ -155,7 +163,7 @@ export async function collectStreamResponse(
         updateMessageStreamStatus(checkpointMessageId, 'interrupted');
       }
       console.warn(
-        `[chat/route] stale owner (lockId superseded) â€?DP1: dropping terminal assistant content for session ${sessionId}`,
+        `[chat/route] stale owner (lockId superseded) â€” DP1: dropping terminal assistant content for session ${sessionId}`,
       );
       return;
     }
@@ -183,8 +191,37 @@ export async function collectStreamResponse(
         if (line.startsWith('data: ')) {
           try {
             const event: SSEEvent = JSON.parse(line.slice(6));
-            if (event.type === 'permission_request' || event.type === 'tool_output') {
-              // Skip permission_request and tool_output events - not saved as message content
+            if (event.type === 'permission_request') {
+              // Permission prompts are not transcript content, but they are a
+              // first-class native notification. The server-side collector is
+              // the single cross-Runtime source, so navigation/reload cannot
+              // make the reminder disappear or duplicate it.
+              if (!opts?.suppressNotifications && isLockOwner(sessionId, lockId)) {
+                try {
+                  const permission = JSON.parse(event.data) as {
+                    permissionRequestId?: unknown;
+                    toolName?: unknown;
+                  };
+                  const permissionRequestId = typeof permission.permissionRequestId === 'string'
+                    ? permission.permissionRequestId
+                    : '';
+                  if (permissionRequestId && !notifiedPermissionRequestIds.has(permissionRequestId)) {
+                    await notifyInteractiveChatApproval({
+                      sessionId,
+                      sessionTitle: telegramOpts.sessionTitle,
+                      toolName: typeof permission.toolName === 'string' ? permission.toolName : undefined,
+                    });
+                    notifiedPermissionRequestIds.add(permissionRequestId);
+                  }
+                } catch (error) {
+                  console.warn(
+                    `[chat/route] failed to queue approval notification for session ${sessionId}:`,
+                    error instanceof Error ? error.message : String(error),
+                  );
+                }
+              }
+            } else if (event.type === 'tool_output') {
+              // Streaming tool output is not saved as message content.
             } else if (event.type === 'thinking') {
               // Accumulate thinking content with phase separation (--- between phases)
               if (thinkingPhaseEnded) {
@@ -277,7 +314,7 @@ export async function collectStreamResponse(
             } else if (event.type === 'status') {
               // Capture SDK session_id and model from init event and persist them.
               // I1/DP1 owner gate: a superseded turn must not write session-level
-              // state â€?skip both writes (diagnostic-log only) if we no longer own
+              // state â€” skip both writes (diagnostic-log only) if we no longer own
               // the lock.
               try {
                 const statusData = JSON.parse(event.data);
@@ -317,13 +354,26 @@ export async function collectStreamResponse(
             } else if (event.type === 'result') {
               try {
                 const resultData = JSON.parse(event.data);
+                const finishReason = typeof resultData.finish_reason === 'string'
+                  ? resultData.finish_reason
+                  : null;
+                if (
+                  finishReason
+                  && NON_SUCCESSFUL_TERMINAL_FINISH_REASONS.has(finishReason)
+                ) {
+                  // Codex emits a second usage-only result after the terminal
+                  // interrupted/inProgress result. Keep this sticky so that
+                  // follow-up accounting cannot turn a stopped turn back into
+                  // a successful completion.
+                  sawNonSuccessfulTerminalResult = true;
+                }
                 if (resultData.usage) {
                   tokenUsage = resultData.usage;
                   persistCheckpoint(true);
                 }
                 if (resultData.is_error) {
                   hasError = true;
-                  // #629 â€?surface the result error so the empty-assistant guard
+                  // #629 â€” surface the result error so the empty-assistant guard
                   // below persists a visible **Error:** bubble; otherwise a failed
                   // is_error result turn looks like "no answer" after refresh.
                   if (!errorMessage) {
@@ -332,9 +382,11 @@ export async function collectStreamResponse(
                         ? resultData.errors.join('\n')
                         : resultData.subtype) || 'The conversation ended with an error';
                   }
+                } else if (!sawNonSuccessfulTerminalResult) {
+                  sawSuccessfulResult = true;
                 }
                 // Also capture session_id from result if we missed it from init.
-                // #629 â€?EXCEPT a stale-resume is_error result: resultData.session_id
+                // #629 â€” EXCEPT a stale-resume is_error result: resultData.session_id
                 // is the BAD id; persisting it would overwrite claude-client's clear
                 // and make the next turn retry the broken resume. Clear it instead so
                 // the next message starts fresh (DB-history rebuild).
@@ -374,15 +426,15 @@ export async function collectStreamResponse(
       contentBlocks.unshift({ type: 'thinking', thinking: thinkingText.trim() });
     }
 
-    // Phase 5c slice 5 (2026-05-16, post-smoke) â€?when the only
+    // Phase 5c slice 5 (2026-05-16, post-smoke) â€” when the only
     // thing the stream produced was an error event (no text, no
     // thinking, no tool call), persist a fallback assistant message
     // capturing the error. Pre-fix the proxy preflight 400 path
     // (e.g. Codex `namespace` tool tripping unsupported_tool_kind)
-    // fired `event.type === 'error'` â†?set `hasError` + `errorMessage`,
+    // fired `event.type === 'error'` â†’ set `hasError` + `errorMessage`,
     // then `done` closed the stream with `contentBlocks` still
     // empty. Nothing landed in DB and refresh showed only the user
-    // bubble â€?looked like "the assistant ignored me".
+    // bubble â€” looked like "the assistant ignored me".
     //
     // Same `**Error:** <message>` format `stream-session-manager.ts`
     // uses on the client side so the post-refresh transcript matches
@@ -408,7 +460,8 @@ export async function collectStreamResponse(
     if (thinkingText.trim()) {
       contentBlocks.unshift({ type: 'thinking', thinking: thinkingText.trim() });
     }
-    // Same error-visibility fallback as the happy path above â€?    // applies when the SSE consumption loop itself throws (network
+    // Same error-visibility fallback as the happy path above â€”
+    // applies when the SSE consumption loop itself throws (network
     // drop / parse failure) rather than receiving an error event.
     // Without this, transient stream errors also disappeared from
     // the transcript on refresh.
@@ -488,13 +541,19 @@ export async function collectStreamResponse(
     // Preconditions, all required:
     //   - the route marked this as the session's first real user turn,
     //   - the turn ended cleanly (`hasError` covers thrown errors AND inline
-    //     `error` SSE events; an aborted/Stopped turn lands here too),
+    //     `error` SSE events; interrupted/inProgress terminal results are
+    //     tracked separately because they are not provider errors),
     //   - the assistant row actually persisted (a turn dropped by the DP1 owner
-    //     gate is a superseded turn â€?it must not name the new owner's chat).
+    //     gate is a superseded turn â€” it must not name the new owner's chat).
     // Not awaited: `collectStreamResponse` is itself detached from the streaming
     // Response, and nothing downstream of here may wait on a provider call.
     // `generateSessionTitle` never throws; `.catch` is belt-and-braces.
-    if (opts?.titleGeneration && !hasError && lastSavedAssistantMsgId !== null) {
+    if (
+      opts?.titleGeneration
+      && !hasError
+      && !sawNonSuccessfulTerminalResult
+      && lastSavedAssistantMsgId !== null
+    ) {
       const gen = opts.titleGeneration;
 
       import('@/lib/title-generation')
@@ -507,7 +566,7 @@ export async function collectStreamResponse(
             model: gen.model,
           }),
         )
-        .catch(() => { /* silent by contract â€?the fallback title stands */ });
+        .catch(() => { /* silent by contract â€” the fallback title stands */ });
 
       // Codex app-server does not generate titles, but it does expose
       // `thread/name/set`. Once the first successful turn has persisted, the
@@ -520,17 +579,41 @@ export async function collectStreamResponse(
         if (canonicalTitle) {
           import('@/lib/codex/thread-name')
             .then(({ syncCodexThreadName }) => syncCodexThreadName(sessionId, canonicalTitle))
-            .catch(() => { /* best effort â€?the local title remains canonical */ });
+            .catch(() => { /* best effort â€” the local title remains canonical */ });
         }
       }
     }
 
+    // Native task-completion notification. Require a successful terminal
+    // result, a persisted assistant row, and current lock ownership so a
+    // stopped/empty/superseded turn can never announce false completion.
+    if (
+      !opts?.suppressNotifications
+      && !hasError
+      && !sawNonSuccessfulTerminalResult
+      && sawSuccessfulResult
+      && lastSavedAssistantMsgId !== null
+      && isLockOwner(sessionId, lockId)
+    ) {
+      try {
+        await notifyInteractiveChatCompleted({
+          sessionId,
+          sessionTitle: telegramOpts.sessionTitle,
+        });
+      } catch (error) {
+        console.warn(
+          `[chat/route] failed to queue completion notification for session ${sessionId}:`,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
     // Telegram notifications: completion or error (fire-and-forget)
-    // Suppressed for auto-trigger turns (onboarding/heartbeat) â€?invisible system flows
+    // Suppressed for auto-trigger turns (onboarding/heartbeat) â€” invisible system flows
     if (!opts?.suppressNotifications) {
       if (hasError) {
         notifySessionError(errorMessage, telegramOpts).catch(() => {});
-      } else {
+      } else if (!sawNonSuccessfulTerminalResult) {
         const textSummary = contentBlocks
           .filter((b): b is Extract<MessageContentBlock, { type: 'text' }> => b.type === 'text')
           .map((b) => b.text)
@@ -545,7 +628,7 @@ export async function collectStreamResponse(
 
 /**
  * Process a detected onboarding/checkin completion on the server side.
- * Calls the shared processor functions directly â€?no HTTP round-trip needed.
+ * Calls the shared processor functions directly â€” no HTTP round-trip needed.
  *
  * Both processors are internally idempotent:
  * - processOnboarding checks state.onboardingComplete
@@ -570,7 +653,7 @@ async function processCompletionServerSide(
     }
 
     // Clear hookTriggeredSessionId directly (no HTTP needed).
-    // CAS: only clear if we are still the owner â€?prevents wiping another
+    // CAS: only clear if we are still the owner â€” prevents wiping another
     // tab's legitimate lock when completions arrive out of order.
     try {
       const { loadState, saveState } = await import('@/lib/assistant-workspace');

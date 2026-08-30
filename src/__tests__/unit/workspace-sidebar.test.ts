@@ -9,9 +9,13 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  activatePrimaryInteractively,
   initialState,
+  hydrateWorkspaceSidebarState,
   openDynamicTab,
   closeTab,
+  closeInspector,
+  createBrowserSurfaceTab,
   setActiveTab,
   setOpen,
   setWidth,
@@ -20,6 +24,9 @@ import {
   storageKey,
   dynamicTabId,
   previewSourceFromTab,
+  renameBrowserSurfaceTab,
+  restoreThreadSurfaceState,
+  serializeThreadSurfaceState,
   tabFromPreviewSource,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
@@ -70,11 +77,73 @@ describe('openDynamicTab', () => {
     assert.equal(s.activeTabId, 'markdown:docs/x.md');           // refocused
   });
 
-  it('keys differ across kinds �?same path can have markdown + file Tabs', () => {
+  it('keys differ across kinds — same path can have markdown + file Tabs', () => {
     let s = openDynamicTab(initialState(), markdownTab('a.md'));
     s = openDynamicTab(s, fileTab('a.md'));
-    // Different kinds �?different ids �?both Tabs coexist.
+    // Different kinds → different ids → both Tabs coexist.
     assert.equal(s.tabs.length, 4);
+  });
+});
+
+describe('repeatable Browser Primary Tabs', () => {
+  it('uses one sidebar Tab per browser page with no nested tab identity', () => {
+    let s = openDynamicTab(initialState(), createBrowserSurfaceTab('one'));
+    s = openDynamicTab(s, createBrowserSurfaceTab('two', 'https://example.com/'));
+    const browserTabs = s.tabs.filter((tab) => tab.kind === 'browser');
+    assert.equal(browserTabs.length, 2);
+    assert.equal(s.activePrimaryId, 'browser');
+    assert.equal(s.activeBrowserTabId, 'browser:two');
+    assert.equal(s.activeTabId, 'browser:two');
+  });
+
+  it('keeps the selected Browser behind Inspector and returns to it on close', () => {
+    let s = openDynamicTab(initialState(), createBrowserSurfaceTab('one'));
+    s = openDynamicTab(s, createBrowserSurfaceTab('two'));
+    s = setActiveTab(s, 'browser:one');
+    s = openDynamicTab(s, markdownTab('docs/x.md'));
+    assert.equal(s.activePrimaryId, 'browser');
+    assert.equal(s.activeBrowserTabId, 'browser:one');
+    assert.equal(s.inspectorOpen, true);
+    s = closeInspector(s);
+    assert.equal(s.activeTabId, 'browser:one');
+    assert.equal(s.inspectorOpen, false);
+  });
+
+  it('renames from the actual page title and selects a sibling when closed', () => {
+    let s = openDynamicTab(initialState(), createBrowserSurfaceTab('one'));
+    s = openDynamicTab(s, createBrowserSurfaceTab('two'));
+    s = openDynamicTab(s, createBrowserSurfaceTab('three'));
+    s = closeTab(s, 'browser:three');
+    assert.equal(s.activeBrowserTabId, 'browser:two');
+    s = renameBrowserSurfaceTab(s, 'browser:two', ' Example Domain ');
+    const renamed = s.tabs.find((tab) => tab.id === 'browser:two');
+    assert.equal(renamed?.kind === 'browser' ? renamed.title : undefined, 'Example Domain');
+    s = closeTab(s, 'browser:two');
+    assert.equal(s.activeBrowserTabId, 'browser:one');
+    assert.equal(s.activeTabId, 'browser:one');
+    s = closeTab(s, 'browser:one');
+    assert.equal(s.activeBrowserTabId, undefined);
+    assert.equal(s.activePrimaryId, 'git');
+    assert.equal(s.activeTabId, 'git');
+  });
+
+  it('keeps Browser page state memory-only while restoring a blank Browser Primary', () => {
+    const open = openDynamicTab(
+      initialState(),
+      createBrowserSurfaceTab('one', 'https://example.com/private'),
+    );
+    const wire = serializeThreadSurfaceState(open, 'thread-a');
+    assert.equal(wire.activePrimary, 'browser');
+    assert.equal(wire.inspectorTabs.some((tab) => tab.kind === 'browser'), false);
+    const restored = restoreThreadSurfaceState(initialState(), wire);
+    assert.equal(restored.activePrimaryId, 'browser');
+    assert.equal(restored.tabs.filter((tab) => tab.kind === 'browser').length, 1);
+    const restoredBrowser = restored.tabs.find((tab) =>
+      tab.kind === 'browser' && tab.id === restored.activeBrowserTabId);
+    assert.equal(
+      restoredBrowser?.kind === 'browser' ? restoredBrowser.initialUrl : 'unexpected',
+      undefined,
+    );
   });
 });
 
@@ -83,7 +152,7 @@ describe('closeTab', () => {
     let s = openDynamicTab(initialState(), markdownTab('a.md'));
     s = openDynamicTab(s, markdownTab('b.md'));
     s = openDynamicTab(s, markdownTab('c.md'));
-    // Active is c.md (just opened). Close c �?b.md becomes active.
+    // Active is c.md (just opened). Close c → b.md becomes active.
     s = closeTab(s, 'markdown:c.md');
     assert.equal(s.tabs.length, 4); // git widget a b
     assert.equal(s.activeTabId, 'markdown:b.md');
@@ -110,7 +179,7 @@ describe('closeTab', () => {
     let s = openDynamicTab(initialState(), markdownTab('a.md'));
     s = closeTab(s, 'markdown:a.md');
     // markdown:a.md was at idx 2; its left neighbour is widget at idx 1.
-    // We don't slingshot back to git �?VSCode/Chrome behaviour is to
+    // We don't slingshot back to git — VSCode/Chrome behaviour is to
     // focus the immediately-adjacent Tab.
     assert.equal(s.activeTabId, 'widget');
     assert.deepEqual(s.tabs.map((t) => t.id), ['git', 'widget']);
@@ -146,6 +215,84 @@ describe('setActiveTab / setOpen / setWidth', () => {
   });
 });
 
+describe('interactive Primary activation', () => {
+  it('reveals Widget over a standalone preview without closing the preview tab', () => {
+    let s = openDynamicTab(initialState(), {
+      id: 'artifact:demo',
+      kind: 'artifact',
+      key: 'demo',
+      title: 'demo.html',
+      source: { kind: 'inline-html', html: '<p>demo</p>', virtualName: 'demo.html' },
+    });
+
+    s = activatePrimaryInteractively(s, 'widget');
+
+    assert.equal(s.activePrimaryId, 'widget');
+    assert.equal(s.activeTabId, 'widget');
+    assert.equal(s.activeInspectorId, undefined);
+    assert.equal(s.inspectorOpen, false);
+    assert.ok(s.tabs.some((tab) => tab.id === 'artifact:demo'));
+
+    s = setActiveTab(s, 'artifact:demo');
+    assert.equal(s.activeInspectorId, 'artifact:demo');
+    assert.equal(s.inspectorOpen, true);
+  });
+
+  it('keeps hydration semantics separate so a restored Inspector remains open', () => {
+    const preview = openDynamicTab(initialState(), markdownTab('docs/restored.md'));
+    const hydrated = hydrateWorkspaceSidebarState(preview, {
+      open: true,
+      width: 480,
+      pinnedPrimaryIds: ['widget'],
+      defaultPrimaryId: 'widget',
+    });
+
+    assert.equal(hydrated.activePrimaryId, 'widget');
+    assert.equal(hydrated.activeInspectorId, 'markdown:docs/restored.md');
+    assert.equal(hydrated.inspectorOpen, true);
+  });
+});
+
+describe('workspace preference hydration', () => {
+  it('restores a thread-owned pinned Primary without reopening a collapsed shell', () => {
+    const threadState = restoreThreadSurfaceState(initialState(), {
+      version: 1,
+      sessionId: 'thread-a',
+      activePrimary: 'files',
+      inspectorTabs: [],
+    });
+    const hydrated = hydrateWorkspaceSidebarState(threadState, {
+      open: false,
+      width: 620,
+      pinnedPrimaryIds: ['files-pinned', 'git'],
+      defaultPrimaryId: 'git',
+    });
+
+    assert.equal(hydrated.open, false);
+    assert.equal(hydrated.width, 620);
+    assert.equal(hydrated.activePrimaryId, 'files-pinned');
+    assert.ok(hydrated.tabs.some((tab) => tab.id === 'files-pinned'));
+  });
+
+  it('falls back to the workspace default when the thread Primary is no longer pinned', () => {
+    const threadState = restoreThreadSurfaceState(initialState(), {
+      version: 1,
+      sessionId: 'thread-a',
+      activePrimary: 'files',
+      inspectorTabs: [],
+    });
+    const hydrated = hydrateWorkspaceSidebarState(threadState, {
+      open: true,
+      width: 480,
+      pinnedPrimaryIds: ['widget'],
+      defaultPrimaryId: 'widget',
+    });
+
+    assert.equal(hydrated.open, true);
+    assert.equal(hydrated.activePrimaryId, 'widget');
+  });
+});
+
 describe('storageKey', () => {
   it('combines workspace + session into a stable key', () => {
     const k = storageKey('/home/proj', 'sess-1');
@@ -158,7 +305,7 @@ describe('storageKey', () => {
   });
 });
 
-describe('Phase 2 boundary �?Files Tab is opt-in only', () => {
+describe('Phase 2 boundary — Files Tab is opt-in only', () => {
   // The revised Phase 2 product boundary says: clicking the topbar
   // file-tree button must NEVER create / activate the Files Tab.
   // Files Tab only exists when the user explicitly clicks PushPin in
@@ -182,7 +329,7 @@ describe('Phase 2 boundary �?Files Tab is opt-in only', () => {
     assert.ok(!s.tabs.some((t) => t.id === 'files-pinned'));
     s = openDynamicTab(s, filesTab);
     assert.ok(s.tabs.some((t) => t.id === 'files-pinned'));
-    // Closing the Files Tab gets back to "no Files Tab" �?re-opening
+    // Closing the Files Tab gets back to "no Files Tab" — re-opening
     // requires another explicit openDynamicTab, never an automatic
     // recovery.
     s = closeTab(s, 'files-pinned');
@@ -203,19 +350,19 @@ describe('Phase 2 boundary �?Files Tab is opt-in only', () => {
   });
 });
 
-describe('previewSourceFromTab �?Tab �?PreviewSource sync (Codex P1)', () => {
-  it('markdown Tab �?file source with the same filePath', () => {
+describe('previewSourceFromTab — Tab → PreviewSource sync (Codex P1)', () => {
+  it('markdown Tab → file source with the same filePath', () => {
     const tab: DynamicTab = markdownTab('docs/buddy.md');
     const src = previewSourceFromTab(tab);
     assert.deepEqual(src, { kind: 'file', filePath: 'docs/buddy.md' });
   });
 
-  it('file Tab �?file source with the same filePath', () => {
+  it('file Tab → file source with the same filePath', () => {
     const src = previewSourceFromTab(fileTab('src/index.ts'));
     assert.deepEqual(src, { kind: 'file', filePath: 'src/index.ts' });
   });
 
-  it('artifact Tab �?echoes the stored inline source unchanged', () => {
+  it('artifact Tab → echoes the stored inline source unchanged', () => {
     const inline = { kind: 'inline-html' as const, html: '<p>x</p>', virtualName: 'note.html' };
     const tab: DynamicTab = {
       id: 'artifact:note.html',
@@ -227,7 +374,7 @@ describe('previewSourceFromTab �?Tab �?PreviewSource sync (Codex P1)', () => {
     assert.deepEqual(previewSourceFromTab(tab), inline);
   });
 
-  it('files-pinned + fixed Tabs �?null (do not drive the preview surface)', () => {
+  it('files-pinned + fixed Tabs → null (do not drive the preview surface)', () => {
     assert.equal(previewSourceFromTab({ id: 'git', kind: 'fixed' }), null);
     assert.equal(previewSourceFromTab({ id: 'widget', kind: 'fixed' }), null);
     assert.equal(
@@ -236,10 +383,10 @@ describe('previewSourceFromTab �?Tab �?PreviewSource sync (Codex P1)', () => {
     );
   });
 
-  it('open A �?open B �?switch back to A: the source we sync is A again', () => {
+  it('open A → open B → switch back to A: the source we sync is A again', () => {
     // Models the regression Codex flagged: TabPanel's sync effect runs
     // `previewSourceFromTab(activeTab)` whenever the active id changes.
-    // Going A �?B �?A must end with the source matching A, not B.
+    // Going A → B → A must end with the source matching A, not B.
     let s = openDynamicTab(initialState(), markdownTab('a.md'));
     s = openDynamicTab(s, markdownTab('b.md'));
     // Active is now b.md; switch back to a.md.
@@ -298,13 +445,35 @@ describe('serialize / parse round-trip', () => {
     const s = parse(wire);
     assert.equal(s.activeTabId, 'git');
   });
+
+  it('round-trips active Inspector state through the thread-owned envelope', () => {
+    let s = initialState({ open: true, width: 640 });
+    s = openDynamicTab(s, {
+      id: 'files-pinned',
+      kind: 'files-pinned',
+      key: 'files',
+      title: 'Files',
+    });
+    s = openDynamicTab(s, markdownTab('docs/persisted.md'));
+    const thread = serializeThreadSurfaceState(s, 'thread-a');
+    const restored = restoreThreadSurfaceState(initialState({ width: 640 }), thread);
+
+    assert.equal(thread.activePrimary, 'files');
+    assert.deepEqual(thread.inspectorTabs.map((tab) => tab.id), ['markdown:docs/persisted.md']);
+    assert.equal(restored.activePrimaryId, 'files-pinned');
+    assert.equal(restored.activeInspectorId, 'markdown:docs/persisted.md');
+    assert.equal(restored.inspectorOpen, true);
+    assert.equal(restored.activeTabId, 'markdown:docs/persisted.md');
+    assert.ok(restored.tabs.some((tab) => tab.id === 'files-pinned'));
+  });
 });
 
 // ─── Phase 4 Phase 1: trust round-trip ────────────────────────────────
 //
 // PreviewSource gained a trust tier (workspace / user-selected /
 // agent-referenced). Tabs persist to localStorage and must survive a
-// page reload without forgetting that an external file was external �?// otherwise reopening a persisted Tab would silently re-promote it to
+// page reload without forgetting that an external file was external —
+// otherwise reopening a persisted Tab would silently re-promote it to
 // workspace and skip the confirm card.
 
 describe('tabFromPreviewSource carries trust tier through to the Tab', () => {
@@ -352,7 +521,7 @@ describe('tabFromPreviewSource carries trust tier through to the Tab', () => {
 });
 
 describe('openDynamicTab refreshes metadata when reopening the same id', () => {
-  it('replaces trust info on the existing tab (agent-referenced �?user-selected)', () => {
+  it('replaces trust info on the existing tab (agent-referenced → user-selected)', () => {
     // Phase 4: PreviewPanel's "confirm external" path calls
     // setPreviewSource with the same filePath + a new trust tier.
     // openDynamicTab must refresh tab metadata in place, otherwise
@@ -387,8 +556,8 @@ describe('openDynamicTab refreshes metadata when reopening the same id', () => {
     assert.equal(s.activeTabId, 'markdown:/Users/me/Desktop/note.md');
   });
 
-  it('serialize �?parse round-trip carries the upgraded trust forward', () => {
-    // The end-to-end shape: after confirm, persist, reload �?the tab
+  it('serialize → parse round-trip carries the upgraded trust forward', () => {
+    // The end-to-end shape: after confirm, persist, reload — the tab
     // should come back as user-selected (NOT re-prompting). Without
     // the in-place replace, this test would fail (old trust persisted).
     let s = openDynamicTab(
@@ -454,7 +623,7 @@ describe('previewSourceFromTab restores trust tier (and stays back-compat)', () 
     assert.deepEqual(src, { kind: 'file', filePath: 'docs/x.md' });
   });
 
-  it('serialize �?parse round-trip preserves trust on a user-selected tab', () => {
+  it('serialize → parse round-trip preserves trust on a user-selected tab', () => {
     // A persisted user-selected Tab must come back with the same trust
     // tier, otherwise reopening after a page refresh would lose the
     // external/readonly marker and let the user edit a file they only

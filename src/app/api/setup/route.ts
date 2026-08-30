@@ -23,11 +23,12 @@ export async function GET() {
       }
     }
 
-    // Provider status â€?MUST stay in lockstep with /api/chat's precheck
+    // Provider status â€” MUST stay in lockstep with /api/chat's precheck
     // (hasCodePilotProvider). If SetupCenter tells a user "provider: completed"
     // while the chat entry is 412-blocking them, the wizard is lying.
     //
-    // Specifically: Claude CLI existence is NOT a provider source for CodePilot â€?    // it's the Claude card's concern. A user who only has the CLI installed
+    // Specifically: Claude CLI existence is NOT a provider source for CodePilot â€”
+    // it's the Claude card's concern. A user who only has the CLI installed
     // (no DB provider, no env, no OAuth) falls into "not-configured" here so
     // the Provider card can surface the "Add provider" CTA.
     let provider: 'not-configured' | 'completed' | 'skipped' | 'needs-fix' = 'not-configured';

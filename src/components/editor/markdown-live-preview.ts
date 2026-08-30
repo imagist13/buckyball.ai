@@ -260,7 +260,7 @@ class MermaidWidget extends RevealWidget {
     const card = this.makeRoot(view, "div", "cm-lp-block cm-lp-mermaid");
     const status = document.createElement("div");
     status.className = "cm-lp-mermaid-loading";
-    status.textContent = "Rendering diagramâ€?;
+    status.textContent = "Rendering diagramâ€¦";
     card.append(status);
 
     const renderId = `codepilot-mermaid-${++mermaidRenderSequence}`;
@@ -743,7 +743,7 @@ export function buildMarkdownLivePreview(
             return;
           }
           const marker = documentText.slice(ref.from, ref.to);
-          const rendered = /^\d/.test(marker) ? marker : "â€?;
+          const rendered = /^\d/.test(marker) ? marker : "â€¢";
           addReplace(
             ref.from,
             ref.to,
@@ -758,7 +758,7 @@ export function buildMarkdownLivePreview(
           addReplace(
             ref.from,
             ref.to,
-            new TextWidget(ref.from, "â”?, "cm-lp-quote-marker"),
+            new TextWidget(ref.from, "â”‚", "cm-lp-quote-marker"),
             false,
             "quote-marker",
           );

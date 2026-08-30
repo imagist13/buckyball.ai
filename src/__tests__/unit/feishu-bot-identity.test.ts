@@ -1,9 +1,9 @@
 /**
- * Phase 6 / #P2 (2026-06-02) â€?Feishu bridge log noise: `Cannot read properties
+ * Phase 6 / #P2 (2026-06-02) â€” Feishu bridge log noise: `Cannot read properties
  * of undefined (reading 'v3')` every 60s.
  *
  * Root cause: getBotInfo called `client.bot.v3.botInfo.list()`, but the Lark
- * SDK 1.59 generated client has no `bot` namespace â†?TypeError on every call,
+ * SDK 1.59 generated client has no `bot` namespace â†’ TypeError on every call,
  * which getBotInfo's catch logged via console.error; the identity-retry timer
  * polls every 60s, so it spammed once a minute.
  *
@@ -23,7 +23,7 @@ function fakeClient(request: ReqFn) {
 
 beforeEach(() => resetBotInfoFailureLogForTests());
 
-describe('getBotInfo â€?uses GET /open-apis/bot/v3/info, parses top-level bot', () => {
+describe('getBotInfo â€” uses GET /open-apis/bot/v3/info, parses top-level bot', () => {
   it('calls the documented bot-info endpoint (never the missing client.bot namespace)', async () => {
     let calledUrl: string | undefined;
     let calledMethod: string | undefined;
@@ -50,7 +50,7 @@ describe('getBotInfo â€?uses GET /open-apis/bot/v3/info, parses top-level bot', 
   });
 });
 
-describe('getBotInfo â€?failures are quiet (no per-minute spam)', () => {
+describe('getBotInfo â€” failures are quiet (no per-minute spam)', () => {
   let warnCalls: number;
   let origWarn: typeof console.warn;
   beforeEach(() => {
@@ -69,13 +69,13 @@ describe('getBotInfo â€?failures are quiet (no per-minute spam)', () => {
   });
 });
 
-describe('identity.ts source â€?no stale client.bot.v3 access (#P2)', () => {
+describe('identity.ts source â€” no stale client.bot.v3 access (#P2)', () => {
   const src = readFileSync(
     path.resolve(__dirname, '../../lib/channels/feishu/identity.ts'),
     'utf8',
   );
   it('does not reference the missing client.bot.v3 namespace', () => {
-    assert.doesNotMatch(src, /\.bot\.v3\.botInfo/, 'the SDK has no bot namespace in 1.59 â€?must use client.request');
+    assert.doesNotMatch(src, /\.bot\.v3\.botInfo/, 'the SDK has no bot namespace in 1.59 â€” must use client.request');
     assert.doesNotMatch(src, /\.bot\.v3\b/);
   });
   it('calls the documented endpoint via client.request', () => {

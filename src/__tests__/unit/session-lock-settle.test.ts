@@ -1,13 +1,13 @@
 /**
- * codex-stop-recovery Phase 3 â€?createSessionLockSettler invariants.
+ * codex-stop-recovery Phase 3 â€” createSessionLockSettler invariants.
  *
  * Behavioral (DI) tests, not source-pins: the settler is the shared seam
  * between the normal collect-completion path and the Stop/abort watchdog, so
  * its three invariants must actually hold at runtime:
- *   1. idempotent â€?only the first call runs side effects;
+ *   1. idempotent â€” only the first call runs side effects;
  *   2. always stops the renewal interval;
  *   3. writes runtime status ONLY when releaseLock() reports we still owned the
- *      lock (lockId-scoped release vs session-scoped status â€?otherwise the
+ *      lock (lockId-scoped release vs session-scoped status â€” otherwise the
  *      watchdog would clobber a newer same-session request's 'running' state).
  */
 
@@ -35,7 +35,7 @@ describe('createSessionLockSettler', () => {
     assert.deepEqual(calls.status, ['idle']);
   });
 
-  it('is idempotent â€?a second settle (e.g. natural completion after the watchdog) is a no-op', () => {
+  it('is idempotent â€” a second settle (e.g. natural completion after the watchdog) is a no-op', () => {
     const { calls, settle } = makeHarness({ owned: true });
     settle('interrupted');
     settle('idle'); // late natural completion must NOT release again or flip status

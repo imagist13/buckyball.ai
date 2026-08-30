@@ -1,12 +1,12 @@
 /**
- * Smoke-fix (2026-06-02) â€?`Settings page loads @smoke` caught a 404:
- *   GET /api/providers/codex_account/models?all=1 â†?404 "Provider not found".
+ * Smoke-fix (2026-06-02) â€” `Settings page loads @smoke` caught a 404:
+ *   GET /api/providers/codex_account/models?all=1 â†’ 404 "Provider not found".
  *
- * codex_account is the Codex (ChatGPT) OAuth virtual provider â€?it routes
+ * codex_account is the Codex (ChatGPT) OAuth virtual provider â€” it routes
  * through Codex's app-server and has no api_providers row / no provider_models.
  * The overview's per-provider manual-count loop excluded `env` and
  * `openai-oauth` but NOT `codex_account`, so it fired the per-provider fetch
- * and 404'd, reddening the Settings smoke (page rendered fine â€?just console
+ * and 404'd, reddening the Settings smoke (page rendered fine â€” just console
  * noise). Fix: skip all virtual / non-DB providers via a named set.
  */
 import { describe, it } from 'node:test';

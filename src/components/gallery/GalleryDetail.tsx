@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { cn, parseDBDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -192,7 +192,7 @@ export function GalleryDetail({
             <div className="absolute inset-0 flex items-center justify-center">
               {integrityFailed ? (
                 <div className="flex max-w-md flex-col items-center gap-3 px-6 text-center text-white/80">
-                  <BuckyballIcon name="warning" size="xl" aria-hidden />
+                  <CodePilotIcon name="warning" size="xl" aria-hidden />
                   <p className="text-sm">
                     {t(
                       item.integrityState === 'missing'
@@ -213,7 +213,7 @@ export function GalleryDetail({
                     className="max-h-full max-w-full object-contain"
                   />
                 ) : (
-                  <BuckyballIcon
+                  <CodePilotIcon
                     name="web"
                     size="xl"
                     className="text-white/40"
@@ -231,7 +231,7 @@ export function GalleryDetail({
                   />
                 ) : isAudio ? (
                   <div className="flex w-full max-w-xl flex-col items-center gap-5 px-8">
-                    <BuckyballIcon name="media_audio" size="xl" className="text-white/70" aria-hidden />
+                    <CodePilotIcon name="media_audio" size="xl" className="text-white/70" aria-hidden />
                     <audio
                       src={imageUrl(currentImage)}
                       controls
@@ -258,7 +258,7 @@ export function GalleryDetail({
                   onClick={() => setCurrentImageIndex((i) => (i > 0 ? i - 1 : item.images.length - 1))}
                   className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 text-white hover:bg-black/70 z-10"
                 >
-                  <BuckyballIcon name="back" size="lg" aria-hidden />
+                  <CodePilotIcon name="back" size="lg" aria-hidden />
                 </Button>
                 <Button
                   variant="ghost"
@@ -266,7 +266,7 @@ export function GalleryDetail({
                   onClick={() => setCurrentImageIndex((i) => (i < item.images.length - 1 ? i + 1 : 0))}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/50 text-white hover:bg-black/70 z-10"
                 >
-                  <BuckyballIcon name="forward" size="lg" aria-hidden />
+                  <CodePilotIcon name="forward" size="lg" aria-hidden />
                 </Button>
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/50 px-2 py-0.5 text-xs text-white z-10">
                   {currentImageIndex + 1} / {item.images.length}
@@ -284,7 +284,7 @@ export function GalleryDetail({
               onClick={() => onToggleFavorite?.(item.id)}
               className="gap-1.5 text-foreground"
             >
-              <BuckyballIcon
+              <CodePilotIcon
                 name="favorite"
                 size="lg"
                 strokeWidth={1.5}
@@ -318,7 +318,7 @@ export function GalleryDetail({
               )}
               {item.model && (
                 <Badge variant="secondary" className="text-[10px] gap-1">
-                  <BuckyballIcon name="appearance" size={12} aria-hidden />
+                  <CodePilotIcon name="appearance" size={12} aria-hidden />
                   {item.model}
                 </Badge>
               )}
@@ -453,7 +453,7 @@ export function GalleryDetail({
                   <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
                     {assetDetail.lineage?.parents?.map((parent) => (
                       <div key={`${parent.parent_asset_id}:${parent.relation}`}>
-                        â?{parent.relation} Â· {parent.parent_asset_id.slice(0, 12)}
+                        ← {parent.relation} · {parent.parent_asset_id.slice(0, 12)}
                       </div>
                     ))}
                   </div>
@@ -462,7 +462,7 @@ export function GalleryDetail({
                   <div className="mt-2 space-y-1 text-[10px] text-muted-foreground">
                     {assetDetail.lineage?.children?.map((child) => (
                       <div key={`${child.child_asset_id}:${child.relation}`}>
-                        â?{child.relation} Â· {child.child_asset_id.slice(0, 12)}
+                        → {child.relation} · {child.child_asset_id.slice(0, 12)}
                       </div>
                     ))}
                   </div>
@@ -509,13 +509,13 @@ export function GalleryDetail({
                     router.push(`/chat/${item.session_id}`);
                   }}
                 >
-                  <BuckyballIcon name="chat" size="sm" aria-hidden />
+                  <CodePilotIcon name="chat" size="sm" aria-hidden />
                   {t('gallery.openChat' as TranslationKey)}
                 </Button>
               )}
               {!isHtml && !integrityFailed && (
                 <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <BuckyballIcon name="download" size="sm" aria-hidden />
+                  <CodePilotIcon name="download" size="sm" aria-hidden />
                   {t('gallery.download' as TranslationKey)}
                 </Button>
               )}
@@ -539,7 +539,7 @@ export function GalleryDetail({
                   onClick={handleDelete}
                   disabled={mutating}
                 >
-                  <BuckyballIcon name="delete" size="sm" aria-hidden />
+                  <CodePilotIcon name="delete" size="sm" aria-hidden />
                   {confirmDelete
                     ? t('gallery.confirmDelete')
                     : t('gallery.delete')}

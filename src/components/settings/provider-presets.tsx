@@ -1,29 +1,13 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { HardDrives } from "@/components/ui/icon";
 import type { ApiProvider } from "@/types";
 import { VENDOR_PRESETS, resolveProviderPresetIdentity } from "@/lib/provider-catalog";
 import type { VendorPreset } from "@/lib/provider-catalog";
-import { getProviderIconKey, type ProviderIconKey } from "@/lib/provider-icon-rule";
-import Anthropic from "@lobehub/icons/es/Anthropic";
-import OpenRouter from "@lobehub/icons/es/OpenRouter";
-import Zhipu from "@lobehub/icons/es/Zhipu";
-import Kimi from "@lobehub/icons/es/Kimi";
-import Moonshot from "@lobehub/icons/es/Moonshot";
-import Minimax from "@lobehub/icons/es/Minimax";
-import Cline from "@lobehub/icons/es/Cline";
-import OpenCode from "@lobehub/icons/es/OpenCode";
-import Aws from "@lobehub/icons/es/Aws";
-import Bedrock from "@lobehub/icons/es/Bedrock";
-import Google from "@lobehub/icons/es/Google";
-import Volcengine from "@lobehub/icons/es/Volcengine";
-import DeepSeek from "@lobehub/icons/es/DeepSeek";
-import Bailian from "@lobehub/icons/es/Bailian";
-import XiaomiMiMo from "@lobehub/icons/es/XiaomiMiMo";
-import Ollama from "@lobehub/icons/es/Ollama";
-import OpenAI from "@lobehub/icons/es/OpenAI";
-import XAI from "@lobehub/icons/es/XAI";
+import {
+  ProviderBrandIcon,
+  ProviderBrandIconByKey,
+} from '@/components/ui/provider-brand-icon';
 
 // ---------------------------------------------------------------------------
 // Brand icon resolver
@@ -31,38 +15,16 @@ import XAI from "@lobehub/icons/es/XAI";
 
 /**
  * React node for a brand icon. Pure rule lives in
- * `src/lib/provider-icon-rule.ts` (unit-testable without React); this
- * thin wrapper just maps the rule's string key to a JSX component.
+ * `src/lib/provider-icon-rule.ts` (unit-testable without React); the shared
+ * ProviderBrandIcon maps the rule's key to JSX for Settings and Composer.
  */
-const ICON_BY_KEY: Record<ProviderIconKey, ReactNode> = {
-  openrouter: <OpenRouter size={18} />,
-  zhipu: <Zhipu size={18} />,
-  kimi: <Kimi size={18} />,
-  moonshot: <Moonshot size={18} />,
-  minimax: <Minimax size={18} />,
-  volcengine: <Volcengine size={18} />,
-  bailian: <Bailian size={18} />,
-  "xiaomi-mimo": <XiaomiMiMo size={18} />,
-  ollama: <Ollama size={18} />,
-  openai: <OpenAI size={18} />,
-  xai: <XAI size={18} />,
-  deepseek: <DeepSeek size={18} />,
-  bedrock: <Bedrock size={18} />,
-  google: <Google size={18} />,
-  aws: <Aws size={18} />,
-  anthropic: <Anthropic size={18} />,
-  cline: <Cline size={18} />,
-  opencode: <OpenCode size={18} />,
-  default: <HardDrives size={18} className="text-muted-foreground" />,
-};
-
 /** Map a provider name / base_url to a brand icon */
 export function getProviderIcon(name: string, baseUrl: string): ReactNode {
-  return ICON_BY_KEY[getProviderIconKey(name, baseUrl)];
+  return <ProviderBrandIcon name={name} baseUrl={baseUrl} />;
 }
 
 // ---------------------------------------------------------------------------
-// Quick-add preset definitions â€?generated from VENDOR_PRESETS (single source of truth)
+// Quick-add preset definitions â€” generated from VENDOR_PRESETS (single source of truth)
 // ---------------------------------------------------------------------------
 
 export interface QuickPreset {
@@ -73,7 +35,7 @@ export interface QuickPreset {
   icon: ReactNode;
   provider_type: string;
   protocol: string;
-  /** Auth style from catalog â€?frontend should use this instead of inferring from extra_env */
+  /** Auth style from catalog â€” frontend should use this instead of inferring from extra_env */
   authStyle: string;
   base_url: string;
   extra_env: string;
@@ -81,7 +43,7 @@ export interface QuickPreset {
   category?: "chat" | "media";
   /** Provider meta info from catalog (for user guidance) */
   meta?: VendorPreset['meta'];
-  /** Catalog default model id â€?used to pre-fill the model_names input so a
+  /** Catalog default model id â€” used to pre-fill the model_names input so a
    *  preset that requires a user-specified model (e.g. MiMo) shows its current
    *  default instead of an empty box with an unrelated placeholder. */
   defaultModelId?: string;
@@ -89,27 +51,7 @@ export interface QuickPreset {
 
 /** Map iconKey from VENDOR_PRESETS to React icon component */
 function resolveIcon(iconKey: string): ReactNode {
-  const ICON_MAP: Record<string, ReactNode> = {
-    anthropic: <Anthropic size={18} />,
-    openrouter: <OpenRouter size={18} />,
-    zhipu: <Zhipu size={18} />,
-    kimi: <Kimi size={18} />,
-    moonshot: <Moonshot size={18} />,
-    minimax: <Minimax size={18} />,
-    bedrock: <Bedrock size={18} />,
-    google: <Google size={18} />,
-    volcengine: <Volcengine size={18} />,
-    bailian: <Bailian size={18} />,
-    'xiaomi-mimo': <XiaomiMiMo size={18} />,
-    ollama: <Ollama size={18} />,
-    openai: <OpenAI size={18} />,
-    xai: <XAI size={18} />,
-    deepseek: <DeepSeek size={18} />,
-    cline: <Cline size={18} />,
-    opencode: <OpenCode size={18} />,
-    server: <HardDrives size={18} className="text-muted-foreground" />,
-  };
-  return ICON_MAP[iconKey] || <HardDrives size={18} className="text-muted-foreground" />;
+  return <ProviderBrandIconByKey iconKey={iconKey} />;
 }
 
 /** Convert a VendorPreset to the frontend QuickPreset format */
@@ -183,7 +125,7 @@ export function getOpenAIImageModel(provider: ApiProvider): string {
 }
 
 // ---------------------------------------------------------------------------
-// Preset matcher â€?find which quick preset a provider was created from
+// Preset matcher â€” find which quick preset a provider was created from
 // ---------------------------------------------------------------------------
 
 export function findMatchingPreset(provider: ApiProvider): QuickPreset | undefined {

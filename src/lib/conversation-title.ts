@@ -1,15 +1,15 @@
 /**
- * Conversation title â€?the single source of truth for turning user-visible
+ * Conversation title â€” the single source of truth for turning user-visible
  * text into a session title.
  *
  * Before this module there were three independent "first message, sliced to
  * 50" implementations that disagreed with each other:
- *   - `src/app/chat/page.tsx`            â€?`content.slice(0, 50)`, NO ellipsis
- *   - `src/app/api/chat/route.ts`        â€?`slice(0, 50) + '...'`
- *   - `src/app/api/claude-sessions/import/route.ts` â€?`slice(0, 50) + '...'`
+ *   - `src/app/chat/page.tsx`            â€” `content.slice(0, 50)`, NO ellipsis
+ *   - `src/app/api/chat/route.ts`        â€” `slice(0, 50) + '...'`
+ *   - `src/app/api/claude-sessions/import/route.ts` â€” `slice(0, 50) + '...'`
  * All three sliced by UTF-16 code unit, so a CJK/emoji boundary could be cut
  * mid-grapheme (a family emoji became a lone ZWJ tail), and all three fed on
- * raw `content` â€?the text sent to the MODEL, which may carry hidden
+ * raw `content` â€” the text sent to the MODEL, which may carry hidden
  * expansion blocks the user never typed. Every entry point now routes here.
  *
  * PRIVACY: callers MUST pass user-visible text (`displayOverride || content`).
@@ -20,7 +20,7 @@
  */
 
 export type TitleOrigin =
-  /** Session created, no real user message yet â€?the only origin a fallback may overwrite. */
+  /** Session created, no real user message yet â€” the only origin a fallback may overwrite. */
   | 'placeholder'
   /** Deterministic truncation of the first real user message. */
   | 'fallback'
@@ -46,29 +46,30 @@ export function isTitleOrigin(value: unknown): value is TitleOrigin {
   return typeof value === 'string' && (TITLE_ORIGINS as readonly string[]).includes(value);
 }
 
-/** Title budget, counted in graphemes (not UTF-16 code units) â€?ellipsis included. */
+/** Title budget, counted in graphemes (not UTF-16 code units) â€” ellipsis included. */
 export const MAX_TITLE_GRAPHEMES = 50;
 
 /** The one ellipsis. A single grapheme, so it costs exactly one of the 50. */
-export const TITLE_ELLIPSIS = 'â€?;
+export const TITLE_ELLIPSIS = 'â€¦';
 
-/** DB default for a session that has no real title yet. Not user-facing copy â€? *  the UI renders `t('chat.newConversation')` when it sees this. */
+/** DB default for a session that has no real title yet. Not user-facing copy â€”
+ *  the UI renders `t('chat.newConversation')` when it sees this. */
 export const PLACEHOLDER_TITLE = 'New Chat';
 
 /** Guard against segmenting a pasted megabyte: no title can survive past this.
- *  Applied AFTER metadata stripping â€?see `stripHiddenMetadata`. */
+ *  Applied AFTER metadata stripping â€” see `stripHiddenMetadata`. */
 const RAW_INPUT_CAP = 4096;
 
 /**
  * Strip metadata the user never typed:
  *  - `<!--files:[...]-->` attachment manifests (paths, mime types, base64)
  *  - the `[Referenced Directories]` / `[Mention Limits]` blocks appended by
- *    `buildMentionAppend` â€?anchored to that helper's exact `\n\n[Section]\n`
+ *    `buildMentionAppend` â€” anchored to that helper's exact `\n\n[Section]\n`
  *    shape so ordinary prose mentioning the words is untouched.
  *
  * Runs on the FULL input, before any length cap: a base64 attachment manifest
  * routinely runs past a cap, and capping first would cut off the closing
- * `-->` and leave the opener â€?paths and payload â€?looking like prose.
+ * `-->` and leave the opener â€” paths and payload â€” looking like prose.
  *
  * An opener with no closer is fail-closed: everything from `<!--files:` on is
  * dropped rather than kept, so a truncated or malformed manifest can never
@@ -85,13 +86,13 @@ function stripHiddenMetadata(raw: string): string {
 /**
  * Collapse to one clean line.
  *
- * `\p{Cc}` (C0/C1 controls â€?newlines, tabs, ANSI escape introducers) becomes
+ * `\p{Cc}` (C0/C1 controls â€” newlines, tabs, ANSI escape introducers) becomes
  * a space rather than being deleted, so `"foo\nbar"` reads as `"foo bar"` and
  * not `"foobar"`. Runs of whitespace then collapse and the ends are trimmed.
  *
  * Deliberately NOT stripped: `\p{Cf}` (format characters). ZWJ lives in that
  * category, and removing it would explode a family emoji into three separate
- * people â€?the exact grapheme damage this module exists to prevent. The
+ * people â€” the exact grapheme damage this module exists to prevent. The
  * `\s+` collapse already absorbs the zero-width space and BOM.
  */
 function toSingleLine(raw: string): string {
@@ -101,7 +102,7 @@ function toSingleLine(raw: string): string {
     .trim();
 }
 
-/** Grapheme split â€?keeps emoji ZWJ sequences and combining marks intact. */
+/** Grapheme split â€” keeps emoji ZWJ sequences and combining marks intact. */
 function toGraphemes(text: string): string[] {
   if (typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function') {
     const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
@@ -111,7 +112,7 @@ function toGraphemes(text: string): string[] {
   return Array.from(text);
 }
 
-/** Grapheme length â€?exported so validation and tests agree on "how long". */
+/** Grapheme length â€” exported so validation and tests agree on "how long". */
 export function titleLength(text: string): number {
   return toGraphemes(text).length;
 }
@@ -121,8 +122,8 @@ export function titleLength(text: string): number {
  *
  * Returns `''` when nothing usable survives cleaning (empty / whitespace /
  * control-characters-only / attachment-manifest-only). Callers decide what
- * that means â€?the chat route keeps the placeholder, import falls back to the
- * project name â€?because "" is not a title and this function will not invent
+ * that means â€” the chat route keeps the placeholder, import falls back to the
+ * project name â€” because "" is not a title and this function will not invent
  * one.
  */
 export function deriveConversationTitle(input: string | null | undefined): string {
@@ -147,7 +148,7 @@ export type ManualTitleResult =
  * Rejects what isn't a title at all (non-string, empty, whitespace-only,
  * control-characters-only). Over-long input is CLAMPED rather than rejected,
  * so a manual rename lands on exactly the same 50-grapheme canonical form as
- * every other entry point â€?one rule, one shape, no "why did the sidebar cut
+ * every other entry point â€” one rule, one shape, no "why did the sidebar cut
  * it but the dialog refuse it" split.
  */
 export function sanitizeManualTitle(raw: unknown): ManualTitleResult {

@@ -1,5 +1,5 @@
 /**
- * tools/bash.ts â€?Execute shell commands.
+ * tools/bash.ts â€” Execute shell commands.
  */
 
 import { tool } from 'ai';
@@ -122,7 +122,7 @@ export function createBashTool(ctx: ToolContext) {
 
           let output = Buffer.concat(chunks).toString('utf-8');
           if (truncated) {
-            output += '\n\n[Output truncated â€?exceeded 1MB limit]';
+            output += '\n\n[Output truncated â€” exceeded 1MB limit]';
           }
 
           if (signal === 'SIGTERM' || signal === 'SIGKILL') {

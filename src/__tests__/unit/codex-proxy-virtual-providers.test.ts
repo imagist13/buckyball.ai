@@ -1,5 +1,5 @@
 /**
- * Phase 5b P0 follow-up �?virtual-provider resolution in the Codex proxy.
+ * Phase 5b P0 follow-up — virtual-provider resolution in the Codex proxy.
  *
  * Background: `/api/providers/models?runtime=codex_runtime` surfaces
  * BOTH DB-backed providers AND virtual providers (`openai-oauth`,
@@ -7,13 +7,13 @@
  * so anything it shows MUST be resolvable by the proxy route. The
  * pre-fix bug: `handleProxyRequest` only looked up by `getProvider`
  * (DB-only), so a user picking openai-oauth under Codex Runtime hit
- * `provider_not_found` on the first send �?UI false-positive.
+ * `provider_not_found` on the first send — UI false-positive.
  *
  * These tests pin two contracts:
  *
  *   1. `handleProxyRequest` resolves openai-oauth WITHOUT returning
- *      provider_not_found. (Downstream failures �?missing OAuth
- *      token, upstream call �?surface as different error codes; the
+ *      provider_not_found. (Downstream failures — missing OAuth
+ *      token, upstream call — surface as different error codes; the
  *      key invariant is "the lookup branch doesn't lose the virtual
  *      id".)
  *
@@ -44,7 +44,7 @@ const validBody = {
 };
 
 // ─────────────────────────────────────────────────────────────────────
-// Virtual-provider resolution �?no provider_not_found
+// Virtual-provider resolution — no provider_not_found
 // ─────────────────────────────────────────────────────────────────────
 
 // Stub the openai_compatible adapter so the test never reaches createModel
@@ -56,7 +56,7 @@ let stubObserved:
   | undefined;
 let originalUnifiedAdapter: ResponsesAdapter;
 
-describe('handleProxyRequest �?virtual providers resolve without provider_not_found', () => {
+describe('handleProxyRequest — virtual providers resolve without provider_not_found', () => {
   before(() => {
     originalUnifiedAdapter = createUnifiedAdapter('openai_compatible');
     registerAdapter('openai_compatible', async (input, resolved) => {
@@ -93,20 +93,20 @@ describe('handleProxyRequest �?virtual providers resolve without provider_not_f
       | undefined;
     if (!observed) {
       throw new Error(
-        'openai-oauth must reach the openai_compatible adapter �?failing earlier (provider_not_found / credentials_missing) means the virtual-provider branch in handleProxyRequest is broken',
+        'openai-oauth must reach the openai_compatible adapter — failing earlier (provider_not_found / credentials_missing) means the virtual-provider branch in handleProxyRequest is broken',
       );
     }
     assert.equal(
       observed.providerId,
       'openai-oauth',
-      'the adapter must see the ORIGINAL virtual id, not a derived/dropped one �?that lost id is what broke createModel in the pre-fix version',
+      'the adapter must see the ORIGINAL virtual id, not a derived/dropped one — that lost id is what broke createModel in the pre-fix version',
     );
     assert.equal(
       observed.resolvedHasCredentials,
       true,
       'buildOpenAIOAuthResolution always sets hasCredentials=true (OAuth checked at call time); credentials_missing here would be a regression',
     );
-    // The stub returns a sentinel internal_error �?surface so we know
+    // The stub returns a sentinel internal_error — surface so we know
     // it's the stub, not a real failure. Critical invariant: NOT provider_not_found.
     assert.equal(result.kind, 'error');
     if (result.kind !== 'error') return;
@@ -141,7 +141,7 @@ describe('handleProxyRequest �?virtual providers resolve without provider_not_f
     // Codex Account routes through Codex's own thread/turn flow with
     // no codepilot_proxy injection. Reaching the proxy with this id
     // means CodexRuntime called thread/start with the proxy injection
-    // active �?a wiring bug we want to flag clearly instead of
+    // active — a wiring bug we want to flag clearly instead of
     // pretending the provider doesn't exist.
     const result = await handleProxyRequest({
       targetProviderId: 'codex_account',
@@ -183,10 +183,10 @@ describe('handleProxyRequest �?virtual providers resolve without provider_not_f
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// API contract �?every codex_runtime row is proxy-resolvable
+// API contract — every codex_runtime row is proxy-resolvable
 // ─────────────────────────────────────────────────────────────────────
 
-describe('API contract �?every provider surfaced under runtime=codex_runtime must be proxy-resolvable', () => {
+describe('API contract — every provider surfaced under runtime=codex_runtime must be proxy-resolvable', () => {
   it('GET /api/providers/models?runtime=codex_runtime: every returned provider_id is in the proxy resolver set', async () => {
     const { GET } = await import('@/app/api/providers/models/route');
     const { NextRequest } = await import('next/server');
@@ -200,7 +200,7 @@ describe('API contract �?every provider surfaced under runtime=codex_runtime mu
     const dbIds = getAllProviders().map(p => p.id);
     const resolvable = getProxyResolvableProviderIds(dbIds);
 
-    // Add `codex_account` defensively �?it surfaces under codex_runtime
+    // Add `codex_account` defensively — it surfaces under codex_runtime
     // but routes around the proxy. The contract only requires it be
     // RESOLVABLE (i.e. the proxy gives a clear error), not that it
     // succeeds. The virtual-provider routing-bug test above confirms
@@ -215,7 +215,7 @@ describe('API contract �?every provider surfaced under runtime=codex_runtime mu
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Metadata guarantee �?proxy registry derives from the shared catalog
+// Metadata guarantee — proxy registry derives from the shared catalog
 // ─────────────────────────────────────────────────────────────────────
 
 describe('Virtual-provider proxy metadata mirrors the shared catalog', () => {

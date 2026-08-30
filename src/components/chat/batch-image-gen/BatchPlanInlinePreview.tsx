@@ -21,7 +21,7 @@ export function BatchPlanInlinePreview({ plan: initialPlan }: BatchPlanInlinePre
   const { sessionId } = usePanel();
   const { t } = useTranslation();
 
-  // Local editable state â€?initialized from the parsed plan
+  // Local editable state â€” initialized from the parsed plan
   const [localPlan, setLocalPlan] = useState<PlannerOutput>(initialPlan);
   const [executed, setExecuted] = useState(false);
 

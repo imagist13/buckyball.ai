@@ -25,7 +25,7 @@ import {
 import {
   HARNESS_HOME_SCHEMA_VERSION,
   FileHarnessRepository,
-  assertBuckyballFullReference,
+  assertCodePilotFullReference,
   hashBytes,
   listRuntimeDescriptors,
   projectCanonicalRepository,
@@ -117,8 +117,8 @@ function createCanonicalFixture(): {
     },
     assetRefs: [{ assetId: 'asset-image-1', kind: 'image' }],
     runtimeOverlays: {
-      bbagent: {
-        runtimeId: 'bbagent',
+      codepilot_runtime: {
+        runtimeId: 'codepilot_runtime',
         definitionRefs: [refs['overlays/codepilot.md']],
         stateRefs: [],
       },
@@ -178,8 +178,8 @@ describe('Harness Home Runtime descriptor conformance', () => {
   });
 
   it('makes CodePilot the full reference and keeps stable capabilities real', () => {
-    assert.doesNotThrow(assertBuckyballFullReference);
-    const reference = requireRuntimeDescriptor('bbagent');
+    assert.doesNotThrow(assertCodePilotFullReference);
+    const reference = requireRuntimeDescriptor('codepilot_runtime');
     assert.equal(reference.integrationLevel, 'full');
     assert.ok(reference.capabilities.length > 0);
     for (const capability of reference.capabilities) {
@@ -219,7 +219,7 @@ describe('Canonical repository Runtime projection', () => {
     try {
       const harness = projectCanonicalRepository({
         repository: fixture.repository,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
       });
       assert.deepEqual(
         harness.sections.map((section) => section.kind),
@@ -253,7 +253,7 @@ describe('Canonical repository Runtime projection', () => {
     try {
       const harness = projectCanonicalRepository({
         repository: fixture.repository,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
       });
       const rendered = renderCanonicalHarnessFragment(harness);
       assert.match(rendered, /user-owned research assistant/);
@@ -272,7 +272,7 @@ describe('Canonical repository Runtime projection', () => {
     try {
       const nativeHarness = projectCanonicalRepository({
         repository: fixture.repository,
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
       });
       const claudeHarness = projectCanonicalRepository({
         repository: fixture.repository,
@@ -309,7 +309,7 @@ describe('Canonical repository Runtime projection', () => {
           ...common,
           canonicalHarness: nativeHarness,
         }),
-        /targets "bbagent", not "claude_code"/,
+        /targets "codepilot_runtime", not "claude_code"/,
       );
     } finally {
       fixture.repository.close();
@@ -344,7 +344,7 @@ describe('Canonical repository Runtime projection', () => {
       assert.throws(
         () => projectCanonicalRepository({
           repository: fixture.repository,
-          runtimeId: 'bbagent',
+          runtimeId: 'codepilot_runtime',
         }),
         /repository is stale/,
       );
@@ -357,7 +357,7 @@ describe('Canonical repository Runtime projection', () => {
     const fixture = createCanonicalFixture();
     fixture.repository.close();
     setSetting(HARNESS_HOME_ROOT_SETTING, fixture.root);
-    const result = loadConfiguredHarnessHome('bbagent');
+    const result = loadConfiguredHarnessHome('codepilot_runtime');
     assert.equal(result.status, 'loaded');
     if (result.status !== 'loaded') return;
     assert.equal(result.harness.repositoryRoot, fs.realpathSync.native(fixture.root));

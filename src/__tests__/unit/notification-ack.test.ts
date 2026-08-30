@@ -1,19 +1,19 @@
 /**
- * Phase 3 Step 3 â€?`notification_deliveries` UPSERT contract (v5 plan).
+ * Phase 3 Step 3 â€” `notification_deliveries` UPSERT contract (v5 plan).
  *
  * Asserts:
- *   1. Basic UPSERT: queued â†?delivered keeps row count at 1.
+ *   1. Basic UPSERT: queued â†’ delivered keeps row count at 1.
  *   2. Multi-channel under one event: each channel has its own row;
  *      ack on channel A doesn't change channel B's status.
  *   3. Repeat ack idempotency: posting the same `(event_id, channel,
  *      delivered)` twice still leaves exactly 1 row in `delivered`.
  *   4. Illegal state transitions are rejected:
- *        - delivered â†?error
- *        - error â†?delivered
+ *        - delivered â†’ error
+ *        - error â†’ delivered
  *      Both should leave the row's status unchanged. The helper
  *      returns `false` to signal the rejection.
  *   5. The `UNIQUE(event_id, channel)` SQL constraint exists in the
- *      schema â€?even a buggy bare INSERT would fail at the DB layer.
+ *      schema â€” even a buggy bare INSERT would fail at the DB layer.
  */
 
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
@@ -87,7 +87,7 @@ async function setupEvent(): Promise<{
 }
 
 describe('notification_deliveries UPSERT (Phase 3 Step 3 v5)', () => {
-  it('queued â†?delivered keeps the row count at 1', async () => {
+  it('queued â†’ delivered keeps the row count at 1', async () => {
     const { event_id, upsertNotificationDelivery, listNotificationDeliveries } = await setupEvent();
     upsertNotificationDelivery({ event_id, channel: 'renderer-toast', status: 'queued' });
     upsertNotificationDelivery({ event_id, channel: 'renderer-toast', status: 'delivered' });
@@ -124,7 +124,7 @@ describe('notification_deliveries UPSERT (Phase 3 Step 3 v5)', () => {
     assert.equal(rows[0].status, 'delivered');
   });
 
-  it('rejects illegal terminal-state transitions (delivered â†?error)', async () => {
+  it('rejects illegal terminal-state transitions (delivered â†” error)', async () => {
     const { event_id, upsertNotificationDelivery, listNotificationDeliveries } = await setupEvent();
     upsertNotificationDelivery({ event_id, channel: 'bridge-telegram', status: 'queued' });
     upsertNotificationDelivery({ event_id, channel: 'bridge-telegram', status: 'delivered' });
@@ -135,13 +135,13 @@ describe('notification_deliveries UPSERT (Phase 3 Step 3 v5)', () => {
       status: 'error',
       error: 'late retry that should not flip success',
     });
-    assert.equal(rejectedToError, false, 'delivered â†?error must be rejected by the state guard');
+    assert.equal(rejectedToError, false, 'delivered â†’ error must be rejected by the state guard');
 
     const rows = listNotificationDeliveries(event_id).filter((r) => r.channel === 'bridge-telegram');
     assert.equal(rows.length, 1);
     assert.equal(rows[0].status, 'delivered', 'guard must leave the row in delivered');
 
-    // Same in reverse: error â†?delivered should also be rejected.
+    // Same in reverse: error â†’ delivered should also be rejected.
     upsertNotificationDelivery({ event_id, channel: 'renderer-toast', status: 'queued' });
     upsertNotificationDelivery({ event_id, channel: 'renderer-toast', status: 'error', error: 'failed' });
     const rejectedToDelivered = upsertNotificationDelivery({
@@ -149,7 +149,7 @@ describe('notification_deliveries UPSERT (Phase 3 Step 3 v5)', () => {
       channel: 'renderer-toast',
       status: 'delivered',
     });
-    assert.equal(rejectedToDelivered, false, 'error â†?delivered must be rejected too');
+    assert.equal(rejectedToDelivered, false, 'error â†’ delivered must be rejected too');
   });
 
   it('schema enforces UNIQUE(event_id, channel)', async () => {

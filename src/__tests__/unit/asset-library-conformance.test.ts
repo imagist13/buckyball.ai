@@ -75,7 +75,7 @@ function insertLegacyMedia(input: {
 }
 
 describe('Harness Home Asset Library conformance', () => {
-  it('registers only real producer â†?materializer â†?validator â†?consumer chains', () => {
+  it('registers only real producer â†’ materializer â†’ validator â†’ consumer chains', () => {
     const kinds = listAssetKinds();
     assert.deepEqual(
       kinds.map((kind) => kind.id),
@@ -107,7 +107,7 @@ describe('Harness Home Asset Library conformance', () => {
         {
           source: 'mcp',
           producerId: 'media-saver:base64',
-          runtimeId: 'bbagent',
+          runtimeId: 'codepilot_runtime',
           methodRef: 'method:test-image',
           prompt: 'one pixel',
         },
@@ -129,7 +129,7 @@ describe('Harness Home Asset Library conformance', () => {
       assert.equal(imageAsset.kind, 'image');
       assert.equal(videoAsset.kind, 'video');
       assert.equal(audioAsset.kind, 'audio');
-      assert.equal(imageAsset.runtime_id, 'bbagent');
+      assert.equal(imageAsset.runtime_id, 'codepilot_runtime');
       assert.equal(imageAsset.method_ref, 'method:test-image');
       assert.equal(imageAsset.integrity_state, 'valid');
       assert.match(imageAsset.content_hash, /^sha256:[a-f0-9]{64}$/);

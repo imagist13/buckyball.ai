@@ -1,6 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { selectRecommendedReleaseAsset, type ReleaseAsset } from '../../lib/update-release';
+import {
+  releasePlatformLabel,
+  resolveReleaseAssetAvailability,
+  selectRecommendedReleaseAsset,
+  type ReleaseAsset,
+} from '../../lib/update-release';
 
 const assets: ReleaseAsset[] = [
   {
@@ -64,5 +69,36 @@ describe('selectRecommendedReleaseAsset', () => {
     });
 
     assert.equal(selected, null);
+  });
+
+  it('marks a newer macOS-only release as unavailable on Windows and Linux', () => {
+    const macOnlyAssets = assets.filter((asset) => /\.(?:dmg|zip)$/.test(asset.name));
+
+    for (const platform of ['win32', 'linux'] as const) {
+      const availability = resolveReleaseAssetAvailability(macOnlyAssets, {
+        platform,
+        processArch: 'x64',
+        hostArch: 'x64',
+      }, true);
+
+      assert.equal(availability.recommendedAsset, null);
+      assert.equal(availability.platformAssetMissing, true);
+    }
+  });
+
+  it('does not claim a missing platform package without a newer release', () => {
+    const availability = resolveReleaseAssetAvailability([], {
+      platform: 'win32',
+      processArch: 'x64',
+      hostArch: 'x64',
+    }, false);
+
+    assert.equal(availability.platformAssetMissing, false);
+  });
+
+  it('keeps platform labels stable for the bilingual missing-asset message', () => {
+    assert.equal(releasePlatformLabel('darwin'), 'macOS');
+    assert.equal(releasePlatformLabel('win32'), 'Windows');
+    assert.equal(releasePlatformLabel('linux'), 'Linux');
   });
 });

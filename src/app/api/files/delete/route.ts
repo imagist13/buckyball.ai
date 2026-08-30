@@ -11,12 +11,12 @@ import {
 import type { ErrorResponse } from '@/types';
 
 /*
- * POST /api/files/delete �?move a file or directory to the system Trash.
+ * POST /api/files/delete — move a file or directory to the system Trash.
  *
  * Uses the `trash` npm package which invokes the OS-native recycle bin
  * (macOS Trash / Windows Recycle Bin / Linux XDG trash) so users can
  * recover from accidental deletion. We deliberately do NOT fall back to
- * fs.rm if trashing fails �?silent fallback to real delete is exactly
+ * fs.rm if trashing fails — silent fallback to real delete is exactly
  * what the "走回收站" safety story is trying to prevent.
  *
  * Body:
@@ -25,7 +25,7 @@ import type { ErrorResponse } from '@/types';
  * Error codes (HTTP status):
  *   path_unsafe/root_path/symlink_detected/blocked_directory (403),
  *   not_found (404), dir_not_empty (409),
- *   trash_unavailable (500 �?environment refused to use the recycle bin).
+ *   trash_unavailable (500 — environment refused to use the recycle bin).
  */
 
 interface DeleteBody {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     const stat = await fs.lstat(resolvedPath);
 
     // For directories, require explicit recursive=true when non-empty.
-    // This mirrors the `rm -r` contract �?one click can move a whole
+    // This mirrors the `rm -r` contract — one click can move a whole
     // project subtree to trash, so we make the UI acknowledge it.
     if (stat.isDirectory()) {
       const entries = await fs.readdir(resolvedPath);

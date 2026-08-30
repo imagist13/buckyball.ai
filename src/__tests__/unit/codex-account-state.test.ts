@@ -1,13 +1,14 @@
 /**
- * Phase 5 Phase 2 â€?Codex account state translation contract.
+ * Phase 5 Phase 2 â€” Codex account state translation contract.
  *
  * Test runs against a mocked app-server transport via the existing
  * `CodexAppServerClient` machinery rather than against a real `codex`
- * binary. Pins the narrowing from upstream `Account | null` â†? * `CodexAccountState` discriminated union the UI consumes:
+ * binary. Pins the narrowing from upstream `Account | null` â†’
+ * `CodexAccountState` discriminated union the UI consumes:
  *
- *   account: null                              â†?{ kind: 'logged_out' }
- *   account: { type: 'chatgpt', email, plan }  â†?{ kind: 'logged_in', account: { type: 'chatgpt', ... } }
- *   account: { type: 'apiKey' }                â†?{ kind: 'logged_in', account: { type: 'apiKey' } }
+ *   account: null                              â†’ { kind: 'logged_out' }
+ *   account: { type: 'chatgpt', email, plan }  â†’ { kind: 'logged_in', account: { type: 'chatgpt', ... } }
+ *   account: { type: 'apiKey' }                â†’ { kind: 'logged_in', account: { type: 'apiKey' } }
  */
 
 import { describe, it } from 'node:test';
@@ -63,8 +64,8 @@ function makeMockTransport() {
   };
 }
 
-describe('Codex account state â€?narrowing', () => {
-  it('null account â†?logged_out', () => {
+describe('Codex account state â€” narrowing', () => {
+  it('null account â†’ logged_out', () => {
     const state = narrowAccount({ account: null, requiresOpenaiAuth: false });
     assert.deepEqual(state, { kind: 'logged_out' });
   });
@@ -91,7 +92,7 @@ describe('Codex account state â€?narrowing', () => {
   });
 });
 
-describe('Codex app-server client â€?account/read round-trip', () => {
+describe('Codex app-server client â€” account/read round-trip', () => {
   it('sends account/read with refreshToken flag, parses response', async () => {
     const mock = makeMockTransport();
     const client = new CodexAppServerClient(mock.transport, { version: '0.0.0' });

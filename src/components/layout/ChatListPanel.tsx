@@ -8,7 +8,7 @@ import {
   CaretDown,
   CaretRight,
 } from "@/components/ui/icon";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -24,7 +24,7 @@ import { useNativeFolderPicker } from "@/hooks/useNativeFolderPicker";
 import { showToast } from '@/hooks/useToast';
 import { cn } from "@/lib/utils";
 import { renameSession } from "@/lib/session-title-events";
-// ConnectionStatus removed from header â?CLI status now lives in Settings > Claude CLI
+// ConnectionStatus removed from header — CLI status now lives in Settings > Claude CLI
 // ImportSessionDialog moved to Settings page
 import { SessionListItem } from "./SessionListItem";
 import { ProjectGroupHeader } from "./ProjectGroupHeader";
@@ -62,18 +62,18 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
   const [deletingSession, setDeletingSession] = useState<string | null>(null);
   const [expandedSessionGroups, setExpandedSessionGroups] = useState<Set<string>>(new Set());
   const SESSION_TRUNCATE_LIMIT = 10;
-  // importDialogOpen removed â?Import CLI moved to Settings
+  // importDialogOpen removed — Import CLI moved to Settings
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(
     () => loadCollapsedProjects()
   );
   const [hoveredFolder, setHoveredFolder] = useState<string | null>(null);
   const [creatingChat, setCreatingChat] = useState(false);
-  // Codex-style sectioned sidebar: separate é¡¹ç® (non-assistant) and å©ç (assistant flat list)
+  // Codex-style sectioned sidebar: separate 项目 (non-assistant) and 助理 (assistant flat list)
   const [projectsCollapsed, setProjectsCollapsed] = useState(false);
   const [assistantCollapsed, setAssistantCollapsed] = useState(false);
   // projectsHovered / assistantHovered state previously gated chevron
-  // visibility (opacity-0 â?opacity-100 on hover). 2026-05-21: chevron
+  // visibility (opacity-0 → opacity-100 on hover). 2026-05-21: chevron
   // is now always visible + button itself takes hover:bg, so the
   // hover-tracked state is no longer needed.
   const [projectListExpanded, setProjectListExpanded] = useState(false);
@@ -149,7 +149,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
     }
 
     if (!lastDir) {
-      // No saved directory â?let user pick one
+      // No saved directory — let user pick one
       openFolderPicker();
       return;
     }
@@ -161,7 +161,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
         `/api/files/browse?dir=${encodeURIComponent(lastDir)}`
       );
       if (!checkRes.ok) {
-        // Directory is gone â?clear stale value, try setup default before prompting
+        // Directory is gone — clear stale value, try setup default before prompting
         localStorage.removeItem("codepilot:last-working-directory");
         let recovered = false;
         try {
@@ -196,7 +196,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
         body: JSON.stringify({ working_directory: lastDir, model, provider_id }),
       });
       if (!res.ok) {
-        // Backend rejected it (e.g. INVALID_DIRECTORY) â?prompt user
+        // Backend rejected it (e.g. INVALID_DIRECTORY) — prompt user
         localStorage.removeItem("codepilot:last-working-directory");
         openFolderPicker();
         return;
@@ -302,7 +302,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
   };
 
   const handleRenameSession = async (sessionId: string, newTitle: string) => {
-    // Canonical title from the server â?PATCH clamps and single-lines, so
+    // Canonical title from the server — PATCH clamps and single-lines, so
     // `newTitle` is only what we asked for, not what the session is called.
     // `renameSession` also broadcasts it, so the top bar and split view land on
     // the same string immediately instead of waiting for their own re-read.
@@ -388,7 +388,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
     return groups;
   }, [filteredSessions, workspacePath]);
 
-  // Split into å©ç (assistant workspace) and é¡¹ç® (everything else)
+  // Split into 助理 (assistant workspace) and 项目 (everything else)
   const assistantGroup = useMemo(
     () => workspacePath ? projectGroups.find(g => g.workingDirectory === workspacePath) : undefined,
     [projectGroups, workspacePath],
@@ -425,21 +425,21 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
   if (!open) return null;
 
   // Phase 2D.4 (2026-05-01): Skills / MCP / CLI Tools collapsed into
-  // a single "Plugins" entry â?see ExtensionsPage for the unified UI.
-  // Bridge moved to `/settings/bridge` (2026-05-02) â?channel configs
+  // a single "Plugins" entry — see ExtensionsPage for the unified UI.
+  // Bridge moved to `/settings/bridge` (2026-05-02) — channel configs
   // are settings, not a primary destination.
-  const navItems: Array<{ href: string; label: string; icon: BuckyballIconName }> = [
+  const navItems: Array<{ href: string; label: string; icon: CodePilotIconName }> = [
     { href: "/plugins", label: t('nav.plugins' as TranslationKey), icon: "plugin" },
     { href: "/gallery", label: t('nav.gallery' as TranslationKey), icon: "image" },
   ];
 
-  // Phase 7c-B â?surface chrome (data-platform-sidebar attribute, bg
+  // Phase 7c-B — surface chrome (data-platform-sidebar attribute, bg
   // token, backdrop-filter, overflow-hidden, width inset) moved to
   // <CardSurface kind="sidebar"> in AppShell. This inner block now
   // only owns the column layout for its own children.
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Round 20 â?the h-12 traffic-light-safe-area + collapse
+      {/* Round 20 — the h-12 traffic-light-safe-area + collapse
           button used to live at the top of this panel. Both moved
           to UnifiedTopBar so the four floating cards (this sidebar,
           main, workspace, file tree) share the same y-origin under
@@ -449,7 +449,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
       {/* Quick actions + feature nav (Codex-style unified list) */}
       <div className="p-2">
         <div className="flex flex-col gap-0.5">
-          {/* New chat â?list option (no shortcut bound currently) */}
+          {/* New chat — list option (no shortcut bound currently) */}
           <Button
             variant="ghost"
             size="sm"
@@ -457,21 +457,21 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
             disabled={creatingChat}
             onClick={handleNewChat}
           >
-            <BuckyballIcon name="chat" size="md" className="text-inherit" aria-hidden />
+            <CodePilotIcon name="chat" size="md" className="text-inherit" aria-hidden />
             {t('chatList.newConversation')}
           </Button>
 
-          {/* Search â?list option with âK shortcut on hover */}
+          {/* Search — list option with ⌘K shortcut on hover */}
           <Button
             variant="ghost"
             size="sm"
             className="group w-full justify-start gap-2 h-9 px-3 rounded-xl text-[13px] font-normal text-sidebar-foreground"
             onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
           >
-            <BuckyballIcon name="search" size="md" className="text-inherit" aria-hidden />
+            <CodePilotIcon name="search" size="md" className="text-inherit" aria-hidden />
             <span>{t('chatList.searchSessions')}</span>
             <kbd className="ml-auto hidden group-hover:inline-flex items-center rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground/80">
-              âK
+              ⌘K
             </kbd>
           </Button>
 
@@ -489,7 +489,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                       : "text-sidebar-foreground font-normal"
                   }`}
                 >
-                  <BuckyballIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
+                  <CodePilotIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
                   {item.label}
                 </Button>
               </Link>
@@ -498,7 +498,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
         </div>
       </div>
 
-      {/* Sectioned list: é¡¹ç® + å©ç (Codex-style) */}
+      {/* Sectioned list: 项目 + 助理 (Codex-style) */}
       <ScrollArea className="flex-1 min-h-0 [&>[data-slot=scroll-area-viewport]>div]:!block">
         <div className="flex flex-col pb-3">
 
@@ -514,12 +514,12 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
             />
           )}
 
-          {/* âââ é¡¹ç® section âââ */}
+          {/* ─── 项目 section ─── */}
           <div
             className="px-2 pt-2 pb-1"
           >
-            {/* Section header â?chevron always visible (was hover-revealed
-                and "å¤ªä¸æ¾ç¼"); button itself takes a hover background
+            {/* Section header — chevron always visible (was hover-revealed
+                and "太不显眼"); button itself takes a hover background
                 so the toggle reads as a tappable affordance, not as
                 plain text. */}
             <button
@@ -550,19 +550,19 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                   style={{ overflow: 'hidden' }}
                 >
                   <div className="flex flex-col">
-                    {/* Fixed top item: æ°å»ºé¡¹ç® */}
+                    {/* Fixed top item: 新建项目 */}
                     <button
                       type="button"
                       onClick={() => openFolderPicker()}
                       className="group flex items-center gap-2 rounded-xl px-3 h-8 cursor-pointer select-none transition-colors hover:bg-sidebar-accent"
                     >
-                      <BuckyballIcon name="folder_add" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
+                      <CodePilotIcon name="folder_add" size="md" className="shrink-0 text-muted-foreground" aria-hidden />
                       <span className="flex-1 truncate text-left text-[13px] font-normal text-sidebar-foreground">
                         {t('chatList.newProject' as TranslationKey)}
                       </span>
                     </button>
 
-                    {/* Non-assistant project folders â?truncate when more than PROJECT_LIST_TRUNCATE_LIMIT */}
+                    {/* Non-assistant project folders — truncate when more than PROJECT_LIST_TRUNCATE_LIMIT */}
                     {(() => {
                       const projectsShouldTruncate = nonAssistantGroups.length > PROJECT_LIST_TRUNCATE_LIMIT;
                       let visibleProjects = nonAssistantGroups;
@@ -700,7 +700,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
             </AnimatePresence>
           </div>
 
-          {/* âââ å©ç section âââ */}
+          {/* ─── 助理 section ─── */}
           {assistantGroup && (() => {
             const aGroup = assistantGroup;
             const isAssistantSessionsExpanded = expandedSessionGroups.has(aGroup.workingDirectory);
@@ -734,8 +734,8 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                     </span>
                   </button>
                   {/* New assistant chat. The assistant has no folder, so this
-                      top-level "åæ°å¯¹è¯" (pencil) entry is how you start a chat
-                      that belongs to the assistant. Always visible â?it's the
+                      top-level "写新对话" (pencil) entry is how you start a chat
+                      that belongs to the assistant. Always visible — it's the
                       assistant's primary action. */}
                   <Button
                     variant="ghost"
@@ -744,7 +744,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                     title={t('chatList.newConversation')}
                     onClick={(e) => handleCreateSessionInProject(e, aGroup.workingDirectory)}
                   >
-                    <BuckyballIcon name="edit" size="sm" aria-hidden />
+                    <CodePilotIcon name="edit" size="sm" aria-hidden />
                   </Button>
                 </div>
 
@@ -832,7 +832,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                 : "text-sidebar-foreground font-normal"
             }`}
           >
-            <BuckyballIcon name="settings" size="md" strokeWidth={pathname.startsWith("/settings") ? 2 : undefined} className="text-inherit" aria-hidden />
+            <CodePilotIcon name="settings" size="md" strokeWidth={pathname.startsWith("/settings") ? 2 : undefined} className="text-inherit" aria-hidden />
             {t('nav.settings' as TranslationKey)}
             {(hasUpdate || readyToInstall) && (
               <span className={`ml-auto h-2 w-2 rounded-full ${readyToInstall ? "bg-primary" : "bg-primary animate-pulse"}`} />

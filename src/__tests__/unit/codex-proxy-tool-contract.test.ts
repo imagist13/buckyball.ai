@@ -1,5 +1,5 @@
 /**
- * Phase 5b �?Codex proxy tool contract test.
+ * Phase 5b — Codex proxy tool contract test.
  *
  * Pins the AI SDK v6 schema contract: tools coming out of
  * `translateResponsesTools` must be the actual `tool({ inputSchema:
@@ -7,7 +7,8 @@
  * object force-cast to ai-sdk's Tool type.
  *
  * Why a separate test file: codex-proxy-translators.test.ts pins
- * SHAPE (description / inputSchema presence). That's not enough �? * the pre-fix code passed shape but the runtime contract (`asSchema`
+ * SHAPE (description / inputSchema presence). That's not enough —
+ * the pre-fix code passed shape but the runtime contract (`asSchema`
  * calls `.validate(...)` on the wrapper, raw objects don't have
  * `.validate`, schema-is-not-a-function explodes inside streamText)
  * still tripped. The fix here is to drive `streamText` end-to-end
@@ -17,9 +18,9 @@
  * Lifecycle:
  *   1. Build a synthetic ResponsesTool[] (function tool with a real
  *      JSON Schema body, plus a non-function entry filtered upstream).
- *   2. translateResponsesTools �?ToolSet.
- *   3. streamText({ model: mock, tools, prompt }) �?drain the stream.
- *   4. Inspect mock.doStreamCalls[0].tools �?must be the
+ *   2. translateResponsesTools → ToolSet.
+ *   3. streamText({ model: mock, tools, prompt }) → drain the stream.
+ *   4. Inspect mock.doStreamCalls[0].tools — must be the
  *      ai-sdk-normalised function tool with inputSchema as a real
  *      JSON Schema object (the wrapper having been unpacked by
  *      ai-sdk before the model call).
@@ -69,10 +70,10 @@ async function drain(stream: AsyncIterable<unknown>): Promise<unknown[]> {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// The actual contract �?streamText must accept the translated tools
+// The actual contract — streamText must accept the translated tools
 // ─────────────────────────────────────────────────────────────────────
 
-describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke round 3)', () => {
+describe('translateResponsesTools — AI SDK v6 wrapper contract (Phase 5b smoke round 3)', () => {
   it('streamText accepts the translated function tool without "schema is not a function"', async () => {
     const tools = translateResponsesTools([
       {
@@ -93,7 +94,7 @@ describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke 
     // The pre-fix code force-cast `{ description, inputSchema }` into
     // ai-sdk's Tool type. ai-sdk's asSchema() helper invoked
     // schema.validate(...) on the wrapper internally, and a raw
-    // object had no `.validate` �?"schema is not a function". The
+    // object had no `.validate` → "schema is not a function". The
     // POST-fix code goes through `tool({ inputSchema: jsonSchema(...) })`
     // which produces a wrapper with the required hooks. If the fix
     // regresses, this stream call will throw before doStream runs.
@@ -201,7 +202,7 @@ describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke 
     await drain(result.fullStream);
     const fn = (mock.doStreamCalls[0].tools as Array<{ name: string; strict?: boolean }>)[0];
     assert.equal(fn.name, 'structured');
-    assert.equal(fn.strict, true, 'tool.strict must flow through translator �?ai-sdk tool() �?provider-format strict field');
+    assert.equal(fn.strict, true, 'tool.strict must flow through translator → ai-sdk tool() → provider-format strict field');
   });
 
   it('omits `strict` when Codex did NOT declare it (no defaulting)', async () => {
@@ -220,7 +221,7 @@ describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke 
     });
     await drain(result.fullStream);
     const fn = (mock.doStreamCalls[0].tools as Array<{ strict?: boolean }>)[0];
-    assert.equal(fn.strict, undefined, 'omitted strict must remain undefined �?do not synthesise a default');
+    assert.equal(fn.strict, undefined, 'omitted strict must remain undefined — do not synthesise a default');
   });
 
   it('canonical tool() + jsonSchema() shape matches the translator output (sanity guard)', () => {
@@ -261,7 +262,7 @@ describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke 
 // Tool-loop continuation contract (Phase 5b smoke round 7)
 //
 // Codex's natural flow under tools is:
-//   1. user �?assistant text + function_call(name, args, call_id)
+//   1. user → assistant text + function_call(name, args, call_id)
 //   2. CodePilot proxy hands the request back through to Codex via SSE
 //   3. Codex runs the tool and re-sends the request body with:
 //      [assistant+function_call, function_call_output(call_id, output)]
@@ -269,19 +270,19 @@ describe('translateResponsesTools �?AI SDK v6 wrapper contract (Phase 5b smoke 
 //      assistant turn.
 //
 // The "tool ran but no continuation" failure happens when step 3's
-// tool-result message doesn't carry the right `toolName` �?Anthropic
+// tool-result message doesn't carry the right `toolName` — Anthropic
 // and OpenAI Responses both use the name to reconcile the result
 // with the tool definition. Pre-fix the translator wrote a sentinel
 // '__from_responses_proxy__' and the model never produced step 4.
 //
 // This test pins the continuation end-to-end: build a Codex-shaped
 // request body with a function_call/function_call_output pair, run
-// through `translateResponsesInput` �?`streamText` with a mock
+// through `translateResponsesInput` → `streamText` with a mock
 // LanguageModel, and verify the mock observes the tool-result with
 // the original toolName (so a real provider would route it correctly).
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Tool continuation �?function_call �?function_call_output �?final assistant text (Phase 5b smoke round 7)', () => {
+describe('Tool continuation — function_call → function_call_output → final assistant text (Phase 5b smoke round 7)', () => {
   it('streamText sees the tool result with the ORIGINAL function_call toolName, enabling continuation', async () => {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { translateResponsesInput } = require('@/lib/codex/proxy/translate-input') as typeof import('@/lib/codex/proxy/translate-input');
@@ -351,23 +352,23 @@ describe('Tool continuation �?function_call �?function_call_output �?final as
     // The mock received a `prompt` (ai-sdk's converted messages). The
     // tool-result MUST be there. The exact provider-format depends on
     // ai-sdk's prompt converter, but the call's prompt argument is the
-    // ground truth �?assert the toolName survives in some form.
+    // ground truth — assert the toolName survives in some form.
     assert.equal(mock.doStreamCalls.length, 1, 'doStream invoked once');
     const promptJson = JSON.stringify(mock.doStreamCalls[0].prompt);
     assert.match(
       promptJson,
       /gpt_image_2/,
-      'tool-result toolName must survive ai-sdk\'s prompt conversion �?pre-fix the sentinel "__from_responses_proxy__" appeared here instead, and providers refused to continue',
+      'tool-result toolName must survive ai-sdk\'s prompt conversion — pre-fix the sentinel "__from_responses_proxy__" appeared here instead, and providers refused to continue',
     );
     assert.doesNotMatch(
       promptJson,
       /__from_responses_proxy__/,
-      'the legacy sentinel must NOT leak through �?that was the silent-failure surface',
+      'the legacy sentinel must NOT leak through — that was the silent-failure surface',
     );
 
     // Continuation actually produced an assistant text turn.
     const types = parts.map(p => (p as { type: string }).type);
-    assert.ok(types.includes('text-delta'), 'continuation must emit assistant text �?saw events: ' + types.join(','));
+    assert.ok(types.includes('text-delta'), 'continuation must emit assistant text — saw events: ' + types.join(','));
     const continuationText = parts
       .filter(p => (p as { type: string }).type === 'text-delta')
       .map(p => (p as { text?: string }).text ?? '')

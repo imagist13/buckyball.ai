@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -11,7 +11,7 @@ import { useTranslation } from '@/hooks/useTranslation';
  * edits files.
  *
  * `path` is the full filesystem path; `name` is the basename shown in the
- * card title. `operation` distinguishes create from edit â?used for the
+ * card title. `operation` distinguishes create from edit — used for the
  * "Created" / "Modified" label in the card description. When MessageItem
  * does not know (e.g. a tool name not in the create set), leave it
  * undefined and the card will fall back to "Modified".
@@ -28,7 +28,7 @@ export interface DiffSummaryProps {
   /**
    * Called when the user clicks "Open preview". When omitted, no card is
    * rendered for previewable files (they fall back to the compact "also
-   * modified" line) â?this keeps behavior identical for callers that
+   * modified" line) — this keeps behavior identical for callers that
    * haven't opted into the Artifact surface yet.
    */
   onPreview?: (file: DiffFile) => void;
@@ -55,13 +55,13 @@ const PREVIEWABLE = new Set(['.md', '.mdx', '.html', '.htm', '.jsx', '.tsx', '.c
  * Extensions where "Export long shot" is a meaningful action *today*.
  *
  * Only HTML is here because the current export pipeline sends the raw
- * file contents to the hidden-BrowserWindow â?PNG path. For .jsx/.tsx,
- * the raw content is source code, not a rendered page â?letting that
+ * file contents to the hidden-BrowserWindow → PNG path. For .jsx/.tsx,
+ * the raw content is source code, not a rendered page — letting that
  * through would hand users a PNG of their TSX source instead of the
  * Sandpack preview they're looking at. (Codex P2.)
  *
  * Re-adds .jsx/.tsx once a Sandpack-to-HTML or iframe-capture path
- * (POC 0.3 Â§X-jsx-1 / X-jsx-2) ships in a later phase.
+ * (POC 0.3 §X-jsx-1 / X-jsx-2) ships in a later phase.
  */
 const LONGSHOT = new Set(['.html', '.htm']);
 
@@ -76,7 +76,7 @@ function getExt(name: string): string {
  * Layout: left column stacks filename (with inline Created/Modified pill)
  * over the absolute path; right column holds the Preview button + optional
  * Export action. Matches docs/design.md `rounded-lg bg-card border-border/50`
- * â?no nested header/content sections, no shadow.
+ * — no nested header/content sections, no shadow.
  */
 function ArtifactFileCard({
   file,
@@ -128,7 +128,7 @@ function ArtifactFileCard({
     <div className="mt-2 flex items-center gap-3 rounded-lg border border-border/50 bg-card px-4 py-3">
       <div className="min-w-0 flex-1">
         <p className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-foreground">
-          <BuckyballIcon name="edit" size={12} className="shrink-0 text-muted-foreground" aria-hidden />
+          <CodePilotIcon name="edit" size={12} className="shrink-0 text-muted-foreground" aria-hidden />
           <span className="truncate">{file.name}</span>
           <span
             className={cn(
@@ -157,7 +157,7 @@ function ArtifactFileCard({
               onClick={() => onPreview?.(file)}
               className="gap-1.5"
             >
-              <BuckyballIcon name="preview" size="sm" aria-hidden />
+              <CodePilotIcon name="preview" size="sm" aria-hidden />
               {t('diffSummary.openPreview')}
             </Button>
           )}
@@ -169,7 +169,7 @@ function ArtifactFileCard({
               title={t('diffSummary.openSystemBrowser')}
               aria-label={t('diffSummary.openSystemBrowser')}
             >
-              <BuckyballIcon name="external" size="sm" aria-hidden />
+              <CodePilotIcon name="external" size="sm" aria-hidden />
             </Button>
           )}
           {canArchive && (
@@ -181,7 +181,7 @@ function ArtifactFileCard({
               title={archiveLabel}
               aria-label={archiveLabel}
             >
-              <BuckyballIcon
+              <CodePilotIcon
                 name="archive"
                 size="sm"
                 aria-hidden
@@ -196,7 +196,7 @@ function ArtifactFileCard({
               title={t('diffSummary.exportLongShot')}
               aria-label={t('diffSummary.exportLongShot')}
             >
-              <BuckyballIcon name="image" size="sm" aria-hidden />
+              <CodePilotIcon name="image" size="sm" aria-hidden />
             </Button>
           )}
         </div>
@@ -209,7 +209,7 @@ function ArtifactFileCard({
  * Summary of files written or edited by the last assistant turn.
  *
  * Layout strategy: previewable files (extension in PREVIEWABLE set + caller
- * passed onPreview) render as individual Artifact cards â?big visible entry
+ * passed onPreview) render as individual Artifact cards — big visible entry
  * with an "Open preview" button. Other files (code, config, etc.) are
  * collapsed into a single trailing line "Also modified: foo.ts, bar.json"
  * to avoid flooding the message with no-op cards.
@@ -248,7 +248,7 @@ export function DiffSummary({
       ))}
       {others.length > 0 && (
         <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground/60">
-          <BuckyballIcon name="edit" size={10} className="shrink-0" aria-hidden />
+          <CodePilotIcon name="edit" size={10} className="shrink-0" aria-hidden />
           <span className="truncate">
             {previewable.length > 0 ? 'Also modified: ' : 'Modified: '}
             {others.map((f) => f.name).join(', ')}

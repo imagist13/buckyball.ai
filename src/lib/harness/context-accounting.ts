@@ -1,5 +1,5 @@
 /**
- * Phase 1 â€?Context Accounting Runtime Contract helpers.
+ * Phase 1 â€” Context Accounting Runtime Contract helpers.
  *
  * Type definitions live in `src/types/index.ts` (next to TokenUsage).
  * This module exposes:
@@ -36,7 +36,7 @@ export const CONTEXT_ACCOUNTING_KIND_ORDER: readonly ContextAccountingKind[] = [
 ] as const;
 
 /**
- * Factory for an empty snapshot â€?Runtime says "I support all these
+ * Factory for an empty snapshot â€” Runtime says "I support all these
  * kinds in principle but this turn produced zero entries". UI still
  * hides empty rows.
  */
@@ -53,7 +53,7 @@ export function makeEmptySnapshot(
 }
 
 /**
- * Factory for "all kinds unsupported" â€?useful when a Runtime hasn't
+ * Factory for "all kinds unsupported" â€” useful when a Runtime hasn't
  * implemented its produce() yet. UI hides every row.
  */
 export function makeAllUnsupportedSnapshot(
@@ -76,7 +76,7 @@ export function makeAllUnsupportedSnapshot(
  *
  * IMPORTANT: this is the only path from a Runtime-produced snapshot to
  * the popover. Source breadcrumbs are intentionally NOT propagated
- * here â€?they're for debugging / future diagnostics. The hook layer
+ * here â€” they're for debugging / future diagnostics. The hook layer
  * deliberately treats the snapshot as the authoritative end state;
  * caller filtering by source belongs upstream (in the Runtime
  * adapter), not in the rendering layer.

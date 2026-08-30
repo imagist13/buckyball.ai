@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo } from 'react';
 import { ArrowUp, X, Stop, NotePencil } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { Button } from '@/components/ui/button';
 import {
   PromptInputSubmit,
@@ -52,7 +52,10 @@ export function FileAwareSubmitButton({
     disabled: !!disabled,
   });
 
-  // tech-debt #52ï¼aria-label å¿é¡»è·éçå®è¡ä¸ºââæµå¼ä¸­æ ææ?åæ­¢ã?  // æµå¼ä¸­æææ¬=æéåéãç©ºé?åéãæ­¤åæ æ¡ä»¶åæ­»"åéæ¶æ?ï¼?  // åæ­¢æé®è¢«è¯»ä½åéï¼a11y å¤±ç + èªå¨åè¯¯ç¹ï¼ã?  const ariaKey: TranslationKey = canQueue
+  // tech-debt #52：aria-label 必须跟随真实行为——流式中无文本=停止、
+  // 流式中有文本=排队发送、空闲=发送。此前无条件写死"发送消息"，
+  // 停止按钮被读作发送（a11y 失真 + 自动化误点）。
+  const ariaKey: TranslationKey = canQueue
     ? ('messageInput.queueAriaLabel' as TranslationKey)
     : isStreaming
       ? ('messageInput.stopAriaLabel' as TranslationKey)
@@ -66,7 +69,7 @@ export function FileAwareSubmitButton({
       aria-label={t(ariaKey)}
       // Stable hook for programmatic clicks. The Run Checkpoint Round 2
       // confirm-and-send flow needs to find this button in a locale-
-      // agnostic way; aria-label is i18n'd ("åéæ¶æ? in zh) and
+      // agnostic way; aria-label is i18n'd ("发送消息" in zh) and
       // would miss in non-en locales. (Codex P2, 2026-04-30.)
       data-message-input-submit=""
       className="rounded-full"
@@ -134,7 +137,7 @@ function formatChipTokens(n: number): string {
 }
 
 /**
- * Headless emitter â?sums the byte size of every PromptInput attachment
+ * Headless emitter — sums the byte size of every PromptInput attachment
  * (preserved as `size` since the April 2026 fix in `prompt-input.tsx`)
  * and reports the rough token total upstream. Lives inside `PromptInput`
  * because `usePromptInputAttachments` only resolves there. Returns null;
@@ -194,7 +197,7 @@ export function FileAttachmentsCapsules() {
                 className="h-5 w-5 rounded object-cover"
               />
             ) : (
-              <BuckyballIcon name="file" size={12} className="text-muted-foreground" aria-hidden />
+              <CodePilotIcon name="file" size={12} className="text-muted-foreground" aria-hidden />
             )}
             <span className="max-w-[120px] truncate text-[11px]">
               {file.filename || 'file'}
@@ -224,7 +227,7 @@ export function FileAttachmentsCapsules() {
 /**
  * Directory references attached via the file tree's "+" button. Same
  * unified muted chip styling as the rest of the composer's chip row
- * (files, mentions, slash commands, CLI badge) â?type is signalled by
+ * (files, mentions, slash commands, CLI badge) — type is signalled by
  * the icon, never by colour. Colour is reserved for error / dangerous
  * states per the three-layer visual rule in
  * `feedback_composer_invisible_until_hover.md`.
@@ -249,7 +252,7 @@ export function DirectoryRefsCapsules({
             key={path}
             className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted pl-2 pr-1 py-0.5 text-xs font-medium text-foreground"
           >
-            <BuckyballIcon name="folder" size={12} className="text-muted-foreground" aria-hidden />
+            <CodePilotIcon name="folder" size={12} className="text-muted-foreground" aria-hidden />
             <span className="max-w-[160px] truncate text-[11px] font-mono">
               {path}
             </span>
@@ -276,7 +279,7 @@ export function DirectoryRefsCapsules({
 }
 
 /**
- * Slash-command badge chip â?shows just the command label. Description used
+ * Slash-command badge chip — shows just the command label. Description used
  * to be rendered next to it but took too much horizontal space (user feedback),
  * and is already visible in the picker before selection anyway.
  *
@@ -291,9 +294,9 @@ export function CommandBadge({
 }) {
   const { t } = useTranslation();
   const icon = badge.kind === 'agent_skill'
-    ? <BuckyballIcon name="skill" size={12} aria-hidden />
+    ? <CodePilotIcon name="skill" size={12} aria-hidden />
     : badge.kind === 'codepilot_command'
-      ? <BuckyballIcon name="code" size={12} aria-hidden />
+      ? <CodePilotIcon name="code" size={12} aria-hidden />
       : <NotePencil size={12} />;
 
   return (
@@ -350,7 +353,7 @@ export function CliBadge({
   return (
     <div className="flex w-full items-center gap-1.5 px-3 pt-2.5 pb-0 order-first">
       <span className="inline-flex items-center gap-1.5 rounded-full border border-border/40 bg-muted pl-2.5 pr-1.5 py-1 text-xs font-medium text-foreground">
-        <BuckyballIcon name="cli" size={12} className="text-muted-foreground" aria-hidden />
+        <CodePilotIcon name="cli" size={12} className="text-muted-foreground" aria-hidden />
         <span>CLI: {name}</span>
         <Button
           type="button"
@@ -388,8 +391,8 @@ function MentionBadge({
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-border/40 bg-muted pl-2.5 pr-1 py-1 text-xs font-medium text-foreground">
       {isDirectory
-        ? <BuckyballIcon name="folder" size={12} className="text-muted-foreground" aria-hidden />
-        : <BuckyballIcon name="file" size={12} className="text-muted-foreground" aria-hidden />}
+        ? <CodePilotIcon name="folder" size={12} className="text-muted-foreground" aria-hidden />
+        : <CodePilotIcon name="file" size={12} className="text-muted-foreground" aria-hidden />}
       <span className="font-mono truncate max-w-[180px]">
         @{mention.display}{isDirectory ? '/' : ''}
       </span>
@@ -454,7 +457,7 @@ export function ComposerBadgeRow({
   mentionOrder: Record<string, number>;
   onRemoveBadge: (command: string) => void;
   onRemoveMention: (mention: MentionRef) => void;
-  /** Path â?estimated tokens. Forwarded to each MentionBadge. */
+  /** Path → estimated tokens. Forwarded to each MentionBadge. */
   mentionEstimates?: Record<string, number | null>;
 }) {
   if (badges.length === 0 && mentions.length === 0) return null;

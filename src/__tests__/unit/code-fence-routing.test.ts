@@ -1,5 +1,5 @@
 /**
- * Phase 4.B â€?code-fence language â†?PreviewSource mapping.
+ * Phase 4.B â€” code-fence language â†’ PreviewSource mapping.
  *
  * The `previewSourceForCodeFence` helper in code-block.tsx is what the
  * chat-side Preview button uses to decide which inline-* kind to
@@ -18,7 +18,7 @@ import assert from 'node:assert/strict';
 import { previewSourceForCodeFence } from '../../components/ai-elements/code-block';
 
 describe('previewSourceForCodeFence', () => {
-  it('html â†?inline-html', () => {
+  it('html â†’ inline-html', () => {
     const s = previewSourceForCodeFence('html', '<h1>x</h1>');
     assert.equal(s?.kind, 'inline-html');
     if (s?.kind !== 'inline-html') return;
@@ -26,28 +26,28 @@ describe('previewSourceForCodeFence', () => {
     assert.equal(s.virtualName, 'fence.html');
   });
 
-  it('jsx / tsx â†?inline-jsx', () => {
+  it('jsx / tsx â†’ inline-jsx', () => {
     const jsx = previewSourceForCodeFence('jsx', 'const X = () => <div/>');
     assert.equal(jsx?.kind, 'inline-jsx');
     const tsx = previewSourceForCodeFence('tsx', 'const Y: FC = () => null');
     assert.equal(tsx?.kind, 'inline-jsx');
   });
 
-  it('json â†?inline-json with the code text preserved', () => {
+  it('json â†’ inline-json with the code text preserved', () => {
     const s = previewSourceForCodeFence('json', '{"a":1}');
     assert.equal(s?.kind, 'inline-json');
     if (s?.kind !== 'inline-json') return;
     assert.equal(s.text, '{"a":1}');
   });
 
-  it('diff / patch â†?inline-diff', () => {
+  it('diff / patch â†’ inline-diff', () => {
     const a = previewSourceForCodeFence('diff', '--- a\n+++ b\n@@\n-x\n+y');
     assert.equal(a?.kind, 'inline-diff');
     const b = previewSourceForCodeFence('patch', '--- a\n+++ b\n@@\n-x\n+y');
     assert.equal(b?.kind, 'inline-diff');
   });
 
-  it('csv â†?inline-datatable with header + rows', () => {
+  it('csv â†’ inline-datatable with header + rows', () => {
     const s = previewSourceForCodeFence('csv', 'name,age\nAlice,30\nBob,25');
     assert.equal(s?.kind, 'inline-datatable');
     if (s?.kind !== 'inline-datatable') return;
@@ -55,7 +55,7 @@ describe('previewSourceForCodeFence', () => {
     assert.deepEqual(s.rows, [['Alice', '30'], ['Bob', '25']]);
   });
 
-  it('tsv â†?inline-datatable with tab delimiter', () => {
+  it('tsv â†’ inline-datatable with tab delimiter', () => {
     const s = previewSourceForCodeFence('tsv', 'a\tb\n1\t2');
     if (s?.kind !== 'inline-datatable') {
       assert.fail('expected inline-datatable');
@@ -65,7 +65,7 @@ describe('previewSourceForCodeFence', () => {
     assert.deepEqual(s.rows, [['1', '2']]);
   });
 
-  it('markdown / md / mdx â†?inline-markdown', () => {
+  it('markdown / md / mdx â†’ inline-markdown', () => {
     assert.equal(previewSourceForCodeFence('md', '# x')?.kind, 'inline-markdown');
     assert.equal(previewSourceForCodeFence('markdown', '# x')?.kind, 'inline-markdown');
     assert.equal(previewSourceForCodeFence('mdx', '# x')?.kind, 'inline-markdown');

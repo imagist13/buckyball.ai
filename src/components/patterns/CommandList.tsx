@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 /* ------------------------------------------------------------------ */
-/*  CommandList �?shared popover/command-list pattern                  */
+/*  CommandList — shared popover/command-list pattern                  */
 /*  Pure presentation; no data fetching or business logic.            */
 /* ------------------------------------------------------------------ */
 
@@ -96,7 +96,7 @@ interface CommandListItemProps {
   className?: string;
   itemRef?: (el: HTMLButtonElement | null) => void;
   /**
-   * Phase 6 UI收口 P2 (2026-05-14) �?render the item in a non-clickable
+   * Phase 6 UI收口 P2 (2026-05-14) — render the item in a non-clickable
    * disabled state. Picker uses this to surface models that aren't
    * compatible with the current runtime alongside the compatible ones
    * (instead of hiding them server-side and confusing users about
@@ -129,14 +129,14 @@ export function CommandListItem({
       title={tooltip}
       className={cn(
         // Inset rounded item (mx-1) so the highlight doesn't touch the
-        // popover's edge �?feels like the muted toolbar buttons rather
+        // popover's edge — feels like the muted toolbar buttons rather
         // than a flat list row. Active = the same accent we use for
         // hover, so selection reads as "intensified hover" instead of a
         // separate strong state.
         "flex w-full items-center justify-start gap-2 rounded-md px-2.5 py-2 text-left text-sm font-normal transition-colors h-auto",
         active ? "bg-accent text-foreground" : "hover:bg-accent hover:text-foreground",
         // Disabled rows are dimmed + non-interactive but still hoverable
-        // so the title tooltip surfaces �?the cursor change + reduced
+        // so the title tooltip surfaces — the cursor change + reduced
         // opacity tells users the row is the reason "you can't pick me"
         // and the tooltip explains why.
         disabled && "opacity-50 cursor-not-allowed hover:bg-transparent hover:text-foreground",
@@ -152,8 +152,9 @@ export function CommandListItem({
 
 // ── Group with label header ─────────────────────────────────────────
 // Grouping is communicated by typography contrast (bold dark label vs
-// regular muted items) and vertical whitespace between groups �?no
-// horizontal divider lines (per April 2026 feedback: "靠字体间距以�?// 是否加粗去区分视觉重点和分组").
+// regular muted items) and vertical whitespace between groups — no
+// horizontal divider lines (per April 2026 feedback: "靠字体间距以及
+// 是否加粗去区分视觉重点和分组").
 
 interface CommandListGroupProps {
   /** Group header. Pass a string for the common case or a ReactNode

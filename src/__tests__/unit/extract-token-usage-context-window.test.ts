@@ -1,9 +1,9 @@
 /**
- * extract-token-usage-context-window.test.ts â€?contract for the wiring
+ * extract-token-usage-context-window.test.ts â€” contract for the wiring
  * between `SDKResultMessage.modelUsage` and `TokenUsage.context_window`
  * inside `claude-client.ts`.
  *
- * The behavioral piece â€?picking the right modelUsage entry â€?has its
+ * The behavioral piece â€” picking the right modelUsage entry â€” has its
  * own test (`sdk-model-usage.test.ts`) since `pickModelUsage` lives in
  * `sdk-model-usage.ts` (extracted so unit tests don't need to import
  * claude-client's full dependency graph). What this file locks in is
@@ -16,7 +16,7 @@
  *
  * Without this contract a future "trim unused TokenUsage fields"
  * refactor could quietly drop the SDK window plumbing. The window is
- * persisted only for a first-party Anthropic endpoint (#632 â€?third-party
+ * persisted only for a first-party Anthropic endpoint (#632 â€” third-party
  * proxies like GLM / Bailian / MiniMax / Kimi / Volcengine intentionally fall
  * back to "capacity unknown"); max_output_tokens / usage_model_id flow
  * regardless.
@@ -33,7 +33,7 @@ const src = fs.readFileSync(
   'utf8',
 );
 
-describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
+describe('extractTokenUsage â€” SDK contextWindow wiring', () => {
   it('imports pickModelUsage from sdk-model-usage', () => {
     assert.match(
       src,
@@ -51,7 +51,7 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
   });
 
   it('writes context_window / max_output_tokens / usage_model_id onto TokenUsage', () => {
-    // Three independent assertions â€?each field is a separate contract.
+    // Three independent assertions â€” each field is a separate contract.
     // Inline so a typo in one doesn't silently swallow another.
     assert.match(
       src,
@@ -70,7 +70,7 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
     );
   });
 
-  it('only fills context_window when the SDK window is positive â€?zero / missing still falls back to catalog later', () => {
+  it('only fills context_window when the SDK window is positive â€” zero / missing still falls back to catalog later', () => {
     // useContextUsage prefers token_usage.context_window when
     // typeof === 'number' && > 0. Writing 0 (instead of leaving it
     // undefined) would defeat the catalog fallback for models the SDK
@@ -78,7 +78,7 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
     assert.match(
       src,
       /usage\.contextWindow\s*>\s*0/,
-      'extractTokenUsage must guard `if (usage.contextWindow > 0)` before writing context_window â€?zero from a partial adapter must not override the catalog window',
+      'extractTokenUsage must guard `if (usage.contextWindow > 0)` before writing context_window â€” zero from a partial adapter must not override the catalog window',
     );
   });
 
@@ -115,7 +115,7 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
     assert.match(
       src,
       /if\s*\(\s*trustWindow\s*&&\s*usage\.contextWindow\s*>\s*0\s*\)\s*base\.context_window/,
-      'context_window must only be written when trustWindow is true â€?a third-party SDK default must not be persisted',
+      'context_window must only be written when trustWindow is true â€” a third-party SDK default must not be persisted',
     );
   });
 
@@ -136,9 +136,9 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
   // but can STILL route through a third-party proxy via settings.anthropic_base_url
   // or process.env.ANTHROPIC_BASE_URL. The original fix gated on
   // resolved.provider?.base_url alone, and isFirstPartyAnthropicEndpoint(undefined)
-  // === true â€?so those third-party windows were re-trusted (GLM "200K" returns).
+  // === true â€” so those third-party windows were re-trusted (GLM "200K" returns).
   // The flag must derive from resolveEffectiveAnthropicBaseUrl(resolved), which
-  // mirrors toClaudeCodeEnv's precedence (provider â†?settings â†?process.env).
+  // mirrors toClaudeCodeEnv's precedence (provider â†’ settings â†’ process.env).
   it('derives the trust flag once from the EFFECTIVE base URL (covers env / legacy ANTHROPIC_BASE_URL)', () => {
     assert.match(
       src,
@@ -151,7 +151,7 @@ describe('extractTokenUsage â€?SDK contextWindow wiring', () => {
     assert.doesNotMatch(
       src,
       /trustContextWindow:\s*isFirstPartyAnthropicEndpoint\(resolved\.provider\?\.base_url\)/,
-      'the provider-row-only gate re-trusts third-party env/legacy ANTHROPIC_BASE_URL windows (#632 P1) â€?must use the precomputed effective-URL flag',
+      'the provider-row-only gate re-trusts third-party env/legacy ANTHROPIC_BASE_URL windows (#632 P1) â€” must use the precomputed effective-URL flag',
     );
   });
 

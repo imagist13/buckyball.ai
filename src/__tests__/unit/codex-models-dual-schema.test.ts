@@ -1,9 +1,9 @@
 /**
- * Phase 0 (2026-07-17) â€?Codex `model/list` schema drift + fail-closed
+ * Phase 0 (2026-07-17) â€” Codex `model/list` schema drift + fail-closed
  * capability parsing.
  *
  * codex-cli 0.144.2 renamed the `supportedReasoningEfforts` element field
- * `effort` â†?`reasoningEffort`. `models.ts` still read `e.effort`, so against
+ * `effort` â†’ `reasoningEffort`. `models.ts` still read `e.effort`, so against
  * a current binary EVERY tier parsed as `undefined`: models still appeared in
  * the picker, but their capability list became `[undefined, undefined, ...]`.
  * Combined with the selector's old five-tier fallback, the user saw a fully
@@ -44,7 +44,7 @@ function effortLevelsOf(caps: Record<string, unknown> | undefined): string[] {
   return (caps?.supportedEffortLevels ?? []) as string[];
 }
 
-/** DI seam â€?a fake app-server returning a canned model/list payload. */
+/** DI seam â€” a fake app-server returning a canned model/list payload. */
 function fakeServer(data: unknown[]) {
   return async () => ({
     client: {
@@ -53,7 +53,7 @@ function fakeServer(data: unknown[]) {
   });
 }
 
-describe('model/list parsing â€?dual schema (old { effort } vs new { reasoningEffort })', () => {
+describe('model/list parsing â€” dual schema (old { effort } vs new { reasoningEffort })', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   it('reads the LEGACY { effort } shape (old codex binary)', async () => {
@@ -70,7 +70,7 @@ describe('model/list parsing â€?dual schema (old { effort } vs new { reasoningEf
     assert.equal(models[0].defaultReasoningEffort, 'medium', 'default must survive parsing');
   });
 
-  it('reads the NEW { reasoningEffort } shape (codex-cli 0.144.2) â€?the drift that broke us', async () => {
+  it('reads the NEW { reasoningEffort } shape (codex-cli 0.144.2) â€” the drift that broke us', async () => {
     const models = await listCodexModels(
       {},
       fakeServer([
@@ -90,7 +90,7 @@ describe('model/list parsing â€?dual schema (old { effort } vs new { reasoningEf
     assert.deepEqual(
       [...models[0].supportedReasoningEfforts],
       ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'],
-      'the real GPT-5.6 Sol tier list must parse â€?no undefined holes',
+      'the real GPT-5.6 Sol tier list must parse â€” no undefined holes',
     );
     assert.equal(models[0].defaultReasoningEffort, 'low');
     assert.ok(
@@ -164,7 +164,7 @@ describe('model/list parsing â€?dual schema (old { effort } vs new { reasoningEf
   });
 });
 
-describe('buildCodexProviderModelGroup â€?fail-closed capability surface', () => {
+describe('buildCodexProviderModelGroup â€” fail-closed capability surface', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   it('ultra is parsed but does NOT enter the generic effort selector', async () => {
@@ -184,7 +184,7 @@ describe('buildCodexProviderModelGroup â€?fail-closed capability surface', () =>
     );
     const levels = effortLevelsOf(group!.models[0].capabilities);
     assert.deepEqual(levels, ['low', 'high', 'xhigh', 'max']);
-    assert.ok(!levels.includes('ultra'), 'ultra is Codex-only â€?not promised in the shared menu');
+    assert.ok(!levels.includes('ultra'), 'ultra is Codex-only â€” not promised in the shared menu');
   });
 
   it('xhigh / max reach the selector verbatim (not clamped away)', async () => {
@@ -208,7 +208,7 @@ describe('buildCodexProviderModelGroup â€?fail-closed capability surface', () =>
     assert.equal(caps.supportsEffort, false, 'must not claim effort support with no sourced tiers');
     assert.ok(
       !('supportedEffortLevels' in caps),
-      'field must be OMITTED, not [] â€?absence is what makes the selector hide',
+      'field must be OMITTED, not [] â€” absence is what makes the selector hide',
     );
   });
 
@@ -220,13 +220,13 @@ describe('buildCodexProviderModelGroup â€?fail-closed capability surface', () =>
     assert.equal(group!.models[0].capabilities!.supportsEffort, false);
   });
 
-  it('an empty model/list (logged out / no entitlement) yields no group â€?no fabricated catalog', async () => {
+  it('an empty model/list (logged out / no entitlement) yields no group â€” no fabricated catalog', async () => {
     const group = await buildCodexProviderModelGroup({}, fakeServer([]));
     assert.equal(group, null);
   });
 });
 
-describe('getCachedCodexEffortLevels â€?per-model allowlist source', () => {
+describe('getCachedCodexEffortLevels â€” per-model allowlist source', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   const server = fakeServer([
@@ -240,7 +240,7 @@ describe('getCachedCodexEffortLevels â€?per-model allowlist source', () => {
     assert.deepEqual([...(await getCachedCodexEffortLevels('gpt-5.6-sol'))!], ['low', 'max']);
   });
 
-  it('returns undefined on a COLD cache â€?no capability info, never a spawn', async () => {
+  it('returns undefined on a COLD cache â€” no capability info, never a spawn', async () => {
     assert.equal(await getCachedCodexEffortLevels('gpt-5.6-sol'), undefined);
   });
 

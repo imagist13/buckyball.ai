@@ -1,5 +1,5 @@
 /**
- * Agent SDK Capabilities Cache â€?per-provider capability cache that captures
+ * Agent SDK Capabilities Cache â€” per-provider capability cache that captures
  * SDK data (models, commands, account info, MCP status) from active Query instances.
  *
  * Uses cache-on-first-query pattern: after each query() initialization,
@@ -75,7 +75,7 @@ export function isCacheFresh(providerId: string = 'env'): boolean {
 
 /**
  * Drop the cached capabilities for a provider. Must be called when the
- * provider row is edited or deleted â€?otherwise model lists and account
+ * provider row is edited or deleted â€” otherwise model lists and account
  * info captured under the old config keep serving for up to CACHE_TTL_MS.
  */
 export function invalidateCapabilityCache(providerId: string): void {
@@ -104,7 +104,7 @@ function isRealQuery(conversation: unknown): conversation is Query {
 /**
  * Capture all capabilities from an active Query instance.
  * Should be called fire-and-forget after registerConversation().
- * Safe to call with non-Query objects (resume fallback) â€?will silently skip.
+ * Safe to call with non-Query objects (resume fallback) â€” will silently skip.
  *
  * @param providerId - The provider ID that owns this session (e.g. 'env', a DB provider ID)
  */
@@ -114,7 +114,7 @@ export async function captureCapabilities(
   providerId: string = 'env',
 ): Promise<void> {
   if (!isRealQuery(conversation)) {
-    console.log('[capabilities] Skipping capture â€?not a real Query instance');
+    console.log('[capabilities] Skipping capture â€” not a real Query instance');
     return;
   }
 

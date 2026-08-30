@@ -1,5 +1,5 @@
 /**
- * Phase 1 â€?Context Accounting Runtime Contract shape tests.
+ * Phase 1 â€” Context Accounting Runtime Contract shape tests.
  *
  * Pins the contract so a future refactor can't silently regress:
  *   - producedBy is restricted to project RuntimeIds (no 'native' alias)
@@ -21,18 +21,18 @@ import {
   type RuntimeContextAccountingSnapshot,
 } from '../../lib/harness/context-accounting';
 
-describe('Context Accounting Runtime Contract â€?shape', () => {
+describe('Context Accounting Runtime Contract â€” shape', () => {
   it('producedBy is restricted to project RuntimeIds (no native alias)', () => {
     const valid: ContextAccountingRuntimeId[] = [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ];
-    // Pin the union exactly â€?a future PR adding 'native' would
+    // Pin the union exactly â€” a future PR adding 'native' would
     // silently expand the type; this assert is the canary.
     assert.deepEqual([...valid].sort(), [
       'claude_code',
-      'bbagent',
+      'codepilot_runtime',
       'codex_runtime',
     ].sort());
 
@@ -52,7 +52,7 @@ describe('Context Accounting Runtime Contract â€?shape', () => {
   });
 
   it('unsupported is a first-class state distinct from entries with tokens=0', () => {
-    // Pattern A: Runtime says "I can't count MCP" â€?UI hides row
+    // Pattern A: Runtime says "I can't count MCP" â€” UI hides row
     const snapA: RuntimeContextAccountingSnapshot = {
       entries: {},
       unsupported: ['mcp', 'tools'],
@@ -62,7 +62,7 @@ describe('Context Accounting Runtime Contract â€?shape', () => {
     assert.ok(snapA.unsupported.includes('mcp'));
     assert.equal(snapA.entries.mcp, undefined);
 
-    // Pattern B: Runtime supports MCP, this turn produced 0 â€?entry exists
+    // Pattern B: Runtime supports MCP, this turn produced 0 â€” entry exists
     const snapB: RuntimeContextAccountingSnapshot = {
       entries: { mcp: { tokens: 0, source: 'mcp-server-schemas/available' } },
       unsupported: [],
@@ -86,7 +86,7 @@ describe('Context Accounting Runtime Contract â€?shape', () => {
     const claudeCode = makeEmptySnapshot('claude_code');
     assert.equal(claudeCode.providerBackend, undefined);
 
-    const codepilot = makeEmptySnapshot('bbagent');
+    const codepilot = makeEmptySnapshot('codepilot_runtime');
     assert.equal(codepilot.providerBackend, undefined);
   });
 
@@ -134,7 +134,7 @@ describe('Context Accounting Runtime Contract â€?shape', () => {
   });
 });
 
-describe('snapshotToCompilerInputs â€?Runtime â†?breakdown layer mapping', () => {
+describe('snapshotToCompilerInputs â€” Runtime â†’ breakdown layer mapping', () => {
   it('returns undefined when snapshot is null/undefined', () => {
     assert.equal(snapshotToCompilerInputs(null), undefined);
     assert.equal(snapshotToCompilerInputs(undefined), undefined);
@@ -165,7 +165,7 @@ describe('snapshotToCompilerInputs â€?Runtime â†?breakdown layer mapping', () =>
   });
 
   it('treats unsupported kinds as undefined even if entries accidentally present', () => {
-    // Defensive â€?if someone fills entries.mcp AND unsupported.includes('mcp'),
+    // Defensive â€” if someone fills entries.mcp AND unsupported.includes('mcp'),
     // the contract says unsupported wins (Runtime explicitly said it can't count).
     const snap: RuntimeContextAccountingSnapshot = {
       entries: {

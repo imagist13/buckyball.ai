@@ -146,7 +146,7 @@ export async function GET() {
           } : null,
         };
       })(),
-      // Codex P1 â€?heartbeat is now scheduler-only. The
+      // Codex P1 â€” heartbeat is now scheduler-only. The
       // `needsHeartbeat` field used to drive the foreground
       // chat-mount auto-trigger via useAssistantTrigger; we removed
       // both the trigger and this signal so no UI surface can
@@ -267,7 +267,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // All side-effects succeeded â€?now commit the setting
+    // All side-effects succeeded â€” now commit the setting
     setSetting(ASSISTANT_WORKSPACE_PATH_SETTING, workspacePath);
 
     const { reconcileAssistantHeartbeat } = await import('@/lib/assistant-heartbeat');
@@ -280,7 +280,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-/** PATCH â€?update individual state fields (e.g. heartbeatEnabled toggle) */
+/** PATCH â€” update individual state fields (e.g. heartbeatEnabled toggle) */
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -295,7 +295,7 @@ export async function PATCH(request: NextRequest) {
     if ('heartbeatEnabled' in body && typeof body.heartbeatEnabled === 'boolean') {
       state.heartbeatEnabled = body.heartbeatEnabled;
     }
-    // Phase 3 Step 4 â€?heartbeat interval (hours). Min 1h to avoid
+    // Phase 3 Step 4 â€” heartbeat interval (hours). Min 1h to avoid
     // background polling pressure; values < 1 are coerced to 1. Stored
     // alongside heartbeatEnabled so toggling the switch off doesn't
     // clobber the user's chosen interval.
@@ -321,7 +321,7 @@ export async function PATCH(request: NextRequest) {
             break;
           }
         }
-      } catch { /* best effort â€?soul.md cleanup is non-critical */ }
+      } catch { /* best effort â€” soul.md cleanup is non-critical */ }
     }
     // Reset heartbeat date to force re-trigger on next session open
     if (body.resetHeartbeat === true) {

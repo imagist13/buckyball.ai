@@ -6,7 +6,7 @@
 
 // ─── Fence Extraction ───────────────────────────────────────────────
 
-/** Regex for onboarding-complete fence �?tolerates CRLF, extra whitespace, optional language tag */
+/** Regex for onboarding-complete fence — tolerates CRLF, extra whitespace, optional language tag */
 const ONBOARDING_FENCE_RE =
   /```+\s*onboarding-complete[^\n]*\r?\n([\s\S]*?)\r?\n\s*```+/;
 
@@ -42,7 +42,7 @@ export function extractCompletionFence(content: string): CompletionFence | null 
  * Applies progressive repair strategies for common formatting issues:
  *   1. Strip markdown bold/italic markers
  *   2. Fix unescaped newlines inside string values
- *   3. Fix single quotes �?double quotes (only around keys/values)
+ *   3. Fix single quotes → double quotes (only around keys/values)
  *   4. Remove trailing commas before } or ]
  *   5. As last resort, extract key-value pairs with regex
  */
@@ -70,7 +70,7 @@ export function parseCompletionPayload(raw: string): Record<string, string> | nu
     if (isValidAnswerMap(parsed)) return normalizeAnswerMap(parsed);
   } catch { /* continue */ }
 
-  // Strategy 4: single quotes �?double quotes (careful: only structural quotes)
+  // Strategy 4: single quotes → double quotes (careful: only structural quotes)
   cleaned = cleaned.replace(/'/g, '"');
 
   try {

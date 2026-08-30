@@ -1,15 +1,15 @@
 "use client";
 
 /**
- * Settings â?About â?application metadata + utility entries.
+ * Settings → About — application metadata + utility entries.
  *
  * Pulls together pieces that used to be scattered through General:
  *   - Version + check-for-updates  (was UpdateCard at top of General)
  *   - Account info                  (was Account card at bottom of General)
  *   - Chat history import           (recently moved to General; lands here)
- *   - Platform info                 (new â?install channel + OS)
- *   - Diagnostic / log export       (new â?entry to Setup Center diagnose flow)
- *   - Documentation / GitHub / Feedback (new â?external links)
+ *   - Platform info                 (new — install channel + OS)
+ *   - Diagnostic / log export       (new — entry to Setup Center diagnose flow)
+ *   - Documentation / GitHub / Feedback (new — external links)
  *
  * Goal: General is now strictly "application behavior"; About is
  * "what version am I running, where do I go for help, how do I see
@@ -22,12 +22,13 @@ import { useUpdate } from "@/hooks/useUpdate";
 import { useAccountInfo } from "@/hooks/useAccountInfo";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut, SpinnerGap } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { MonolithIcon } from "@/components/brand/MonolithIcon";
 import { SettingsCard } from "@/components/patterns/SettingsCard";
 import { ImportSessionDialog } from "@/components/layout/ImportSessionDialog";
 import { showToast } from "@/hooks/useToast";
 import type { TranslationKey } from "@/i18n";
+import { releasePlatformLabel } from "@/lib/update-release";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.0.0";
 
@@ -35,7 +36,7 @@ const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.0.0";
  * Best-effort platform / channel detection. Electron sets a UA marker so
  * we can distinguish "running inside the app" from "browser-tab dev".
  * Branch and arch come from `navigator.platform` as a fallback when the
- * Electron preload doesn't expose them â?good enough for the About page,
+ * Electron preload doesn't expose them — good enough for the About page,
  * which only needs to label the build, not gate behavior.
  */
 function detectPlatform(): { os: string; channel: string } {
@@ -62,8 +63,8 @@ export function AboutSection() {
   const { accountInfo } = useAccountInfo();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [platform, setPlatform] = useState<{ os: string; channel: string }>({
-    os: "â?,
-    channel: "â?,
+    os: "—",
+    channel: "—",
   });
   const [exportingDiagnostics, setExportingDiagnostics] = useState(false);
   const [logPath, setLogPath] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function AboutSection() {
   const handleOpenLogFolder = async () => {
     if (!logPath) return;
     try {
-      // Electron's scoped reveal bridge resolves with a *string* â?empty
+      // Electron's scoped reveal bridge resolves with a *string* — empty
       // means success, non-empty is the OS-level error message
       // ("no such file", permission denied, etc). It rarely throws.
       // Without checking the returned string the user's last escape
@@ -108,7 +109,8 @@ export function AboutSection() {
         });
       }
     } catch {
-      // Truly thrown (rare). Generic toast is the best we can do â?      // the OS-level reason is in the rejected error but we don't
+      // Truly thrown (rare). Generic toast is the best we can do —
+      // the OS-level reason is in the rejected error but we don't
       // surface raw exception copy to end users.
       showToast({
         message: t("about.support.openLogsFailed"),
@@ -121,14 +123,21 @@ export function AboutSection() {
     updateInfo?.isNativeUpdate &&
     !updateInfo.readyToInstall &&
     updateInfo.downloadProgress != null;
+  const nativeUpdateBusy = updateInfo?.nativePhase === "downloading"
+    || updateInfo?.nativePhase === "downloaded"
+    || updateInfo?.nativePhase === "installing";
+  const updateCheckDisabled = checking || nativeUpdateBusy;
+  const updateErrorMessage = updateInfo?.lastErrorCode
+    ? t(`update.error.${updateInfo.lastErrorCode}` as TranslationKey)
+    : updateInfo?.lastError;
 
   /**
    * Phase 2C.6: download a sanitized diagnostic bundle. The /api/doctor/export
    * endpoint already exists and includes the cached diagnosis + recent runtime
    * logs + provider resolution chain, with API keys / URLs / paths sanitized.
-   * UI just fetches it and triggers a JSON download â?no new backend.
+   * UI just fetches it and triggers a JSON download — no new backend.
    *
-   * This replaces the previous "å¯¼åºè¿è¡æ¥å¿" copy that didn't have a real
+   * This replaces the previous "导出运行日志" copy that didn't have a real
    * action behind it; everything the user wants for issue-filing or local
    * inspection is in the bundle.
    */
@@ -152,9 +161,9 @@ export function AboutSection() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      // Support is the user's last escape hatch â?silent failure here is
+      // Support is the user's last escape hatch — silent failure here is
       // worse than the noise. Surface a toast that points at the
-      // alternative action ("æå¼æ¥å¿æä»¶å¤?) so the user has a way out.
+      // alternative action ("打开日志文件夹") so the user has a way out.
       showToast({
         message: canOpenLogFolder
           ? t("about.support.exportFailedWithLogFolder")
@@ -178,7 +187,7 @@ export function AboutSection() {
       {/* Version + update check. Same logic as the legacy UpdateCard
           but rendered as a single inline row so it matches the rest
           of About visually. App icon (Monolith) sits left of the name +
-          version pair â?replaces the previous separate "brand hero"
+          version pair — replaces the previous separate "brand hero"
           card so About lands as a single coherent row. */}
       <SettingsCard>
         <div className="flex items-center justify-between gap-3">
@@ -195,21 +204,25 @@ export function AboutSection() {
             {updateInfo?.updateAvailable && !checking && (
               updateInfo.readyToInstall ? (
                 <Button size="sm" onClick={quitAndInstall}>
-                  <BuckyballIcon name="refresh" size="sm" aria-hidden />
+                  <CodePilotIcon name="refresh" size="sm" aria-hidden />
                   {t("update.restartToUpdate")}
                 </Button>
               ) : updateInfo.isNativeUpdate && !isDownloading ? (
                 <Button size="sm" onClick={downloadUpdate}>
-                  <BuckyballIcon name="download" size="sm" aria-hidden />
+                  <CodePilotIcon name="download" size="sm" aria-hidden />
                   {t("update.installUpdate")}
                 </Button>
               ) : !updateInfo.isNativeUpdate ? (
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => window.open(updateInfo.releaseUrl, "_blank")}
+                  onClick={() => window.open(updateInfo.downloadUrl || updateInfo.releaseUrl, "_blank")}
                 >
-                  {t("settings.viewRelease")}
+                  {updateInfo.platformAssetMissing
+                    ? t("update.viewReleaseDetails")
+                    : updateInfo.downloadAssetName
+                      ? t("update.getRecommendedBuild")
+                      : t("settings.viewRelease")}
                 </Button>
               ) : null
             )}
@@ -217,15 +230,19 @@ export function AboutSection() {
               variant="outline"
               size="sm"
               onClick={checkForUpdates}
-              disabled={checking}
+              disabled={updateCheckDisabled}
               className="gap-2"
             >
               {checking ? (
                 <SpinnerGap size={14} className="animate-spin" />
               ) : (
-                <BuckyballIcon name="refresh" size="sm" aria-hidden />
+                <CodePilotIcon name="refresh" size="sm" aria-hidden />
               )}
-              {checking ? t("settings.checking") : t("settings.checkForUpdates")}
+              {checking
+                ? t("settings.checking")
+                : nativeUpdateBusy
+                  ? t("update.checkUnavailableDuringUpdate")
+                  : t("settings.checkForUpdates")}
             </Button>
           </div>
         </div>
@@ -264,10 +281,20 @@ export function AboutSection() {
                     />
                   </div>
                 )}
-                {updateInfo.lastError && (
-                  <p className="text-xs text-status-error-foreground">{updateInfo.lastError}</p>
+                {updateInfo.platformAssetMissing && (
+                  <p className="text-xs text-status-warning-foreground">
+                    {t("update.platformAssetMissing", {
+                      version: updateInfo.latestVersion,
+                      platform: releasePlatformLabel(updateInfo.detectedPlatform),
+                    })}
+                  </p>
+                )}
+                {updateErrorMessage && (
+                  <p className="text-xs text-status-error-foreground">{updateErrorMessage}</p>
                 )}
               </div>
+            ) : updateErrorMessage ? (
+              <p className="text-xs text-status-error-foreground">{updateErrorMessage}</p>
             ) : (
               <p className="text-sm text-muted-foreground">{t("settings.latestVersion")}</p>
             )}
@@ -275,7 +302,7 @@ export function AboutSection() {
         )}
       </SettingsCard>
 
-      {/* Platform info â?"what build am I running" surfaces here so a
+      {/* Platform info — "what build am I running" surfaces here so a
           user filing a bug report can copy the exact line. */}
       <SettingsCard
         title={t("about.platform.title")}
@@ -303,7 +330,7 @@ export function AboutSection() {
         </div>
       </SettingsCard>
 
-      {/* Account info â?shown only when the underlying provider
+      {/* Account info — shown only when the underlying provider
           surfaces it. Read-only display; account management itself
           happens inside the provider that owns the credential
           (Anthropic OAuth, ChatGPT Plus OAuth, etc.). */}
@@ -339,7 +366,7 @@ export function AboutSection() {
       )}
 
       {/* Support & logs (Phase 2C.6 rename).
-          The previous wording was "è¯æ­ä¸ç»´æ?â?è¿è¡è¿æ¥è¯æ­ãå¯¼åºè¿è¡æ¥å¿â?
+          The previous wording was "诊断与维护 — 运行连接诊断、导出运行日志…"
           which over-promised: the existing diagnostic flow doesn't always
           identify root causes and the auto-repair path can mislead. The
           honest framing is: Health gives you status; if status doesn't
@@ -359,7 +386,7 @@ export function AboutSection() {
               onClick={handleOpenLogFolder}
               title={logPath ?? undefined}
             >
-              <BuckyballIcon name="folder" size="sm" aria-hidden />
+              <CodePilotIcon name="folder" size="sm" aria-hidden />
               {t("about.support.openLogs")}
             </Button>
           )}
@@ -373,7 +400,7 @@ export function AboutSection() {
             {exportingDiagnostics ? (
               <SpinnerGap size={14} className="animate-spin" />
             ) : (
-              <BuckyballIcon name="download" size="sm" aria-hidden />
+              <CodePilotIcon name="download" size="sm" aria-hidden />
             )}
             {t("about.support.exportDiagnostics")}
           </Button>
@@ -383,7 +410,7 @@ export function AboutSection() {
             className="text-xs gap-1.5"
             onClick={() => window.dispatchEvent(new CustomEvent("open-setup-center"))}
           >
-            <BuckyballIcon name="diagnose" size="sm" aria-hidden />
+            <CodePilotIcon name="diagnose" size="sm" aria-hidden />
             {t("about.support.runSetupWizard")}
           </Button>
           <Button
@@ -392,7 +419,7 @@ export function AboutSection() {
             className="text-xs gap-1.5"
             onClick={() => setImportDialogOpen(true)}
           >
-            <BuckyballIcon name="download" size="sm" aria-hidden />
+            <CodePilotIcon name="download" size="sm" aria-hidden />
             {t("cli.importButton" as TranslationKey)}
           </Button>
         </div>

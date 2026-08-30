@@ -1,18 +1,18 @@
 "use client";
 
 /**
- * Settings â†?General â€?application behavior only.
+ * Settings â†’ General â€” application behavior only.
  *
  * Strictly: language, default panel, generative UI, permission default
  * (auto-approve), error reporting (Sentry). The Settings IA Phase 2
  * cleanup moved everything else out:
  *
- *   - UpdateCard / version + update check  â†?Settings â†?About
- *   - Account info                          â†?Settings â†?About
- *   - Chat history import                   â†?Settings â†?About
- *   - Setup Center entry                    â†?Settings â†?Overview (system card)
- *                                              + Settings â†?About (diagnose card)
- *   - Appearance (theme / theme family)    â†?Settings â†?Appearance
+ *   - UpdateCard / version + update check  â†’ Settings â†’ About
+ *   - Account info                          â†’ Settings â†’ About
+ *   - Chat history import                   â†’ Settings â†’ About
+ *   - Setup Center entry                    â†’ Settings â†’ Overview (system card)
+ *                                              + Settings â†’ About (diagnose card)
+ *   - Appearance (theme / theme family)    â†’ Settings â†’ Appearance
  *
  * Don't add cross-cutting features here. If a new setting is about
  * "where do I see X status" or "where do I jump to Y management",
@@ -133,7 +133,7 @@ export function GeneralSection() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Page title â€?matches other Settings sub-pages. */}
+      {/* Page title â€” matches other Settings sub-pages. */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">{t('settings.general')}</h2>
       </div>
@@ -207,7 +207,7 @@ export function GeneralSection() {
           </Select>
         </FieldRow>
 
-        {/* Error Reporting â€?last row, before the warning dialog */}
+        {/* Error Reporting â€” last row, before the warning dialog */}
         <SentryToggle locale={locale} t={t} />
 
       </SettingsCard>

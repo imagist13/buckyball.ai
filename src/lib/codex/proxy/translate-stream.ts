@@ -1,25 +1,25 @@
 /**
- * Phase 5b smoke round 5 (2026-05-16) â?ai-sdk `fullStream` â?Codex
+ * Phase 5b smoke round 5 (2026-05-16) — ai-sdk `fullStream` → Codex
  * Responses SSE event stream, rewritten against the SDK fixture
  * contract.
  *
  * Contract source:
- *   - `èµæ/codex/sdk/typescript/tests/responsesProxy.ts`
+ *   - `资料/codex/sdk/typescript/tests/responsesProxy.ts`
  *     (`responseStarted` / `assistantMessage` / `shell_call` /
  *     `responseCompleted` / `responseFailed`)
- *   - `èµæ/codex/codex-rs/core/tests/common/responses.rs`
+ *   - `资料/codex/codex-rs/core/tests/common/responses.rs`
  *     (`ev_assistant_message` / `ev_function_call` / `ev_completed`)
  *
  * Event mapping:
  *
  *   ai-sdk part                Responses events emitted
- *   âââââââââââââââââââââââââ  ââââââââââââââââââââââââââââââââââââââ
+ *   ─────────────────────────  ──────────────────────────────────────
  *   start                      response.created
  *   text-start                 response.output_item.added (message, empty content)
  *   text-delta                 response.output_text.delta
  *   text-end                   response.output_item.done (message with accumulated text)
  *   tool-input-start           response.output_item.added (function_call placeholder)
- *   tool-input-delta           (dropped â?SDK fixture doesn't model partial-arg streaming;
+ *   tool-input-delta           (dropped — SDK fixture doesn't model partial-arg streaming;
  *                               function_call lands wholesale in output_item.done)
  *   tool-call                  response.output_item.done (function_call with call_id/name/arguments)
  *   finish                     response.completed { response: { id, usage } }
@@ -29,7 +29,7 @@
  * NOTE on error event shape: SDK fixture `responseFailed()` emits
  * `{type: 'error'}`, but Codex's app-server parser (the path our
  * proxy actually serves today) doesn't match `error` and falls
- * through to "stream closed before response.completed" â?a silent
+ * through to "stream closed before response.completed" — a silent
  * failure. We emit `response.failed` instead so the failure surfaces
  * as a structured ApiError. A future @openai/codex-sdk POC path will
  * need to branch on consumer-style and emit `error` there.
@@ -80,13 +80,14 @@ export type ProviderToolLifecycleEvent =
 interface TranslateStreamOptions {
   responseId: string;
   body: ResponsesRequestBody;
-  /** ai-sdk fullStream. Tools type is intentionally unconstrained â?   *  the translator only reads on `type` discriminants. */
+  /** ai-sdk fullStream. Tools type is intentionally unconstrained —
+   *  the translator only reads on `type` discriminants. */
   source: AsyncIterable<TextStreamPart<ToolSet>>;
-  /** Phase 5c (2026-05-16) â?names of tools the proxy itself
+  /** Phase 5c (2026-05-16) — names of tools the proxy itself
    *  executes through the CodePilot built-in bridge. Codex doesn't
    *  need (and shouldn't see) function_call output_items for these
-   *  because the bridge already handled them in `execute()` â?the
-   *  result reaches buckyball.ai's UI via the side-channel event bus.
+   *  because the bridge already handled them in `execute()` — the
+   *  result reaches CodePilot's UI via the side-channel event bus.
    *  Leaking these calls to Codex causes the same "Codex tries to
    *  execute a tool it doesn't know" failure mode that motivated the
    *  bridge in the first place. */
@@ -94,7 +95,7 @@ interface TranslateStreamOptions {
   /** Provider-hosted tools suppressed from Codex but mirrored to CodePilot UI. */
   providerExecutedToolNames?: ReadonlySet<string>;
   onProviderToolEvent?: (event: ProviderToolLifecycleEvent) => void;
-  /** Flat provider function name â?original Codex namespace/member pair. */
+  /** Flat provider function name → original Codex namespace/member pair. */
   namespaceToolRoutes?: ReadonlyMap<string, CodexNamespaceToolRoute>;
 }
 
@@ -116,7 +117,7 @@ export async function* translateStream(
   const textBuffers = new Map<string, string>();
   const toolIndices = new Map<string, number>();
   const toolNames = new Map<string, string>();
-  /** Phase 5c â?track which tool-call ids belong to the built-in
+  /** Phase 5c — track which tool-call ids belong to the built-in
    *  bridge so we drop them on the way out (input-start / call /
    *  result events for these names should never reach Codex). */
   const suppressedToolCallIds = new Set<string>();
@@ -159,7 +160,7 @@ export async function* translateStream(
         }
 
         case 'text-delta': {
-          // Phase 5b smoke round 6 fix (2026-05-18) â?defensively
+          // Phase 5b smoke round 6 fix (2026-05-18) — defensively
           // allocate the text block if no `text-start` preceded.
           // OpenRouter Anthropic-skin (`anthropic/*` models via the
           // OpenAI-compatible /v1/chat/completions endpoint) was
@@ -167,7 +168,7 @@ export async function* translateStream(
           // `text-delta` without a preceding `text-start`. The old
           // `if (idx === undefined) break;` silently dropped every
           // delta and the SSE only ever carried `context_usage +
-          // result + done` â?Codex's reader had no
+          // result + done` — Codex's reader had no
           // `output_item.added` / `output_text.delta` to attach
           // text to, so the assistant message rendered blank. Now
           // the first delta triggers the preamble + index alloc.
@@ -199,7 +200,7 @@ export async function* translateStream(
           // Defensive: if neither text-start nor text-delta
           // preceded (cheap upstream that emits only text-end + a
           // synthetic finish), allocate here so Codex still sees
-          // the message â?even if the body is empty, the canonical
+          // the message — even if the body is empty, the canonical
           // `output_item.done` shape is what the reader needs.
           let idx = textIndices.get(part.id);
           if (idx === undefined) {
@@ -230,7 +231,7 @@ export async function* translateStream(
         }
 
         case 'tool-input-start': {
-          // Phase 5c (2026-05-16) â?bridge-owned tools: don't even
+          // Phase 5c (2026-05-16) — bridge-owned tools: don't even
           // reserve an output_index. Codex never sees the function
           // call (the bridge ran it server-side), so allocating an
           // index here would create gaps in the output_index
@@ -241,7 +242,7 @@ export async function* translateStream(
             break;
           }
           // Reserve the output_index but DON'T emit output_item.added
-          // here â?the SDK fixture only ever emits function_call
+          // here — the SDK fixture only ever emits function_call
           // wholesale in `output_item.done`. Codex's reader doesn't
           // need a pre-amble for function calls (no streaming arg
           // surface). Pre-fix we sent a half-shaped `added` event
@@ -256,13 +257,14 @@ export async function* translateStream(
           // SDK fixture doesn't model partial-arg streaming; Codex
           // landed function_call arguments wholesale in the `done`
           // event. We drop the delta here rather than emit a
-          // non-canonical event that no Codex reader consumes â?          // pre-fix the smoke saw `function_call.delta` events that
+          // non-canonical event that no Codex reader consumes —
+          // pre-fix the smoke saw `function_call.delta` events that
           // never showed up downstream, just noise on the wire.
           break;
         }
 
         case 'tool-call': {
-          // Phase 5c â?suppress when the bridge owns the tool. The
+          // Phase 5c — suppress when the bridge owns the tool. The
           // ai-sdk loop will still call execute() (which emits the
           // canonical tool_started + tool_completed via the side
           // channel) and feed the result back to the model.
@@ -317,15 +319,15 @@ export async function* translateStream(
 
         case 'tool-result':
         case 'tool-error': {
-          // Phase 5c â?ai-sdk emits these after a tool with execute()
+          // Phase 5c — ai-sdk emits these after a tool with execute()
           // returns. Codex has no Responses-API slot for tool results
           // (they flow back as `function_call_output` in the NEXT
           // turn's input), so a `tool-result` part is always either:
-          //   1. a bridge tool â?drop (handled via side channel), OR
+          //   1. a bridge tool — drop (handled via side channel), OR
           //   2. an upstream provider's own implicit tool execute
           //      (rare; ai-sdk drops it from fullStream by default
           //      because Codex tools have no execute()).
-          // Provider-hosted tools are still mirrored to buckyball.ai's canonical
+          // Provider-hosted tools are still mirrored to CodePilot's canonical
           // tool lifecycle side-channel so the chat never shows a permanently
           // pending search. They remain suppressed from Codex Responses output.
           const toolName = part.toolName || toolNames.get(part.toolCallId);
@@ -370,7 +372,7 @@ export async function* translateStream(
           // Flush any text blocks that didn't get a text-end (some
           // upstreams skip it on natural completion). Without this,
           // Codex sees no output_item.done for the message and the
-          // turn renders blank â?the GLM/Kimi failure mode.
+          // turn renders blank — the GLM/Kimi failure mode.
           for (const [id, idx] of textIndices.entries()) {
             const finalText = textBuffers.get(id) ?? '';
             const item: ResponsesOutputItem = {
@@ -435,11 +437,11 @@ export async function* translateStream(
         // The remaining ai-sdk parts (reasoning-*, file,
         // tool-result, tool-error, start-step, finish-step, raw,
         // tool-output-denied) don't map onto the Codex-visible
-        // surface today â?we drop them silently. Reasoning content
+        // surface today — we drop them silently. Reasoning content
         // would need provider-specific routing back to Codex's
         // reasoning event; that's a separate phase.
         //
-        // Phase 5b smoke round 6 fix (2026-05-18) â?gated debug log
+        // Phase 5b smoke round 6 fix (2026-05-18) — gated debug log
         // so a real-credential smoke run can see which chunk types
         // an upstream provider sends that we don't yet handle. The
         // OpenRouter Anthropic-skin empty-text symptom turned out
@@ -479,7 +481,7 @@ export async function* translateStream(
     }
     return;
   } finally {
-    // Upstream closed without emitting a terminal event â?synthesise
+    // Upstream closed without emitting a terminal event — synthesise
     // a zero-usage completion so Codex's reader exits cleanly.
     if (!terminalEmitted) {
       yield {

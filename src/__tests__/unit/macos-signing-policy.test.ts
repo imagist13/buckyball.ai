@@ -63,6 +63,9 @@ describe('macOS signing policy', () => {
   });
 
   it('wires stable and preview macOS workflows to certificate secrets and a post-package gate', () => {
+    const builder = fs.readFileSync(path.join(repoRoot, 'electron-builder.yml'), 'utf8');
+    assert.match(builder, /dmg:[\s\S]*?sign:\s*true[\s\S]*?writeUpdateInfo:\s*false/);
+
     for (const relative of [
       '.github/workflows/build.yml',
       '.github/workflows/preview-build.yml',
@@ -74,6 +77,21 @@ describe('macOS signing policy', () => {
       assert.match(workflow, /CODEPILOT_APPLE_TEAM_ID:\s*\$\{\{ secrets\.APPLE_TEAM_ID \}\}/);
       assert.match(workflow, /CODEPILOT_REQUIRE_DEVELOPER_ID:\s*["']1["']/);
       assert.match(workflow, /verify-macos-developer-id\.mjs release/);
+      assert.match(workflow, /APPLE_NOTARIZATION_KEY_BASE64/);
+      assert.match(workflow, /APPLE_API_KEY_ID/);
+      assert.match(workflow, /APPLE_API_ISSUER/);
+      assert.match(workflow, /notarize-macos-dmgs\.mjs release/);
+      assert.match(workflow, /verify-macos-notarization\.mjs release/);
+
+      const notarizationStep = workflow
+        .split(/\n(?=\s+- name:)/)
+        .find((step) => /notarize-macos-dmgs\.mjs release/.test(step));
+      assert.ok(notarizationStep, `${relative} must include the final DMG notarization step`);
+      assert.match(
+        notarizationStep,
+        /CODEPILOT_APPLE_TEAM_ID:\s*\$\{\{ secrets\.APPLE_TEAM_ID \}\}/,
+        `${relative} must pass the expected Team ID to the DMG notarization precheck`,
+      );
 
       const certificateBackedSteps = workflow
         .split(/\n(?=\s+- name:)/)
@@ -114,5 +132,33 @@ describe('macOS signing policy', () => {
       finalVerifier,
       /\['--verify', '--deep', '--strict', '--verbose=4', appPath\],[\s\S]*?CODESIGN_VERIFY_TIMEOUT_MS/,
     );
+
+    const dmgNotarizer = fs.readFileSync(
+      path.join(repoRoot, 'scripts/notarize-macos-dmgs.mjs'),
+      'utf8',
+    );
+    const notarizationVerifier = fs.readFileSync(
+      path.join(repoRoot, 'scripts/verify-macos-notarization.mjs'),
+      'utf8',
+    );
+    assert.match(dmgNotarizer, /resolveMacosSigningMode\(\{[\s\S]*?requireDeveloperId:\s*true/);
+    assert.match(dmgNotarizer, /CODEPILOT_APPLE_TEAM_ID/);
+    assert.match(dmgNotarizer, /codesign', \['--verify', '--strict', '--verbose=4', dmg\]/);
+    assert.match(notarizationVerifier, /codesign', \['--verify', '--strict', '--verbose=4', dmg\]/);
+    assert.match(notarizationVerifier, /'--type', 'open', '--context', 'context:primary-signature'/);
+    assert.doesNotMatch(notarizationVerifier, /'--type', 'install'/);
+  });
+
+  it('gives native, universal and notarization work independent bounded timeouts', () => {
+    for (const relative of [
+      '.github/workflows/build.yml',
+      '.github/workflows/preview-build.yml',
+      '.github/workflows/preview-release.yml',
+    ]) {
+      const workflow = fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+      assert.match(workflow, /name: Package native macOS[\s\S]{0,180}timeout-minutes: 45/);
+      assert.match(workflow, /name: Package universal macOS[\s\S]{0,180}timeout-minutes: 45/);
+      assert.match(workflow, /name: Notarize and staple[\s\S]{0,100}timeout-minutes: 45/);
+    }
   });
 });

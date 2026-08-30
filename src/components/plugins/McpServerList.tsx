@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { SpinnerGap, WifiHigh } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Switch } from '@/components/ui/switch';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showToast } from '@/hooks/useToast';
@@ -13,7 +13,7 @@ import { useState, useCallback } from 'react';
 
 /**
  * Runtime status carried alongside each user-installed server. Mirrors
- * the SDK `McpServerStatus` type but kept narrow â?we only consume
+ * the SDK `McpServerStatus` type but kept narrow — we only consume
  * status, optional serverInfo, and tools when connected.
  */
 export interface McpRuntimeStatus {
@@ -83,17 +83,17 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
           const data = await res.json();
           if (data?.error) message = data.error;
         } catch {
-          // body not json â?keep status fallback
+          // body not json — keep status fallback
         }
         showToast({
           type: 'error',
-          message: `${t('mcp.reconnect' as TranslationKey)} Â· ${serverName}: ${message}`,
+          message: `${t('mcp.reconnect' as TranslationKey)} · ${serverName}: ${message}`,
         });
       }
     } catch (err) {
       showToast({
         type: 'error',
-        message: `${t('mcp.reconnect' as TranslationKey)} Â· ${serverName}: ${(err as Error).message}`,
+        message: `${t('mcp.reconnect' as TranslationKey)} · ${serverName}: ${(err as Error).message}`,
       });
     } finally {
       setReconnecting(prev => {
@@ -127,7 +127,7 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
   if (entries.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-        <BuckyballIcon name="disk" size={40} className="mb-3 opacity-50" aria-hidden />
+        <CodePilotIcon name="disk" size={40} className="mb-3 opacity-50" aria-hidden />
         <p className="text-sm">{t('mcp.noServers')}</p>
         <p className="text-xs mt-1">
           {t('mcp.noServersDesc')}
@@ -171,7 +171,7 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
                 onOpenDetail(name, server);
               }
             }}
-            aria-label={`${name} â?${typeInfo.label}`}
+            aria-label={`${name} — ${typeInfo.label}`}
             // Same chrome as built-in cards (rounded-lg + soft border + p-5 + hover wash)
             // so the two MCP card families read as one continuous catalogue.
             className={cn(
@@ -198,9 +198,9 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
                 {typeInfo.iconKind === 'wifi' ? (
                   <WifiHigh size={10} className={typeInfo.color} />
                 ) : typeInfo.iconKind === 'web' ? (
-                  <BuckyballIcon name="web_simple" size={10} className={typeInfo.color} aria-hidden />
+                  <CodePilotIcon name="web_simple" size={10} className={typeInfo.color} aria-hidden />
                 ) : (
-                  <BuckyballIcon name="disk" size={10} className={typeInfo.color} aria-hidden />
+                  <CodePilotIcon name="disk" size={10} className={typeInfo.color} aria-hidden />
                 )}
                 {typeInfo.label}
               </span>
@@ -226,7 +226,7 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
               )}
             </div>
 
-            {/* Command / URL â?mono, clipped at 2 lines so cards stay aligned. */}
+            {/* Command / URL — mono, clipped at 2 lines so cards stay aligned. */}
             <p
               className="text-xs font-mono text-muted-foreground mt-2 leading-relaxed line-clamp-2 break-all"
               title={commandLine}
@@ -240,7 +240,7 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
               </p>
             )}
 
-            {/* Reconnect / Enable â?only when runtime status calls for it.
+            {/* Reconnect / Enable — only when runtime status calls for it.
                 Edit / Delete moved into the detail dialog (card click). */}
             {(runtime?.status === 'failed' || runtime?.status === 'disabled') && activeSessionId && (
               <div className="flex items-center gap-1 mt-3 -mb-1 -mr-1 self-end">
@@ -257,7 +257,7 @@ export function McpServerList({ servers, onOpenDetail, onToggleEnabled, runtimeS
                     {isReconnecting ? (
                       <SpinnerGap size={14} className="animate-spin" />
                     ) : (
-                      <BuckyballIcon name="refresh" size="sm" aria-hidden />
+                      <CodePilotIcon name="refresh" size="sm" aria-hidden />
                     )}
                     <span
                       className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-status-warning"

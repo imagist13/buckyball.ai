@@ -1,5 +1,5 @@
 /**
- * `codepilot:add-to-chat` window event channel â€?Phase 4 Markdown data layer.
+ * `codepilot:add-to-chat` window event channel â€” Phase 4 Markdown data layer.
  *
  * Selection-to-chat affordance: when the user selects text in a
  * Markdown preview and clicks "Add to chat", the preview surface
@@ -18,14 +18,14 @@
 export const ADD_TO_CHAT_EVENT = "codepilot:add-to-chat";
 
 export interface AddToChatDetail {
-  /** The text the user selected, verbatim â€?including formatting. */
+  /** The text the user selected, verbatim â€” including formatting. */
   text: string;
   /** Absolute path to the source file. */
   sourcePath: string;
   /** Optional anchor in the standardized form parsed by
    *  `parseAnchor()`: `#L12`, `:12`, `:12:5`, or `#heading-slug`. */
   sourceAnchor?: string;
-  /** Optional human label â€?typically the closest heading text â€?that
+  /** Optional human label â€” typically the closest heading text â€” that
    *  the chip can display alongside the path basename. */
   sourceLabel?: string;
 }

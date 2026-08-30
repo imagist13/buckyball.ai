@@ -6,8 +6,8 @@
  * also expose a much larger inference catalogue at the same host's
  * `/v1/models`. Probing and writing that list silently surfaces non-plan
  * models on the Models page; users select one and get 4xx + potentially
- * extra billing. Gate trigger: `sdkProxyOnly && billingModel âˆ?{coding_plan,
- * token_plan}` â€?pay-as-you-go anthropic-compat (kimi, moonshot, xiaomi-mimo,
+ * extra billing. Gate trigger: `sdkProxyOnly && billingModel âˆˆ {coding_plan,
+ * token_plan}` â€” pay-as-you-go anthropic-compat (kimi, moonshot, xiaomi-mimo,
  * deepseek) stays on `experimental` because their full catalogue is the
  * genuine offering.
  *
@@ -28,69 +28,69 @@ const isCatalogOnlyPlanProviderRecord = (record: { provider_type: string; base_u
     ...record,
   });
 
-describe('classifyProvider â€?Coding Plan / Token Plan gate', () => {
-  // â”€â”€ Gate-affected presets â€?should classify as `unsupported` â”€â”€
+describe('classifyProvider â€” Coding Plan / Token Plan gate', () => {
+  // â”€â”€ Gate-affected presets â€” should classify as `unsupported` â”€â”€
 
-  it('volcengine (coding_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('volcengine (coding_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'volcengine' });
     assert.equal(r.classification, 'unsupported');
     assert.match(r.notes, /SKU whitelist|Coding\/Token Plan/i);
   });
 
-  it('bailian (coding_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('bailian (coding_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'bailian' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  it('glm-cn (coding_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('glm-cn (coding_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'glm-cn' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  it('glm-global (coding_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('glm-global (coding_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'glm-global' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  it('minimax-cn (token_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('minimax-cn (token_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'minimax-cn' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  it('minimax-global (token_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('minimax-global (token_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'minimax-global' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  it('xiaomi-mimo-token-plan (token_plan, sdkProxyOnly) â†?unsupported', () => {
+  it('xiaomi-mimo-token-plan (token_plan, sdkProxyOnly) â†’ unsupported', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'xiaomi-mimo-token-plan' });
     assert.equal(r.classification, 'unsupported');
   });
 
-  // â”€â”€ Pay-as-you-go anthropic-compat â€?gate must NOT trigger â”€â”€
+  // â”€â”€ Pay-as-you-go anthropic-compat â€” gate must NOT trigger â”€â”€
 
-  it('kimi (pay_as_you_go, sdkProxyOnly) â†?experimental, NOT gated', () => {
+  it('kimi (pay_as_you_go, sdkProxyOnly) â†’ experimental, NOT gated', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'kimi' });
     assert.equal(r.classification, 'experimental');
     // Sanity: not the Coding Plan note
     assert.doesNotMatch(r.notes, /SKU whitelist/i);
   });
 
-  it('moonshot (pay_as_you_go, sdkProxyOnly) â†?experimental', () => {
+  it('moonshot (pay_as_you_go, sdkProxyOnly) â†’ experimental', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'moonshot' });
     assert.equal(r.classification, 'experimental');
   });
 
-  it('xiaomi-mimo (pay_as_you_go, sdkProxyOnly) â†?experimental', () => {
+  it('xiaomi-mimo (pay_as_you_go, sdkProxyOnly) â†’ experimental', () => {
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'xiaomi-mimo' });
     assert.equal(r.classification, 'experimental');
   });
 
-  it('deepseek (pay_as_you_go, sdkProxyOnly) â†?experimental', () => {
+  it('deepseek (pay_as_you_go, sdkProxyOnly) â†’ experimental', () => {
     // DeepSeek is sdkProxyOnly + fixed lineup, but its billingModel is
     // pay_as_you_go (not a subscription), so the Coding/Token Plan gate
     // does not catch it. Catalog refresh handles model accuracy
-    // separately â€?the gate only governs probe-and-write behavior.
+    // separately â€” the gate only governs probe-and-write behavior.
     const r = classifyProvider({ protocol: 'anthropic', presetKey: 'deepseek' });
     assert.equal(r.classification, 'experimental');
   });
@@ -99,8 +99,8 @@ describe('classifyProvider â€?Coding Plan / Token Plan gate', () => {
 
   it('openrouter is now gated by its own rule (not the Coding/Token Plan gate)', () => {
     // OpenRouter has its own dedicated `unsupported` branch in
-    // classifyProvider â€?same `unsupported` classification but a different
-    // note ("OpenRouter â€?full /v1/models materialization is no longer the
+    // classifyProvider â€” same `unsupported` classification but a different
+    // note ("OpenRouter â€” full /v1/models materialization is no longer the
     // auto-discover path"). Used to be `api` before the OpenRouter
     // search-and-add round; the gate is separate from the Coding/Token
     // Plan one because the underlying problem is different (volume vs
@@ -127,7 +127,7 @@ describe('classifyProvider â€?Coding Plan / Token Plan gate', () => {
   });
 });
 
-describe('isCatalogOnlyPlanProvider â€?single source of truth helper', () => {
+describe('isCatalogOnlyPlanProvider â€” single source of truth helper', () => {
   // Same condition as the discovery gate, but exposed for UI sites
   // (ProviderManager Add-Service success path; ModelsSection
   // isSyncableProvider). Tests here lock the contract so a future
@@ -144,22 +144,22 @@ describe('isCatalogOnlyPlanProvider â€?single source of truth helper', () => {
     'minimax-global',
     'xiaomi-mimo-token-plan',
   ]) {
-    it(`${key} â†?true (gated)`, () => {
+    it(`${key} â†’ true (gated)`, () => {
       assert.equal(isCatalogOnlyPlanProvider(key), true);
     });
   }
 
   for (const key of ['kimi', 'moonshot', 'xiaomi-mimo', 'deepseek']) {
-    it(`${key} (pay_as_you_go) â†?false`, () => {
+    it(`${key} (pay_as_you_go) â†’ false`, () => {
       assert.equal(isCatalogOnlyPlanProvider(key), false);
     });
   }
 
-  it('openrouter â†?false (own tech-debt path, not gated)', () => {
+  it('openrouter â†’ false (own tech-debt path, not gated)', () => {
     assert.equal(isCatalogOnlyPlanProvider('openrouter'), false);
   });
 
-  it('null / undefined / empty / unknown â†?false', () => {
+  it('null / undefined / empty / unknown â†’ false', () => {
     assert.equal(isCatalogOnlyPlanProvider(null), false);
     assert.equal(isCatalogOnlyPlanProvider(undefined), false);
     assert.equal(isCatalogOnlyPlanProvider(''), false);
@@ -167,10 +167,10 @@ describe('isCatalogOnlyPlanProvider â€?single source of truth helper', () => {
   });
 });
 
-describe('isCatalogOnlyPlanProviderRecord â€?UI-safe record-aware check', () => {
+describe('isCatalogOnlyPlanProviderRecord â€” UI-safe record-aware check', () => {
   // Regression for the bug where the by-key helper silently missed every
   // plan provider in the UI: brand-specific anthropic-compat presets
-  // (Volcengine, Bailian, GLM, MiniMax, â€? save `provider_type='anthropic'`,
+  // (Volcengine, Bailian, GLM, MiniMax, â€¦) save `provider_type='anthropic'`,
   // not the preset key. Without going through `findMatchingPresetForRecord`
   // the gate is effectively a no-op for ProviderManager + ModelsSection.
 
@@ -185,11 +185,11 @@ describe('isCatalogOnlyPlanProviderRecord â€?UI-safe record-aware check', () => 
     'minimax-global',
     'xiaomi-mimo-token-plan',
   ]) {
-    it(`{ provider_type: 'anthropic', base_url: ${key}.baseUrl } â†?true`, () => {
+    it(`{ provider_type: 'anthropic', base_url: ${key}.baseUrl } â†’ true`, () => {
       const preset = getPreset(key);
       assert.ok(preset, `preset ${key} must exist for this test to be meaningful`);
       // This is the shape every brand-specific anthropic-compat preset
-      // gets saved with â€?the matcher must recover the real preset via
+      // gets saved with â€” the matcher must recover the real preset via
       // base_url, not provider_type.
       assert.equal(
         isCatalogOnlyPlanProviderRecord({
@@ -202,8 +202,8 @@ describe('isCatalogOnlyPlanProviderRecord â€?UI-safe record-aware check', () => 
     });
   }
 
-  it('Custom anthropic-thirdparty (provider_type=anthropic, custom base_url) â†?false', () => {
-    // No matching preset by base_url â†?falls back to anthropic-thirdparty,
+  it('Custom anthropic-thirdparty (provider_type=anthropic, custom base_url) â†’ false', () => {
+    // No matching preset by base_url â†’ falls back to anthropic-thirdparty,
     // which is pay_as_you_go, so gate must NOT trigger.
     assert.equal(
       isCatalogOnlyPlanProviderRecord({
@@ -214,14 +214,14 @@ describe('isCatalogOnlyPlanProviderRecord â€?UI-safe record-aware check', () => 
     );
   });
 
-  it('OpenRouter record â†?false (own tech-debt path)', () => {
+  it('OpenRouter record â†’ false (own tech-debt path)', () => {
     assert.equal(
       isCatalogOnlyPlanProviderRecord({ provider_type: 'openrouter', base_url: 'https://openrouter.ai/api' }),
       false,
     );
   });
 
-  it('Empty / nonsense record â†?false', () => {
+  it('Empty / nonsense record â†’ false', () => {
     assert.equal(isCatalogOnlyPlanProviderRecord({ provider_type: '', base_url: '' }), false);
     assert.equal(
       isCatalogOnlyPlanProviderRecord({ provider_type: 'whatever', base_url: 'https://nope.example.com' }),
@@ -230,7 +230,7 @@ describe('isCatalogOnlyPlanProviderRecord â€?UI-safe record-aware check', () => 
   });
 });
 
-describe('discoverModels â€?gate prevents network probe', () => {
+describe('discoverModels â€” gate prevents network probe', () => {
   // Stub fetch so we can detect *any* network call. The gate must keep us
   // from ever reaching the fetch layer for these vendors.
   it('volcengine never fires a probe (no fetch call)', async () => {

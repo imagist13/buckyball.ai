@@ -1,5 +1,5 @@
 /**
- * Phase 4.C â€?Markdown â†?HTML presentation templates.
+ * Phase 4.C â€” Markdown â†’ HTML presentation templates.
  *
  * Coverage:
  *  - all four templates produce valid HTML containing the source body
@@ -8,7 +8,7 @@
  *  - frontmatter title overrides body heading
  *  - body heading fallback when no frontmatter title
  *  - filename fallback when no title at all
- *  - basic markdown â†?html serialization (lists, code, links, bold)
+ *  - basic markdown â†’ html serialization (lists, code, links, bold)
  *
  * Run: npx tsx --test src/__tests__/unit/presentation-templates.test.ts
  */
@@ -25,7 +25,7 @@ import {
   slugifyPresentationArtifactName,
 } from '../../lib/markdown/presentation-templates';
 
-describe('renderPresentation â€?template + structure', () => {
+describe('renderPresentation â€” template + structure', () => {
   it('every template id resolves to itself', () => {
     for (const t of PRESENTATION_TEMPLATES) {
       assert.equal(getTemplate(t.id).id, t.id);
@@ -66,7 +66,7 @@ describe('renderPresentation â€?template + structure', () => {
       sourcePath: '/Users/me/notes/spec.md',
       body: '# Spec',
     });
-    // The footer surfaces "Source: <code>...</code>" â€?escapeHtml
+    // The footer surfaces "Source: <code>...</code>" â€” escapeHtml
     // doesn't touch alphanumerics + slashes, so the literal substring
     // appears in the output.
     assert.match(html, /Source:.*\/Users\/me\/notes\/spec\.md/);

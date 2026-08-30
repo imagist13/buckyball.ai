@@ -433,7 +433,7 @@ describe('Assistant Workspace', () => {
 
       assert.ok(prompt.includes('<assistant-workspace>'));
       assert.ok(prompt.includes('I am helpful'), 'soul.md should be in prompt');
-      // Daily memories are no longer in system prompt �?accessed via codepilot_memory_search MCP
+      // Daily memories are no longer in system prompt — accessed via codepilot_memory_search MCP
       assert.ok(!prompt.includes('Did coding'), 'daily memories should NOT be in prompt');
     });
 
@@ -494,8 +494,8 @@ describe('parseQuery CJK support', () => {
   it('should tokenize Chinese text into bigrams and unigrams', () => {
     const tokens = parseQuery('项目排期');
     // Should contain individual chars and bigrams
-    assert.ok(tokens.includes('�?), 'should include unigram �?);
-    assert.ok(tokens.includes('�?), 'should include unigram �?);
+    assert.ok(tokens.includes('项'), 'should include unigram 项');
+    assert.ok(tokens.includes('目'), 'should include unigram 目');
     assert.ok(tokens.includes('项目'), 'should include bigram 项目');
     assert.ok(tokens.includes('排期'), 'should include bigram 排期');
   });

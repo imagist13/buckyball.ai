@@ -1,5 +1,5 @@
 /**
- * builtin-mcp-bridge.ts â€?Bridge between SDK MCP tool format and AI SDK tool format.
+ * builtin-mcp-bridge.ts â€” Bridge between SDK MCP tool format and AI SDK tool format.
  *
  * The 7 built-in MCP servers (notification, memory, dashboard, cli-tools, media,
  * image-gen, widget) are defined using SDK's createSdkMcpServer + tool() format.
@@ -75,7 +75,7 @@ export function getBuiltinMcpTools(options: {
   const tools: ToolSet = {};
   const systemPrompts: string[] = [];
 
-  // For now, return empty â€?individual servers will be bridged incrementally.
+  // For now, return empty â€” individual servers will be bridged incrementally.
   // Each server needs its own bridge file that imports handlers without SDK dependency.
   // This is the registration point where they'll be added.
 

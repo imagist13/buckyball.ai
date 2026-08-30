@@ -6,15 +6,15 @@ import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 
 /**
- * NewChatWelcome â€?single-line hero above the composer on the new-chat
+ * NewChatWelcome â€” single-line hero above the composer on the new-chat
  * surface (the /chat page, and ChatView's empty state).
  *
  * The line is composed as "{time salutation}{sep}{question}" so it
  * reads as alive rather than a fixed prompt:
  *   - the salutation reflects the time of day (morning / afternoon /
  *     evening / late night);
- *   - the question pool depends on context â€?assistant workspace, a
- *     named project, or general â€?and the project name is interpolated
+ *   - the question pool depends on context â€” assistant workspace, a
+ *     named project, or general â€” and the project name is interpolated
  *     into the project pool.
  *
  * SSR / hydration: the time, the context-derived pool, and the random
@@ -72,7 +72,7 @@ interface NewChatWelcomeProps {
 
 export function NewChatWelcome({ workingDir, isAssistant }: NewChatWelcomeProps = {}) {
   const { t } = useTranslation();
-  // null on the first paint â†?render the neutral fallback below so the
+  // null on the first paint â†’ render the neutral fallback below so the
   // server and first client render agree; the composed greeting is set
   // once the client-only effect runs.
   const [greeting, setGreeting] = useState<string | null>(null);

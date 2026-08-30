@@ -1,5 +1,5 @@
 /**
- * Interrupt/phase reconcile â€?pure runtime_status â†?phase
+ * Interrupt/phase reconcile â€” pure runtime_status â†’ phase
  * reconciliation (d-reconcile-tests).
  *
  * Behavioral truth table, not a source-pin: `reconcilePhase` is the single seam
@@ -17,7 +17,7 @@ import {
   reconcilePhase,
 } from '../../lib/stream-phase-reconcile';
 
-describe('runtimeStatusToPhase â€?canonical backend status â†?client phase', () => {
+describe('runtimeStatusToPhase â€” canonical backend status â†’ client phase', () => {
   // The values here are exactly the ones written to
   // chat_sessions.runtime_status by setSessionRuntimeStatus call sites.
   const cases: Array<[string, ReturnType<typeof runtimeStatusToPhase>]> = [
@@ -28,12 +28,12 @@ describe('runtimeStatusToPhase â€?canonical backend status â†?client phase', () 
     ['error', 'error'],
   ];
   for (const [status, phase] of cases) {
-    it(`'${status}' â†?${phase}`, () => {
+    it(`'${status}' â†’ ${phase}`, () => {
       assert.equal(runtimeStatusToPhase(status), phase);
     });
   }
 
-  it('unrecognized / empty / null â†?null (nothing authoritative to act on)', () => {
+  it('unrecognized / empty / null â†’ null (nothing authoritative to act on)', () => {
     assert.equal(runtimeStatusToPhase('something-else'), null);
     assert.equal(runtimeStatusToPhase(''), null);
     assert.equal(runtimeStatusToPhase(null), null);
@@ -41,8 +41,8 @@ describe('runtimeStatusToPhase â€?canonical backend status â†?client phase', () 
   });
 });
 
-describe('reconcilePhase â€?drift correction truth table', () => {
-  // Full grid: each real runtime_status Ã— each client phase â†?expected result.
+describe('reconcilePhase â€” drift correction truth table', () => {
+  // Full grid: each real runtime_status Ã— each client phase â†’ expected result.
   // null means "no correction" (unknown status, or already consistent).
   const RUNTIME = ['running', 'waiting_permission', 'idle', 'interrupted', 'error', 'bogus', ''] as const;
   const PHASES = ['active', 'completed', 'stopped', 'error', null] as const;
@@ -60,15 +60,15 @@ describe('reconcilePhase â€?drift correction truth table', () => {
   for (const status of RUNTIME) {
     for (const phase of PHASES) {
       const want = expected[status](phase);
-      it(`(${status || 'empty'} Ã— ${phase ?? 'none'}) â†?${want ?? 'null'}`, () => {
+      it(`(${status || 'empty'} Ã— ${phase ?? 'none'}) â†’ ${want ?? 'null'}`, () => {
         assert.equal(reconcilePhase(status, phase), want);
       });
     }
   }
 
-  it('the primary I2/I4 fix: backend terminal while client stuck active â†?converge', () => {
-    // interrupted/idle/error while the client snapshot is stuck 'active' â€?the
-    // exact "å?active" split that locks the composer.
+  it('the primary I2/I4 fix: backend terminal while client stuck active â†’ converge', () => {
+    // interrupted/idle/error while the client snapshot is stuck 'active' â€” the
+    // exact "å‡ active" split that locks the composer.
     assert.equal(reconcilePhase('interrupted', 'active'), 'stopped');
     assert.equal(reconcilePhase('idle', 'active'), 'completed');
     assert.equal(reconcilePhase('error', 'active'), 'error');

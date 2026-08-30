@@ -34,7 +34,7 @@ export function registerConversation(
 }
 
 /**
- * Remove the registered Query for `sessionId` â€?but only if `lockId` matches
+ * Remove the registered Query for `sessionId` â€” but only if `lockId` matches
  * the token that registered it. A late unregister from a superseded turn
  * (which carries the OLD lockId) is a no-op, so it cannot evict the Query the
  * new owning turn just registered. Passing no `lockId` matches only an entry

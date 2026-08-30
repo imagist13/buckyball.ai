@@ -2,13 +2,13 @@
  * Codex app-server tracing noise control (B-025).
  *
  * A user's main log reached 12.5 GB; ~99% of the recent tail was Codex
- * app-server INFO span tracing â€?`codex_core::tasks: enter/exit` and
- * `codex_core::session::handlers: enter/exit` â€?tens of thousands of lines in
+ * app-server INFO span tracing â€” `codex_core::tasks: enter/exit` and
+ * `codex_core::session::handlers: enter/exit` â€” tens of thousands of lines in
  * seconds. Two defenses, both pure + unit-testable:
  *
- *  1. `resolveCodexRustLog` â€?default the spawned app-server to `RUST_LOG=warn`
+ *  1. `resolveCodexRustLog` â€” default the spawned app-server to `RUST_LOG=warn`
  *     so it doesn't EMIT the INFO flood at all; opt back in explicitly.
- *  2. `shouldDropCodexTraceLine` â€?a backstop on the stderr tee that drops those
+ *  2. `shouldDropCodexTraceLine` â€” a backstop on the stderr tee that drops those
  *     specific high-frequency INFO spans even if something re-enables info
  *     tracing (operator RUST_LOG, older binary). It NEVER drops warn / error /
  *     fatal lines, so fatal-config fail-fast and real diagnostics survive.
@@ -17,7 +17,7 @@
 // Matches the high-cardinality span targets at their enter/exit boundary.
 const HIGH_FREQ_SPAN_RE = /\bcodex_core::(?:tasks|session::handlers):\s*(?:enter|exit)\b/;
 
-// Anything that smells like a real problem â€?keep it no matter what.
+// Anything that smells like a real problem â€” keep it no matter what.
 const KEEP_ALWAYS_RE = /\b(?:WARN|ERROR|FATAL|panic(?:ked)?)\b|error:/;
 
 /**

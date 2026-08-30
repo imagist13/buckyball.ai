@@ -1,10 +1,10 @@
 /**
- * Chat first-paint static-graph contract â€?dev-server memory guardrail.
+ * Chat first-paint static-graph contract â€” dev-server memory guardrail.
  *
  * Background (2026-05-09): comparing v0.54.0 (refactor-pre baseline) to
  * the current worktree, every other surface got LIGHTER (root layout
- * 1251â†?10 KB, AppShell 1066â†?66 KB), but `/chat` and `/chat/[id]` each
- * gained ~310 KB / 13 modules. The new weight wasn't ChatListPanel â€?it
+ * 1251â†’810 KB, AppShell 1066â†’566 KB), but `/chat` and `/chat/[id]` each
+ * gained ~310 KB / 13 modules. The new weight wasn't ChatListPanel â€” it
  * was `RunCockpit` directly importing `useOverviewData` (the Settings
  * Overview data layer), which transitively pulled `runtime/effective`,
  * the provider-catalog code path, and `useClaudeStatus` into the chat
@@ -47,7 +47,7 @@ function resolveModulePath(fromFile: string, spec: string): string | null {
   } else if (spec.startsWith('./') || spec.startsWith('../')) {
     basePath = path.resolve(path.dirname(fromFile), spec);
   } else {
-    return null; // bare package â€?outside the repo, not what we trace
+    return null; // bare package â€” outside the repo, not what we trace
   }
   for (const ext of ['.ts', '.tsx', '/index.ts', '/index.tsx']) {
     const candidate = basePath + ext;
@@ -62,7 +62,7 @@ function resolveModulePath(fromFile: string, spec: string): string | null {
  * Walk the static import graph starting from `entry`, depth-first, and
  * return the set of repo files transitively reachable. Stops at bare
  * package specifiers (`react`, `next/dynamic`, etc.) and at
- * `dynamic(() => import(...))` expressions â€?those are the boundaries
+ * `dynamic(() => import(...))` expressions â€” those are the boundaries
  * we want to enforce, since they DON'T contribute to first-paint
  * compile cost in the same way a static import does.
  */
@@ -95,7 +95,8 @@ function staticImportGraph(entry: string): Set<string> {
 }
 
 // Modules that should NOT reach chat first-paint entries via static
-// imports. Each entry is paired with the entries it's forbidden from â€?// some forbidden modules are scoped (e.g., `ai-elements/context.tsx`
+// imports. Each entry is paired with the entries it's forbidden from â€”
+// some forbidden modules are scoped (e.g., `ai-elements/context.tsx`
 // and `tokenlens` are forbidden in RunCockpit shell only, but the lazy
 // popover content is allowed to use them).
 //
@@ -117,7 +118,7 @@ interface ForbiddenRule {
    *  the static-graph walker, we resolve to the corresponding repo path. */
   spec: string;
   /** Resolved repo file (relative to SRC). Some specs (`tokenlens`) are
-   *  bare packages â€?graph walker stops at bare packages, so we also
+   *  bare packages â€” graph walker stops at bare packages, so we also
    *  scan import statements in the entry directly. */
   rel?: string;
   /** Entry files this rule applies to. */
@@ -132,7 +133,7 @@ const FORBIDDEN: ForbiddenRule[] = [
     rel: 'components/settings/useOverviewData.ts',
     entries: [RUN_COCKPIT, CHAT_PAGE, CHAT_VIEW],
     reason:
-      'useOverviewData is the Settings Overview snapshot â€?fans out to ' +
+      'useOverviewData is the Settings Overview snapshot â€” fans out to ' +
       '/api/settings/app + /api/providers/models?runtime=auto + ' +
       '/api/providers/models + /api/providers/options + ' +
       '/api/settings/workspace + /api/workspace/summary on every chat ' +
@@ -143,14 +144,14 @@ const FORBIDDEN: ForbiddenRule[] = [
   {
     spec: '@/lib/runtime/effective',
     rel: 'lib/runtime/effective.ts',
-    // ChatView only â€?the new-chat page (CHAT_PAGE) legitimately uses
+    // ChatView only â€” the new-chat page (CHAT_PAGE) legitimately uses
     // `resolveNewChatDefault` from runtime/effective for its local
     // runtime-aware resolver effect. ChatView (existing-session path)
     // had no need beyond `computeEffectiveRuntime` for the dropped
     // `runtimeFallback` checkpoint, so the import must not return.
     entries: [CHAT_VIEW],
     reason:
-      'ChatView no longer needs runtime/effective â€?the only consumer ' +
+      'ChatView no longer needs runtime/effective â€” the only consumer ' +
       'was computeEffectiveRuntime feeding the now-dropped runtimeFallback ' +
       'checkpoint. Re-introducing the import means RunCheckpoint regrew a ' +
       'global health signal it intentionally shed.',
@@ -160,13 +161,14 @@ const FORBIDDEN: ForbiddenRule[] = [
     rel: 'lib/provider-catalog.ts',
     // RunCockpit shell only. The chat ENTRIES (CHAT_PAGE / CHAT_VIEW)
     // legitimately reach provider-catalog through the model-picker
-    // chain (MessageInput â†?ModelSelectorDropdown â†?runtime-compat â†?    // provider-catalog) â€?that's the composer's actual model UI, not
+    // chain (MessageInput â†’ ModelSelectorDropdown â†’ runtime-compat â†’
+    // provider-catalog) â€” that's the composer's actual model UI, not
     // RunCheckpoint, and out of scope for this contract. The user's
     // explicit forbidden list for chat entries was useOverviewData +
     // runtime/effective only; provider-catalog wasn't on it.
     entries: [RUN_COCKPIT],
     reason:
-      'provider-catalog is a ~70KB lookup table for Settings â†?Providers / ' +
+      'provider-catalog is a ~70KB lookup table for Settings â†’ Providers / ' +
       'Models. The trigger-only RunCockpit shell has no business reaching it.',
   },
   {
@@ -184,12 +186,12 @@ const FORBIDDEN: ForbiddenRule[] = [
     entries: [RUN_COCKPIT],
     reason:
       'tokenlens is consumed exclusively by ContextContentBody / ' +
-      'ContextInputUsage / etc. inside the full ai-elements/context.tsx â€?' +
+      'ContextInputUsage / etc. inside the full ai-elements/context.tsx â€” ' +
       'it must not be reachable from the trigger-only shell.',
   },
 ];
 
-describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', () => {
+describe('Chat first-paint static-graph contract â€” RunCockpit + chat entries', () => {
   it('every guarded entry exists and resolves cleanly', () => {
     for (const entry of [RUN_COCKPIT, CHAT_PAGE, CHAT_VIEW, POPOVER]) {
       assert.ok(existsSync(entry), `${path.relative(SRC, entry)} not found`);
@@ -197,7 +199,7 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
     const graph = staticImportGraph(RUN_COCKPIT);
     assert.ok(
       graph.size > 5,
-      `RunCockpit static graph has only ${graph.size} files â€?graph walker is likely broken`,
+      `RunCockpit static graph has only ${graph.size} files â€” graph walker is likely broken`,
     );
   });
 
@@ -208,7 +210,7 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
         // For bare packages (like `tokenlens`) the graph walker stops
         // at bare specifiers, so reachability via path alone won't
         // catch them. Scan the entry's source for an `import` statement
-        // referencing the spec â€?that's a sufficient stand-in because
+        // referencing the spec â€” that's a sufficient stand-in because
         // package imports always start at a `.ts/.tsx` file in our
         // own tree (no re-export indirection through a repo file
         // would import a bare package without us seeing it).
@@ -253,7 +255,7 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
       assert.match(
         src,
         /<RunCockpit[\s>]/,
-        `${rel} must still render <RunCockpit/> â€?the split moves the data layer, the surface stays`,
+        `${rel} must still render <RunCockpit/> â€” the split moves the data layer, the surface stays`,
       );
     }
   });
@@ -261,13 +263,13 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
   it('chat entries use the lightweight useGlobalAgentRuntime hook (not useOverviewData)', () => {
     // After the cut, RuntimeSelector display still needs the global
     // agent_runtime label. The lightweight hook is the single
-    // sanctioned source â€?verify both call sites use it.
+    // sanctioned source â€” verify both call sites use it.
     for (const rel of ['app/chat/page.tsx', 'components/chat/ChatView.tsx']) {
       const src = readFileSync(path.join(SRC, rel), 'utf-8');
       assert.match(
         src,
         /from\s+["']@\/hooks\/useGlobalAgentRuntime["']/,
-        `${rel} must import useGlobalAgentRuntime â€?the heavy useOverviewData was the previous source and is now forbidden in chat first paint`,
+        `${rel} must import useGlobalAgentRuntime â€” the heavy useOverviewData was the previous source and is now forbidden in chat first paint`,
       );
     }
   });
@@ -276,7 +278,7 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
     // Positive sanity: the lazy chunk WHERE these modules legitimately
     // live should reach them via static imports. If a refactor moved
     // them out of the popover content too, the popover would be
-    // missing functionality. We just check the grep â€?full graph walk
+    // missing functionality. We just check the grep â€” full graph walk
     // not needed.
     const popover = readFileSync(
       path.join(SRC, 'components/chat/RunCockpitPopoverContent.tsx'),
@@ -285,7 +287,7 @@ describe('Chat first-paint static-graph contract â€?RunCockpit + chat entries', 
     assert.match(
       popover,
       /from\s+["']@\/components\/settings\/useOverviewData["']/,
-      'RunCockpitPopoverContent must keep its useOverviewData import â€?' +
+      'RunCockpitPopoverContent must keep its useOverviewData import â€” ' +
         'that is the whole point of the split (heavy half lives here, ' +
         'shell stays light)',
     );

@@ -1,5 +1,5 @@
 /**
- * claude-settings.ts â?Read Anthropic credentials from ~/.claude/settings.json.
+ * claude-settings.ts — Read Anthropic credentials from ~/.claude/settings.json.
  *
  * External tools (notably cc-switch, but also any user who manually edits the
  * file) manage Claude Code CLI credentials by writing an `env` block in
@@ -8,12 +8,12 @@
  * skipping keys in its internal blocklist (which does NOT cover
  * ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN / ANTHROPIC_BASE_URL).
  *
- * buckyball.ai's runtime resolver needs the same visibility so auto mode can
+ * CodePilot's runtime resolver needs the same visibility so auto mode can
  * pick the SDK runtime (instead of falling back to native, which cannot read
  * this file at all).
  *
  * This reader is intentionally tiny and dependency-free, and silently returns
- * null on any error â?callers must be resilient to a missing file.
+ * null on any error — callers must be resilient to a missing file.
  */
 import fs from 'node:fs';
 import os from 'node:os';
@@ -60,7 +60,7 @@ export function readClaudeSettingsCredentials(): ClaudeSettingsCredentials | nul
 
       return { apiKey, authToken, baseUrl };
     } catch {
-      // Unreadable / malformed / permission-denied â?treat as absent and try next file.
+      // Unreadable / malformed / permission-denied — treat as absent and try next file.
     }
   }
 

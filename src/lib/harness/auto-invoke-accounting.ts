@@ -1,27 +1,28 @@
 /**
- * Phase 7.0 �?Runtime-agnostic Auto-Invoke Context Accounting contract.
+ * Phase 7.0 — Runtime-agnostic Auto-Invoke Context Accounting contract.
  *
  * Replaces per-Runtime tool / mcp / skills accounting logic with a shared
  * abstraction so adding a new Agent runtime (or backend) doesn't require
  * rewriting token estimation, classification, or source-breadcrumb rules.
  *
  * Design driver (v7 user decision, 2026-05-20):
- *   "ClaudeCode + Native 都搞；Codex �?SDK 接口�? *    也得抽象，不然后面接新的 Agent 又会出问�?
+ *   "ClaudeCode + Native 都搞；Codex 看 SDK 接口；
+ *    也得抽象，不然后面接新的 Agent 又会出问题"
  *
  * Reconnaissance finding: all three current Runtimes already emit the same
- * SSE tool_use event shape ({ id, name, input }) �?see:
+ * SSE tool_use event shape ({ id, name, input }) — see:
  *   - ClaudeCode  src/lib/claude-client.ts:1585 (block.type === 'tool_use')
  *   - Native      src/lib/agent-loop.ts:483-489 (case 'tool-call')
  *   - Codex       src/lib/codex/runtime.ts:82-134 (RuntimeRunEvent.tool_started)
  * So the contract is promotion of an already-shared shape, not invention.
  *
  * Public surface:
- *   - ToolInvocationRecord     �?Runtime-agnostic record shape
- *   - ToolInvocationAccumulator �?per-turn collector for streaming loops
- *   - collectAutoInvokeSnapshot �?Runtime-agnostic snapshot producer
+ *   - ToolInvocationRecord     — Runtime-agnostic record shape
+ *   - ToolInvocationAccumulator — per-turn collector for streaming loops
+ *   - collectAutoInvokeSnapshot — Runtime-agnostic snapshot producer
  *
  * Extending to a new Agent: see `docs/exec-plans/completed/context-accounting-runtime-contract.md`
- * section "�?Agent 扩展规则" �?any new Runtime MUST reuse this contract;
+ * section "跨 Agent 扩展规则" — any new Runtime MUST reuse this contract;
  * per-Runtime reinvention is explicitly rejected at plan-review time.
  */
 
@@ -41,7 +42,8 @@ import { discoverSkills } from '@/lib/skill-discovery';
  *
  * Phase 7 (2026-05-20): moved here from claude-code-context-accounting.ts
  * (which is being deleted). MessageInput.tsx keeps its own inline copy of
- * the same 2-line logic to avoid pulling node:fs into the client bundle �? * see commit 5c356e8 client-bundle hotfix.
+ * the same 2-line logic to avoid pulling node:fs into the client bundle —
+ * see commit 5c356e8 client-bundle hotfix.
  */
 export function canonicalizeSkillName(value: string): string {
   return value.trim().replace(/^\/+/, '');
@@ -55,9 +57,9 @@ export function canonicalizeSkillName(value: string): string {
 export interface ToolInvocationRecord {
   toolUseId: string;
   /** Raw tool name as emitted by the Runtime. Possible shapes:
-   *  - 'Skill'                         �?Anthropic Skill tool
-   *  - 'mcp__<server>__<tool>'         �?MCP server tool (double-underscore split)
-   *  - Everything else                 �?built-in tool (Bash / Read / Edit / Grep / ...)
+   *  - 'Skill'                         → Anthropic Skill tool
+   *  - 'mcp__<server>__<tool>'         → MCP server tool (double-underscore split)
+   *  - Everything else                 → built-in tool (Bash / Read / Edit / Grep / ...)
    */
   toolName: string;
   /** Tool input arg object. Treated as opaque except:
@@ -95,7 +97,7 @@ export class ToolInvocationAccumulator {
   recordToolResult(toolUseId: string, content: string): void {
     const record = this.byId.get(toolUseId);
     if (!record) {
-      // Result without matching tool_use �?Runtime stream anomaly. Ignore
+      // Result without matching tool_use — Runtime stream anomaly. Ignore
       // rather than fabricate a record (no toolName / input would be a guess).
       return;
     }
@@ -133,7 +135,7 @@ export interface ClassifiedToolUse {
 export function classifyToolUse(record: ToolInvocationRecord): ClassifiedToolUse | null {
   if (record.toolName === 'Skill') {
     const skillName = extractSkillName(record.input);
-    if (!skillName) return null; // malformed Skill call �?drop, don't guess
+    if (!skillName) return null; // malformed Skill call — drop, don't guess
     return { category: 'skill', detail: skillName, fullName: 'Skill' };
   }
   if (record.toolName.startsWith('mcp__')) {
@@ -188,7 +190,7 @@ function formatSkillSource(workspacePath: string, filePath: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Main entry �?collectAutoInvokeSnapshot
+// Main entry — collectAutoInvokeSnapshot
 // ─────────────────────────────────────────────────────────────────────────
 
 export interface CollectAutoInvokeInput {
@@ -197,13 +199,13 @@ export interface CollectAutoInvokeInput {
   producedBy: ContextAccountingRuntimeId;
   /** Codex-specific subclassification; transparently forwarded. */
   providerBackend?: string;
-  /** Badge picker selections (ClaudeCode only) �?pre-declared skills
+  /** Badge picker selections (ClaudeCode only) — pre-declared skills
    *  that may not be auto-invoked yet. Merged into entries.skills with
    *  dedup against records of category === 'skill'. */
   selectedSkills?: readonly string[];
   /** Kinds that this Runtime cannot account for, even after auto-invoke.
    *  Caller supplies (e.g. ['system_prompt', 'memory', 'files_attachments']
-   *  for Phase 7 �?system prompt is opaque, memory bridge not wired, etc). */
+   *  for Phase 7 — system prompt is opaque, memory bridge not wired, etc). */
   unsupported: readonly ContextAccountingKind[];
   /** Optional injection point for the workspace rules entry (CLAUDE.md
    *  filesize today; can swap to other rules sources later). Runtime-
@@ -226,7 +228,7 @@ export interface CollectAutoInvokeInput {
  *
  * entries.rules is populated by resolveRulesEntry when provided.
  *
- * No fabrication: a category with zero resolvable records �?entry omitted,
+ * No fabrication: a category with zero resolvable records → entry omitted,
  * UI hides the row. Hallucination (showing 0 / placeholder) is rejected.
  */
 export function collectAutoInvokeSnapshot(
@@ -264,7 +266,7 @@ export function collectAutoInvokeSnapshot(
     try {
       allSkills = discoverSkills(input.workspacePath);
     } catch {
-      // Skip �?skills entry will stay omitted if no matches resolve.
+      // Skip — skills entry will stay omitted if no matches resolve.
     }
     let totalTokens = 0;
     const matchedNames: string[] = [];
@@ -278,7 +280,7 @@ export function collectAutoInvokeSnapshot(
         matchedNames.push(skill.name);
         sources.push(formatSkillSource(input.workspacePath, skill.filePath));
       } catch {
-        // SKILL.md missing despite discovery �?skip silently.
+        // SKILL.md missing despite discovery — skip silently.
       }
     }
     if (totalTokens > 0) {
@@ -346,7 +348,7 @@ export function collectAutoInvokeSnapshot(
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// Workspace-rules helper (shared across Runtimes �?Runtime-specific layouts
+// Workspace-rules helper (shared across Runtimes — Runtime-specific layouts
 // can supply their own; this is the default for "workspace/CLAUDE.md").
 // ─────────────────────────────────────────────────────────────────────────
 

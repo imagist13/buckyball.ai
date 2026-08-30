@@ -135,7 +135,7 @@ describe('computeDisplayOverride', () => {
 
   it('never lets the [Referenced Directories] block leak into the bubble', () => {
     // Even if the caller accidentally passed finalContent here, the
-    // function only forwards what it was given �?so we instead assert
+    // function only forwards what it was given — so we instead assert
     // the design invariant on the call site: the component MUST pass
     // the raw user `content`, not the appended `finalContent`. To prove
     // this, we feed both forms and confirm the helper is a pure passthrough
@@ -150,7 +150,7 @@ describe('computeDisplayOverride', () => {
   });
 });
 
-// ─── 4. Pending context tokens �?post-send must be zero ─────────────
+// ─── 4. Pending context tokens — post-send must be zero ─────────────
 
 describe('computePendingContextTokens', () => {
   it('returns 0 when every source is empty (the post-send invariant)', () => {
@@ -232,7 +232,7 @@ const fileAttachment = (id: string): FileAttachment => ({
   data: 'AA==',
 });
 
-describe('composeSubmitPayload �?single source of truth for handleSubmit', () => {
+describe('composeSubmitPayload — single source of truth for handleSubmit', () => {
   it('matches the per-helper composition (regression guard)', () => {
     const input = {
       content: 'review',
@@ -245,7 +245,7 @@ describe('composeSubmitPayload �?single source of truth for handleSubmit', () =
       directoryRefs: ['docs/'],
     };
     const payload = composeSubmitPayload(input);
-    // Files: uploads �?mention files �?directory attachments, in that order.
+    // Files: uploads → mention files → directory attachments, in that order.
     assert.equal(payload.files.length, 3);
     assert.equal(payload.files[0].id, 'a.txt');
     assert.equal(payload.files[1].id, 'x.ts');
@@ -282,7 +282,7 @@ describe('composeSubmitPayload �?single source of truth for handleSubmit', () =
   });
 });
 
-describe('Submit-flow cycle �?mirrors MessageInput.handleSubmit', () => {
+describe('Submit-flow cycle — mirrors MessageInput.handleSubmit', () => {
   // Mocks of the state setters MessageInput owns. The flow test calls
   // composeSubmitPayload + the recorded `onSend` + the cleanup setX in
   // the EXACT order the React component does, so any future refactor
@@ -391,7 +391,7 @@ describe('Submit-flow cycle �?mirrors MessageInput.handleSubmit', () => {
       directoryRefs,
     });
     if (!payload.finalContent && payload.files.length === 0) {
-      // Real handleSubmit returns early in this branch �?confirm we'd hit it.
+      // Real handleSubmit returns early in this branch — confirm we'd hit it.
       assert.equal(payload.finalContent, '');
       assert.equal(payload.files.length, 0);
       assert.equal(payload.displayOverride, undefined);
@@ -418,7 +418,8 @@ describe('Context chips send-clear contract (the four invariants)', () => {
 
     // (1) directoryRefs === []
     assert.deepEqual(directoryRefs, []);
-    // (2) directoryAttachments derived from cleared state is empty �?    // proxy for "no synthetic dir attachments would re-leak into a
+    // (2) directoryAttachments derived from cleared state is empty —
+    // proxy for "no synthetic dir attachments would re-leak into a
     // subsequent send".
     assert.deepEqual(buildDirectoryAttachments(directoryRefs), []);
     // (3) pendingContextTokens === 0

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Skills manager â?embeddable into the ExtensionsPage.
+ * Skills manager — embeddable into the ExtensionsPage.
  *
  * Phase 2D.4 P2 (2026-05-01) restructure: this component no longer owns
  * its own page chrome (title / description / segmented control / search
@@ -13,18 +13,18 @@
  *   renders as a heading + count, followed by a 2-col card grid.
  * - Cards use the canonical Settings chrome from `docs/design.md`
  *   (`rounded-lg bg-card border border-border/50 p-5`, no shadow).
- * - Click â?`<SkillDetailDialog>` shows description + read-only
+ * - Click → `<SkillDetailDialog>` shows description + read-only
  *   markdown body + Delete (when editable).
  *
  * Marketplace browsing was moved out of this component into a dialog
- * triggered from the ExtensionsPage Create dropdown â?keeping the body
+ * triggered from the ExtensionsPage Create dropdown — keeping the body
  * a single grid surface instead of a nested tab-in-tab layout.
  */
 
 import { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, SpinnerGap, Lock } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { SkillDetailDialog } from "./SkillDetailDialog";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
@@ -141,7 +141,7 @@ export const SkillsManager = forwardRef<SkillsManagerHandle, SkillsManagerProps>
       )
     : skills;
 
-  // Picker source order: global â?project â?installed â?plugin â?sdk.
+  // Picker source order: global → project → installed → plugin → sdk.
   const groups: Array<{
     source: SkillSource;
     labelKey: TranslationKey;
@@ -259,7 +259,7 @@ function SkillCard({
           onOpen();
         }
       }}
-      aria-label={`/${skill.name} â?${skill.description}`}
+      aria-label={`/${skill.name} — ${skill.description}`}
       className="rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-center gap-2 flex-wrap">
@@ -295,7 +295,7 @@ function SkillsEmptyState({
   const { t } = useTranslation();
   return (
     <div className="rounded-lg border border-border/50 bg-card p-10 flex flex-col items-center text-center gap-3">
-      <BuckyballIcon name="skill" size="xl" className="opacity-40 text-muted-foreground" />
+      <CodePilotIcon name="skill" size="xl" className="opacity-40 text-muted-foreground" />
       <div className="text-sm font-medium">{t("skills.noSkillsFound")}</div>
       {!hasSearch && onCreate && (
         <Button variant="default" size="sm" className="gap-1.5 mt-1" onClick={onCreate}>

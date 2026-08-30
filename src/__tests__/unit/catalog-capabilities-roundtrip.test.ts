@@ -1,27 +1,30 @@
 /**
- * Catalog â†?DB â†?resolver round-trip for model capabilities.
+ * Catalog â†’ DB â†’ resolver round-trip for model capabilities.
  *
  * Phase 1 review round 1 (2026-07-17) found the hole this file guards: the
  * GLM/Kimi effort capabilities lived only on the in-memory catalog object.
  * Both DB sync paths (`seedCatalogModelsIfEmpty`, `alignEnabledWithCatalog`)
  * hard-wrote `capabilities_json='{}'`, and both read paths (models GET route,
  * provider-resolver) let a same-id DB row shadow the catalog. So the moment a
- * provider's rows were materialized â€?which the Models page does on first GET â€? * `supportsEffort` / `supportedEffortLevels` / `effortNoteKey` were dropped and
+ * provider's rows were materialized â€” which the Models page does on first GET â€”
+ * `supportsEffort` / `supportedEffortLevels` / `effortNoteKey` were dropped and
  * the Auto/High/Max menu disappeared for exactly the providers Phase 1 added it
  * for. Catalog-object-only assertions (provider-resolver.test.ts) could not see
  * this; these tests drive the DB.
  *
  * Invariants, in the order the review demanded them:
- *   - fresh seed  â†?resolver still reports the catalog capabilities
- *   - legacy row  â†?system-managed metadata (display/upstream/caps) realigns,
+ *   - fresh seed  â†’ resolver still reports the catalog capabilities
+ *   - legacy row  â†’ system-managed metadata (display/upstream/caps) realigns,
  *                   but model_id stays put so session pins never strand
- *   - user_edited / manual_* rows â†?untouched, capabilities included
- *   - catalog silent about capabilities â†?DB value preserved, never erased
+ *   - user_edited / manual_* rows â†’ untouched, capabilities included
+ *   - catalog silent about capabilities â†’ DB value preserved, never erased
  */
 
 import '../db-isolation.setup';
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   alignEnabledWithCatalog,
   mergeCatalogManagedModels,
@@ -35,6 +38,7 @@ import {
 } from '../../lib/db';
 import { resolveProvider } from '../../lib/provider-resolver';
 import { getCatalogDefaultModelsForRecord as getCatalogDefaultModelsForRecordResolved } from '../../lib/provider-catalog';
+import { classifyCatalogModelPresence } from '../../lib/catalog-model-identity';
 
 const TEST_PROVIDER_PREFIX = '__test_caps_rt_';
 
@@ -72,9 +76,14 @@ function resolvedModel(providerId: string, modelId: string) {
   return { resolution, entry };
 }
 
-describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
+describe('catalog capabilities survive the DB round-trip â€” GLM', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
+
+  it('keeps the complete legacy capabilities snapshot in the SQL compare-and-swap', () => {
+    const source = fs.readFileSync(path.resolve(__dirname, '../../lib/db.ts'), 'utf8');
+    assert.match(source, /upstream_model_id = \? AND display_name = \?\s+AND capabilities_json IS \?/);
+  });
 
   it('fresh seed: resolver sees current GLM-5.3 metadata and effort contract', () => {
     const providerId = createScratchProvider(GLM_BASE_URL);
@@ -90,7 +99,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
     const { entry } = resolvedModel(providerId, 'sonnet');
     assert.ok(entry, 'materialized GLM row vanished from the resolver');
     assert.equal(entry.capabilities?.supportsEffort, true,
-      'DB row shadowed the catalog and dropped supportsEffort â€?effort menu would not render');
+      'DB row shadowed the catalog and dropped supportsEffort â€” effort menu would not render');
     assert.equal(entry.displayName, 'GLM-5.3');
     assert.equal(entry.upstreamModelId, 'glm-5.3[1m]');
     assert.deepEqual(entry.capabilities?.supportedEffortLevels, ['low', 'high', 'max']);
@@ -148,8 +157,10 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
     const flagship = alignedRows.find(row => row.model_id === 'sonnet')!;
     assert.equal(flagship.display_name, 'GLM-5.3');
     assert.equal(flagship.upstream_model_id, 'glm-5.3[1m]');
-    assert.ok(alignedRows.some(row => row.model_id === 'glm-5-turbo'));
-    assert.ok(alignedRows.some(row => row.model_id === 'haiku' && row.upstream_model_id === 'glm-4.7'));
+    const flash = alignedRows.find(row => row.model_id === 'haiku');
+    assert.equal(flash?.upstream_model_id, 'glm-5.3-flash[1m]');
+    assert.equal(flash?.display_name, 'GLM-5.3-Flash');
+    assert.equal(JSON.parse(flash?.capabilities_json ?? '{}').vision, true);
   });
 
   it('Models-page catalog merge preserves a user-hidden catalog identity', () => {
@@ -173,7 +184,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
       base_url: GLM_BASE_URL,
     });
     const result = mergeCatalogManagedModels(providerId, catalog);
-    assert.equal(result.inserted, 2, 'missing Turbo/Haiku catalog rows should still be added');
+    assert.equal(result.inserted, 1, 'the missing Flash catalog row should still be added');
     assert.equal(result.updated, 0, 'the existing user-managed flagship must not be rewritten');
 
     const flagship = getAllModelsForProvider(providerId).find(row => row.model_id === 'sonnet')!;
@@ -184,6 +195,273 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
     assert.equal(flagship.user_edited, 1);
     assert.equal(flagship.enable_source, 'manual_hidden');
     assert.deepEqual(JSON.parse(flagship.capabilities_json), { private: true });
+  });
+
+  it('keeps a retired pristine GLM-5-Turbo row as historical data', () => {
+    const providerId = createScratchProvider(GLM_BASE_URL);
+    upsertProviderModel({
+      provider_id: providerId,
+      model_id: 'glm-5-turbo',
+      upstream_model_id: 'glm-5-turbo',
+      display_name: 'GLM-5-Turbo',
+      capabilities_json: JSON.stringify({
+        reasoning: true,
+        toolUse: true,
+        contextWindow: 204_800,
+        defaultEffortLevel: 'max',
+      }),
+      variants_json: '{}',
+      sort_order: 1,
+      enabled: 1,
+      source: 'catalog',
+      user_edited: 0,
+      enable_source: 'catalog',
+    });
+
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    mergeCatalogManagedModels(providerId, catalog);
+
+    const rows = getAllModelsForProvider(providerId);
+    const retired = rows.find(row => row.model_id === 'glm-5-turbo');
+    assert.ok(retired, 'a Models-page read must not delete a retired catalog row');
+    assert.equal(retired.display_name, 'GLM-5-Turbo');
+    assert.equal(retired.upstream_model_id, 'glm-5-turbo');
+    assert.equal(retired.enabled, 1);
+    assert.ok(rows.some(row => row.model_id === 'sonnet'));
+    assert.equal(rows.find(row => row.model_id === 'haiku')?.upstream_model_id, 'glm-5.3-flash[1m]');
+  });
+
+  it('upgrades the exact three-row pre-source-migration GLM snapshot without inventing fingerprints', () => {
+    const providerId = createScratchProvider(GLM_BASE_URL);
+    upsertProviderModel({
+      provider_id: providerId,
+      model_id: 'sonnet',
+      upstream_model_id: 'sonnet',
+      display_name: 'GLM-5-Turbo',
+      capabilities_json: '{}',
+      variants_json: '{}',
+      sort_order: 0,
+      enabled: 1,
+      // Old databases received this conservative source backfill even for
+      // rows originally seeded from the built-in catalog.
+      source: 'manual',
+      user_edited: 0,
+      enable_source: 'recommended',
+    });
+    upsertProviderModel({
+      provider_id: providerId,
+      model_id: 'opus',
+      upstream_model_id: 'opus',
+      display_name: 'GLM-5.1',
+      capabilities_json: '{}',
+      variants_json: '{}',
+      sort_order: 1,
+      enabled: 1,
+      source: 'manual',
+      user_edited: 0,
+      enable_source: 'recommended',
+    });
+    upsertProviderModel({
+      provider_id: providerId,
+      model_id: 'haiku',
+      upstream_model_id: 'haiku',
+      display_name: 'GLM-4.5-Air',
+      capabilities_json: '{}',
+      variants_json: '{}',
+      sort_order: 2,
+      enabled: 1,
+      source: 'manual',
+      user_edited: 0,
+      enable_source: 'recommended',
+    });
+
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    const result = mergeCatalogManagedModels(providerId, catalog);
+    assert.deepEqual(result, { inserted: 0, updated: 2 });
+
+    const rows = getAllModelsForProvider(providerId);
+    const flagship = rows.find(row => row.model_id === 'sonnet')!;
+    assert.equal(flagship.upstream_model_id, 'glm-5.3[1m]');
+    assert.equal(flagship.display_name, 'GLM-5.3');
+    assert.equal(flagship.source, 'catalog');
+    assert.equal(flagship.enable_source, 'catalog');
+    assert.equal(rows.find(row => row.model_id === 'haiku')?.upstream_model_id, 'glm-5.3-flash[1m]');
+    assert.equal(rows.find(row => row.model_id === 'haiku')?.display_name, 'GLM-5.3-Flash');
+    assert.equal(rows.find(row => row.model_id === 'opus')?.display_name, 'GLM-5.1',
+      'the retired opus slot is historical data and must not be silently deleted or rewritten');
+  });
+
+  it('upgrades the gen-0 GLM-4.7 sonnet slot shipped from 2026-03-09 through 2026-03-28', () => {
+    const providerId = createScratchProvider(GLM_BASE_URL);
+    for (const [modelId, displayName, sortOrder] of [
+      ['sonnet', 'GLM-4.7', 0],
+      ['opus', 'GLM-5', 1],
+      ['haiku', 'GLM-4.5-Air', 2],
+    ] as const) {
+      upsertProviderModel({
+        provider_id: providerId,
+        model_id: modelId,
+        upstream_model_id: modelId,
+        display_name: displayName,
+        capabilities_json: '{}',
+        variants_json: '{}',
+        sort_order: sortOrder,
+        enabled: 1,
+        source: 'manual',
+        user_edited: 0,
+        enable_source: 'recommended',
+      });
+    }
+
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    assert.deepEqual(mergeCatalogManagedModels(providerId, catalog), { inserted: 0, updated: 2 });
+
+    const rows = getAllModelsForProvider(providerId);
+    assert.equal(rows.find(row => row.model_id === 'sonnet')?.upstream_model_id, 'glm-5.3[1m]');
+    assert.equal(rows.find(row => row.model_id === 'sonnet')?.display_name, 'GLM-5.3');
+    assert.equal(rows.find(row => row.model_id === 'haiku')?.upstream_model_id, 'glm-5.3-flash[1m]');
+    assert.equal(rows.find(row => row.model_id === 'opus')?.display_name, 'GLM-5',
+      'retired gen-0 opus history is preserved rather than guessed into a current slot');
+  });
+
+  it('keeps a canonical current SKU usable when an extra direct-wire row remains', () => {
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    const flagship = catalog.find(model => model.modelId === 'sonnet')!;
+    const presence = classifyCatalogModelPresence([
+      {
+        model_id: 'sonnet',
+        upstream_model_id: 'glm-5.3[1m]',
+        display_name: 'GLM-5.3',
+        capabilities_json: '{}',
+        enabled: 1,
+        source: 'catalog',
+        user_edited: 0,
+        enable_source: 'catalog',
+      },
+      {
+        model_id: 'glm-5.3[1m]',
+        upstream_model_id: 'glm-5.3[1m]',
+        display_name: 'Older direct row',
+        capabilities_json: '{}',
+        enabled: 1,
+        source: 'manual',
+        user_edited: 1,
+        enable_source: 'manual_enabled',
+      },
+    ], flagship);
+    assert.deepEqual(presence, { state: 'current_enabled', existingModelId: 'sonnet' });
+  });
+
+  it('reports the current SKU enabled when a unique direct wire is enabled beside a hidden canonical row', () => {
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    const flagship = catalog.find(model => model.modelId === 'sonnet')!;
+    const presence = classifyCatalogModelPresence([
+      {
+        model_id: 'sonnet',
+        upstream_model_id: 'glm-5.3[1m]',
+        display_name: 'GLM-5.3',
+        capabilities_json: '{}',
+        enabled: 0,
+        source: 'catalog',
+        user_edited: 0,
+        enable_source: 'manual_hidden',
+      },
+      {
+        model_id: 'glm-5.3[1m]',
+        upstream_model_id: 'glm-5.3[1m]',
+        display_name: 'GLM-5.3 direct',
+        capabilities_json: '{}',
+        enabled: 1,
+        source: 'manual',
+        user_edited: 1,
+        enable_source: 'manual_enabled',
+      },
+    ], flagship);
+
+    assert.deepEqual(presence, {
+      state: 'current_enabled',
+      existingModelId: 'glm-5.3[1m]',
+    });
+  });
+
+  it('fails closed with explicit model ids when no row is a unique current or legacy identity', () => {
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    const flagship = catalog.find(model => model.modelId === 'sonnet')!;
+    const presence = classifyCatalogModelPresence([
+      {
+        model_id: 'sonnet',
+        upstream_model_id: 'private-sonnet-route',
+        display_name: 'My custom Sonnet slot',
+        capabilities_json: '{}',
+        enabled: 1,
+        source: 'manual',
+        user_edited: 1,
+        enable_source: 'manual_enabled',
+      },
+      {
+        model_id: 'glm-5.3[1m]',
+        upstream_model_id: 'proxy-glm-route',
+        display_name: 'Conflicting direct-id row',
+        capabilities_json: '{}',
+        enabled: 0,
+        source: 'manual',
+        user_edited: 1,
+        enable_source: 'manual_hidden',
+      },
+    ], flagship);
+
+    assert.deepEqual(presence, {
+      state: 'identity_conflict',
+      conflictModelIds: ['sonnet', 'glm-5.3[1m]'],
+    });
+  });
+
+  it('does not upgrade a lookalike GLM row after the user has claimed ownership', () => {
+    const providerId = createScratchProvider(GLM_BASE_URL);
+    upsertProviderModel({
+      provider_id: providerId,
+      model_id: 'sonnet',
+      upstream_model_id: 'sonnet',
+      display_name: 'GLM-5-Turbo',
+      capabilities_json: '{}',
+      variants_json: '{}',
+      sort_order: 17,
+      enabled: 0,
+      source: 'manual',
+      user_edited: 1,
+      enable_source: 'manual_hidden',
+    });
+
+    const catalog = getCatalogDefaultModelsForRecord({
+      provider_type: 'anthropic',
+      base_url: GLM_BASE_URL,
+    });
+    const result = mergeCatalogManagedModels(providerId, catalog);
+    assert.equal(result.updated, 0);
+    const flagship = getAllModelsForProvider(providerId).find(row => row.model_id === 'sonnet')!;
+    assert.equal(flagship.upstream_model_id, 'sonnet');
+    assert.equal(flagship.display_name, 'GLM-5-Turbo');
+    assert.equal(flagship.enabled, 0);
+    assert.equal(flagship.sort_order, 17);
+    assert.equal(flagship.source, 'manual');
   });
 
   it('does not create a stable alias when a user row already owns the catalog upstream id', () => {
@@ -206,7 +484,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
       base_url: GLM_BASE_URL,
     });
     const result = mergeCatalogManagedModels(providerId, catalog);
-    assert.equal(result.inserted, 2, 'Turbo and 4.7 are new, but the duplicate 5.3 wire is not');
+    assert.equal(result.inserted, 1, 'Flash is new, but the duplicate 5.3 wire is not');
     const rows = getAllModelsForProvider(providerId);
     assert.equal(rows.filter(row => row.upstream_model_id === 'glm-5.3[1m]').length, 1);
     assert.equal(rows.some(row => row.model_id === 'sonnet'), false);
@@ -321,7 +599,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
     assert.equal(new Set(rows.map(row => row.sort_order)).size, rows.length);
     assert.equal(rows.find(row => row.model_id === 'user/pinned-order')?.sort_order, 1);
     const catalogRows = catalog.map(model => rows.find(row => row.model_id === model.modelId)!);
-    assert.deepEqual(catalogRows.map(row => row.sort_order), [0, 2, 3]);
+    assert.deepEqual(catalogRows.map(row => row.sort_order), [0, 2]);
   });
 
   it('absorbs a unique-key winner committed after the merge snapshot', () => {
@@ -349,7 +627,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
         base_url: GLM_BASE_URL,
       });
       const result = mergeCatalogManagedModels(providerId, catalog);
-      assert.equal(result.inserted, 2, 'the ignored catalog insert must not inflate the write count');
+      assert.equal(result.inserted, 1, 'the ignored catalog insert must not inflate the write count');
       const winner = getAllModelsForProvider(providerId).find(row => row.model_id === 'sonnet')!;
       assert.equal(winner.display_name, 'Concurrent winner');
       assert.equal(winner.source, 'manual');
@@ -360,7 +638,7 @@ describe('catalog capabilities survive the DB round-trip â€?GLM', () => {
   });
 });
 
-describe('catalog capabilities survive the DB round-trip â€?Kimi for Coding', () => {
+describe('catalog capabilities survive the DB round-trip â€” Kimi for Coding', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -396,7 +674,7 @@ describe('catalog capabilities survive the DB round-trip â€?Kimi for Coding', ()
     assert.equal(row.upstream_model_id, 'kimi-for-coding',
       'legacy row would keep sending the bare `sonnet` alias upstream');
     assert.equal(row.model_id, 'sonnet',
-      'model_id is the session/DB pin â€?realignment must never move it');
+      'model_id is the session/DB pin â€” realignment must never move it');
 
     const { resolution, entry } = resolvedModel(providerId, 'sonnet');
     assert.equal(resolution.upstreamModel, 'kimi-for-coding');
@@ -484,7 +762,7 @@ describe('capability realignment respects user ownership', () => {
     assert.equal(row.enabled, 0, 'manual_hidden row must stay hidden');
     assert.equal(row.enable_source, 'manual_hidden');
     assert.equal(row.capabilities_json, '{}',
-      'hidden rows are the user\'s call â€?sync must not write to them at all');
+      'hidden rows are the user\'s call â€” sync must not write to them at all');
   });
 
   it('a catalog entry with no capabilities does not erase discovered ones', () => {

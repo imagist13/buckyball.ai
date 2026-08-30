@@ -1,5 +1,5 @@
 /**
- * provider-request-shape.test.ts â€?AI SDK 7 Phase 2: provider request-shape
+ * provider-request-shape.test.ts â€” AI SDK 7 Phase 2: provider request-shape
  * AI SDK 7 provider capability matrix evidence.
  *
  * What this pins: for each provider wire the native runtime can hit
@@ -18,7 +18,8 @@
  *
  * Sanitization contract (fixture-sanitized check):
  *   - Secret-bearing headers (authorization, x-api-key, api-key,
- *     chatgpt-account-id) are recorded by NAME with value "[REDACTED]" â€? *     proving which header would carry credentials without the value.
+ *     chatgpt-account-id) are recorded by NAME with value "[REDACTED]" â€”
+ *     proving which header would carry credentials without the value.
  *     Test API keys are the obviously-fake FAKE_KEY constant anyway.
  *   - Any string in the body longer than 200 chars is replaced with a
  *     "[redacted: N chars]" marker (defense in depth; all probe payloads
@@ -28,7 +29,7 @@
  * Regenerate fixtures after an intentional SDK upgrade / mapping change:
  *   UPDATE_REQUEST_SHAPE_FIXTURES=1 npx tsx --test src/__tests__/unit/provider-request-shape.test.ts
  *
- * NOT covered here (needs real credentials â†?human gate, do not guess):
+ * NOT covered here (needs real credentials â†’ human gate, do not guess):
  * whether each upstream/gateway ACCEPTS these fields or silently ignores
  * them. This file only proves what our runtime puts on the wire.
  */
@@ -54,7 +55,7 @@ const UPDATE = process.env.UPDATE_REQUEST_SHAPE_FIXTURES === '1';
 const FAKE_KEY = 'test-key-not-real';
 const SYSTEM = 'You are a synthetic capability probe. Reply with the word ok.';
 const PROMPT = 'capability probe ping';
-// 1Ã—1 transparent PNG (68 bytes) â€?synthetic, non-sensitive.
+// 1Ã—1 transparent PNG (68 bytes) â€” synthetic, non-sensitive.
 const PNG_1PX =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 // Minimal (invalid-but-shaped) PDF: "%PDF-1.4\n%%EOF"
@@ -263,7 +264,7 @@ function checkFixture(name: string, meta: FixtureMeta, captured: CapturedRequest
   assert.deepEqual(
     sanitized,
     expected,
-    `request-shape drift for ${name} â€?if intentional (SDK upgrade / mapping change), regenerate with UPDATE_REQUEST_SHAPE_FIXTURES=1 and re-review the matrix doc`,
+    `request-shape drift for ${name} â€” if intentional (SDK upgrade / mapping change), regenerate with UPDATE_REQUEST_SHAPE_FIXTURES=1 and re-review the matrix doc`,
   );
 }
 
@@ -349,7 +350,7 @@ function gatewayOpenAIChat(fetchImpl: typeof fetch): LanguageModel {
 }
 
 function gatewayOpenAIChatUpstreamRaw(fetchImpl: typeof fetch): LanguageModel {
-  // NO normalization wrapper â€?pins the raw @ai-sdk/openai .chat() output so
+  // NO normalization wrapper â€” pins the raw @ai-sdk/openai .chat() output so
   // the upstream bare-base64 bug (å‘çŽ° 3) stays visible. When an SDK upgrade
   // makes this fixture drift to a proper data URL, the upstream bug is fixed
   // and the app-side wrapper can be retired.
@@ -362,7 +363,7 @@ function gatewayOpenAIChatUpstreamRaw(fetchImpl: typeof fetch): LanguageModel {
 }
 
 function compatOpenAICompatible(fetchImpl: typeof fetch): LanguageModel {
-  // NOT an app path today â€?candidate adapter (@ai-sdk/openai-compatible)
+  // NOT an app path today â€” candidate adapter (@ai-sdk/openai-compatible)
   // captured for the Phase 2 adoption comparison.
   const compat = createOpenAICompatible({
     name: 'openai-compatible',
@@ -420,7 +421,7 @@ const ANTHROPIC_META = {
   mirrors: 'src/lib/ai-provider.ts createLanguageModel case anthropic + src/lib/agent-loop.ts providerOptions.anthropic',
 };
 
-describe('provider request shape â€?Anthropic Messages API', () => {
+describe('provider request shape â€” Anthropic Messages API', () => {
   it('reasoning: thinking {type:enabled, budgetTokens} is sent as body.thinking with snake_case budget', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
@@ -483,7 +484,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-context-1m-beta', ANTHROPIC_META, req);
   });
 
-  it('tool choice: tools + toolChoice auto â†?body.tools[] + tool_choice {type:auto}', async () => {
+  it('tool choice: tools + toolChoice auto â†’ body.tools[] + tool_choice {type:auto}', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -497,7 +498,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-tool-choice-auto', ANTHROPIC_META, req);
   });
 
-  it('tool choice: required â†?tool_choice {type:any}', async () => {
+  it('tool choice: required â†’ tool_choice {type:any}', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -509,7 +510,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-tool-choice-required', ANTHROPIC_META, req);
   });
 
-  it('tool choice: named tool â†?tool_choice {type:tool, name}', async () => {
+  it('tool choice: named tool â†’ tool_choice {type:tool, name}', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -521,7 +522,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-tool-choice-named', ANTHROPIC_META, req);
   });
 
-  it('tool choice: no tools + toolChoice none (agent-loop no-tool path) â†?no tools/tool_choice on wire', async () => {
+  it('tool choice: no tools + toolChoice none (agent-loop no-tool path) â†’ no tools/tool_choice on wire', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -533,7 +534,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-tool-choice-none-no-tools', ANTHROPIC_META, req);
   });
 
-  it('file input: image/png file part â†?content block {type:image, source:base64}', async () => {
+  it('file input: image/png file part â†’ content block {type:image, source:base64}', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       messages: IMAGE_MESSAGES,
@@ -547,7 +548,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     checkFixture('anthropic-file-image', ANTHROPIC_META, req);
   });
 
-  it('file input: application/pdf file part â†?content block {type:document}', async () => {
+  it('file input: application/pdf file part â†’ content block {type:document}', async () => {
     const req = await captureGenerate('anthropic', appAnthropic, {
       system: SYSTEM,
       messages: PDF_MESSAGES,
@@ -572,7 +573,7 @@ describe('provider request shape â€?Anthropic Messages API', () => {
     assert.equal(streamReq.body.stream, true);
     checkFixture(
       'anthropic-stream-parity',
-      { ...ANTHROPIC_META, note: 'captured via streamText â€?native runtime path; only delta vs generateText is stream:true' },
+      { ...ANTHROPIC_META, note: 'captured via streamText â€” native runtime path; only delta vs generateText is stream:true' },
       streamReq,
     );
   });
@@ -596,7 +597,7 @@ const RESPONSES_PROVIDER_OPTIONS = {
   },
 };
 
-describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
+describe('provider request shape â€” OpenAI Responses API (Codex path)', () => {
   it('reasoning/effort: reasoningEffort + textVerbosity + store + instructions land on the wire', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
@@ -611,7 +612,7 @@ describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
     checkFixture('openai-responses-reasoning-effort', RESPONSES_META, req);
   });
 
-  it('tool choice: tools + auto â†?body.tools[] (flattened function) + tool_choice auto', async () => {
+  it('tool choice: tools + auto â†’ body.tools[] (flattened function) + tool_choice auto', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -625,7 +626,7 @@ describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
     checkFixture('openai-responses-tool-choice-auto', RESPONSES_META, req);
   });
 
-  it('tool choice: required â†?tool_choice required', async () => {
+  it('tool choice: required â†’ tool_choice required', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -637,7 +638,7 @@ describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
     checkFixture('openai-responses-tool-choice-required', RESPONSES_META, req);
   });
 
-  it('tool choice: named tool â†?tool_choice {type:function, name}', async () => {
+  it('tool choice: named tool â†’ tool_choice {type:function, name}', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -649,7 +650,7 @@ describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
     checkFixture('openai-responses-tool-choice-named', RESPONSES_META, req);
   });
 
-  it('file input: image/png file part â†?input_image', async () => {
+  it('file input: image/png file part â†’ input_image', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
       messages: IMAGE_MESSAGES,
@@ -661,7 +662,7 @@ describe('provider request shape â€?OpenAI Responses API (Codex path)', () => {
     checkFixture('openai-responses-file-image', RESPONSES_META, req);
   });
 
-  it('file input: application/pdf file part â†?input_file', async () => {
+  it('file input: application/pdf file part â†’ input_file', async () => {
     const req = await captureGenerate('openai-responses', appOpenAIResponses, {
       system: SYSTEM,
       messages: PDF_MESSAGES,
@@ -686,7 +687,7 @@ const XAI_PROVIDER_OPTIONS = {
   xai: { store: false, reasoningEffort: 'high' as const },
 };
 
-describe('provider request shape â€?xAI Responses API', () => {
+describe('provider request shape â€” xAI Responses API', () => {
   it('passes every UI/stale effort through the real builder and installed xAI SDK schema', async () => {
     for (const [requested, expected] of [
       ['minimal', undefined],
@@ -788,11 +789,11 @@ describe('provider request shape â€?xAI Responses API', () => {
 const CHAT_META = {
   package: '@ai-sdk/openai',
   version: VERSIONS['@ai-sdk/openai'],
-  mirrors: 'src/lib/ai-provider.ts non-OAuth openai branch (openai.chat) â€?openai-compatible gateways / OpenRouter-class',
+  mirrors: 'src/lib/ai-provider.ts non-OAuth openai branch (openai.chat) â€” openai-compatible gateways / OpenRouter-class',
 };
 
-describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () => {
-  it('reasoning/effort: providerOptions.openai.reasoningEffort â†?body.reasoning_effort', async () => {
+describe('provider request shape â€” OpenAI Chat Completions (gateway path)', () => {
+  it('reasoning/effort: providerOptions.openai.reasoningEffort â†’ body.reasoning_effort', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -804,7 +805,7 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     checkFixture('openai-chat-reasoning-effort', CHAT_META, req);
   });
 
-  it('tool choice: tools + auto â†?body.tools[] (nested function) + tool_choice auto', async () => {
+  it('tool choice: tools + auto â†’ body.tools[] (nested function) + tool_choice auto', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -819,7 +820,7 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     checkFixture('openai-chat-tool-choice-auto', CHAT_META, req);
   });
 
-  it('tool choice: required â†?tool_choice required', async () => {
+  it('tool choice: required â†’ tool_choice required', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -831,7 +832,7 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     checkFixture('openai-chat-tool-choice-required', CHAT_META, req);
   });
 
-  it('tool choice: named tool â†?tool_choice {type:function, function:{name}}', async () => {
+  it('tool choice: named tool â†’ tool_choice {type:function, function:{name}}', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -843,7 +844,7 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     checkFixture('openai-chat-tool-choice-named', CHAT_META, req);
   });
 
-  it('file input: image/png file part â†?image_url data URL (app path: bare-base64 fixed by withChatImageDataUrlFetch)', async () => {
+  it('file input: image/png file part â†’ image_url data URL (app path: bare-base64 fixed by withChatImageDataUrlFetch)', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       messages: IMAGE_MESSAGES,
@@ -860,7 +861,7 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     checkFixture('openai-chat-file-image', CHAT_META, req);
   });
 
-  it('file input (upstream control, NO wrapper): @ai-sdk/openai .chat() emits image_url as BARE base64 â€?upstream bug', async () => {
+  it('file input (upstream control, NO wrapper): @ai-sdk/openai .chat() emits image_url as BARE base64 â€” upstream bug', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChatUpstreamRaw, {
       system: SYSTEM,
       messages: IMAGE_MESSAGES,
@@ -869,17 +870,17 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
     const content = req.body.messages.find((m: { role: string }) => m.role === 'user').content;
     const image = content.find((p: { type: string }) => p.type === 'image_url');
     assert.ok(image, 'expected image_url part');
-    // Drift here (bare base64 â†?data URL) means upstream fixed the bug:
+    // Drift here (bare base64 â†’ data URL) means upstream fixed the bug:
     // regenerate fixtures and consider retiring withChatImageDataUrlFetch.
     assert.equal(image.image_url.url, PNG_1PX, 'installed @ai-sdk/openai still emits bare base64');
     checkFixture(
       'openai-chat-file-image-upstream-bare-base64',
-      { ...CHAT_META, note: 'raw SDK output WITHOUT the app normalization wrapper â€?documents upstream bare-base64 bug (å‘çŽ° 3)' },
+      { ...CHAT_META, note: 'raw SDK output WITHOUT the app normalization wrapper â€” documents upstream bare-base64 bug (å‘çŽ° 3)' },
       req,
     );
   });
 
-  it('file input: application/pdf file part â†?file part (or documented unsupported)', async () => {
+  it('file input: application/pdf file part â†’ file part (or documented unsupported)', async () => {
     const req = await captureGenerate('openai-chat', gatewayOpenAIChat, {
       system: SYSTEM,
       messages: PDF_MESSAGES,
@@ -897,11 +898,11 @@ describe('provider request shape â€?OpenAI Chat Completions (gateway path)', () 
 const COMPAT_META = {
   package: '@ai-sdk/openai-compatible',
   version: VERSIONS['@ai-sdk/openai-compatible'],
-  mirrors: 'NOT an app path â€?Phase 2 candidate adapter comparison for OpenRouter-class gateways',
+  mirrors: 'NOT an app path â€” Phase 2 candidate adapter comparison for OpenRouter-class gateways',
 };
 
-describe('provider request shape â€?@ai-sdk/openai-compatible (candidate adapter)', () => {
-  it('reasoning/effort: providerOptions["openai-compatible"].reasoningEffort â†?body.reasoning_effort', async () => {
+describe('provider request shape â€” @ai-sdk/openai-compatible (candidate adapter)', () => {
+  it('reasoning/effort: providerOptions["openai-compatible"].reasoningEffort â†’ body.reasoning_effort', async () => {
     const req = await captureGenerate('openai-chat', compatOpenAICompatible, {
       system: SYSTEM,
       prompt: PROMPT,
@@ -938,7 +939,7 @@ describe('provider request shape â€?@ai-sdk/openai-compatible (candidate adapter
     checkFixture('compat-tool-choice-named', COMPAT_META, req);
   });
 
-  it('file input: image/png file part â†?image_url data URL', async () => {
+  it('file input: image/png file part â†’ image_url data URL', async () => {
     const req = await captureGenerate('openai-chat', compatOpenAICompatible, {
       system: SYSTEM,
       messages: IMAGE_MESSAGES,
@@ -950,7 +951,7 @@ describe('provider request shape â€?@ai-sdk/openai-compatible (candidate adapter
     checkFixture('compat-file-image', COMPAT_META, req);
   });
 
-  it('file input: application/pdf â€?capture whether the compat adapter can send it at all', async () => {
+  it('file input: application/pdf â€” capture whether the compat adapter can send it at all', async () => {
     // The compat package historically threw UnsupportedFunctionality for
     // non-image files. Capture the truth either way: a request fixture if it
     // sends, an error fixture if it throws.
@@ -963,7 +964,7 @@ describe('provider request shape â€?@ai-sdk/openai-compatible (candidate adapter
       checkFixture('compat-file-pdf', COMPAT_META, req);
     } catch (err) {
       const sanitized = {
-        meta: { ...COMPAT_META, ai: VERSIONS.ai, note: 'PDF file part is NOT sendable via @ai-sdk/openai-compatible â€?SDK throws before any HTTP request' },
+        meta: { ...COMPAT_META, ai: VERSIONS.ai, note: 'PDF file part is NOT sendable via @ai-sdk/openai-compatible â€” SDK throws before any HTTP request' },
         error: { name: (err as Error).name, message: (err as Error).message },
       };
       const file = path.join(FIXTURE_DIR, 'compat-file-pdf.json');
@@ -978,7 +979,7 @@ describe('provider request shape â€?@ai-sdk/openai-compatible (candidate adapter
 
 // â”€â”€ Fixture hygiene (fixture-sanitized check, enforced in CI) â”€â”€â”€
 
-describe('provider request shape â€?fixture hygiene', () => {
+describe('provider request shape â€” fixture hygiene', () => {
   it('no fixture contains the test key, an unredacted auth header, or oversized strings', () => {
     const files = fs.readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.json'));
     assert.ok(files.length >= 20, `expected the full fixture set, got ${files.length}`);

@@ -38,7 +38,7 @@ export class ChatRateLimiter {
       return;
     }
 
-    // Window is full â€?wait until the oldest entry expires
+    // Window is full â€” wait until the oldest entry expires
     const oldest = bucket.timestamps[0];
     const waitMs = oldest + this.windowMs - now;
     if (waitMs > 0) {

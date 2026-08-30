@@ -47,6 +47,8 @@ describe('isolated Sentry telemetry smoke', () => {
     const main = read('electron/main.ts');
 
     assert.match(main, /telemetrySmokeEnabled\(process\.env\.CODEPILOT_TELEMETRY_SMOKE\)[\s\S]*?process\.env\.CODEPILOT_NATIVE_CRASH_SMOKE === '1'/);
+    assert.match(main, /allowNativeMinidumps: nativeMinidumpTelemetryEnabled/);
+    assert.match(main, /nativeMinidumpTelemetryEnabled[\s\S]*?telemetrySmokeEnabled\(process\.env\.CODEPILOT_TELEMETRY_SMOKE\)/);
     assert.match(workflow, /github\.event_name == 'workflow_dispatch' && inputs\.telemetry_smoke/);
     assert.match(workflow, /CODEPILOT_NATIVE_CRASH_SMOKE=1/);
     assert.match(workflow, /!\(github\.event_name == 'workflow_dispatch' && inputs\.telemetry_smoke\)/);

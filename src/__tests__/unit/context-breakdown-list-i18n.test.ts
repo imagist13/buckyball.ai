@@ -1,11 +1,11 @@
 /**
- * context-breakdown-list-i18n.test.ts �?Codex P1 finding (2026-05-19) closeout.
+ * context-breakdown-list-i18n.test.ts — Codex P1 finding (2026-05-19) closeout.
  *
  * Pins the i18n contract for ContextBreakdownList so a future refactor can't
  * silently regress to rendering `part.label` directly (which mixed Chinese
  * DEFAULT_LABELS into the English UI).
  *
- * Source-grep tests rather than runtime React rendering �?we just need to
+ * Source-grep tests rather than runtime React rendering — we just need to
  * lock the file shape:
  *   1. Component uses useTranslation
  *   2. Component does not render {part.label}
@@ -33,7 +33,7 @@ const KIND_TO_KEY: Record<string, string> = {
   cache_or_previous: 'runStatus.breakdownCacheOrPrevious',
 };
 
-describe('ContextBreakdownList �?i18n contract (Codex P1 finding 2026-05-19)', () => {
+describe('ContextBreakdownList — i18n contract (Codex P1 finding 2026-05-19)', () => {
   const src = fs.readFileSync(
     path.join(
       repoRoot,
@@ -56,7 +56,7 @@ describe('ContextBreakdownList �?i18n contract (Codex P1 finding 2026-05-19)', 
     assert.doesNotMatch(
       src,
       />\{\s*part\.label\s*\}</,
-      'ContextBreakdownList must not render {part.label} �?labels must go through t(LABEL_KEY[part.kind])',
+      'ContextBreakdownList must not render {part.label} — labels must go through t(LABEL_KEY[part.kind])',
     );
   });
 
@@ -78,13 +78,13 @@ describe('ContextBreakdownList �?i18n contract (Codex P1 finding 2026-05-19)', 
       assert.match(
         src,
         re,
-        `LABEL_KEY must map ${kind} �?${expectedKey}; missing or mismatched in ContextBreakdownList`,
+        `LABEL_KEY must map ${kind} → ${expectedKey}; missing or mismatched in ContextBreakdownList`,
       );
     }
   });
 });
 
-describe('ContextBreakdownList i18n keys �?zh + en bundle coverage', () => {
+describe('ContextBreakdownList i18n keys — zh + en bundle coverage', () => {
   it('all 10 runStatus.breakdown* keys exist in zh.ts and en.ts', () => {
     const zh = fs.readFileSync(path.join(repoRoot, 'i18n/zh.ts'), 'utf8');
     const en = fs.readFileSync(path.join(repoRoot, 'i18n/en.ts'), 'utf8');
@@ -93,18 +93,18 @@ describe('ContextBreakdownList i18n keys �?zh + en bundle coverage', () => {
       assert.match(
         zh,
         new RegExp(`['"]${escaped}['"]`),
-        `${key} missing from zh.ts �?i18n bundles must stay in sync`,
+        `${key} missing from zh.ts — i18n bundles must stay in sync`,
       );
       assert.match(
         en,
         new RegExp(`['"]${escaped}['"]`),
-        `${key} missing from en.ts �?i18n bundles must stay in sync`,
+        `${key} missing from en.ts — i18n bundles must stay in sync`,
       );
     }
   });
 
   it('zh and en values are different for non-trivial labels (English is not Chinese fallback)', () => {
-    // Sanity check: regression test for "forgot to translate en.ts" �?the
+    // Sanity check: regression test for "forgot to translate en.ts" — the
     // values for system_prompt / rules / files_attachments etc. should
     // differ between bundles. Keys whose English happens to equal the
     // brand string (Skills / MCP / Memory) are exempt.
@@ -114,9 +114,9 @@ describe('ContextBreakdownList i18n keys �?zh + en bundle coverage', () => {
       ['runStatus.breakdownSystemPrompt', '系统提示'],
       ['runStatus.breakdownTools', '工具'],
       ['runStatus.breakdownRules', '规则'],
-      ['runStatus.breakdownFilesAttachments', '文件与附�?],
+      ['runStatus.breakdownFilesAttachments', '文件与附件'],
       ['runStatus.breakdownConversation', '对话历史'],
-      ['runStatus.breakdownPendingNextTurn', '本次待加�?],
+      ['runStatus.breakdownPendingNextTurn', '本次待加入'],
       ['runStatus.breakdownCacheOrPrevious', '缓存 / 上轮'],
     ];
     for (const [key, zhValue] of checks) {
@@ -130,7 +130,7 @@ describe('ContextBreakdownList i18n keys �?zh + en bundle coverage', () => {
       assert.doesNotMatch(
         en,
         new RegExp(`['"]${escapedKey}['"]\\s*:\\s*['"]${zhValue}['"]`),
-        `${key} must not carry the Chinese label in en.ts �?translate it`,
+        `${key} must not carry the Chinese label in en.ts — translate it`,
       );
     }
   });

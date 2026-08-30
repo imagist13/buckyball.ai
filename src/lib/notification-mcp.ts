@@ -1,5 +1,5 @@
 /**
- * codepilot-notify MCP �?in-process MCP server for notifications and scheduled tasks.
+ * codepilot-notify MCP — in-process MCP server for notifications and scheduled tasks.
  *
  * Provides up to 5 tools:
  * - codepilot_notify: Send an immediate notification
@@ -10,7 +10,7 @@
  *
  * Globally registered for ClaudeCode SDK / Native callers (no keyword gating).
  *
- * `ctx.excludeTools` filters individual tools at construction time �?used by
+ * `ctx.excludeTools` filters individual tools at construction time — used by
  * the Codex `codepilot_tasks` route to keep `codepilot_hatch_buddy` off Codex's
  * tool surface (the capability matrix says `assistant_buddy = perception_only`
  * on Codex Account; exposing the tool there without an explicit smoke would
@@ -26,27 +26,34 @@ function getBaseUrl(): string {
   return `http://localhost:${port}`;
 }
 
-export const NOTIFICATION_MCP_SYSTEM_PROMPT = `## 通知与定时任�?
+export const NOTIFICATION_MCP_SYSTEM_PROMPT = `## 通知与定时任务
+
 你可以发送通知和创建定时任务：
 
-- codepilot_notify: 立即发送通知给用户（支持系统通知和应用内提示�?- codepilot_schedule_task: 创建定时任务（支�?cron 表达式、固定间隔、一次性定时）
-- codepilot_list_tasks: 查看已有的定时任�?- codepilot_cancel_task: 取消定时任务
+- codepilot_notify: 立即发送通知给用户（支持系统通知和应用内提示）
+- codepilot_schedule_task: 创建定时任务（支持 cron 表达式、固定间隔、一次性定时）
+- codepilot_list_tasks: 查看已有的定时任务
+- codepilot_cancel_task: 取消定时任务
 - codepilot_hatch_buddy: 孵化或命名用户的助理伙伴
 
-使用场景�?- 用户�?提醒�?.."�?X 分钟�?.." �?�?codepilot_schedule_task（schedule_type: "once"�?- 用户�?每天/每小�?.." �?�?codepilot_schedule_task（schedule_type: "cron" �?"interval"�?- 任务完成需要告知用�?�?�?codepilot_notify
-- 用户�?有哪些定时任�? �?�?codepilot_list_tasks
-- 用户�?孵化"�?领养"�?hatch" �?�?codepilot_hatch_buddy
-- 用户给伙伴起名字 �?�?codepilot_hatch_buddy(buddyName: 名字)`;
+使用场景：
+- 用户说"提醒我..."或"X 分钟后..." → 用 codepilot_schedule_task（schedule_type: "once"）
+- 用户说"每天/每小时..." → 用 codepilot_schedule_task（schedule_type: "cron" 或 "interval"）
+- 任务完成需要告知用户 → 用 codepilot_notify
+- 用户问"有哪些定时任务" → 用 codepilot_list_tasks
+- 用户说"孵化"、"领养"、"hatch" → 用 codepilot_hatch_buddy
+- 用户给伙伴起名字 → 用 codepilot_hatch_buddy(buddyName: 名字)`;
 
 /**
- * Phase 3 Step 4 follow-up �?hidden run context.
+ * Phase 3 Step 4 follow-up — hidden run context.
  *
  * `codepilot_schedule_task` USED to ship the model's literal args
  * straight to /api/tasks/schedule, which meant a task created by the
  * AI in chat session A had no way to remember which working
  * directory or which originating chat it belonged to. When the
  * scheduler later fired the task, the runner had only the prompt +
- * schedule data and fell back to whatever the global default was �? * so two tasks created from two different projects both ended up
+ * schedule data and fell back to whatever the global default was —
+ * so two tasks created from two different projects both ended up
  * writing into a shared "latest assistant" session, even though they
  * structurally were per-project work.
  *
@@ -56,7 +63,7 @@ export const NOTIFICATION_MCP_SYSTEM_PROMPT = `## 通知与定时任�?
  * resolvedWorkingDirectory.path). The schedule_task tool's execute
  * closure then injects these as `origin_session_id` and
  * `working_directory` into the POST body. The model can't override
- * them �?they're read from the closure, not the model's params.
+ * them — they're read from the closure, not the model's params.
  */
 export interface NotificationMcpContext {
   /** Originating chat_session.id for tasks created via codepilot_schedule_task. */
@@ -64,7 +71,7 @@ export interface NotificationMcpContext {
   /** Originating working directory (resolved on the streamClaude side). */
   workingDirectory?: string;
   /**
-   * Optional allowlist exclusion �?tool names listed here are NOT registered on
+   * Optional allowlist exclusion — tool names listed here are NOT registered on
    * the returned MCP server. Used by the Codex `codepilot_tasks` route to keep
    * `codepilot_hatch_buddy` (assistant_buddy domain, perception_only on Codex
    * Account in the matrix) off Codex's tool surface.
@@ -102,17 +109,17 @@ export function createNotificationMcpServer(ctx: NotificationMcpContext = {}) {
       tool(
         'codepilot_schedule_task',
         'Create a scheduled task. Pick `kind` based on user intent: ' +
-          '`reminder` for natural-language reminders (e.g. "remind me to drink water in 5 minutes" �?' +
+          '`reminder` for natural-language reminders (e.g. "remind me to drink water in 5 minutes" — ' +
           'shows a notification with the prompt as body, NEVER calls a model); `ai_task` for ' +
           'workflows where an AI should run on schedule (e.g. "every Monday review last week\'s commits" ' +
-          '�?feeds the prompt to the configured provider). Supports cron / interval / once schedules.',
+          '— feeds the prompt to the configured provider). Supports cron / interval / once schedules.',
         {
           name: z.string().describe('Task name (e.g. "Drink water reminder")'),
           prompt: z.string().describe(
             'For kind=reminder: notification body the user will see. ' +
             'For kind=ai_task: instruction handed to the model.',
           ),
-          // Phase 3 Step 3 �?kind required so reminders bypass the AI
+          // Phase 3 Step 3 — kind required so reminders bypass the AI
           // path. Same schema as the builtin-tool variant in
           // src/lib/builtin-tools/notification.ts; tests grep both files
           // for parity.
@@ -128,7 +135,7 @@ export function createNotificationMcpServer(ctx: NotificationMcpContext = {}) {
         async ({ name, prompt, kind, schedule_type, schedule_value, priority, notify_on_complete, durable }) => {
           try {
             // Session-only tasks: stored in memory, not persisted to DB.
-            // v4 fix #1 �?`kind` MUST land on the in-memory literal too.
+            // v4 fix #1 — `kind` MUST land on the in-memory literal too.
             // Without this, the durable=false path bypasses the API
             // schedule route's kind validation and would default to
             // ai_task in the scheduler dispatch (which then tries to
@@ -167,7 +174,7 @@ export function createNotificationMcpServer(ctx: NotificationMcpContext = {}) {
                 priority: priority || 'normal',
                 notify_on_complete: notify_on_complete ? 1 : 0,
                 permanent: 0,
-                // Hidden run context �?even non-durable session tasks
+                // Hidden run context — even non-durable session tasks
                 // need origin so the runner can scope execution to the
                 // right project's working dir + provider config.
                 origin_session_id: ctx.sessionId,
@@ -190,7 +197,7 @@ export function createNotificationMcpServer(ctx: NotificationMcpContext = {}) {
                 schedule_value,
                 priority,
                 notify_on_complete: notify_on_complete ? 1 : 0,
-                // Hidden run context �?model can't override; closure
+                // Hidden run context — model can't override; closure
                 // value wins. Empty when the tool was registered
                 // without context (legacy callers / unit tests).
                 origin_session_id: ctx.sessionId,
@@ -289,7 +296,7 @@ export function createNotificationMcpServer(ctx: NotificationMcpContext = {}) {
         },
       ),
 
-      // Tool 5: Hatch / name buddy �?gated by ctx.excludeTools so the
+      // Tool 5: Hatch / name buddy — gated by ctx.excludeTools so the
       // Codex `codepilot_tasks` route can keep buddy off Codex's tool
       // surface while ClaudeCode SDK / Native callers still get it.
       ...(ctx.excludeTools?.includes('codepilot_hatch_buddy') ? [] : [createHatchBuddyTool()]),

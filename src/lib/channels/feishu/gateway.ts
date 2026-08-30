@@ -1,8 +1,8 @@
 /**
- * Feishu WebSocket gateway â€?manages lark SDK client and WS connection lifecycle.
+ * Feishu WebSocket gateway â€” manages lark SDK client and WS connection lifecycle.
  *
  * Key design decisions:
- * - WSClient mode handles auth internally â€?no encryptKey/verificationToken needed.
+ * - WSClient mode handles auth internally â€” no encryptKey/verificationToken needed.
  * - Client and WSClient receive the resolved SDK domain (Feishu vs Lark).
  * - card.action.trigger handler guarantees a valid response within 3 seconds,
  *   regardless of what the upper-layer handler does. Heavy logic is fire-and-forget.
@@ -29,7 +29,7 @@ const FALLBACK_TOAST = {
 /**
  * Card action callback handler type.
  * Receives the raw event data and returns a toast/card response object.
- * May also return void/undefined â€?gateway will fill in a default toast.
+ * May also return void/undefined â€” gateway will fill in a default toast.
  */
 export type CardActionHandler = (data: unknown) => Promise<unknown>;
 
@@ -44,7 +44,7 @@ export class FeishuGateway {
 
   constructor(config: FeishuConfig) {
     this.config = config;
-    // WSClient mode doesn't need encryptKey/verificationToken â€?pass empty strings.
+    // WSClient mode doesn't need encryptKey/verificationToken â€” pass empty strings.
     this.eventDispatcher = new lark.EventDispatcher({
       encryptKey: '',
       verificationToken: '',
@@ -106,7 +106,7 @@ export class FeishuGateway {
     const handler = this.cardActionHandler;
     if (!handler) return FALLBACK_TOAST;
 
-    const TIMEOUT_MS = 2500; // 2.5s â€?leave 500ms margin for SDK overhead
+    const TIMEOUT_MS = 2500; // 2.5s â€” leave 500ms margin for SDK overhead
 
     try {
       const result = await Promise.race([
@@ -117,7 +117,7 @@ export class FeishuGateway {
       // Handler resolved with a valid response
       if (result && typeof result === 'object') return result;
 
-      // Handler returned void/undefined or timed out â€?use fallback
+      // Handler returned void/undefined or timed out â€” use fallback
       return FALLBACK_TOAST;
     } catch (err) {
       console.error(LOG_TAG, 'Card action handler error:', err);
@@ -182,7 +182,7 @@ export class FeishuGateway {
     this.running = false;
     // WSClient.close({ force: true }) cancels ping + reconnect timers, removes
     // all listeners, and terminates the underlying WebSocket. Without this,
-    // the old connection stayed alive after stop() â€?a problem during bridge
+    // the old connection stayed alive after stop() â€” a problem during bridge
     // restart or feishu "rebind" flows where the same app_id/secret got a
     // fresh WSClient while the old one kept receiving events, causing
     // duplicate message/permission card deliveries.

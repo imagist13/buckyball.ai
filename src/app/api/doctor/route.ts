@@ -5,8 +5,8 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/doctor â€?run diagnostic probes.
- * ?live=true â€?also run the live probe (spawns CLI, takes up to 15s).
+ * GET /api/doctor â€” run diagnostic probes.
+ * ?live=true â€” also run the live probe (spawns CLI, takes up to 15s).
  * Without ?live, only runs fast static probes (~1s).
  */
 export async function GET(request: NextRequest) {

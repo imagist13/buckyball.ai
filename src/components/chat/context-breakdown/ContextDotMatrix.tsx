@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * Phase 6 Phase 2b â€?dot-matrix main bar for the chat Context popover.
+ * Phase 6 Phase 2b â€” dot-matrix main bar for the chat Context popover.
  *
  * Renders 100 cells (2 rows Ã— 50) representing the breakdown by category.
  * Each cell is one of:
  *   - colored fill: a category's allocated share of the context window
  *     (background-color comes from --context-dot-{kebab-kind} in globals.css)
  *   - dashed outline + transparent fill: pending share (files_attachments /
- *     pending_next_turn) â€?"what would join the next turn"
+ *     pending_next_turn) â€” "what would join the next turn"
  *   - muted empty fill: remaining capacity (only when contextWindow known)
  *
  * Cell allocation rules:
@@ -20,7 +20,7 @@
  *   - Pending cells render after the used cells (visually distinct via
  *     dashed border) but before the empty cells
  *
- * Sub-component of ContextUsageIndicator / RunCockpitPopoverContent â€?not a
+ * Sub-component of ContextUsageIndicator / RunCockpitPopoverContent â€” not a
  * standalone mount surface.
  */
 
@@ -58,16 +58,16 @@ export function computeAllocations(
 
   // Denominator decides what one cell represents.
   // When contextWindow is known: 1 cell = contextWindow / cellCount tokens.
-  // When UNKNOWN: both modes distribute by used + pending â€?a composition
+  // When UNKNOWN: both modes distribute by used + pending â€” a composition
   // view (relative kind sizes), NOT a capacity %.
   //
   // v0.56.x #632 follow-up: the old mini-bar (minCellsPerKind=0) fell back to
   // a typical-window constant (~200k) so it could draw a "believable rough %".
-  // But that fabricated a capacity the upstream never reported â€?the trigger
+  // But that fabricated a capacity the upstream never reported â€” the trigger
   // still implied "used / remaining" against a guess. Removed. RunCockpit now
   // HIDES the mini-bar entirely when the window is untrusted (showing only the
   // absolute used-token text), so in practice this unknown branch only serves
-  // the popover's composition view â€?no fabricated denominator anywhere.
+  // the popover's composition view â€” no fabricated denominator anywhere.
   const pendingTotal = breakdown.parts
     .filter((p) => PENDING_SET.has(p.kind))
     .reduce((s, p) => s + p.tokens, 0);
@@ -83,10 +83,10 @@ export function computeAllocations(
   let totalAllocated = 0;
 
   // Allocation strategy depends on minCellsPerKind:
-  //   1 â€?popover (default): every non-zero category surfaces at least 1
+  //   1 â€” popover (default): every non-zero category surfaces at least 1
   //       cell, even when its share rounds to 0. Use Math.max(1, ceil)
   //       so 100-cell main bar shows every visible category.
-  //   0 â€?mini-bar (10-cell trigger): no minimum. Tiny categories that
+  //   0 â€” mini-bar (10-cell trigger): no minimum. Tiny categories that
   //       round below 0.5 disappear; otherwise round to nearest.
   //       Without this, 5 categories each holding 2% of context would
   //       force 5 cells = 50% mini-bar fill at ~10% real usage.
@@ -136,9 +136,9 @@ export function computeAllocations(
   // and total used > 0 but everything rounds below 0.5, the mini-bar ends
   // up completely empty even though the user IS using context. Boost the
   // largest category to 1 cell so "some usage exists" is visible.
-  // Example: Codex at 1% real usage on 10-cell mini-bar â†?round â†?0 cells
-  // â†?confusing "I just sent a message but bar is empty". With this boost,
-  // the largest non-zero category becomes 1 cell â€?small but visible.
+  // Example: Codex at 1% real usage on 10-cell mini-bar â†’ round â†’ 0 cells
+  // â†’ confusing "I just sent a message but bar is empty". With this boost,
+  // the largest non-zero category becomes 1 cell â€” small but visible.
   if (
     minCellsPerKind === 0
     && totalAllocated === 0
@@ -168,8 +168,8 @@ export interface ContextDotMatrixProps {
   /** Total number of cells. Default 100 (2 rows Ã— 50 columns). */
   cellCount?: number;
   /**
-   * Row count. Default 2 â†?100 cells lays out as 50 columns Ã— 2 rows.
-   * Phase 6 (2026-05-19): cells flow column-major â€?the first column
+   * Row count. Default 2 â†’ 100 cells lays out as 50 columns Ã— 2 rows.
+   * Phase 6 (2026-05-19): cells flow column-major â€” the first column
    * gets [row1, row2], then column 2 gets [row1, row2], etc. That way
    * "used" cells light up column-by-column from left to right instead
    * of filling all of row 1 before any of row 2.
@@ -179,7 +179,7 @@ export interface ContextDotMatrixProps {
    * Minimum cells per non-zero category.
    *   - 1 (default, popover): every visible category gets at least 1 cell
    *     so the breakdown legend matches the bar one-to-one.
-   *   - 0 (mini-bar / trigger): no minimum â€?tiny categories that round
+   *   - 0 (mini-bar / trigger): no minimum â€” tiny categories that round
    *     below 0.5 disappear. Required for 10-cell trigger so 5 tiny
    *     categories don't each force 1 cell and overshoot real usage.
    *

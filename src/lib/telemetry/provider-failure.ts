@@ -83,8 +83,8 @@ export function reportProviderFailure(
       Sentry.withScope((scope) => {
         scope.setTag('error.category', description.category);
         scope.setTag('error.outcome', description.outcome);
-        scope.setTag('error.runtime', 'bbagent');
-        scope.setTag('runtime.id', 'bbagent');
+        scope.setTag('error.runtime', 'codepilot_runtime');
+        scope.setTag('runtime.id', 'codepilot_runtime');
         scope.setTag('provider.protocol', protocol);
         scope.setTag('provider.class', classification);
         scope.setTag('status.class', statusClass(description.statusCode));
@@ -104,7 +104,7 @@ export function reportProviderFailure(
           scope.setFingerprint(buildNormalizedFingerprint({
             category: description.category,
             layer: 'next_server',
-            runtimeId: 'bbagent',
+            runtimeId: 'codepilot_runtime',
             providerProtocol: protocol,
             providerClass: classification,
             statusCode: description.statusCode,

@@ -34,7 +34,7 @@ export interface SubagentRunView {
   workflowId?: string;
   taskKey?: string;
   dependencyTaskKeys: string[];
-  runtime?: 'bbagent' | 'claude_code' | 'codex_runtime';
+  runtime?: 'codepilot_runtime' | 'claude_code' | 'codex_runtime';
   status: SubagentRunStatus;
   phase: SubagentRunPhase;
   dispatchState: SubagentDispatchState;
@@ -289,7 +289,7 @@ function parseNativeResult(result: string | undefined): {
       model: statusResult.metadata.model,
       effectiveModel: statusResult.metadata.effectiveModel,
       result: statusResult.body,
-      isNative: statusResult.metadata.runtime === 'bbagent',
+      isNative: statusResult.metadata.runtime === 'codepilot_runtime',
       status: statusResult.metadata.status,
       phase: statusResult.metadata.phase,
       taskId: statusResult.metadata.taskId,
@@ -341,7 +341,7 @@ function deriveStatus(
   // done. Completion is updated later from task_notification on the same id.
   if (isAsyncSubagentLaunchResult(result)) return 'running';
   if (/SUBAGENT_CANCELLED|cancelled|canceled/i.test(result)) return 'cancelled';
-  // Managed routes always return buckyball.ai's structured terminal envelope.
+  // Managed routes always return CodePilot's structured terminal envelope.
   // A plain tool result is therefore not proof that the child finished; it is
   // most commonly a launch/transport receipt. Fail closed as running instead
   // of reviving the old "any tool_result = completed" heuristic.
@@ -439,7 +439,7 @@ function inferRuntime(name: string, nativeResult: boolean): SubagentRunView['run
   if (lower.endsWith('__codepilot_spawn_subagent') || lower === 'codepilot_spawn_subagent') {
     return 'claude_code';
   }
-  if (nativeResult) return 'bbagent';
+  if (nativeResult) return 'codepilot_runtime';
   // Agent / Task are SDK names as well as the legacy Native tool name. When
   // the result lacks a trustworthy runtime breadcrumb, do not invent one.
   return undefined;

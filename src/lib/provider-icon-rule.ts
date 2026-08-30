@@ -1,16 +1,16 @@
 /**
- * Brand-icon resolver â€?pure URL/name â†?icon-key matcher.
+ * Brand-icon resolver â€” pure URL/name â†’ icon-key matcher.
  *
  * Lives outside `provider-presets.tsx` so the rule is unit-testable without
- * React. The `.tsx` consumer maps `ProviderIconKey` â†?React component via a
+ * React. The `.tsx` consumer maps `ProviderIconKey` â†’ React component via a
  * static lookup table; this file owns the matching logic.
  *
- * Rule order matters â€?first match wins. When adding a new vendor with a
+ * Rule order matters â€” first match wins. When adding a new vendor with a
  * shared host fragment (e.g. `token-plan` appears in both Bailian Token
  * Plan AND Xiaomi MiMo Token Plan hosts), keep the more specific vendor
  * higher up OR scope its match to a brand-unique fragment (`maas.aliyuncs.com`
  * for Bailian, `xiaomimimo` for Xiaomi). Don't introduce a generic
- * `token-plan` match â€?it would steal icons across vendors.
+ * `token-plan` match â€” it would steal icons across vendors.
  */
 
 export type ProviderIconKey =
@@ -39,12 +39,12 @@ export function getProviderIconKey(name: string, baseUrl: string): ProviderIconK
   const url = baseUrl.toLowerCase();
 
   if (lower.includes("openrouter")) return "openrouter";
-  // OpenCode Go: the provider name carries a protocol suffix â€?"OpenCode Go
+  // OpenCode Go: the provider name carries a protocol suffix â€” "OpenCode Go
   // (OpenAI)" / "(Anthropic)". Match BEFORE the openai / anthropic name
   // matchers below, which would otherwise steal the wrong brand logo
   // (OpenCode brand icon added in @lobehub/icons 4.9.0).
   if (url.includes("opencode.ai") || lower.includes("opencode")) return "opencode";
-  // ClinePass â€?Cline brand icon. Scoped to brand-unique fragments
+  // ClinePass â€” Cline brand icon. Scoped to brand-unique fragments
   // (`cline.bot` host / `clinepass` name) to avoid stealing on "client" etc.
   if (url.includes("cline.bot") || lower.includes("clinepass")) return "cline";
   if (
@@ -67,7 +67,7 @@ export function getProviderIconKey(name: string, baseUrl: string): ProviderIconK
     lower.includes("è±†åŒ…")
   )
     return "volcengine";
-  // Aliyun-only host fragments â€?must NOT include a bare `token-plan`
+  // Aliyun-only host fragments â€” must NOT include a bare `token-plan`
   // match: Xiaomi MiMo Token Plan host is `token-plan-cn.xiaomimimo.com`
   // and would steal the Bailian icon if we matched on `token-plan` alone.
   // `maas.aliyuncs.com` already covers Bailian Token Plan

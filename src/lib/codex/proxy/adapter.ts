@@ -1,5 +1,5 @@
 /**
- * Phase 5b �?Codex Responses proxy entry point.
+ * Phase 5b — Codex Responses proxy entry point.
  *
  * The route file (`/api/codex/proxy/v1/responses`) calls
  * `handleProxyRequest` with the parsed request body, the target
@@ -14,13 +14,13 @@
  *
  * Phase 5b shipped a single `createUnifiedAdapter` implementation that
  * serves the CodePilot families (OpenAI-compatible, xAI Responses,
- * Anthropic-compatible / ClaudeCode-compatible, CodePlan / 套餐�?. The wire-
+ * Anthropic-compatible / ClaudeCode-compatible, CodePlan / 套餐型). The wire-
  * format divergence between families lives INSIDE ai-sdk's per-tier
  * SDK selection (createAnthropic / createOpenAI / claude-code-compat
- * / etc.), so the proxy doesn't need a per-family translator �?the
+ * / etc.), so the proxy doesn't need a per-family translator — the
  * registry below maps every family-name slot to the same adapter.
  * `unknown` is the only tier that stays gated (the proxy can't infer
- * the wire format without more info �?it surfaces as
+ * the wire format without more info — it surfaces as
  * `adapter_not_implemented`).
  *
  * Adapter contract:
@@ -56,7 +56,7 @@ import type {
 
 /**
  * Virtual providers that DON'T live in the `api_providers` table but
- * DO surface under `/api/providers/models?runtime=codex_runtime` �?the
+ * DO surface under `/api/providers/models?runtime=codex_runtime` — the
  * proxy must therefore resolve them by id WITHOUT a DB lookup.
  *
  *   openai-oauth   ChatGPT OAuth login (Codex API). Wire format is
@@ -89,7 +89,7 @@ interface VirtualProviderEntry {
   compat: ProviderRuntimeCompat;
   protocol?: Protocol;
   /** When true, this id should never have been routed through the
-   *  proxy at all �?surface a clear routing-bug error. */
+   *  proxy at all — surface a clear routing-bug error. */
   routingBug?: true;
 }
 
@@ -136,7 +136,7 @@ export function getProxyVirtualProviderMetadata(
  *   - a `kind: 'json'` result with a complete Responses object
  *   - a `kind: 'error'` result the caller maps to HTTP status.
  *
- * Adapters MUST NOT throw �?wrap any internal failure via
+ * Adapters MUST NOT throw — wrap any internal failure via
  * `classifyUpstreamError` so Codex's reader sees a structured error.
  */
 export type ResponsesAdapter = (
@@ -148,9 +148,9 @@ export type ResponsesAdapter = (
  * Adapter registry. Sub-commits replace the `notImplementedAdapter`
  * entries with real implementations:
  *
- *   openai_compatible    �?./adapters/openai-compat.ts
- *   anthropic_compatible �?./adapters/anthropic-compat.ts
- *   codeplan             �?./adapters/codeplan.ts
+ *   openai_compatible    → ./adapters/openai-compat.ts
+ *   anthropic_compatible → ./adapters/anthropic-compat.ts
+ *   codeplan             → ./adapters/codeplan.ts
  *
  * `native` should never appear in dispatch (codex_account routes
  * through Codex's own app-server, media_only doesn't reach chat).
@@ -166,7 +166,7 @@ const ADAPTERS: Record<AdapterFamily, ResponsesAdapter> = {
   codeplan: createUnifiedAdapter('codeplan'),
   native: async () => makeErrorResult(
     'internal_error',
-    'Provider routed to the Codex proxy but its compat tier is native (Codex Account / media-only). This is a routing bug �?the provider should not have been injected into Codex thread/start config.',
+    'Provider routed to the Codex proxy but its compat tier is native (Codex Account / media-only). This is a routing bug — the provider should not have been injected into Codex thread/start config.',
   ),
 };
 
@@ -193,14 +193,14 @@ export async function handleProxyRequest(
   if (!input.targetProviderId) {
     return makeErrorResult(
       'provider_not_targeted',
-      'Codex proxy invoked without the x-codepilot-target-provider header. The runtime config injection should set this �?check `buildCodexProviderProxyInjection` wiring.',
+      'Codex proxy invoked without the x-codepilot-target-provider header. The runtime config injection should set this — check `buildCodexProviderProxyInjection` wiring.',
     );
   }
 
   // 2. Identify the provider. The API route exposes BOTH DB-backed
   //    providers AND a small set of virtual providers (openai-oauth,
   //    xai-oauth, codex_account) under `runtime=codex_runtime`. The proxy must
-  //    resolve every id it surfaced �?otherwise the UI would show a
+  //    resolve every id it surfaced — otherwise the UI would show a
   //    provider, the user would pick it, and the send would fail
   //    here with provider_not_found. Virtual providers don't have an
   //    ApiProvider record; we carry their compat tier from the
@@ -214,7 +214,7 @@ export async function handleProxyRequest(
     if (virtual.routingBug) {
       return makeErrorResult(
         'internal_error',
-        `Virtual provider "${virtual.displayName}" reached the Codex proxy. This provider routes through Codex's own credentials, not through the codepilot_proxy injection �?CodexRuntime should call thread/start WITHOUT the proxy config for this provider.`,
+        `Virtual provider "${virtual.displayName}" reached the Codex proxy. This provider routes through Codex's own credentials, not through the codepilot_proxy injection — CodexRuntime should call thread/start WITHOUT the proxy config for this provider.`,
         { providerId: input.targetProviderId, compat: virtual.compat },
       );
     }
@@ -237,7 +237,7 @@ export async function handleProxyRequest(
   const status = ADAPTER_STATUS_BY_COMPAT[compat];
 
   // 3. Resolve via the canonical provider-resolver. Same call for
-  //    DB-backed AND virtual providers �?provider-resolver already
+  //    DB-backed AND virtual providers — provider-resolver already
   //    has dedicated branches for openai-oauth / xai-oauth / codex_account /
   //    env / DB ids. Passing the raw target id (not a derived field)
   //    is what lets the virtual paths kick in.
@@ -254,7 +254,7 @@ export async function handleProxyRequest(
   if (!resolved.hasCredentials) {
     return makeErrorResult(
       'credentials_missing',
-      `Provider "${providerName}" has no credentials configured. Add an API key in Settings �?服务�?or remove the model from Codex thread config.`,
+      `Provider "${providerName}" has no credentials configured. Add an API key in Settings → 服务商 or remove the model from Codex thread config.`,
       { providerId: input.targetProviderId, providerName, compat },
     );
   }
@@ -278,7 +278,7 @@ export async function handleProxyRequest(
   }
 
   // 6. Dispatch to the per-family adapter. Adapter is responsible
-  //    for never throwing �?but wrap defensively so a bug in
+  //    for never throwing — but wrap defensively so a bug in
   //    upstream code doesn't kill Codex's HTTP read loop.
   const adapter = ADAPTERS[family];
   try {
@@ -295,7 +295,7 @@ function buildPendingMessage(family: AdapterFamily, providerName: string): strin
   // tier (compat = 'unknown'). That tier still routes to the
   // `openai_compatible` family slot in the parity registry because
   // OpenAI-shape chat/completions is the most common third-party
-  // shape �?but until a user explicitly verifies the wire format, the
+  // shape — but until a user explicitly verifies the wire format, the
   // proxy refuses to guess and surfaces a clear "wire format
   // unidentified" message. Other families CANNOT reach this branch
   // (status='ready'); the switch arms below remain defensive in case
@@ -306,24 +306,24 @@ function buildPendingMessage(family: AdapterFamily, providerName: string): strin
     case 'anthropic_compatible':
       return `Codex provider proxy: "${providerName}" classifies as Anthropic-compatible but the adapter is currently disabled. Re-enable the adapter family or pick a different provider.`;
     case 'codeplan':
-      return `Codex provider proxy: "${providerName}" classifies as a CodePlan / 套餐�?brand but the adapter is currently disabled. Re-enable the adapter family or pick a different provider.`;
+      return `Codex provider proxy: "${providerName}" classifies as a CodePlan / 套餐型 brand but the adapter is currently disabled. Re-enable the adapter family or pick a different provider.`;
     case 'native':
       return `Provider "${providerName}" routes through Codex natively, not through the proxy.`;
   }
 }
 
 function makeNotImplementedAdapter(family: AdapterFamily): ResponsesAdapter {
-  // Should never actually run �?the status gate above short-circuits
+  // Should never actually run — the status gate above short-circuits
   // before reaching the adapter. Defensive fallback so a registry
   // edit that forgets to set status='ready' surfaces a clear message.
   return async () => makeErrorResult(
     'adapter_not_implemented',
-    `${family} adapter not yet registered. This is a wiring bug �?adapter status should have gated this call earlier.`,
+    `${family} adapter not yet registered. This is a wiring bug — adapter status should have gated this call earlier.`,
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Helpers �?exported for tests
+// Helpers — exported for tests
 // ─────────────────────────────────────────────────────────────────────
 
 /** Generate the response id Codex echoes back in completion events. */

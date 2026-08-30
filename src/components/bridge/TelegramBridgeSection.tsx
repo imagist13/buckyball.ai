@@ -35,10 +35,10 @@ export function TelegramBridgeSection() {
   } | null>(null);
   const { t } = useTranslation();
 
-  // Snapshot of last successful save â€?used to compute SaveButton dirty.
-  // botToken is masked as "***â€? by the server, so the snapshot stores
+  // Snapshot of last successful save â€” used to compute SaveButton dirty.
+  // botToken is masked as "***â€¦" by the server, so the snapshot stores
   // the masked form too; user typing a real token diverges from the mask
-  // â†?dirty=true.
+  // â†’ dirty=true.
   const [savedSnapshot, setSavedSnapshot] = useState({
     botToken: "",
     chatId: "",
@@ -85,7 +85,7 @@ export function TelegramBridgeSection() {
       if (res.ok) {
         setSettings((prev) => ({ ...prev, ...updates }));
         // Re-baseline snapshot from current form state, not from the
-        // `updates` payload â€?when the user kept the masked secret
+        // `updates` payload â€” when the user kept the masked secret
         // untouched, `updates.telegram_bot_token` is undefined, but
         // `botToken` still holds the mask the form is displaying. If
         // we baselined from `updates`, the snapshot would silently
@@ -106,10 +106,10 @@ export function TelegramBridgeSection() {
   const handleSaveCredentials = () => {
     const updates: Partial<TelegramBridgeSettings> = {};
     // Three-way token handling:
-    //   "***â€? (mask, untouched)  â†?omit (server keeps existing)
-    //   ""                        â†?send "" (explicit clear so the user
+    //   "***â€¦" (mask, untouched)  â†’ omit (server keeps existing)
+    //   ""                        â†’ send "" (explicit clear so the user
     //                                can remove a token via the UI)
-    //   anything else             â†?send as the new token value
+    //   anything else             â†’ send as the new token value
     if (botToken === "") {
       updates.telegram_bot_token = "";
     } else if (!botToken.startsWith("***")) {

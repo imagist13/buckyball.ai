@@ -1,5 +1,5 @@
 /**
- * Dashboard Store â€?file-based CRUD for per-project dashboard config.
+ * Dashboard Store â€” file-based CRUD for per-project dashboard config.
  * Storage: {projectDir}/.codepilot/dashboard/dashboard.json
  */
 

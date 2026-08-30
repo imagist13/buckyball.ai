@@ -14,7 +14,8 @@ describe('Preset Schema Validation', () => {
 
       it('has at least one default model (or is volcengine/ollama/openai-compatible)', () => {
         // openai-compatible is a generic third-party gateway: the user names
-        // their own model. Fabricating a default lineup would be fake data â€?        // same rationale as volcengine/ollama.
+        // their own model. Fabricating a default lineup would be fake data â€”
+        // same rationale as volcengine/ollama.
         if (preset.key === 'volcengine' || preset.key === 'ollama' || preset.key === 'openai-compatible') return;
         assert.ok(preset.defaultModels.length > 0, `Preset ${preset.key} expected at least one default model`);
       });
@@ -77,7 +78,7 @@ describe('Preset Schema Validation', () => {
     assert.ok(p, 'generic openai-compatible preset must exist');
     assert.equal(p!.protocol, 'openai-compatible');
     assert.equal(p!.authStyle, 'api_key');
-    assert.equal(p!.baseUrl, '', 'generic gateway has no fixed base URL â€?the user supplies it');
+    assert.equal(p!.baseUrl, '', 'generic gateway has no fixed base URL â€” the user supplies it');
     assert.equal(p!.defaultModels.length, 0, 'must not fabricate a model lineup for an arbitrary gateway');
     assert.ok(p!.fields.includes('base_url'), 'must expose base_url so the user can enter their endpoint');
     assert.ok(p!.fields.includes('model_names'), 'must expose model_names so the user can set their model');
@@ -87,7 +88,7 @@ describe('Preset Schema Validation', () => {
 });
 
 describe('toClaudeCodeEnv: env shape after CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST removal', () => {
-  // The flag was removed in the cc-switch credential bridge fix â€?SDK 0.2.62
+  // The flag was removed in the cc-switch credential bridge fix â€” SDK 0.2.62
   // does not implement this variable, so setting it was dead code. These
   // tests pin the current behavior so the flag doesn't get reintroduced
   // accidentally, and verify the core env injection still works correctly.
@@ -160,12 +161,13 @@ describe('toClaudeCodeEnv: env shape after CLAUDE_CODE_PROVIDER_MANAGED_BY_HOST 
   });
 });
 
-describe('getDefaultModelsForProvider â€?provider-catalog flow', () => {
+describe('getDefaultModelsForProvider â€” provider-catalog flow', () => {
   it('bedrock with empty baseUrl resolves to BEDROCK_VERTEX_DEFAULT_MODELS (Opus 4.6 alias, no xhigh)', () => {
     const models = getDefaultModelsForProvider('bedrock', '');
     const opus = models.find(m => m.modelId === 'opus');
     assert.ok(opus, 'bedrock catalog should include opus');
-    // Bedrock opus alias resolves to 4.6 upstream per official docs â€?    // label must not promise 4.7.
+    // Bedrock opus alias resolves to 4.6 upstream per official docs â€”
+    // label must not promise 4.7.
     assert.ok(
       !/4\.7/.test(opus.displayName),
       `bedrock opus display should not claim 4.7 (got "${opus.displayName}")`,
@@ -193,7 +195,7 @@ describe('getDefaultModelsForProvider â€?provider-catalog flow', () => {
     assert.equal(opus.upstreamModelId, undefined);
   });
 
-  it('anthropic protocol (unmatched baseUrl) returns alias-only catalog â€?no claude-opus-4-7 pin', () => {
+  it('anthropic protocol (unmatched baseUrl) returns alias-only catalog â€” no claude-opus-4-7 pin', () => {
     // Third-party proxies fall through to this branch. Pinning first-party
     // upstream here would break OpenRouter/LiteLLM/Ollama compatibility.
     const models = getDefaultModelsForProvider('anthropic', 'https://unknown-proxy.example/v1');
@@ -304,7 +306,7 @@ describe('getDefaultModelsForProvider â€?provider-catalog flow', () => {
     const hasImageModel = chatModels.some(m => /^gpt-image/i.test(m.modelId));
     assert.equal(hasImageModel, false, 'openai-compatible must not inherit GPT Image catalog');
 
-    // And the happy path â€?the same URL with protocol='openai-image' still
+    // And the happy path â€” the same URL with protocol='openai-image' still
     // resolves to GPT Image models.
     const imageModels = getDefaultModelsForProvider(
       'openai-image',
@@ -318,7 +320,7 @@ describe('getDefaultModelsForProvider â€?provider-catalog flow', () => {
 
   it('missing providerType with empty baseUrl stays alias-only (no accidental first-party promotion)', () => {
     // When provider_type is unknown or explicitly something else, the
-    // empty-baseUrl branch does NOT kick in â€?prevents, e.g., a third-
+    // empty-baseUrl branch does NOT kick in â€” prevents, e.g., a third-
     // party custom provider from being mis-labeled as first-party.
     const models = getDefaultModelsForProvider('anthropic', '');
     const opus = models.find(m => m.modelId === 'opus');

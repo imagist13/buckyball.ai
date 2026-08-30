@@ -5,12 +5,13 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/plugins/mcp/reconnect â€?Reconnect a specific MCP server.
+ * POST /api/plugins/mcp/reconnect â€” Reconnect a specific MCP server.
  *
  * Phase 2D.2 (2026-04-30): added pre-flight checks so a missing or
  * built-in server fails fast with an explicit reason instead of silently
  * delegating to mcp-connection-manager (which throws an opaque error
- * deep in the SDK). The underlying reconnect path is still preview â€? * see the UI badge â€?but at least we don't bury "unknown server" inside
+ * deep in the SDK). The underlying reconnect path is still preview â€”
+ * see the UI badge â€” but at least we don't bury "unknown server" inside
  * a 500.
  */
 export async function POST(request: NextRequest) {

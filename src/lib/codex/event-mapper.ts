@@ -1,5 +1,5 @@
 /**
- * Codex notification â?canonical event mapper.
+ * Codex notification → canonical event mapper.
  *
  * Phase 5 Phase 3 (2026-05-13) + review fix round 1 (same day).
  * Maps the wide Codex app-server notification surface into:
@@ -12,8 +12,8 @@
  *
  * Unknown methods fall through to `unknown_item` per the contract.
  *
- * Schema source of truth â?every method name in the switch below MUST
- * appear in `èµæ/codex/codex-rs/app-server-protocol/schema/typescript/ServerNotification.ts`.
+ * Schema source of truth — every method name in the switch below MUST
+ * appear in `资料/codex/codex-rs/app-server-protocol/schema/typescript/ServerNotification.ts`.
  * The `codex-method-names.test.ts` guardrail reads that file at test
  * time and fails the build if any name in this module isn't present.
  *
@@ -24,10 +24,10 @@
  *     and `params.item.command: string` (not `string[]`) per ThreadItem
  *     commandExecution variant.
  *   - `ThreadTokenUsageUpdatedNotification.params.tokenUsage.last.{inputTokens,
- *     outputTokens}` + `params.tokenUsage.modelContextWindow` â?a layered
+ *     outputTokens}` + `params.tokenUsage.modelContextWindow` — a layered
  *     shape, not flat.
  *   - Method names like `account/login/completed` /
- *     `account/rateLimits/updated` / `thread/status/changed` â?Codex
+ *     `account/rateLimits/updated` / `thread/status/changed` — Codex
  *     uses slash-separated namespaces, not camelCase.
  */
 
@@ -52,11 +52,11 @@ interface CodexMappingContext {
   sessionId: string;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Known Codex notification methods. Pinned to upstream ServerNotification
 // union; the codex-method-names.test.ts guardrail asserts this set is a
 // subset of the schema file at test time.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 const KNOWN_CODEX_METHODS = new Set<string>([
   // Run lifecycle
@@ -148,7 +148,7 @@ export function translateCodexNotification(
   const base = { runtimeId: 'codex_runtime' as const, sessionId: ctx.sessionId };
 
   switch (method) {
-    // âââ streaming text ââââââââââââââââââââââââââââââââââââââââââââ
+    // ─── streaming text ────────────────────────────────────────────
     // AgentMessageDeltaNotification = { threadId, turnId, itemId, delta }
     case 'item/agentMessage/delta': {
       const p = params as { delta?: string };
@@ -164,7 +164,7 @@ export function translateCodexNotification(
       return makeAssistantDelta(base, p.delta);
     }
 
-    // âââ item lifecycle ââââââââââââââââââââââââââââââââââââââââââââ
+    // ─── item lifecycle ────────────────────────────────────────────
     // ItemStartedNotification = { item: ThreadItem, threadId, turnId,
     //                             startedAtMs }
     // ThreadItem is a discriminated union; id and type live INSIDE
@@ -182,7 +182,7 @@ export function translateCodexNotification(
       return translateItemCompleted(p.item, base);
     }
 
-    // âââ token usage âââââââââââââââââââââââââââââââââââââââââââââââ
+    // ─── token usage ───────────────────────────────────────────────
     // ThreadTokenUsageUpdatedNotification = { threadId, turnId, tokenUsage }
     // ThreadTokenUsage = { total, last, modelContextWindow }
     // TokenUsageBreakdown = { totalTokens, inputTokens, cachedInputTokens,
@@ -204,15 +204,15 @@ export function translateCodexNotification(
       });
     }
 
-    // âââ turn lifecycle ââââââââââââââââââââââââââââââââââââââââââââ
+    // ─── turn lifecycle ────────────────────────────────────────────
     // TurnCompletedNotification = { threadId, turn: Turn }
     // Turn = { id, items, itemsView, status: TurnStatus,
     //         error: TurnError | null, startedAt, completedAt, durationMs }
     // TurnStatus = "completed" | "interrupted" | "failed" | "inProgress"
     // TurnError = { message, codexErrorInfo, additionalDetails }
     //
-    // Phase 5 review round 2 fix (2026-05-13) â?earlier revision read
-    // `params.status` (flat, doesn't exist) â?every turn appeared as
+    // Phase 5 review round 2 fix (2026-05-13) — earlier revision read
+    // `params.status` (flat, doesn't exist) → every turn appeared as
     // a successful end_turn, including failed and interrupted ones.
     case 'turn/completed': {
       const p = params as {
@@ -237,18 +237,19 @@ export function translateCodexNotification(
           message: diagnosis.code ? diagnosis.message : rawMessage,
         });
       }
-      // For completed / interrupted / inProgress (and missing status â?      // be conservative): preserve the real status as finishReason so
+      // For completed / interrupted / inProgress (and missing status —
+      // be conservative): preserve the real status as finishReason so
       // downstream can distinguish user-interrupt from natural end_turn.
       return makeRunCompleted(base, { finishReason: status ?? 'completed' });
     }
-    // ErrorNotification â?top-level Codex error channel. Schema (per
+    // ErrorNotification — top-level Codex error channel. Schema (per
     // codex-rs/.../v2/ErrorNotification.ts):
     //   { error: TurnError, willRetry, threadId, turnId }
     // TurnError: { message, codexErrorInfo, additionalDetails }
     // CodexErrorInfo: string variant (e.g. 'unauthorized') OR an
     //   object like `{ httpConnectionFailed: { httpStatusCode } }`.
     //
-    // Pre-5b smoke fix (2026-05-15) â?the previous reader looked for
+    // Pre-5b smoke fix (2026-05-15) — the previous reader looked for
     // `p.code` / `p.message` at the top level, which never matched the
     // real schema, so every Codex error surfaced as the bare string
     // "Codex error" with no context. We now read `p.error.message`
@@ -279,7 +280,7 @@ export function translateCodexNotification(
       if (!wasDiagnosed && additional && additional !== baseMessage) parts.push(additional);
       if (classification) parts.push(`(${classification})`);
 
-      // Phase 5b smoke round 6 (2026-05-18, user-driven) â?willRetry
+      // Phase 5b smoke round 6 (2026-05-18, user-driven) — willRetry
       // is non-terminal. Pre-fix this branch unconditionally emitted
       // `run_failed`, which the runtime wildcard handler closes the
       // stream on. Real Codex behaviour after `error willRetry=true`:
@@ -287,14 +288,14 @@ export function translateCodexNotification(
       // ("stream disconnected - retrying sampling request (n/5)").
       // CodePilot was prematurely closing on the first retry signal,
       // so the user saw "error + done" while Codex was still working
-      // â?and a subsequent `thread/resume` could trip the "config
+      // — and a subsequent `thread/resume` could trip the "config
       // overrides ignored for running thread" path.
       //
       // Fix: map willRetry=true to `unknown_item` (the canonical
       // fallback for adapter-side payloads that don't fit the main
       // event set; documented as MUST be rendered, never dropped).
       // sourceType='codex_retry' lets the UI render a passive
-      // "Reconnectingâ? hint. Only `willRetry !== true` (terminal
+      // "Reconnecting…" hint. Only `willRetry !== true` (terminal
       // error) keeps the old `run_failed` mapping, and the eventual
       // `turn/completed status=failed` still lands as `run_failed`.
       if (p.willRetry === true) {
@@ -329,7 +330,7 @@ export function translateCodexNotification(
       });
     }
 
-    // âââ file changes ââââââââââââââââââââââââââââââââââââââââââââââ
+    // ─── file changes ──────────────────────────────────────────────
     // FsChangedNotification = { watchId, changedPaths }
     case 'fs/changed': {
       const p = params as { changedPaths?: string[] };
@@ -337,7 +338,7 @@ export function translateCodexNotification(
       return makeFileChanged(base, { paths: p.changedPaths });
     }
 
-    // âââ transport-only / different channel ââââââââââââââââââââââââ
+    // ─── transport-only / different channel ────────────────────────
     case 'thread/started':
     case 'thread/closed':
     case 'thread/status/changed':
@@ -353,7 +354,7 @@ export function translateCodexNotification(
     case 'item/plan/delta':
     case 'item/reasoning/summaryPartAdded':
     case 'mcpServer/startupStatus/updated': {
-      // Phase 8 Phase 3 â?a failed MCP startup must remain diagnosable so a
+      // Phase 8 Phase 3 — a failed MCP startup must remain diagnosable so a
       // broken Memory / user MCP is explainable instead of looking like a
       // missing tool. Successful readiness, however, is internal lifecycle
       // noise: surfacing it through the generic status fallback exposes the
@@ -413,7 +414,7 @@ export function translateCodexNotification(
       return null;
 
     default:
-      // Unknown â?fallback per contract. Adapter MUST surface, never drop.
+      // Unknown → fallback per contract. Adapter MUST surface, never drop.
       return makeUnknownItem(base, {
         sourceType: `codex.${method}`,
         payload: params,
@@ -421,12 +422,12 @@ export function translateCodexNotification(
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// ThreadItem helpers â?minimal shape per upstream schema. We don't
-// import the full ThreadItem union from `èµæ/` to avoid coupling
+// ─────────────────────────────────────────────────────────────────────
+// ThreadItem helpers — minimal shape per upstream schema. We don't
+// import the full ThreadItem union from `资料/` to avoid coupling
 // production code to the vendored schema directory; this narrow shape
 // covers what we read.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface ThreadItemLike {
   type?: string;
@@ -477,12 +478,12 @@ interface ThreadItemLike {
  * to the chat / Run / Preview UI as a discrete event. Adapter emits
  * canonical events for these.
  *
- * Phase 5b smoke round 7 (2026-05-16) â?`imageGeneration` and
+ * Phase 5b smoke round 7 (2026-05-16) — `imageGeneration` and
  * `imageView` moved out of CHAT_ONLY_ITEM_TYPES into this set. They
  * have NO streaming delta channel (unlike agentMessage / plan /
  * reasoning), so `item/completed` is the ONLY surface where the
  * final image / saved path reaches the UI. Treating them as
- * chat-only silently dropped GPT-Image-2.0 results â?the user saw
+ * chat-only silently dropped GPT-Image-2.0 results — the user saw
  * "tool ran" but no image. Promoting to tool_started/tool_completed
  * lets the existing tool-card UI render them with the result payload.
  */
@@ -508,7 +509,7 @@ const TOOL_LIKE_ITEM_TYPES = new Set<string>([
  * so emitting a separate canonical event would just noise the
  * transcript. userMessage is what the user sent us (already on screen).
  *
- * Phase 5 review round 2 fix (2026-05-13) â?earlier revision dumped
+ * Phase 5 review round 2 fix (2026-05-13) — earlier revision dumped
  * these into `unknown_item`, which the runtime then surfaces as a
  * `status` SSE line. `useSSEStream.ts:229` displayed the raw JSON
  * as status text, so a normal Codex reply briefly showed
@@ -525,7 +526,7 @@ const CHAT_ONLY_ITEM_TYPES = new Set<string>([
   'enteredReviewMode',
   'exitedReviewMode',
   'contextCompaction',
-  // NOTE: imageGeneration / imageView are NOT chat-only â?they have no
+  // NOTE: imageGeneration / imageView are NOT chat-only — they have no
   // streaming delta channel and their final item/completed is the only
   // way the result reaches the user. See TOOL_LIKE_ITEM_TYPES above for
   // the round-7 (2026-05-16) fix.
@@ -571,7 +572,7 @@ function translateItemStarted(
     });
   }
   if (item.type === 'imageGeneration') {
-    // Phase 5b smoke round 7 (2026-05-16) â?emit a tool_started so the
+    // Phase 5b smoke round 7 (2026-05-16) — emit a tool_started so the
     // chat UI shows a card while the image generates. Input carries
     // only the metadata available at this point (revisedPrompt is
     // filled in by item/completed). The actual image result lands on
@@ -585,7 +586,7 @@ function translateItemStarted(
   if (item.type === 'imageView') {
     // imageView is Codex referencing an image FILE the user uploaded
     // or the model wants to surface. The path is the load-bearing
-    // piece â?chat side renders it through PreviewPanel / inline image.
+    // piece — chat side renders it through PreviewPanel / inline image.
     return makeToolStarted(base, {
       toolId: id,
       name: 'image_view',
@@ -599,14 +600,14 @@ function translateItemStarted(
       input: item,
     });
   }
-  // Known chat-only item types â?text / reasoning / review markers
+  // Known chat-only item types — text / reasoning / review markers
   // etc. carry no extra info in the lifecycle event; the actual
   // content streams through dedicated delta methods. Return null
   // instead of polluting the chat status surface.
   if (typeof item.type === 'string' && CHAT_ONLY_ITEM_TYPES.has(item.type)) {
     return null;
   }
-  // Truly unknown item type â?surface via fallback so we don't drop
+  // Truly unknown item type — surface via fallback so we don't drop
   // brand-new Codex item variants silently.
   if (typeof item.type === 'string') {
     return makeUnknownItem(base, {
@@ -635,11 +636,11 @@ function translateItemCompleted(
       error: errorIfAny,
     });
   }
-  // imageGeneration / imageView â?emit MediaBlock so the chat-side
+  // imageGeneration / imageView — emit MediaBlock so the chat-side
   // MediaPreview renders the image inline. Without this, the result
   // lived inside the JSON-stringified `output` and never reached
   // the SSE `tool_result.media` channel that `useSSEStream.ts`
-  // forwards to `MediaPreview` â?the silent-completion behaviour the
+  // forwards to `MediaPreview` — the silent-completion behaviour the
   // user saw on GPT-Image-2.0 even after round 7 surfaced the
   // tool_completed event.
   if (item.type === 'imageGeneration') {
@@ -664,7 +665,7 @@ function translateItemCompleted(
       toolId: id,
       output: item,
       // The outer status belongs to this collaboration action (wait,
-      // sendInput, closeAgentâ?, not to the child. Only anonymous/ambiguous
+      // sendInput, closeAgent…), not to the child. Only anonymous/ambiguous
       // collaboration activities surface that action failure as a tool error.
       // Identity-bound child status is derived separately from agentsStates.
       error: !isChildLifecycle && item.status === 'failed'
@@ -672,7 +673,7 @@ function translateItemCompleted(
         : undefined,
     });
   }
-  // mcpToolCall â?Phase 8 Phase 3. Surface the MCP tool error into the
+  // mcpToolCall — Phase 8 Phase 3. Surface the MCP tool error into the
   // canonical `error` field (not just buried in the output payload) so a
   // failed Memory / user MCP call renders as an errored tool card, the
   // same as a native command failure above.
@@ -681,17 +682,17 @@ function translateItemCompleted(
       item.error?.message ?? (item.status === 'failed' ? 'MCP tool call failed' : undefined);
     return makeToolCompleted(base, { toolId: id, output: item, error: errMsg });
   }
-  // For tool-like items â?generic output via item shape; runtime
+  // For tool-like items — generic output via item shape; runtime
   // adapter doesn't need to differentiate.
   if (item.type && TOOL_LIKE_ITEM_TYPES.has(item.type)) {
     return makeToolCompleted(base, { toolId: id, output: item });
   }
-  // Known chat-only types â?no completion event for the UI (the
+  // Known chat-only types — no completion event for the UI (the
   // content already arrived via the streaming delta path).
   if (typeof item.type === 'string' && CHAT_ONLY_ITEM_TYPES.has(item.type)) {
     return null;
   }
-  // Truly unknown item type â?fallback so new variants stay visible.
+  // Truly unknown item type — fallback so new variants stay visible.
   if (typeof item.type === 'string') {
     return makeUnknownItem(base, {
       sourceType: `codex.item/completed.${item.type}`,
@@ -736,11 +737,11 @@ function getSingleCodexCollabChildId(item: ThreadItemLike): string | undefined {
  * produces the canonical event the UI consumes.
  *
  * Subjects today:
- *   - `item/commandExecution/requestApproval` â?`Bash Â· <command>`
- *   - `item/fileChange/requestApproval`       â?`Patch`
- *   - `item/permissions/requestApproval`      â?`Permissions`
- *   - Legacy `execCommandApproval`            â?`Bash Â· <command>`
- *   - Legacy `applyPatchApproval`             â?`Patch Â· N files`
+ *   - `item/commandExecution/requestApproval` → `Bash · <command>`
+ *   - `item/fileChange/requestApproval`       → `Patch`
+ *   - `item/permissions/requestApproval`      → `Permissions`
+ *   - Legacy `execCommandApproval`            → `Bash · <command>`
+ *   - Legacy `applyPatchApproval`             → `Patch · N files`
  *
  * Future Codex approval kinds fall through to `permission_unavailable`
  * per the conservative-default contract.
@@ -772,7 +773,7 @@ export function translateCodexApproval(args: {
         ...base,
         toolName: 'Bash',
         toolInput: { command: p.command ?? '', cwd: p.cwd },
-        subject: p.command ? `Bash Â· ${p.command}` : 'Bash',
+        subject: p.command ? `Bash · ${p.command}` : 'Bash',
         details: detailLines.length > 0 ? detailLines.join('\n') : undefined,
         nativeRequestRef: {
           runtimeId: 'codex_runtime',
@@ -795,7 +796,7 @@ export function translateCodexApproval(args: {
         ...base,
         toolName: 'Bash',
         toolInput: { command: p.command ?? [], cwd: p.cwd },
-        subject: cmd ? `Bash Â· ${cmd}` : 'Bash',
+        subject: cmd ? `Bash · ${cmd}` : 'Bash',
         details: detailLines.length > 0 ? detailLines.join('\n') : undefined,
         nativeRequestRef: {
           runtimeId: 'codex_runtime',
@@ -806,7 +807,7 @@ export function translateCodexApproval(args: {
 
     // FileChangeRequestApprovalParams (current canonical):
     // { threadId, turnId, itemId, startedAtMs, reason?, grantRoot? }
-    // No fileChanges in the canonical shape â?the file list lives in
+    // No fileChanges in the canonical shape — the file list lives in
     // the corresponding `item/started` event with the same itemId.
     case 'item/fileChange/requestApproval': {
       const p = params as { reason?: string; itemId?: string };
@@ -829,7 +830,7 @@ export function translateCodexApproval(args: {
       const p = params as { fileChanges?: Record<string, unknown>; reason?: string };
       const files = p.fileChanges ? Object.keys(p.fileChanges) : [];
       const subject = files.length > 0
-        ? `Patch Â· ${files.length} file${files.length === 1 ? '' : 's'}`
+        ? `Patch · ${files.length} file${files.length === 1 ? '' : 's'}`
         : 'Patch';
       return {
         type: 'permission_request',
@@ -881,7 +882,7 @@ export function translateCodexApproval(args: {
     }
 
     default:
-      // Conservative default â?unknown approval kind. Adapter must
+      // Conservative default — unknown approval kind. Adapter must
       // emit unavailable rather than fall through to granted.
       return {
         type: 'permission_unavailable',
@@ -898,9 +899,9 @@ export const CODEX_KNOWN_NOTIFICATION_METHODS = Array.from(KNOWN_CODEX_METHODS);
  * Synthesize a canonical `file_changed` event from a fileChange item
  * payload at item/completed time.
  *
- * Phase 5 review round 3 (2026-05-13) â?earlier revision only
+ * Phase 5 review round 3 (2026-05-13) — earlier revision only
  * translated fs/changed notifications into file_changed. But fs/changed
- * only fires when buckyball.ai has explicitly subscribed via fs/watch,
+ * only fires when CodePilot has explicitly subscribed via fs/watch,
  * and ThreadItem.fileChange completions already carry the touched
  * paths inside `changes[]` (FileUpdateChange = { path, kind, diff }).
  * Without this synthesizer, Codex applying a patch via fileChange
@@ -909,7 +910,7 @@ export const CODEX_KNOWN_NOTIFICATION_METHODS = Array.from(KNOWN_CODEX_METHODS);
  *
  * The runtime emits BOTH `tool_completed` (so chat shows "fileChange
  * done") AND this `file_changed` event (so PreviewPanel quiet-
- * refreshes). Two events from one item is legitimate â?they serve
+ * refreshes). Two events from one item is legitimate — they serve
  * different downstream channels (chat UI vs preview dispatch).
  *
  * Returns null when params don't carry a fileChange item with
@@ -948,15 +949,15 @@ export function synthesizeFileChangedFromCompletedItem(
  * the suffix instead of appending an empty parenthesis.
  */
 /**
- * Phase 5b smoke round 8 (2026-05-16) â?derive a MediaBlock from a
+ * Phase 5b smoke round 8 (2026-05-16) — derive a MediaBlock from a
  * Codex `imageGeneration` item. Codex's schema (see
- * `èµæ/codex/codex-rs/app-server-protocol/schema/typescript/v2/ThreadItem.ts`):
+ * `资料/codex/codex-rs/app-server-protocol/schema/typescript/v2/ThreadItem.ts`):
  *
  *   { type: 'imageGeneration', id, status, revisedPrompt, result, savedPath? }
  *
  * `savedPath` is what Codex auto-saved to disk; `result` is the raw
  * base64 (only present when Codex didn't save automatically). Both
- * can be absent if the generation failed mid-flight â?in that case
+ * can be absent if the generation failed mid-flight — in that case
  * we return null and the chat-side falls back to the structured
  * `output` JSON, which at least surfaces "image generation finished"
  * without an image.
@@ -971,7 +972,8 @@ function buildImageGenerationMedia(item: ThreadItemLike): import('@/types').Medi
   if (!savedPath && !result) return null;
   const mimeType = savedPath ? mimeTypeFromPath(savedPath) ?? 'image/png' : 'image/png';
   // Capture the REAL generation context so the import layer can populate
-  // the library row with `prompt = revisedPrompt` + a real model id â?  // otherwise the gallery shows `prompt = filename` and the image is
+  // the library row with `prompt = revisedPrompt` + a real model id —
+  // otherwise the gallery shows `prompt = filename` and the image is
   // unsearchable / unidentifiable. (Codex protocol exposes `revisedPrompt`
   // but no model id on this item, so we tag with the fixed identifier
   // 'codex-image' that downstream UI / filters can recognize.)
@@ -992,7 +994,7 @@ function buildImageGenerationMedia(item: ThreadItemLike): import('@/types').Medi
 }
 
 /**
- * Phase 5b smoke round 8 (2026-05-16) â?derive a MediaBlock from a
+ * Phase 5b smoke round 8 (2026-05-16) — derive a MediaBlock from a
  * Codex `imageView` item. Schema:
  *
  *   { type: 'imageView', id, path: AbsolutePathBuf }

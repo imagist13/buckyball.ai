@@ -1,12 +1,16 @@
 /**
- * 稳定性审�?�?�?useSSEStream �?ref-proxy 必须转发
- * onSkillNudge / onContextCompressed / onFileChanged�? *
- * consumeSSEStream 解析这三个事件并调用回调，但 useSSEStream() �?proxied
- * 对象（callbacksRef 代理）此前漏了这三项 �?�?useSSEStream() 的调用方永远�? * 不到 skill-nudge 横幅 / 压缩提示 / Codex 文件变更刷新。三层验证：
- *   1) 行为钉：consumeSSEStream 对三事件确实派发到回调（解析层契约）�? *   2) 运行时钉：真正通过 useSSEStream().processStream / ref-proxy 驱动，三事件
- *      必须�?hook proxy 到达最�?callbacks（这是出问题的那一层——用 react-dom/server
+ * 稳定性审计 ② — useSSEStream 的 ref-proxy 必须转发
+ * onSkillNudge / onContextCompressed / onFileChanged。
+ *
+ * consumeSSEStream 解析这三个事件并调用回调，但 useSSEStream() 的 proxied
+ * 对象（callbacksRef 代理）此前漏了这三项 → 走 useSSEStream() 的调用方永远收
+ * 不到 skill-nudge 横幅 / 压缩提示 / Codex 文件变更刷新。三层验证：
+ *   1) 行为钉：consumeSSEStream 对三事件确实派发到回调（解析层契约）；
+ *   2) 运行时钉：真正通过 useSSEStream().processStream / ref-proxy 驱动，三事件
+ *      必须经 hook proxy 到达最新 callbacks（这是出问题的那一层——用 react-dom/server
  *      SSR 渲染一个探针组件捕获真实的 processStream 闭包，不绕过 proxy）；
- *   3) 源码钉：proxied 对象补齐三项转发（修复层，防无声回退）�? */
+ *   3) 源码钉：proxied 对象补齐三项转发（修复层，防无声回退）。
+ */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -67,7 +71,7 @@ function threeEventChunks(): string[] {
 /**
  * Render the useSSEStream() hook via react-dom/server SSR and capture the real
  * `processStream` closure (real useRef/useCallback, real ref-proxy). Calling the
- * captured function later does NOT re-enter React �?it just runs the proxy.
+ * captured function later does NOT re-enter React — it just runs the proxy.
  */
 function captureProcessStream(): ReturnType<typeof useSSEStream>['processStream'] {
   let captured: ReturnType<typeof useSSEStream>['processStream'] | null = null;
@@ -89,7 +93,7 @@ function captureProcessStream(): ReturnType<typeof useSSEStream>['processStream'
 }
 
 describe('consumeSSEStream 派发 skill_nudge / context_compressed / file_changed（②行为钉）', () => {
-  it('三事件都到达对应回调，不被丢�?, async () => {
+  it('三事件都到达对应回调，不被丢弃', async () => {
     const got = { nudge: 0, compressed: 0, files: [] as string[] };
     const callbacks: SSECallbacks = {
       ...noopCallbacks(),
@@ -105,8 +109,8 @@ describe('consumeSSEStream 派发 skill_nudge / context_compressed / file_change
 });
 
 // ── 运行时钉：真正走 useSSEStream().processStream / ref-proxy（②反例，对照漏转发前）──
-describe('useSSEStream() ref-proxy 真正转发三事件（②运行时钉，�?hook proxy 而非 consumeSSEStream�?, () => {
-  it('三事件通过 processStream / ref-proxy 到达最�?callbacks', async () => {
+describe('useSSEStream() ref-proxy 真正转发三事件（②运行时钉，经 hook proxy 而非 consumeSSEStream）', () => {
+  it('三事件通过 processStream / ref-proxy 到达最新 callbacks', async () => {
     const processStream = captureProcessStream();
     const got = { nudge: 0, compressed: 0, files: [] as string[] };
     const callbacks: SSECallbacks = {
@@ -115,13 +119,14 @@ describe('useSSEStream() ref-proxy 真正转发三事件（②运行时钉，�?
       onContextCompressed: (d) => { got.compressed = d.tokensSaved; },
       onFileChanged: (paths) => { got.files = paths; },
     };
-    // 修复�?proxied 漏了这三�?�?�?hook proxy 时它们被静默丢弃，下面三断言�?fail�?    await processStream(makeReader(threeEventChunks()), callbacks);
-    assert.equal(got.nudge, 8, 'onSkillNudge �?ref-proxy 到达（修复前漏转发→丢弃�?);
-    assert.equal(got.compressed, 1234, 'onContextCompressed �?ref-proxy 到达（修复前漏转发→丢弃�?);
-    assert.deepEqual(got.files, ['/x.ts', '/y.ts'], 'onFileChanged �?ref-proxy 到达（修复前漏转发→丢弃�?);
+    // 修复前 proxied 漏了这三项 → 走 hook proxy 时它们被静默丢弃，下面三断言全 fail。
+    await processStream(makeReader(threeEventChunks()), callbacks);
+    assert.equal(got.nudge, 8, 'onSkillNudge 经 ref-proxy 到达（修复前漏转发→丢弃）');
+    assert.equal(got.compressed, 1234, 'onContextCompressed 经 ref-proxy 到达（修复前漏转发→丢弃）');
+    assert.deepEqual(got.files, ['/x.ts', '/y.ts'], 'onFileChanged 经 ref-proxy 到达（修复前漏转发→丢弃）');
   });
 
-  it('ref 语义：proxy 转发到最近一次传入的 callbacks（证明确实经 ref-proxy，而非静�?consumeSSEStream�?, async () => {
+  it('ref 语义：proxy 转发到最近一次传入的 callbacks（证明确实经 ref-proxy，而非静态 consumeSSEStream）', async () => {
     const processStream = captureProcessStream();
     const stale = { nudge: -1 };
     const fresh = { nudge: -1 };
@@ -130,17 +135,18 @@ describe('useSSEStream() ref-proxy 真正转发三事件（②运行时钉，�?
       ...noopCallbacks(),
       onSkillNudge: (d) => { stale.nudge = d.step; },
     });
-    // 第二次用 fresh callbacks —�?同一�?processStream 闭包，ref 已更�?    await processStream(makeReader(threeEventChunks()), {
+    // 第二次用 fresh callbacks —— 同一个 processStream 闭包，ref 已更新
+    await processStream(makeReader(threeEventChunks()), {
       ...noopCallbacks(),
       onSkillNudge: (d) => { fresh.nudge = d.step; },
     });
-    assert.equal(stale.nudge, -1, '�?callbacks 不再收到事件（ref 已切换）');
-    assert.equal(fresh.nudge, 8, '最�?callbacks 收到事件（ref-proxy 生效�?);
+    assert.equal(stale.nudge, -1, '旧 callbacks 不再收到事件（ref 已切换）');
+    assert.equal(fresh.nudge, 8, '最新 callbacks 收到事件（ref-proxy 生效）');
   });
 });
 
 // ── 源码钉：proxied 对象补齐三项转发 ──
-describe('useSSEStream proxied 三转发（②源码钉，防回退�?, () => {
+describe('useSSEStream proxied 三转发（②源码钉，防回退）', () => {
   it('proxied 对象转发 onSkillNudge / onContextCompressed / onFileChanged', () => {
     const src = fs.readFileSync(path.resolve(__dirname, '../../hooks/useSSEStream.ts'), 'utf-8');
     const m = src.match(/const proxied: SSECallbacks = \{([\s\S]*?)\n {6}\};/);
@@ -149,7 +155,7 @@ describe('useSSEStream proxied 三转发（②源码钉，防回退�?, () => {
     for (const key of ['onSkillNudge', 'onContextCompressed', 'onFileChanged']) {
       assert.ok(
         new RegExp(`${key}:.*callbacksRef\\.current`).test(block),
-        `proxied 必须�?${key} 转发�?callbacksRef.current（否则该事件被静默丢弃）`,
+        `proxied 必须把 ${key} 转发到 callbacksRef.current（否则该事件被静默丢弃）`,
       );
     }
   });

@@ -3,17 +3,17 @@
  *
  * Single source of truth for OpenRouter candidate fetching across the two
  * routes that need it:
- *   - `POST /api/providers/[id]/search-models` â€?read-cache (force=false)
- *   - `POST /api/providers/[id]/validate-models` â€?force-refetch (force=true)
+ *   - `POST /api/providers/[id]/search-models` â€” read-cache (force=false)
+ *   - `POST /api/providers/[id]/validate-models` â€” force-refetch (force=true)
  *
  * Cache contract (per the OpenRouter exec plan):
  *   - 5-minute TTL keyed by `${provider.id}`
- *   - `force: false` (default) â†?cache hit within TTL returns immediately;
- *     miss or expired â†?fetch + write
- *   - `force: true` â†?bypass TTL, always fetch + write; reflects refresh
+ *   - `force: false` (default) â†’ cache hit within TTL returns immediately;
+ *     miss or expired â†’ fetch + write
+ *   - `force: true` â†’ bypass TTL, always fetch + write; reflects refresh
  *     button semantics ("user clicked refresh" must actually re-hit upstream)
  *
- * NOT exported as a public surface â€?every caller must go through one of
+ * NOT exported as a public surface â€” every caller must go through one of
  * the two routes above so the auth gate (`isOpenRouterProviderRecord`)
  * cannot be bypassed.
  */
@@ -79,7 +79,7 @@ interface OpenRouterModelsResponse {
 
 function normalizePricing(raw: { prompt?: string; completion?: string } | undefined): OpenRouterCandidate['pricing'] {
   if (!raw) return undefined;
-  // OpenRouter quotes pricing as per-token (string) â€?convert to per-million
+  // OpenRouter quotes pricing as per-token (string) â€” convert to per-million
   // floats so the UI can show "$3.00 / $15.00 per 1M". Drop the field if
   // either side is missing; partial numbers mislead more than they help.
   const prompt = raw.prompt ? Number.parseFloat(raw.prompt) * 1_000_000 : undefined;
@@ -97,7 +97,7 @@ async function fetchUpstream(provider: ApiProvider): Promise<OpenRouterCandidate
     throw new Error('OpenRouter provider has empty base_url');
   }
   // OpenRouter records exist in two shapes in real DBs:
-  //   - https://openrouter.ai/api      (preset default â€?missing /v1)
+  //   - https://openrouter.ai/api      (preset default â€” missing /v1)
   //   - https://openrouter.ai/api/v1   (legacy / OpenRouter's own docs example)
   // NaÃ¯vely concatenating `/v1/models` would produce `/api/v1/v1/models`
   // for the second shape and break legacy provider rows. Mirror the
@@ -126,7 +126,7 @@ async function fetchUpstream(provider: ApiProvider): Promise<OpenRouterCandidate
 
 /**
  * Get the OpenRouter catalog for a provider, honoring the cache TTL or a
- * forced refetch. Throws on upstream errors â€?callers are responsible for
+ * forced refetch. Throws on upstream errors â€” callers are responsible for
  * mapping to the appropriate HTTP response.
  */
 export async function getOpenRouterCatalog(

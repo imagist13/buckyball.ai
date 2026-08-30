@@ -1,15 +1,15 @@
 /**
- * Phase 5b smoke round 9 (2026-05-16) �?Codex media import bridge.
+ * Phase 5b smoke round 9 (2026-05-16) — Codex media import bridge.
  *
  * Pins the path that makes Codex `imageGeneration.savedPath` and
  * `imageView.path` actually renderable through `/api/media/serve`
  * without registering every view as a second durable Asset:
  *
- *   raw FS path (/tmp/foo.webp) �?materializeCodexEventMedia
- *   �?imageGeneration imports once; imageView reuses that Asset or stages
+ *   raw FS path (/tmp/foo.webp) → materializeCodexEventMedia
+ *   → imageGeneration imports once; imageView reuses that Asset or stages
  *     a content-addressed preview-only copy
- *   �?MediaBlock.localPath rewritten to a served path
- *   �?/api/media/serve?path=<imported> returns 200
+ *   → MediaBlock.localPath rewritten to a served path
+ *   → /api/media/serve?path=<imported> returns 200
  *
  * Pre-fix the mapper handed `MediaBlock.localPath` = raw Codex path
  * straight to the chat side. `/api/media/serve` allows ONLY paths
@@ -18,19 +18,19 @@
  * broken card.
  *
  * Tests cover:
- *   - savedPath outside the media dir �?imported, localPath rewritten,
+ *   - savedPath outside the media dir → imported, localPath rewritten,
  *     mediaId stamped, file actually copied to disk.
  *   - imageView.path is preview-only unless it can reuse a durable import.
  *   - repeated generation/view events produce one durable DB row.
- *   - localPath already inside the media dir �?pass through unchanged.
- *   - data-only block (no localPath) �?pass through unchanged.
- *   - source missing �?block dropped, console.warn, event still
+ *   - localPath already inside the media dir → pass through unchanged.
+ *   - data-only block (no localPath) → pass through unchanged.
+ *   - source missing → block dropped, console.warn, event still
  *     emitted (with the surviving blocks or media undefined).
  *   - Route-level integration: imported path is served 200 by the
  *     /api/media/serve route handler.
  */
 
-// CRITICAL �?this side-effect import MUST be first. It sets
+// CRITICAL — this side-effect import MUST be first. It sets
 // CLAUDE_GUI_DATA_DIR to a fresh test root BEFORE any @/lib import
 // chain triggers `src/lib/db.ts` module-load (which captures the env
 // var at module-load time). Without this, db.ts captures the user's
@@ -50,7 +50,7 @@ import type { RuntimeRunEvent } from '@/lib/runtime/contract';
 // `tempDir` now resolves to the SAME test root (which is the dataDir
 // db.ts captured). Tests that previously assumed a fresh dataDir per
 // test still get a fresh source-file subdir; the DB + media dir are
-// shared across tests in this file (intentionally �?distinct sessionIds
+// shared across tests in this file (intentionally — distinct sessionIds
 // keep rows separate, and a single shared DB is faster).
 const tempDir = CODEX_MEDIA_TEST_ROOT;
 
@@ -95,7 +95,7 @@ before(() => {
 after(() => {
   // Close the test-DB handle so the test root can be removed.
   try {
-    // Dynamic import �?closeDb may not exist on all branches.
+    // Dynamic import — closeDb may not exist on all branches.
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { closeDb } = require('../../lib/db');
     closeDb?.();
@@ -111,7 +111,7 @@ after(() => {
     assert.equal(
       after,
       realDbCodexRowsBefore,
-      `codex-media-import.test.ts leaked ${after - realDbCodexRowsBefore} provider='codex' rows into the REAL user DB at ${REAL_USER_DB_PATH}. Tech-debt #25 regressed �?investigate _codex-media-import-env.ts ordering / db.ts capture behavior.`,
+      `codex-media-import.test.ts leaked ${after - realDbCodexRowsBefore} provider='codex' rows into the REAL user DB at ${REAL_USER_DB_PATH}. Tech-debt #25 regressed — investigate _codex-media-import-env.ts ordering / db.ts capture behavior.`,
     );
   }
   // Best-effort cleanup of the shared test root.
@@ -141,10 +141,10 @@ function makeImageGenerationEvent(localPath: string): RuntimeRunEvent {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Foreign path �?imported + rewritten
+// Foreign path → imported + rewritten
 // ─────────────────────────────────────────────────────────────────────
 
-describe('materializeCodexEventMedia �?Codex savedPath imported into the media library', () => {
+describe('materializeCodexEventMedia — Codex savedPath imported into the media library', () => {
   it('rewrites localPath to a path under .codepilot-media and stamps a mediaId', () => {
     const src = buildSourcePng();
     const event = makeImageGenerationEvent(src);
@@ -152,7 +152,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
     if (out.type !== 'tool_completed') throw new Error('unreachable');
     assert.ok(out.media && out.media.length === 1, 'media must survive the import');
     const block = out.media![0];
-    assert.notEqual(block.localPath, src, 'localPath must NOT be the raw Codex path �?that\'s what 403s through /api/media/serve');
+    assert.notEqual(block.localPath, src, 'localPath must NOT be the raw Codex path — that\'s what 403s through /api/media/serve');
     assert.ok(
       block.localPath!.startsWith(path.join(tempDir, '.codepilot-media') + path.sep),
       `imported localPath must live under <dataDir>/.codepilot-media; got ${block.localPath}`,
@@ -165,7 +165,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
 
   it('Codex imageGeneration with revisedPrompt: library row gets prompt=revisedPrompt + model=codex-image (not filename, 2026-05-28)', async () => {
     // Real user concern: a Codex-generated image must land in the gallery
-    // searchable by its actual prompt �?not by the temp filename that
+    // searchable by its actual prompt — not by the temp filename that
     // Codex's savedPath uses. buildImageGenerationMedia threads
     // `revisedPrompt` into block.sourceMetadata; materializeCodexEventMedia
     // passes that into importFileToLibrary as prompt + model.
@@ -201,7 +201,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
   });
 
   it('Codex imageGeneration WITHOUT revisedPrompt: falls back to filename (no regression for current behavior)', async () => {
-    // Defensive fallback �?if Codex omits revisedPrompt (failed generation,
+    // Defensive fallback — if Codex omits revisedPrompt (failed generation,
     // older protocol), the library still gets an importable row, just with
     // the prior filename-as-prompt behavior. No drift in error paths.
     const src = buildSourcePng();
@@ -342,7 +342,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
     const out = materializeCodexEventMedia(event, { sessionId: 's-1' });
     if (out.type !== 'tool_completed') throw new Error('unreachable');
     const block = out.media![0];
-    assert.equal(block.data, TINY_PNG_BASE64, 'inline data stays �?MediaPreview renders via data: URL');
+    assert.equal(block.data, TINY_PNG_BASE64, 'inline data stays — MediaPreview renders via data: URL');
     assert.equal(block.localPath, undefined);
     assert.equal(block.mediaId, undefined);
   });
@@ -370,7 +370,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
     assert.equal(out, event);
   });
 
-  it('source file missing �?block dropped, console.warn fires, event survives', () => {
+  it('source file missing → block dropped, console.warn fires, event survives', () => {
     const originalWarn = console.warn;
     const warnings: string[] = [];
     console.warn = (...args: unknown[]) => {
@@ -380,7 +380,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
       const event = makeImageGenerationEvent('/tmp/this-file-does-not-exist-12345.png');
       const out = materializeCodexEventMedia(event, { sessionId: 's-1' });
       if (out.type !== 'tool_completed') throw new Error('unreachable');
-      assert.equal(out.media, undefined, 'every block failed �?media field is dropped so MediaPreview skips the row');
+      assert.equal(out.media, undefined, 'every block failed → media field is dropped so MediaPreview skips the row');
       // The rest of the event survives so the chat side still surfaces
       // the structured output JSON for debugging.
       assert.equal(out.toolId, 'img-1');
@@ -393,7 +393,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
     }
   });
 
-  it('partial failure: one block fails, one succeeds �?survivor kept', () => {
+  it('partial failure: one block fails, one succeeds → survivor kept', () => {
     const originalWarn = console.warn;
     const stub = () => {};
     console.warn = stub;
@@ -420,7 +420,7 @@ describe('materializeCodexEventMedia �?Codex savedPath imported into the media 
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Route-level integration �?/api/media/serve must accept the import
+// Route-level integration — /api/media/serve must accept the import
 // ─────────────────────────────────────────────────────────────────────
 
 describe('imported MediaBlock.localPath is accepted by /api/media/serve', () => {
@@ -433,13 +433,13 @@ describe('imported MediaBlock.localPath is accepted by /api/media/serve', () => 
 
     // Invoke the route handler directly. Mirrors how
     // codex-phase-6-wiring.test.ts exercises the providers/models
-    // route �?same NextRequest pattern.
+    // route — same NextRequest pattern.
     const { GET } = await import('@/app/api/media/serve/route');
     const { NextRequest } = await import('next/server');
     const url = `http://test.local/api/media/serve?path=${encodeURIComponent(importedPath)}`;
     const req = new NextRequest(url);
     const res = await GET(req);
-    assert.equal(res.status, 200, 'imported path MUST be served �?that\'s the whole point of the import bridge');
+    assert.equal(res.status, 200, 'imported path MUST be served — that\'s the whole point of the import bridge');
     assert.equal(res.headers.get('Content-Type'), 'image/webp');
     const body = await res.arrayBuffer();
     assert.ok(body.byteLength > 0, 'response carries the file bytes');
@@ -464,13 +464,13 @@ describe('imported MediaBlock.localPath is accepted by /api/media/serve', () => 
 // Source-pin: the env setup MUST be the first import (tech-debt #25 guard)
 // ─────────────────────────────────────────────────────────────────────
 
-describe('import order �?env setup must run before any @/lib import', () => {
+describe('import order — env setup must run before any @/lib import', () => {
   it('the first `import` line in this file must be ./_codex-media-import-env', () => {
     // ESM imports execute in declaration order (siblings of the same
     // parent module). If anything triggering `@/lib/db` module-load
     // (directly or transitively) is imported BEFORE the env setup,
     // db.ts captures the user's real ~/.codepilot path and the test
-    // silently re-pollutes the real DB �?the exact failure mode
+    // silently re-pollutes the real DB — the exact failure mode
     // tech-debt #25 was about. A comment alone isn't enforcement;
     // this source pin will fail loudly if someone reorders.
     const src = fs.readFileSync(__filename, 'utf-8');
@@ -479,7 +479,7 @@ describe('import order �?env setup must run before any @/lib import', () => {
     assert.match(
       firstImportLine!,
       /from\s+['"]\.\/_codex-media-import-env['"]/,
-      `the FIRST import in codex-media-import.test.ts MUST be ./_codex-media-import-env (sets CLAUDE_GUI_DATA_DIR + pre-touches an empty DB before @/lib/db module-load). Got: ${firstImportLine}. Reordering will silently re-pollute the real ~/.codepilot/codepilot.db �?see tech-debt #25.`,
+      `the FIRST import in codex-media-import.test.ts MUST be ./_codex-media-import-env (sets CLAUDE_GUI_DATA_DIR + pre-touches an empty DB before @/lib/db module-load). Got: ${firstImportLine}. Reordering will silently re-pollute the real ~/.codepilot/codepilot.db — see tech-debt #25.`,
     );
   });
 });

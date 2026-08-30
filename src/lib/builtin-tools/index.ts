@@ -1,27 +1,27 @@
 /**
- * builtin-tools/index.ts â€?Registry of built-in MCP-equivalent tools for Native Runtime.
+ * builtin-tools/index.ts â€” Registry of built-in MCP-equivalent tools for Native Runtime.
  *
  * These tools provide the same capabilities as the 7 built-in MCP servers
  * (notification, memory, dashboard, cli-tools, media, image-gen, widget)
  * but packaged as Vercel AI SDK tools for the Native Runtime.
  *
- * Phase 5d Phase 2 slice 2d (2026-05-17) â€?`getBuiltinTools` now
+ * Phase 5d Phase 2 slice 2d (2026-05-17) â€” `getBuiltinTools` now
  * delegates system-prompt assembly to the Harness Context Compiler.
  * Per-group `systemPrompt` fields stay declared (they document the
  * canonical fragment for that group) but are NOT directly returned
  * to callers; the compiler produces the final ordered + de-duplicated
  * prompt string from the capability catalog. This keeps Native
- * adapter "only adapt compiler output" â€?gating decisions stay in
+ * adapter "only adapt compiler output" â€” gating decisions stay in
  * this file (workspace / keyword / always), prompt text comes from
  * the compiler.
  *
  * Migration status:
- * âœ?notification (4 tools) â€?fully migrated
- * âœ?memory-search (3 tools) â€?fully migrated
- * âœ?dashboard (5 tools) â€?fully migrated
- * âœ?media (2 tools: import + generate) â€?fully migrated
- * âœ?widget-guidelines (1 tool) â€?fully migrated
- * âœ?cli-tools (6 tools) â€?fully migrated
+ * âœ… notification (4 tools) â€” fully migrated
+ * âœ… memory-search (3 tools) â€” fully migrated
+ * âœ… dashboard (5 tools) â€” fully migrated
+ * âœ… media (2 tools: import + generate) â€” fully migrated
+ * âœ… widget-guidelines (1 tool) â€” fully migrated
+ * âœ… cli-tools (6 tools) â€” fully migrated
  */
 
 import type { ToolSet } from 'ai';
@@ -40,7 +40,7 @@ export interface GetBuiltinToolsOptions {
   workspacePath?: string;
   prompt?: string;
   /**
-   * Originating chat session id â€?plumbed through to
+   * Originating chat session id â€” plumbed through to
    * `createNotificationTools` so codepilot_schedule_task knows which
    * chat session the task is being created from. Mirrors the SDK
    * MCP variant in claude-client.ts.
@@ -68,8 +68,8 @@ export interface GetBuiltinToolsOptions {
  *
  * Returns an array because one group can mount tools that belong to
  * multiple capabilities (e.g. `codepilot-media` mounts both
- * `codepilot_import_media` â†?media_import AND
- * `codepilot_generate_image` â†?image_generation). The compiler then
+ * `codepilot_import_media` â†’ media_import AND
+ * `codepilot_generate_image` â†’ image_generation). The compiler then
  * emits fragments + tool descriptors for every returned id.
  *
  * Empty array = the group is not capability-tracked yet (Phase 4
@@ -79,11 +79,11 @@ export interface GetBuiltinToolsOptions {
 function capabilityIdsForGroup(groupName: string): readonly string[] {
   switch (groupName) {
     case 'codepilot-notify':
-      // Phase 5e round 8 follow-up (2026-05-18) â€?same pattern as the
+      // Phase 5e round 8 follow-up (2026-05-18) â€” same pattern as the
       // round 5 media fix below: `createNotificationTools` mounts
       // BOTH the task/notify quartet (notify / schedule_task /
-      // list_tasks / cancel_task â†?tasks_and_notify) AND
-      // `codepilot_hatch_buddy` (â†?assistant_buddy). Returning only
+      // list_tasks / cancel_task â†’ tasks_and_notify) AND
+      // `codepilot_hatch_buddy` (â†’ assistant_buddy). Returning only
       // `tasks_and_notify` would leak the same "tool exists at
       // runtime but the compiler doesn't know about its capability"
       // gap the media fix sealed: Settings would show Native as
@@ -100,7 +100,7 @@ function capabilityIdsForGroup(groupName: string): readonly string[] {
     case 'codepilot-dashboard':
       return ['dashboard'];
     case 'codepilot-media':
-      // Phase 5d Phase 2 P1 fix (2026-05-17) â€?pre-fix this returned
+      // Phase 5d Phase 2 P1 fix (2026-05-17) â€” pre-fix this returned
       // only 'media_import' but the underlying `createMediaTools()`
       // mounts BOTH the import tool AND `codepilot_generate_image`.
       // That meant the compiler's enabledCapabilities / toolDescriptors
@@ -134,7 +134,7 @@ function capabilityIdsForGroup(groupName: string): readonly string[] {
  *     search, ask-user-question).
  *
  * Native Runtime callers should treat `systemPrompts` as a flat
- * list to concatenate â€?same shape as pre-Phase-5d.
+ * list to concatenate â€” same shape as pre-Phase-5d.
  */
 export function getBuiltinTools(
   options: GetBuiltinToolsOptions,
@@ -158,7 +158,7 @@ export function getBuiltinTools(
 
     // #26: Plan / read-only mode keeps only permission-safe tools. A group
     // whose tools are all mutating contributes neither tools nor its
-    // capability prompt â€?so Plan advertises safe_read caps (widget
+    // capability prompt â€” so Plan advertises safe_read caps (widget
     // guidelines / memory) but not image-gen / dashboard / schedule / notify.
     const groupTools = options.safeReadOnly
       ? Object.fromEntries(
@@ -180,22 +180,22 @@ export function getBuiltinTools(
     }
   }
 
-  // Phase 5d Phase 3 (2026-05-17) â€?capability prompt assembly +
+  // Phase 5d Phase 3 (2026-05-17) â€” capability prompt assembly +
   // toolSet keys routed through the Runtime Capability Adapter.
   // Caller (this function) still owns:
   //   - tool MOUNTING (the AI SDK `ToolSet` instances live in
   //     per-group factories like `createNotificationTools`).
   //   - capability GATING (`group.condition === 'always' | 'workspace'
-  //     | keyword`) â€?gating reads filesystem / regex / mode state
+  //     | keyword`) â€” gating reads filesystem / regex / mode state
   //     which the adapter is forbidden from touching.
   //   - NON-CAPABILITY prompt slots (session-search /
-  //     ask-user-question â€?these haven't earned a capability contract
+  //     ask-user-question â€” these haven't earned a capability contract
   //     entry yet; their raw `systemPrompt` text flows through the
   //     legacy slot in the returned `systemPrompts` array).
   // Adapter owns: capability prompt text + toolSetKeys hint, both
   // sourced from the canonical capability catalog.
   //
-  // Phase 5e review fix P1 #2 (2026-05-18) â€?scan User / External
+  // Phase 5e review fix P1 #2 (2026-05-18) â€” scan User / External
   // Harness extensions and pass them through the adapter so the
   // Native Runtime's model sees the user's MCP / Skills / commands /
   // external framework configs in the system prompt. Scans are best-
@@ -214,23 +214,23 @@ export function getBuiltinTools(
     const { scanUserCodePilotExtensions } = require('@/lib/harness/user-codepilot-extensions');
     userExtensions = scanUserCodePilotExtensions({
       workspacePath: options.workspacePath,
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
     });
   } catch { /* best effort */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { scanExternalFrameworkExtensions } = require('@/lib/harness/external-framework-harness');
-    // Native isn't ClaudeCode or Codex itself â€?flag external
+    // Native isn't ClaudeCode or Codex itself â€” flag external
     // extensions as perception-only (executable=false). Caller's
     // active framework hint is `undefined`, which the scanner
-    // interprets as "no framework matches â†?all entries get
+    // interprets as "no framework matches â†’ all entries get
     // perceptionHint".
     externalExtensions = scanExternalFrameworkExtensions({});
   } catch { /* best effort */ }
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { loadConfiguredHarnessHome } = require('@/lib/harness-home/runtime/configured');
-    const configured = loadConfiguredHarnessHome('bbagent', {
+    const configured = loadConfiguredHarnessHome('codepilot_runtime', {
       userPrompt: options.prompt || '',
       projectId: options.workspacePath || undefined,
     });
@@ -238,14 +238,14 @@ export function getBuiltinTools(
       canonicalHarness = configured.harness;
     } else if (configured.status === 'unavailable') {
       console.warn('[harness-home] Canonical projection unavailable', {
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         root: configured.root,
         reason: configured.reason,
       });
     }
   } catch (error) {
     console.warn('[harness-home] Canonical projection failed', {
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       reason: error instanceof Error ? error.message : String(error),
     });
   }
@@ -279,7 +279,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     });
   };
 
-  // Notification tools â€?always available. Pass through the run
+  // Notification tools â€” always available. Pass through the run
   // context so codepilot_schedule_task injects origin_session_id +
   // working_directory into /api/tasks/schedule POST body.
   try {
@@ -296,7 +296,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     });
   } catch (error) { reportLoadFailure('codepilot-notify', error); }
 
-  // Widget guidelines â€?keyword-gated
+  // Widget guidelines â€” keyword-gated
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createWidgetGuidelinesTools, WIDGET_SYSTEM_PROMPT } = require('./widget-guidelines');
@@ -308,7 +308,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     });
   } catch (error) { reportLoadFailure('codepilot-widget-guidelines', error); }
 
-  // Dashboard tools â€?keyword-gated
+  // Dashboard tools â€” keyword-gated
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createDashboardTools, DASHBOARD_SYSTEM_PROMPT } = require('./dashboard');
@@ -335,7 +335,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     }),
   });
 
-  // Memory search tools â€?workspace-gated
+  // Memory search tools â€” workspace-gated
   if (options.workspacePath) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -349,7 +349,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     } catch (error) { reportLoadFailure('codepilot-memory', error); }
   }
 
-  // Session history search tool â€?always available (queries SQLite messages table)
+  // Session history search tool â€” always available (queries SQLite messages table)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createSessionSearchTools, SESSION_SEARCH_SYSTEM_PROMPT } = require('./session-search');
@@ -361,7 +361,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     });
   } catch (error) { reportLoadFailure('codepilot-session-search', error); }
 
-  // AskUserQuestion â€?structured question UI for Native Runtime.
+  // AskUserQuestion â€” structured question UI for Native Runtime.
   // SDK Runtime has this built in; Native Runtime needs it as a builtin tool.
   // The tool goes through the permission wrapper which emits permission_request SSE,
   // and the existing AskUserQuestionUI in PermissionPrompt.tsx renders the UI.
@@ -376,7 +376,7 @@ function getToolGroups(options: GetBuiltinToolsOptions): BuiltinToolGroup[] {
     });
   } catch (error) { reportLoadFailure('codepilot-ask-user', error); }
 
-  // CLI tools â€?keyword-gated
+  // CLI tools â€” keyword-gated
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createCliToolsTools, CLI_TOOLS_SYSTEM_PROMPT } = require('./cli-tools');

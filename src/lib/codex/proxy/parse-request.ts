@@ -1,16 +1,16 @@
 /**
- * Phase 5b â?Codex Responses proxy: incoming request parser.
+ * Phase 5b — Codex Responses proxy: incoming request parser.
  *
  * Codex sends a JSON POST to `/api/codex/proxy/v1/responses` shaped
  * like OpenAI's Responses-API. The parser does shape validation only
- * â?semantic checks (does the targeted provider exist, do we have
+ * — semantic checks (does the targeted provider exist, do we have
  * credentials etc.) happen later in the adapter so a structured
  * error can name the actual cause.
  *
  * Validation philosophy: lenient on optional fields, strict on the
  * three load-bearing ones (`model`, `input`, item shape). Anything
  * missing surfaces as `invalid_request` with a sentence naming the
- * field â?Codex's reader displays the message verbatim.
+ * field — Codex's reader displays the message verbatim.
  */
 
 import type {
@@ -22,38 +22,39 @@ import type {
 } from './types';
 
 /**
- * Phase 5c slice 5 (2026-05-16, post-smoke) â?known non-function tool
+ * Phase 5c slice 5 (2026-05-16, post-smoke) — known non-function tool
  * `type` strings we preserve in `passthroughTools` rather than
  * treating as a request error.
  *
- * Source of truth: `èµæ/codex/codex-rs/tools/src/tool_spec.rs`
+ * Source of truth: `资料/codex/codex-rs/tools/src/tool_spec.rs`
  * `ToolSpec` enum with `#[serde(tag = "type")]`. Codex serialises
  * every tool descriptor through that enum, so any `type` string
  * Codex's app-server sends on the wire is one of these seven:
  *
- *   - `function`         â?handled by the main `tools` array path
- *   - `namespace`        â?plugin / Skill bundle, contains nested
+ *   - `function`         — handled by the main `tools` array path
+ *   - `namespace`        — plugin / Skill bundle, contains nested
  *                          function tools
- *   - `tool_search`      â?Codex's tool-discovery surface
- *   - `local_shell`      â?Codex's shell tool
- *   - `image_generation` â?OpenAI Responses built-in
- *   - `web_search`       â?OpenAI Responses built-in
- *   - `custom`           â?Codex's freeform (apply_patch, etc.)
+ *   - `tool_search`      — Codex's tool-discovery surface
+ *   - `local_shell`      — Codex's shell tool
+ *   - `image_generation` — OpenAI Responses built-in
+ *   - `web_search`       — OpenAI Responses built-in
+ *   - `custom`           — Codex's freeform (apply_patch, etc.)
  *
  * Slice 1 (pre-smoke) included `plugin` / `file_search` /
  * `code_interpreter` / `web_search_preview` speculatively, but
  * grepping the Rust source confirms none of those discriminants are
- * actually emitted by Codex â?listing them just hides a real future
+ * actually emitted by Codex — listing them just hides a real future
  * schema extension behind a permissive default. Slice 5 trims to
  * the seven from the source enum.
  *
  * The smoke failure that drove this trim:
- *   GLM-5 Turbo + Codex Runtime + image task â? *   "tools[17] has unsupported type \"namespace\""
+ *   GLM-5 Turbo + Codex Runtime + image task →
+ *   "tools[17] has unsupported type \"namespace\""
  * Codex's plugin/Skill namespace descriptor reached the proxy and
  * we 400'd before the bridge could mount. Now `namespace` lands on
  * `passthroughTools` and the request continues.
  *
- * NOT widened to "accept everything" â?unknown types still trip
+ * NOT widened to "accept everything" — unknown types still trip
  * `unsupported_tool_kind` so a future Codex schema extension we
  * haven't snapshot'd surfaces as a clear contract gap rather than
  * silently disappearing.
@@ -157,19 +158,19 @@ export function parseResponsesRequest(raw: unknown): ParseResult {
     }
   }
 
-  // Phase 5c (2026-05-16) â?classify Codex's `tools[]` into:
+  // Phase 5c (2026-05-16) — classify Codex's `tools[]` into:
   //   1. function tools (forwarded to ai-sdk via `translateResponsesTools`)
   //   2. known non-function tools (preserved on
   //      `passthroughTools` for the bridge layer to log / inspect)
-  //   3. unknown tool types â?structured `unsupported_tool_kind`
+  //   3. unknown tool types → structured `unsupported_tool_kind`
   //      so a future Codex schema extension doesn't disappear into
   //      the void.
   //
-  // Pre-5c we silently dropped (2) and (3) â?the smoke evidence was
+  // Pre-5c we silently dropped (2) and (3) — the smoke evidence was
   // GLM/Kimi reading `imagegen` Skill text and trying to call a
   // tool that wasn't in their function list, then falling back to
   // CLI / auth.json / npm install. Surfacing both kinds means the
-  // bridge can either route them through buckyball.ai's tool set or
+  // bridge can either route them through CodePilot's tool set or
   // tell the user clearly that this type isn't bridged yet.
   let tools: ResponsesTool[] | undefined;
   let passthroughTools: ClassifiedNonFunctionTool[] | undefined;
@@ -208,7 +209,7 @@ export function parseResponsesRequest(raw: unknown): ParseResult {
       }
       if (!KNOWN_NON_FUNCTION_TYPES.has(toolType)) {
         // Unknown tool kind. Surface as a structured request error
-        // rather than dropping â?Codex's reader prints this verbatim
+        // rather than dropping — Codex's reader prints this verbatim
         // and the bridge layer doesn't have to guess.
         return {
           ok: false,
@@ -235,7 +236,7 @@ export function parseResponsesRequest(raw: unknown): ParseResult {
   const reasoning = isObject(raw.reasoning)
     ? { effort: typeof raw.reasoning.effort === 'string' ? (raw.reasoning.effort as ResponsesRequestBody['reasoning'] extends infer R ? R extends { effort?: infer E } ? E : never : never) : undefined }
     : undefined;
-  // Phase 5b smoke fix (2026-05-15) â?OpenAI OAuth (Codex API)
+  // Phase 5b smoke fix (2026-05-15) — OpenAI OAuth (Codex API)
   // requires `store: false` on outbound /responses calls. Codex
   // itself sends `store: false` in its request body; we MUST preserve
   // that and forward it via providerOptions.openai.store. Pre-fix

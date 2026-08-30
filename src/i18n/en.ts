@@ -1,10 +1,10 @@
 /**
- * English translations ???source of truth.
+ * English translations — source of truth.
  * Every key defined here becomes part of the `TranslationKey` type.
  * Other locale files must implement `Record<TranslationKey, string>`.
  */
 const en = {
-  // ?????? Navigation ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Navigation ──────────────────────────────────────────────
   'nav.chats': 'Chats',
   'nav.extensions': 'Extensions',
   'nav.settings': 'Settings',
@@ -18,7 +18,7 @@ const en = {
   'nav.mcp': 'MCP',
   'nav.gallery': 'Gallery',
 
-  // ?????? Chat list panel ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Chat list panel ─────────────────────────────────────────
   'chatList.justNow': 'just now',
   'chatList.minutesAgo': '{n}m',
   'chatList.hoursAgo': '{n}h',
@@ -42,7 +42,7 @@ const en = {
   'chatList.showMore': 'Show {count} more',
   'chatList.showLess': 'Show less',
 
-  // ?????? Global search ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Global search ───────────────────────────────────────────
   'globalSearch.placeholder': 'Search... (try session:, message:, file:)',
   'globalSearch.hint': 'Type to search across sessions and messages',
   'globalSearch.hintPrefix': 'Prefix with',
@@ -55,18 +55,18 @@ const en = {
   'globalSearch.activeScope': 'Searching in {scope}',
   'globalSearch.toolLabel': 'Tool',
 
-  // ?????? Message list ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  'messageList.claudeChat': 'buckyball.ai Chat',
-  'messageList.emptyDescription': 'Start a conversation with buckyball.ai. Ask questions, get help with code, or explore ideas.',
+  // ── Message list ────────────────────────────────────────────
+  'messageList.claudeChat': 'CodePilot Chat',
+  'messageList.emptyDescription': 'Start a conversation with CodePilot. Ask questions, get help with code, or explore ideas.',
   'messageList.loadEarlier': 'Load earlier messages',
   'messageList.loading': 'Loading...',
   'messageList.userLabel': 'User',
   'messageList.assistantLabel': 'Assistant',
-  'message.streamStatus.streaming': 'Response is still running ? saved content updates automatically',
-  'message.streamStatus.interrupted': 'Response was interrupted ? showing the last saved content',
-  'message.streamStatus.error': 'Response ended with an error ? showing the last saved content',
+  'message.streamStatus.streaming': 'Response is still running · saved content updates automatically',
+  'message.streamStatus.interrupted': 'Response was interrupted · showing the last saved content',
+  'message.streamStatus.error': 'Response ended with an error · showing the last saved content',
 
-  // ?????? Message input ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Message input ───────────────────────────────────────────
   'messageInput.attachFiles': 'Attach files',
   'messageInput.helpDesc': 'Show available commands and tips',
   'messageInput.clearDesc': 'Clear conversation history',
@@ -81,7 +81,7 @@ const en = {
   'messageInput.modePlan': 'Plan',
   'messageInput.aiSuggested': 'AI Suggested',
 
-  // ?????? Streaming message ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Streaming message ───────────────────────────────────────
   'streaming.thinking': 'Thinking...',
   'streaming.thinkingDeep': 'Thinking deeply...',
   'streaming.preparing': 'Preparing response...',
@@ -92,45 +92,48 @@ const en = {
   'streaming.allowForSession': 'Allow for Session',
   'streaming.allowed': 'Allowed',
   'streaming.denied': 'Denied',
-  'streaming.permissionTimedOut': 'Auto-denied ???request timed out',
+  'streaming.permissionTimedOut': 'Auto-denied — request timed out',
   'streaming.permissionRequestedBySubagent': 'Requested by Sub Agent: {name}',
 
-  // ?????? Skill Nudge ??????
+  // ── Skill Nudge ──
   'skillNudge.message': 'This workflow involved {step} steps across {toolCount} distinct tools. Save as a Skill for one-click replay.',
   'skillNudge.saveButton': 'Save as Skill',
   'skillNudge.savePrompt': 'Please help me save the workflow from this conversation as a reusable Skill.',
 
-  // ?????? Message queue ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Message queue ────────────────────────────────────────────
   'messageQueue.queued': 'Queued',
   'messageQueue.cancel': 'Cancel queued message',
 
-  // ?????? Chat view / session page ????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Chat view / session page ────────────────────────────────
   'chat.newConversation': 'New Conversation',
   // Phase 2 Step 3b: inline notice that replaces the silent PATCH
   // when the session's saved provider isn't reachable under the
   // current execution engine. User picks a new one in the composer
   // below; no auto-rewrite of session state.
   'chat.sessionProviderIncompatible.message': 'This session\'s saved provider isn\'t reachable under the current execution engine. Pick another provider in the composer below, or switch the engine in Settings.',
-  // Phase 2 Step 4b: 409 INVALID_SESSION_PROVIDER banner ???the session's
+  // Phase 2 Step 4b: 409 INVALID_SESSION_PROVIDER banner — the session's
   // saved provider was deleted right before send, server refused to
   // continue. The picker below already only lists real providers, so
   // picking one and sending again will route through the new choice.
   'chat.invalidSessionProvider.message': 'This session\'s saved provider "{providerId}" was deleted and the message could not be sent. Pick another provider in the composer below, or return to Settings to reconnect it.',
-  'chat.codexRecoverySafeMode': 'buckyball.ai recovered its local service in safe mode. Codex Runtime and automatic background tasks are paused; restart the app to return to normal mode.',
+  'chat.providerCredentialsUnavailable.message': 'The credential for provider "{providerId}" is missing. The message was not sent to any provider. Open Settings → Providers, enter its API key, then retry.',
+  'chat.providerCredentialsUnreadable.message': 'CodePilot can no longer decrypt the saved credential for provider "{providerId}" after the update. The API key itself may still be valid, and the message was not sent to any provider. Open Settings → Providers, delete the old provider, add it again using the same API key, then select it again in this chat and retry. Deleting a provider also removes its custom model settings; note them first if needed.',
+  'chat.providerCredentialsUnavailable.action': 'Open provider settings',
+  'chat.codexRecoverySafeMode': 'CodePilot recovered its local service in safe mode. Codex Runtime and automatic background tasks are paused; restart the app to return to normal mode.',
 
-  // ?????? Settings: General ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: General ───────────────────────────────────────
   'settings.title': 'Settings',
-  'settings.description': 'Manage buckyball.ai and Claude Code settings',
+  'settings.description': 'Manage CodePilot and Claude Code settings',
   'settings.overview': 'Overview',
-  'settings.overviewDesc': 'See the current Runtime / Provider / Model / Assistant workspace / system status at a glance ???one primary entry per block to jump to its dedicated page',
+  'settings.overviewDesc': 'See the current Runtime / Provider / Model / Assistant workspace / system status at a glance — one primary entry per block to jump to its dedicated page',
   'settings.general': 'General',
   'settings.about': 'About',
-  'settings.aboutDesc': 'buckyball.ai version, platform info, account, diagnostics & maintenance, documentation & feedback',
+  'settings.aboutDesc': 'CodePilot version, platform info, account, diagnostics & maintenance, documentation & feedback',
   'settings.providers': 'Providers',
   'settings.models': 'Models',
   'settings.runtime': 'Runtime',
   'settings.claudeCli': 'Claude Code',
-  'settings.bbagent': 'buckyball.ai',
+  'settings.codepilot': 'CodePilot',
   'settings.version': 'Version {version}',
   'settings.checkForUpdates': 'Check for Updates',
   'settings.checking': 'Checking...',
@@ -148,8 +151,8 @@ const en = {
   'settings.autoApproveTrustWarning': 'Only enable this if you fully trust the task at hand. This setting applies to all new chat sessions.',
   'settings.cancel': 'Cancel',
   'settings.enableAutoApprove': 'Enable Auto-approve',
-  'settings.errorReporting': 'Anonymous Error Reporting & Crash-free Statistics',
-  'settings.errorReportingDesc': 'Anonymously reports sanitized errors and one app-process session for release health and crash-free statistics. It does not track feature usage or identify users, and never includes conversation content or API keys. Restart the app for the change to fully take effect.',
+  'settings.errorReporting': 'Anonymous JavaScript Errors & Release Health',
+  'settings.errorReportingDesc': 'Anonymously reports sanitized JavaScript errors and one app-process session for release health. Normal builds do not upload native crash dumps. It does not track feature usage or identify users, and never includes conversation content or API keys. Restart the app for the change to fully take effect.',
   'settings.generativeUITitle': 'Generative UI',
   'settings.generativeUIDesc': 'Enable interactive visualizations (charts, diagrams, mockups) in chat responses. Disabling saves tokens but removes visual generation capability.',
   'settings.defaultPanelTitle': 'Default Side Panel',
@@ -162,11 +165,11 @@ const en = {
   'settings.languageDesc': 'Choose the display language for the interface',
   'settings.usage': 'Usage',
   'settings.health': 'Health',
-  'settings.healthDesc': 'Daily health overview ???connectivity, runtime, default model, model exposure, and workspace at a glance',
+  'settings.healthDesc': 'Daily health overview — connectivity, runtime, default model, model exposure, and workspace at a glance',
 
-  // ?????? Settings: Appearance ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Appearance ──────────────────────────────────────
   'settings.appearance': 'Appearance',
-  'settings.appearanceDesc': 'Customize the look and feel of buckyball.ai',
+  'settings.appearanceDesc': 'Customize the look and feel of CodePilot',
   'settings.themeMode': 'Theme Mode',
   'settings.themeModeDesc': 'Choose between light, dark, or system preference',
   'settings.themeFamily': 'Color Theme',
@@ -175,7 +178,7 @@ const en = {
   'settings.modeDark': 'Dark',
   'settings.modeSystem': 'System',
 
-  // ?????? Settings: Overview (dashboard) ?????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Overview (dashboard) ───────────────────────────
   'overview.gettingStarted': 'Getting started',
   'overview.completed': '{done}/{total} completed',
   'overview.checklistConnectProvider': 'Connect a provider',
@@ -183,7 +186,7 @@ const en = {
   'overview.checklistEnableModels': 'Enable models',
   'overview.checklistEnableModelsDesc': 'Turn on the models you actually want to surface in the picker.',
   'overview.checklistVerifyRuntime': 'Verify Runtime',
-  'overview.checklistVerifyRuntimeDesc': 'The current runtime is on a fallback path ???check and recover.',
+  'overview.checklistVerifyRuntimeDesc': 'The current runtime is on a fallback path — check and recover.',
   'overview.checklistConfigureWorkspace': 'Configure Assistant workspace',
   'overview.checklistConfigureWorkspaceDesc': 'Pick a local working directory for the Assistant.',
   'overview.actionGoConfigure': 'Configure',
@@ -192,10 +195,10 @@ const en = {
   'overview.heatmapMostActive': 'Most active day',
   'overview.heatmapCurrentStreak': 'Current streak',
   'overview.heatmapLongestStreak': 'Longest streak',
-  'overview.heatmapEmpty': 'No usage data yet ???start a conversation to see it here.',
+  'overview.heatmapEmpty': 'No usage data yet — start a conversation to see it here.',
   'overview.heatmapViewDetails': 'View full usage stats',
 
-  // ?????? Settings: Usage Stats ?????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Usage Stats ───────────────────────────────────
   'usage.totalTokens': 'Total Tokens',
   'usage.totalCost': 'Total Cost',
   'usage.sessions': 'Sessions',
@@ -209,7 +212,7 @@ const en = {
   'usage.noData': 'No usage data yet',
   'usage.noDataHint': 'Start a conversation to see statistics here.',
 
-  // ?????? Settings: CLI ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: CLI ───────────────────────────────────────────
   'cli.permissions': 'Permissions',
   'cli.permissionsDesc': 'Configure permission settings for Claude Code',
   'cli.envVars': 'Environment Variables',
@@ -227,7 +230,7 @@ const en = {
   'cli.enableClaude': 'Enable Claude Code',
   'cli.enableClaudeDesc': 'OFF: Native AI SDK as backend. ON: Claude Code as backend.',
   'cli.agentRuntime': 'Agent Runtime',
-  'cli.agentRuntimeDesc': 'Choose how buckyball.ai executes agent tasks',
+  'cli.agentRuntimeDesc': 'Choose how CodePilot executes agent tasks',
   'cli.runtimeNative': 'Native Runtime (AI SDK)',
   'cli.runtimeSdk': 'Claude Code SDK',
   'cli.cliStatus': 'Status',
@@ -256,7 +259,7 @@ const en = {
   'cli.installAfter': 'After installation, run "claude login" to authenticate.',
   'cli.installDone': 'Done',
 
-  // ?????? Settings: Providers ???????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Providers ─────────────────────────────────────
   'provider.addProvider': 'Add Provider',
   'provider.editProvider': 'Edit Provider',
   'provider.deleteProvider': 'Delete Provider',
@@ -284,10 +287,10 @@ const en = {
   'provider.notesPlaceholder': 'Optional notes about this provider...',
   'provider.saving': 'Saving...',
   'provider.update': 'Update',
-  // Provider Card ????????????????Step 4 copy round, 2026-05-06): user-facing
+  // Provider Card 「接入方式」(Step 4 copy round, 2026-05-06): user-facing
   // taxonomy that replaces the raw `Auth Token / API Key` authStyle dump.
   // Keys derive from preset.meta.billingModel + a few special-case checks
-  // (env_only ???cloud creds, anthropic-thirdparty ???relay gateway, etc.).
+  // (env_only → cloud creds, anthropic-thirdparty → relay gateway, etc.).
   'provider.accessType.subscriptionToken': 'Subscription token',
   'provider.accessType.apiKey': 'API key',
   'provider.accessType.oauth': 'OAuth login',
@@ -312,13 +315,13 @@ const en = {
   'provider.form.roleModelsJson': 'Role mapping (JSON)',
   // Provider card endpoint sanitization (Step 4 round, P1 follow-up):
   // some users have accidentally pasted an API key into the base_url
-  // field. The card was rendering the value verbatim ???leaking secrets
+  // field. The card was rendering the value verbatim — leaking secrets
   // in screenshots / screen recordings. Suspicious values are masked.
-  'provider.endpoint.suspicious': 'Suspicious endpoint (???{tail})',
-  'provider.endpoint.suspiciousTooltip': "This value doesn't look like a valid URL ???it's masked here. Open Edit and check whether the endpoint field was filled with a key by mistake.",
+  'provider.endpoint.suspicious': 'Suspicious endpoint (…{tail})',
+  'provider.endpoint.suspiciousTooltip': "This value doesn't look like a valid URL — it's masked here. Open Edit and check whether the endpoint field was filled with a key by mistake.",
   // Field-level: stored-key affordances. Were hardcoded English in
   // ProviderForm even though PresetConnectDialog already has both
-  // languages ???this aligns the manual form with the preset dialog.
+  // languages — this aligns the manual form with the preset dialog.
   'provider.form.keepKeyPlaceholder': 'Leave empty to keep current key',
   'provider.form.clearKeyPlaceholder': 'Stored key will be cleared on save',
   'provider.form.clearKeyAction': 'Clear stored key',
@@ -354,38 +357,38 @@ const en = {
   'provider.addService': 'Add service',
   'provider.addServiceDesc': 'Connect via subscription / API key / third-party gateway / local model',
   'provider.emptyTitle': 'No services connected yet',
-  'provider.emptyDesc': 'Add your first AI service. buckyball.ai will surface its supported models and capabilities automatically.',
+  'provider.emptyDesc': 'Add your first AI service. CodePilot will surface its supported models and capabilities automatically.',
   'provider.refreshModels': 'Refresh models',
   'provider.syncToClaudeCode': 'Sync to Claude Code',
 
-  // ?????? Auto-discover toasts (fired after Add Service success) ??????
+  // ── Auto-discover toasts (fired after Add Service success) ──
   'provider.autoDiscover.loading': 'Discovering models for {name}...',
   'provider.autoDiscover.success': '{name}: {total} models found, {enabled} enabled, {hidden} hidden',
   'provider.autoDiscover.noModels': '{name}: connection succeeded but no models reported',
-  'provider.autoDiscover.unsupported': '{name}: this provider does not expose a model list ???open Models to add manually',
+  'provider.autoDiscover.unsupported': '{name}: this provider does not expose a model list — open Models to add manually',
   'provider.autoDiscover.probeFailed': '{name}: could not reach upstream to discover models',
-  'provider.autoDiscover.applyFailed': '{name}: discovered models but failed to save ???try Refresh on the card',
-  'provider.autoDiscover.upToDate': '{name}: already up to date ({total} models) ???last sync timestamp refreshed',
+  'provider.autoDiscover.applyFailed': '{name}: discovered models but failed to save — try Refresh on the card',
+  'provider.autoDiscover.upToDate': '{name}: already up to date ({total} models) — last sync timestamp refreshed',
 
-  // ?????? Models page batch refresh (page-top "Refresh all") ??????????????????
-  'models.refreshAll.progress': 'Refreshing {done}/{total} ? {name}',
-  'models.refreshAll.summaryOk': '{ok} updated ? {enabled} enabled ? {hidden} hidden',
+  // ── Models page batch refresh (page-top "Refresh all") ──────
+  'models.refreshAll.progress': 'Refreshing {done}/{total} · {name}',
+  'models.refreshAll.summaryOk': '{ok} updated · {enabled} enabled · {hidden} hidden',
   'models.refreshAll.summaryNoChange': '{n} no change',
   'models.refreshAll.summaryFailed': '{n} failed: {names}',
 
-  // ?????? Right panel / Files ???????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Right panel / Files ─────────────────────────────────────
   'panel.files': 'Files',
   'panel.tasks': 'Tasks',
   'panel.openPanel': 'Open panel',
   'panel.closePanel': 'Close panel',
 
-  // ?????? File tree ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── File tree ───────────────────────────────────────────────
   'fileTree.filterFiles': 'Filter files...',
   'fileTree.refresh': 'Refresh',
   'fileTree.noFiles': 'No files found',
   'fileTree.selectFolder': 'Select a project folder to view files',
 
-  // ?????? File preview ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── File preview ────────────────────────────────────────────
   'filePreview.backToTree': 'Back to file tree',
   'filePreview.lines': '{count} lines',
   'filePreview.linesApprox': '~{count} lines',
@@ -394,7 +397,7 @@ const en = {
   'filePreview.tooLarge': 'File too large to preview (>10 MB)',
   'filePreview.binaryNotPreviewable': 'Binary file, cannot preview',
   'filePreview.notFound': 'File not found',
-  'filePreview.sandpackLoading': 'Loading sandbox???,
+  'filePreview.sandpackLoading': 'Loading sandbox…',
   'filePreview.sandpackError': 'Sandbox failed to load: {error}',
   'filePreview.aliasNotSupported': 'This file uses `@/` path aliases; preview compiles external npm deps only.',
   'filePreview.viewMode.edit': 'Edit',
@@ -411,18 +414,18 @@ const en = {
   'filePreview.archiveAsset.archived': 'Archived in Asset Library',
   'filePreview.archiveAsset.failed': 'Could not archive web page: {reason}',
   'filePreview.closePreview': 'Close preview',
-  // ?????? Phase 4 Phase 1: external / read-only authorization + disk conflict ???
-  'filePreview.external.chip': 'External ? Read-only',
+  // ── Phase 4 Phase 1: external / read-only authorization + disk conflict ─
+  'filePreview.external.chip': 'External · Read-only',
   'filePreview.external.chipTooltip': 'This file is outside the current workspace; preview is read-only.',
   'filePreview.external.confirm.title': 'AI referenced a local path outside the workspace',
-  'filePreview.external.confirm.body': 'After confirmation, files open as read-only previews and folders are revealed in the system file manager. buckyball.ai will not inspect the path until you confirm.',
+  'filePreview.external.confirm.body': 'After confirmation, files open as read-only previews and folders are revealed in the system file manager. CodePilot will not inspect the path until you confirm.',
   'filePreview.external.confirm.confirm': 'Open file',
   'filePreview.external.confirm.cancel': 'Cancel',
   'filePreview.conflict.title': 'Disk content changed',
   'filePreview.conflict.body': 'Another writer (AI or external process) updated this file while you had unsaved edits.',
   'filePreview.conflict.reload': 'Reload from disk',
   'filePreview.conflict.keep': 'Keep my edits',
-  // ?????? Phase 4 Phase 1.5: HTML interactive-sandbox toggle ???????????????????????????
+  // ── Phase 4 Phase 1.5: HTML interactive-sandbox toggle ─────────
   'filePreview.interactive.enable': 'Enable scripts',
   'filePreview.interactive.disable': 'Scripts enabled',
   'filePreview.interactive.enableTooltip': 'Allow scripts to run inside the sandbox; all external https resources (CDN images, fonts, remote CSS) are blocked to prevent data exfiltration via URLs',
@@ -430,7 +433,7 @@ const en = {
   'filePreview.interactive.modeStatic': 'Static',
   'filePreview.interactive.modeInteractive': 'Interactive',
   'filePreview.interactive.modeTooltip': 'Static mode loads images / CSS / fonts (including https), no scripts. Interactive mode lets scripts run in the sandbox but blocks every https resource so scripts cannot leak content via <img>/<link>/<script> URLs.',
-  // ?????? Phase 4 Markdown data layer + Artifact completion batch ????????????
+  // ── Phase 4 Markdown data layer + Artifact completion batch ────
   'filePreview.addToChat.action': 'Add to chat',
   'filePreview.addToChat.charsLabel': 'chars selected',
   'filePreview.presentation.generate': 'Generate presentation',
@@ -439,10 +442,10 @@ const en = {
   'presentation.pickerTitle': 'Pick a presentation style',
   'presentation.cancel': 'Cancel',
   'presentation.generate': 'Generate',
-  // ?????? Phase 4 UX: quiet refresh ???????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Phase 4 UX: quiet refresh ─────────────────────────────────
   'filePreview.quietRefresh.updated': 'Updated',
   'filePreview.external.confirm.openReadOnly': 'Open',
-  'filePreview.external.confirm.permission': 'Files read-only ? no disk writes',
+  'filePreview.external.confirm.permission': 'Files read-only · no disk writes',
   'filePreview.external.confirm.source': 'Source: local path mentioned by the AI',
   'diffSummary.openPreview': 'Open preview',
   'diffSummary.openSystemBrowser': 'Open in system browser',
@@ -451,12 +454,12 @@ const en = {
   'localReference.openFailed': 'Could not open this local path: {reason}',
   'localReference.unsupported': 'This local path type is not supported.',
 
-  // ?????? File tree actions (Phase 4) ???????????????????????????????????????????????????????????????????????????????????????
+  // ── File tree actions (Phase 4) ─────────────────────────────
   'fileTree.sectionTitle': 'Files',
   'fileTree.newMarkdown': 'New Markdown file',
   'fileTree.newFolder': 'New folder',
   'fileTree.createButton': 'Create',
-  'fileTree.newFileHint': 'Enter ??to create ? Esc to cancel',
+  'fileTree.newFileHint': 'Enter ⏎ to create · Esc to cancel',
   'fileTree.newFileErrorEmpty': 'Name cannot be empty',
   'fileTree.newFileErrorNoWorkspace': 'No workspace selected for this session',
   'fileTree.newFileErrorGeneric': 'Failed to create',
@@ -464,12 +467,12 @@ const en = {
   'fileTree.context.newFolder': 'New folder',
   'fileTree.context.rename': 'Rename',
   'fileTree.context.delete': 'Move to Trash',
-  'fileTree.delete.title': 'Move ???{name}???to Trash?',
+  'fileTree.delete.title': 'Move “{name}” to Trash?',
   'fileTree.delete.fileDescription': 'The file will be moved to the system Trash and can be restored.',
   'fileTree.delete.folderDescription': 'The folder and its {count} visible items will be moved to the system Trash and can be restored.',
   'fileTree.delete.unsavedWarning': 'This file has unsaved changes. Deleting it will discard them.',
   'fileTree.delete.confirm': 'Move to Trash',
-  'fileTree.delete.deleting': 'Moving???,
+  'fileTree.delete.deleting': 'Moving…',
   'fileIO.errors.path_unsafe': 'The path is outside the current workspace.',
   'fileIO.errors.root_path': 'The workspace root cannot be changed or deleted.',
   'fileIO.errors.symlink_detected': 'This operation is blocked because the path contains a symbolic link.',
@@ -485,15 +488,15 @@ const en = {
   'fileIO.errors.invalid_filename': 'That name is not valid on this platform.',
   'fileIO.errors.write_failed': 'The file operation failed. No changes were applied.',
 
-  // ?????? Doc preview ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Doc preview ─────────────────────────────────────────────
   'docPreview.htmlPreview': 'HTML Preview',
 
-  // ?????? Extensions page ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Extensions page ─────────────────────────────────────────
   'extensions.title': 'Extensions',
   'extensions.skills': 'Skills',
   'extensions.mcpServers': 'MCP Servers',
 
-  // ?????? Skills ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Skills ──────────────────────────────────────────────────
   'skills.noSelected': 'No skill selected',
   'skills.selectOrCreate': 'Select a skill from the list or create a new one',
   'skills.newSkill': 'New Skill',
@@ -537,7 +540,7 @@ const en = {
   'skills.marketplaceHintDesc': 'Search and install community skills from Skills.sh',
   'skills.noReadme': 'No description available for this skill',
 
-  // ?????? MCP ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── MCP ─────────────────────────────────────────────────────
   'mcp.addServer': 'Add Server',
   'mcp.loadingServers': 'Loading MCP servers...',
   'mcp.serverConfig': 'MCP Server Configuration',
@@ -559,14 +562,14 @@ const en = {
   'mcp.jsonEditTab': 'JSON',
   'mcp.saveChanges': 'Save Changes',
 
-  // ?????? Folder picker ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Folder picker ───────────────────────────────────────────
   'folderPicker.title': 'Select a project folder',
   'folderPicker.loading': 'Loading...',
   'folderPicker.noSubdirs': 'No subdirectories',
   'folderPicker.cancel': 'Cancel',
   'folderPicker.select': 'Select This Folder',
 
-  // ?????? Import session dialog ?????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Import session dialog ───────────────────────────────────
   'import.title': 'Import Session from Claude CLI',
   'import.searchSessions': 'Search sessions...',
   'import.noSessions': 'No sessions found',
@@ -579,7 +582,7 @@ const en = {
   'import.messages': '{n} msg',
   'import.messagesPlural': '{n} msgs',
 
-  // ?????? Connection status ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Connection status ───────────────────────────────────────
   'connection.notInstalled': 'Claude Code is not installed',
   'connection.installed': 'Claude Code is installed',
   'connection.version': 'Version: {version}',
@@ -600,7 +603,7 @@ const en = {
   'connection.missingGitDesc': 'Claude Code requires Git for Windows to run properly. Without it, all commands will fail with exit code 1.',
   'connection.installGit': 'Install Git',
   'connection.gitInstalling': 'Installing...',
-  'connection.gitInstallSuccess': 'Git installed successfully! Please restart buckyball.ai.',
+  'connection.gitInstallSuccess': 'Git installed successfully! Please restart CodePilot.',
   'connection.gitInstallFailed': 'Auto-install failed. Please download and install manually.',
   'connection.downloadGit': 'Download',
   'connection.recheck': 'Recheck',
@@ -608,15 +611,15 @@ const en = {
   'connection.conflictWarning': 'Multiple Claude Code installations detected',
   'connection.conflictRemove': 'To remove',
   'connection.updateAvailable': 'Update Available',
-  'connection.versionCompare': 'v{current} ???v{latest}',
+  'connection.versionCompare': 'v{current} → v{latest}',
   'connection.upgradeButton': 'Upgrade CLI',
   'connection.upgrading': 'Upgrading...',
-  'connection.upgradeSuccess': 'Upgrade successful! Please restart buckyball.ai to apply the update.',
+  'connection.upgradeSuccess': 'Upgrade successful! Please restart CodePilot to apply the update.',
   'connection.upgradeFailed': 'Upgrade failed. Please try manually:',
   'connection.checkUpgrade': 'Check for Updates',
   'connection.manualUpdateHint': 'This install channel does not auto-update. Run the upgrade to check for new versions.',
 
-  // ?????? Install wizard ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Install wizard ──────────────────────────────────────────
   'install.title': 'Install Claude Code',
   'install.checkingPrereqs': 'Checking environment...',
   'install.alreadyInstalled': 'Claude Code is already installed',
@@ -635,7 +638,7 @@ const en = {
   'install.notDetected': 'not detected',
   'install.nativeDescription': 'Claude Code CLI was not detected. Install it using the official native installer?',
   'install.autoDescription': 'Automatically install Claude Code CLI',
-  'install.nativeExplain': 'Click Install to download and run the official native installer. No Node.js required ???the native binary auto-updates in the background.',
+  'install.nativeExplain': 'Click Install to download and run the official native installer. No Node.js required — the native binary auto-updates in the background.',
   'install.nativeCompleteDesc': 'Claude Code has been installed via the native installer. It will auto-update in the background.',
   'install.conflictTitle': 'Multiple installations detected',
   'install.conflictUsing': 'Currently using',
@@ -648,7 +651,7 @@ const en = {
   'install.gitStep2': 'Run the installer with default settings',
   'install.gitStep3': 'Come back here and click "Recheck"',
 
-  // ?????? Task list ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Task list ───────────────────────────────────────────────
   'tasks.all': 'All',
   'tasks.active': 'Active',
   'tasks.done': 'Done',
@@ -658,35 +661,35 @@ const en = {
   'tasks.noTasks': 'No tasks yet',
   'tasks.noMatching': 'No matching tasks',
 
-  // ?????? Tool call block ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Tool call block ─────────────────────────────────────────
   'tool.running': 'running',
   'tool.success': 'success',
   'tool.error': 'error',
 
-  // ?????? Common ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Common ──────────────────────────────────────────────────
   'common.cancel': 'Cancel',
   'common.confirm': 'Confirm',
   'common.back': 'Back',
   'common.save': 'Save',
   'common.saved': 'Saved',
-  'common.saving': 'Saving???,
+  'common.saving': 'Saving…',
   'common.delete': 'Delete',
   'common.loading': 'Loading...',
   'common.close': 'Close',
   'common.enabled': 'Enabled',
-  // v11 ???clipboard feedback used by `lib/clipboard.ts:copyWithToast`
+  // v11 — clipboard feedback used by `lib/clipboard.ts:copyWithToast`
   'common.copySuccess': 'Copied to clipboard',
   'common.copyFailed': 'Could not copy. You can copy this manually:',
   'common.disabled': 'Disabled',
 
-  // ?????? Prompt dialog (replacement for window.prompt ???not supported in Electron) ??????
+  // ── Prompt dialog (replacement for window.prompt — not supported in Electron) ──
   'prompt.rename.title': 'Rename Conversation',
   'prompt.rename.placeholder': 'Enter new title',
   'prompt.workspacePath.title': 'Workspace Path',
   'prompt.workspacePath.description': 'Enter the absolute path to the directory',
   'prompt.workspacePath.placeholder': '/path/to/workspace',
 
-  // ?????? Error boundary ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Error boundary ────────────────────────────────────────
   'error.title': 'Something went wrong',
   'error.description': 'An unexpected error occurred. You can try again or reload the app.',
   'error.showDetails': 'Show details',
@@ -694,22 +697,95 @@ const en = {
   'error.tryAgain': 'Try Again',
   'error.reloadApp': 'Reload App',
 
-  // ?????? Update ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Update ─────────────────────────────────────────────────
   'update.newVersionAvailable': 'New Version Available',
   'update.downloading': 'Downloading',
   'update.restartToUpdate': 'Restart to Update',
   'update.restartNow': 'Restart Now',
-  'update.readyToInstall': 'buckyball.ai v{version} is ready ???restart to update',
+  'update.readyToInstall': 'CodePilot v{version} is ready — restart to update',
   'update.installUpdate': 'Download & Install',
   'update.later': 'Later',
-  'update.rosettaWarning': 'buckyball.ai is running through Rosetta on this Apple Silicon Mac. Install the arm64 build for better responsiveness.',
+  'update.rosettaWarning': 'CodePilot is running through Rosetta on this Apple Silicon Mac. Install the arm64 build for better responsiveness.',
+  'update.windowsUnsignedTrustNotice': 'This Windows update has no independent publisher signature. CodePilot trusts only the official op7418/CodePilot GitHub Release and verifies the SHA-512 from its update metadata; this is not Authenticode publisher verification, and Windows may still show SmartScreen.',
   'update.recommendedAsset': 'Recommended download: {asset}',
   'update.getRecommendedBuild': 'Get Recommended Build',
+  'update.platformAssetMissing': 'CodePilot v{version} does not provide a {platform} installer. You can view the release details, but there is no compatible package to download.',
+  'update.viewReleaseDetails': 'View Release Details',
+  'update.checkUnavailableDuringUpdate': 'Update in progress',
+  'update.error.offline': 'The update service is offline. CodePilot will retry, or you can use the release page.',
+  'update.error.metadata_invalid': 'The update metadata is missing or invalid. The package was not installed.',
+  'update.error.signature_invalid': 'The update signature or publisher could not be verified. The package was not installed.',
+  'update.error.download_failed': 'The update download failed. CodePilot will retry; the current version remains usable.',
+  'update.error.install_failed': 'The installer did not take over. CodePilot remains open and the downloaded update can be retried.',
+  'update.error.active_work': 'An active chat, bridge, or scheduled task is still running. Finish or stop it before restarting to update.',
+  'update.error.activity_unavailable': 'CodePilot could not confirm that active work is idle, so it did not restart. Try again after the app is fully ready.',
+  'update.error.cli_update_running': 'A Claude Code or Codex CLI update is still running. Wait for it to finish before installing the CodePilot update.',
+  'update.error.internal': 'The native updater could not complete this action. Use the release page to update manually.',
 
-  // ?????? Image Generation ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Claude Code / Codex CLI maintenance ────────────────────
+  'cliMaintenance.error.active_work': 'Finish active chats, bridges, or scheduled tasks before updating.',
+  'cliMaintenance.error.activity_unavailable': 'CodePilot could not prove that Runtime activity is idle.',
+  'cliMaintenance.error.maintenance_in_progress': 'Another CLI update is already running.',
+  'cliMaintenance.error.cli_update_running': 'Another CLI update is already running.',
+  'cliMaintenance.error.app_update_installing': 'Wait for the CodePilot app update to finish.',
+  'cliMaintenance.error.app_quitting': 'CodePilot is quitting and did not start the CLI update.',
+  'cliMaintenance.error.install_channel_unknown': 'This installation channel cannot be updated safely from CodePilot.',
+  'cliMaintenance.error.update_target_mismatch': 'The selected CLI could not be matched to the update target.',
+  'cliMaintenance.error.package_manager_missing': 'The package manager for this installation was not found.',
+  'cliMaintenance.error.permission_denied': 'The updater lacks permission. Use the official manual update instructions.',
+  'cliMaintenance.error.executable_locked': 'The CLI executable is still in use. Close related processes and retry.',
+  'cliMaintenance.error.network_unavailable': 'The update source is temporarily unavailable.',
+  'cliMaintenance.error.timed_out': 'The updater timed out and rechecked the installed CLI.',
+  'cliMaintenance.error.cancelled': 'The update was cancelled and the installed CLI was rechecked.',
+  'cliMaintenance.error.cleanup_incomplete': 'The installer process tree could not be fully stopped. Manual recovery may be required.',
+  'cliMaintenance.error.command_failed': 'The update command failed. The installed version was rechecked.',
+  'cliMaintenance.error.version_unverified': 'The CLI version could not be verified after the update. Use manual recovery.',
+  'cliMaintenance.error.version_unchanged': 'The command finished but the selected CLI version did not change.',
+  'cliMaintenance.error.internal': 'The CLI update could not be completed.',
+  'cliMaintenance.requestRejected': 'The CLI update request was rejected.',
+  'cliMaintenance.updateCouldNotStart': 'The CLI update could not start.',
+  'cliMaintenance.updatingProvider': 'Updating {provider}…',
+  'cliMaintenance.updatedProviderVersion': '{provider} updated to v{version}',
+  'cliMaintenance.card.singleTitle': '{provider} update available',
+  'cliMaintenance.card.multiTitle': 'CLI updates available',
+  'cliMaintenance.card.stayCurrent': 'Stay current to reduce feature compatibility issues.',
+  'cliMaintenance.card.installing': 'Installing the new version; CodePilot will verify it afterwards.',
+  'cliMaintenance.card.installingProgress': 'Installing the new version ({current}/{total}); CodePilot will verify it afterwards.',
+  'cliMaintenance.card.notCompleted': 'CLI update not completed',
+  'cliMaintenance.card.retry': 'Retry',
+  'cliMaintenance.card.complete': 'CLI update complete',
+  'cliMaintenance.card.singleSuccess': '{provider} updated and verified.',
+  'cliMaintenance.card.multiSuccess': '{count} CLIs updated and verified.',
+  'cliMaintenance.card.update': 'Update',
+  'cliMaintenance.card.settings': 'Settings',
+  'cliMaintenance.settings.sectionLabel': 'CLI maintenance',
+  'cliMaintenance.settings.verifiedLatest': 'verified latest',
+  'cliMaintenance.settings.managedAuto': 'managed by the official CLI',
+  'cliMaintenance.settings.sameChannelRequired': 'same-channel check required',
+  'cliMaintenance.settings.belowMinimum': 'Below the Runtime minimum v{version}',
+  'cliMaintenance.settings.checked': 'Checked {date}',
+  'cliMaintenance.settings.unknownVersion': 'Unknown version',
+  'cliMaintenance.settings.cancel': 'Cancel',
+  'cliMaintenance.settings.update': 'Update',
+  'cliMaintenance.settings.checkAria': 'Check for CLI updates',
+  'cliMaintenance.settings.notInstalled': 'Not installed',
+  'cliMaintenance.settings.success': 'Update complete; the selected CLI was re-verified.',
+  'cliMaintenance.connection.cancelUpdate': 'Cancel update',
+  'cliMaintenance.connection.reviewOptions': 'Review update options in Settings',
+  'cliMaintenance.quit.title': 'CLI update in progress',
+  'cliMaintenance.quit.message': 'Quitting CodePilot may interrupt the Claude Code or Codex CLI installer.',
+  'cliMaintenance.quit.detail': 'Wait for the update to finish, or cancel it and wait for cleanup. Force quit can leave the CLI installation requiring manual recovery.',
+  'cliMaintenance.quit.keepWaiting': 'Keep Waiting',
+  'cliMaintenance.quit.cancelAndQuit': 'Cancel Update and Quit',
+  'cliMaintenance.quit.forceQuit': 'Force Quit',
+  'cliMaintenance.quit.cleanupTitle': 'Update cleanup is still running',
+  'cliMaintenance.quit.cleanupMessage': 'CodePilot stayed open to avoid damaging the CLI installation. Try again shortly.',
+  'cliMaintenance.quit.ok': 'OK',
+
+  // ── Image Generation ──────────────────────────────────────
   'imageGen.toggle': 'Image Generation',
   'imageGen.toggleLabel': 'Image Agent',
-  'imageGen.toggleTooltip': 'Toggle Image Agent ???AI analyzes intent and generates single or batch images',
+  'imageGen.toggleTooltip': 'Toggle Image Agent — AI analyzes intent and generates single or batch images',
   'imageGen.generating': 'Generating image...',
   'imageGen.params': 'Generation Parameters',
   'imageGen.aspectRatio': 'Aspect Ratio',
@@ -738,7 +814,7 @@ const en = {
   'imageGen.activeProviderStale': 'Image provider unavailable',
   'imageGen.activeProviderStaleHint': 'The active image provider is missing its key or was changed. Open Settings to reconfigure.',
 
-  // ?????? Batch Image Generation ???????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Batch Image Generation ─────────────────────────────────
   'batchImageGen.toggle': 'Batch Generate',
   'batchImageGen.toggleTooltip': 'Toggle batch image generation mode',
   'batchImageGen.entryTitle': 'Batch Image Generation',
@@ -784,12 +860,12 @@ const en = {
   'batchImageGen.aspectRatio': 'Ratio',
   'batchImageGen.imageSize': 'Size',
 
-  // ?????? Gallery ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Gallery ─────────────────────────────────────────────────
   'gallery.title': 'Asset Library',
   'gallery.description': 'Manage durable images, videos, audio, and archived web pages',
   'gallery.empty': 'No Assets here yet',
   'gallery.emptyHint': 'Generate media or archive a completed web page to see it here.',
-  'gallery.searchPlaceholder': 'Search prompt, tags, project, source, model, or method???,
+  'gallery.searchPlaceholder': 'Search prompt, tags, project, source, model, or method…',
   'gallery.kindAll': 'All',
   'gallery.deleteBlocked': 'This Asset is still used by: {consumers}',
   'gallery.deleteFailed': 'This Asset could not be permanently deleted.',
@@ -844,10 +920,10 @@ const en = {
   'media.source.mcp': 'Generated by MCP tool',
   'media.source.cli': 'Imported from CLI tool',
 
-  // ?????? Provider: Gemini Image ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Provider: Gemini Image ──────────────────────────────────
   'provider.chatProviders': 'Chat Providers',
   'provider.mediaProviders': 'Image & video providers',
-  'provider.geminiImageDesc': 'Nano Banana Pro ???AI image generation by Google Gemini',
+  'provider.geminiImageDesc': 'Nano Banana Pro — AI image generation by Google Gemini',
   'provider.diagnose': 'Diagnose',
   'provider.doctor.title': 'Provider Doctor',
   'provider.doctor.running': 'Running diagnostics...',
@@ -864,20 +940,20 @@ const en = {
   'provider.doctor.probe.network': 'Network/Endpoint',
   'provider.doctor.fix': 'Fix',
 
-  // ?????? CLI dynamic field labels ??????????????????????????????????????????????????????????????????????????????????????????
+  // ── CLI dynamic field labels ──────────────────────────────
   'cli.loadingSettings': 'Loading settings...',
   'cli.field.skipDangerousModePermissionPrompt': 'Skip Dangerous Mode Permission Prompt',
   'cli.field.verbose': 'Verbose',
   'cli.field.theme': 'Theme',
   'cli.formatError': 'Cannot format: invalid JSON',
 
-  // ?????? Split screen ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Split screen ─────────────────────────────────────────────
   'split.splitScreen': 'Split Screen',
   'split.closeSplit': 'Close Split',
   'split.splitGroup': 'Split',
   'chatList.splitScreen': 'Split Screen',
 
-  // ?????? Telegram (Bridge) ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Telegram (Bridge) ──────────────────────────────────────
   'telegram.credentials': 'Bot Credentials',
   'telegram.credentialsDesc': 'Enter your Telegram Bot token and chat ID',
   'telegram.botToken': 'Bot Token',
@@ -899,17 +975,17 @@ const en = {
   'telegram.step5': 'Send /start to your bot, then click "Auto Detect" next to the Chat ID field',
   'telegram.step6': 'Click "Save" to store your credentials',
 
-  // ?????? Feishu (Bridge) ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Feishu (Bridge) ──────────────────────────────────────
   'feishu.quickCreate': 'Quick Start',
-  'feishu.quickCreateDesc': 'Auto-create a Feishu bot and bind it to buckyball.ai ???no manual permission or event setup needed',
+  'feishu.quickCreateDesc': 'Auto-create a Feishu bot and bind it to CodePilot — no manual permission or event setup needed',
   'feishu.quickCreateBtn': 'Create & Bind Feishu App',
-  'feishu.waitingAuth': 'Browser opened ???please confirm creation in Feishu...',
+  'feishu.waitingAuth': 'Browser opened — please confirm creation in Feishu...',
   'feishu.createSuccess': 'Bound successfully: {botName}',
   'feishu.createSuccessGeneric': 'Bound successfully',
   'feishu.createFailed': 'Failed to create app',
   'feishu.createExpired': 'Authorization timed out, please retry',
   'feishu.rebind': 'Rebind',
-  'feishu.manualConfig': 'Already have a Feishu app? Manual configuration ???,
+  'feishu.manualConfig': 'Already have a Feishu app? Manual configuration ›',
   'feishu.errorUserDenied': 'User denied the app creation request',
   'feishu.errorEmptyCredentials': 'Registration returned empty credentials',
   'feishu.errorLarkEmptyCredentials': 'Lark endpoint returned empty credentials',
@@ -932,26 +1008,26 @@ const en = {
   'feishu.allowFromDesc': 'Control which users can send DMs to the bot',
   'feishu.allowFromHint': 'Comma-separated open_id values. Use * to allow all users.',
   'feishu.dmPolicy': 'DM Policy',
-  'feishu.dmPolicyOpen': 'Open ???accept DMs from all users',
-  'feishu.dmPolicyPairing': 'Pairing ???require pairing handshake',
-  'feishu.dmPolicyAllowlist': 'Allowlist ???only listed users',
-  'feishu.dmPolicyDisabled': 'Disabled ???ignore all DMs',
+  'feishu.dmPolicyOpen': 'Open — accept DMs from all users',
+  'feishu.dmPolicyPairing': 'Pairing — require pairing handshake',
+  'feishu.dmPolicyAllowlist': 'Allowlist — only listed users',
+  'feishu.dmPolicyDisabled': 'Disabled — ignore all DMs',
   'feishu.accessBehavior': 'Access & Behavior',
   'feishu.accessBehaviorDesc': 'Configure who can use the bot and how it behaves',
   'feishu.saved': 'Saved',
   'feishu.groupSettings': 'Group Chat Settings',
   'feishu.groupSettingsDesc': 'Control how the bot responds in group chats',
   'feishu.groupPolicy': 'Group Policy',
-  'feishu.groupPolicyOpen': 'Open ???respond in all groups',
-  'feishu.groupPolicyAllowlist': 'Allowlist ???only specified groups',
-  'feishu.groupPolicyDisabled': 'Disabled ???ignore all group messages',
+  'feishu.groupPolicyOpen': 'Open — respond in all groups',
+  'feishu.groupPolicyAllowlist': 'Allowlist — only specified groups',
+  'feishu.groupPolicyDisabled': 'Disabled — ignore all group messages',
   'feishu.groupAllowFrom': 'Allowed Groups',
   'feishu.groupAllowFromHint': 'Comma-separated chat_id values of allowed groups',
   'feishu.requireMention': 'Require @mention',
   'feishu.requireMentionDesc': 'Only respond in groups when the bot is @mentioned',
   'feishu.setupGuide': 'How it works',
-  'feishu.step1': 'Click "Create & Bind Feishu App" above ???your browser will open the Feishu authorization page',
-  'feishu.step2': 'Select a workspace and confirm ???Bot capabilities, permissions, and event subscriptions are auto-configured',
+  'feishu.step1': 'Click "Create & Bind Feishu App" above — your browser will open the Feishu authorization page',
+  'feishu.step2': 'Select a workspace and confirm — Bot capabilities, permissions, and event subscriptions are auto-configured',
   'feishu.step3': 'Come back here, then go to the Bridge overview to start the bridge',
   'feishu.threadSession': 'Thread Sessions',
   'feishu.threadSessionDesc': 'Enable per-thread independent context (parallel conversations in different threads)',
@@ -980,11 +1056,11 @@ const en = {
   'feishu.diagnose.permissions': 'Permissions',
   'feishu.diagnose.running': 'Running diagnostics...',
 
-  // ?????? Channels (generic) ????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Channels (generic) ────────────────────────────────────
   'channels.configSaved': 'Configuration saved',
   'channels.configError': 'Configuration error',
 
-  // ?????? Remote ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Remote ────────────────────────────────────────────────
   'remote.title': 'Remote Control',
   'remote.host': 'Host',
   'remote.controllers': 'Controllers',
@@ -994,7 +1070,7 @@ const en = {
   'remote.leaseReleased': 'Lease released',
   'remote.leaseExpired': 'Lease expired',
 
-  // ?????? Settings: Remote Bridge ????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Remote Bridge ────────────────────────────────
   'settings.bridge': 'Remote Bridge',
   'bridge.title': 'Remote Bridge',
   'bridge.description': 'Control Claude from external channels like Telegram or Feishu',
@@ -1065,7 +1141,7 @@ const en = {
   'bridge.errorAdapterConfig': 'Channel configuration is invalid. Check settings for each enabled channel.',
   'bridge.errorNetwork': 'Network error while starting bridge.',
 
-  // ?????? Settings: Discord Bridge ???????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: Discord Bridge ─────────────────────────────────
   'discord.credentials': 'Bot Credentials',
   'discord.credentialsDesc': 'Enter your Discord Bot token',
   'discord.botToken': 'Bot Token',
@@ -1085,8 +1161,8 @@ const en = {
   'discord.allowedGuilds': 'Allowed Server (Guild) IDs',
   'discord.allowedGuildsHint': 'Guild IDs, comma-separated for multiple. Leave empty to allow all servers.',
   'discord.groupPolicy': 'Server Message Policy',
-  'discord.groupPolicyOpen': 'Open ???respond in all server channels',
-  'discord.groupPolicyDisabled': 'Disabled ???ignore all server messages (DM only)',
+  'discord.groupPolicyOpen': 'Open — respond in all server channels',
+  'discord.groupPolicyDisabled': 'Disabled — ignore all server messages (DM only)',
   'discord.requireMention': 'Require @mention',
   'discord.requireMentionDesc': 'Only respond in servers when the bot is @mentioned',
   'discord.streamPreview': 'Stream Preview',
@@ -1097,16 +1173,16 @@ const en = {
   'discord.step2': 'Navigate to "Bot" in the sidebar, click "Add Bot" to create the bot',
   'discord.step3': 'Scroll down to "Privileged Gateway Intents", enable the "MESSAGE CONTENT INTENT" toggle',
   'discord.step4': 'Click "Reset Token" to copy the Bot Token, paste it in the "Bot Credentials" section above and save',
-  'discord.step5': 'Go to "OAuth2 ???URL Generator", check "bot" under Scopes, then check "Send Messages" and "Read Message History" under Bot Permissions',
+  'discord.step5': 'Go to "OAuth2 → URL Generator", check "bot" under Scopes, then check "Send Messages" and "Read Message History" under Bot Permissions',
   'discord.step6': 'Copy the generated invite URL, open it in your browser to invite the Bot to your server',
-  'discord.step7': 'Click "Test Connection" above ???if the bot name appears, setup is complete',
+  'discord.step7': 'Click "Test Connection" above — if the bot name appears, setup is complete',
   'discord.setupIdTitle': 'Getting IDs (Developer Mode required)',
-  'discord.stepDevMode': 'Open Discord ???User Settings ???Advanced ???enable "Developer Mode"',
-  'discord.stepUserId': 'User ID: right-click your avatar or username ???"Copy User ID"',
-  'discord.stepChannelId': 'Channel ID: right-click a channel name in the sidebar ???"Copy Channel ID"',
-  'discord.stepGuildId': 'Server ID: right-click the server name at the top-left ???"Copy Server ID"',
+  'discord.stepDevMode': 'Open Discord → User Settings → Advanced → enable "Developer Mode"',
+  'discord.stepUserId': 'User ID: right-click your avatar or username → "Copy User ID"',
+  'discord.stepChannelId': 'Channel ID: right-click a channel name in the sidebar → "Copy Channel ID"',
+  'discord.stepGuildId': 'Server ID: right-click the server name at the top-left → "Copy Server ID"',
 
-  // ?????? Settings: QQ Bridge ????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: QQ Bridge ────────────────────────────────────
   'qq.credentials': 'Bot Credentials',
   'qq.credentialsDesc': 'Enter your QQ Bot App ID and App Secret',
   'qq.appId': 'App ID',
@@ -1131,7 +1207,7 @@ const en = {
   'qq.step4': 'Go back to the Bridge page, enable the QQ channel toggle, and start the bridge',
   'qq.step5': 'Add your QQ bot as a friend and send it a message to start chatting',
 
-  // ?????? Settings: WeChat Bridge ??????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Settings: WeChat Bridge ──────────────────────────────────
   'weixin.accounts': 'Accounts',
   'weixin.accountsDesc': 'Manage your linked WeChat accounts',
   'weixin.addAccount': 'Add Account',
@@ -1170,18 +1246,24 @@ const en = {
   'weixin.mediaEnabled': 'Media Support',
   'weixin.mediaEnabledDesc': 'Download and process media attachments from WeChat messages',
 
-  // ?????? Assistant Workspace ??????????????????????????????????????????????????????????????????????????????????????????
+  // ── Assistant Workspace ──────────────────────────────
   'settings.assistant': 'Assistant',
   'settings.tasks': 'Tasks',
-  'settings.tasksDesc': 'Global task center ???reminders and AI tasks from any source (user / assistant / automation) in one place',
+  'settings.tasksDesc': 'Global task center — reminders and AI tasks from any source (user / assistant / automation) in one place',
   'tasks.create': 'New Task',
-  'tasks.creating': 'Creating???,
+  'tasks.creating': 'Creating…',
   'tasks.cancel': 'Cancel',
   'tasks.empty': 'No scheduled tasks yet.',
-  'tasks.createHint': 'Click "New Task" ???it opens a chat where the AI walks you through creating one.',
+  'tasks.createHint': 'Click "New Task" — it opens a chat where the AI walks you through creating one.',
   'tasks.deliveryLog': 'Execution history & notification channels',
+  'notifications.untitledSession': 'Untitled task',
+  'notifications.unknownAction': 'an action',
+  'notifications.taskCompletedTitle': 'Task completed',
+  'notifications.taskCompletedBody': '“{session}” has finished.',
+  'notifications.approvalRequiredTitle': 'Action required',
+  'notifications.approvalRequiredBody': '“{session}” is waiting for your approval: {tool}.',
   'tasks.kindReminder': 'Reminder',
-  'tasks.kindReminderDesc': 'Pops a notification at the scheduled time. The prompt text is the notification body ???no AI model is called.',
+  'tasks.kindReminderDesc': 'Pops a notification at the scheduled time. The prompt text is the notification body — no AI model is called.',
   'tasks.kindAiTask': 'AI Task',
   'tasks.kindAiTaskDesc': 'Feeds the prompt to your configured provider; the AI reply becomes the notification body.',
   'tasks.schedule': 'Schedule',
@@ -1209,7 +1291,7 @@ const en = {
   'assistant.changeWorkspacePath': 'Set a new assistant folder path',
   'assistant.confirmSwitchPathTitle': 'Switch assistant folder?',
   'assistant.confirmSwitchPathDesc': 'After switching, the assistant reads its personality, memory, instructions, and HEARTBEAT.md from the new folder and opens the assistant session associated with it.',
-  'assistant.confirmSwitchPathHint': 'The original folder and its files are not deleted or migrated automatically. After selection, buckyball.ai asks again based on the target folder state.',
+  'assistant.confirmSwitchPathHint': 'The original folder and its files are not deleted or migrated automatically. After selection, CodePilot asks again based on the target folder state.',
   'assistant.continueSelectFolder': 'Continue to folder picker',
   'assistant.initialize': 'Initialize',
   'assistant.initializing': 'Initializing...',
@@ -1220,7 +1302,7 @@ const en = {
   'assistant.fileMissing': 'missing',
   'assistant.fileChars': '{count} chars',
   'assistant.rulesMirrorConflictTitle': 'Assistant rule files conflict',
-  'assistant.rulesMirrorConflictDesc': 'These compatibility files were edited separately, so buckyball.ai stopped overwriting them. Merge anything you want to keep into instructions.md, then delete the conflicting files; the next assistant chat will regenerate them.',
+  'assistant.rulesMirrorConflictDesc': 'These compatibility files were edited separately, so CodePilot stopped overwriting them. Merge anything you want to keep into instructions.md, then delete the conflicting files; the next assistant chat will regenerate them.',
   'assistant.onboardingTitle': 'Onboarding',
   'assistant.onboardingDesc': 'Answer questions to personalize your assistant',
   'assistant.onboardingComplete': 'Onboarding complete',
@@ -1228,7 +1310,7 @@ const en = {
   'assistant.startOnboarding': 'Start Onboarding',
   'assistant.redoOnboarding': 'Redo Onboarding',
   'assistant.heartbeatTitle': 'Heartbeat',
-  // v10 ???v13 ???Honest framing, take two.
+  // v10 → v13 — Honest framing, take two.
   // v10 truthfully said "not a background timer" because at that
   // point heartbeat only fired via the foreground autoTrigger when
   // a new workspace chat opened. After Phase 3 Step 4 the trigger
@@ -1258,7 +1340,7 @@ const en = {
   'assistant.testNotificationQueued': 'Queued for native delivery; waiting for the OS result.',
   'assistant.testNotificationAccepted': 'Accepted by the OS (not a read receipt)',
   'assistant.testNotificationFailed': 'System notification failed',
-  'assistant.testNotificationMacDev': 'macOS does not display system notifications from the unsigned Electron development client. Test with a signed buckyball.ai build.',
+  'assistant.testNotificationMacDev': 'macOS does not display system notifications from the unsigned Electron development client. Test with a signed CodePilot build.',
   'assistant.testNotificationHint': 'This tests native notification, sound policy, and click-to-open only. It does not call a model or write assistant memory/chat.',
   'assistant.lastHeartbeatLabel': 'Last heartbeat',
   'assistant.heartbeatOk': 'All clear',
@@ -1267,7 +1349,7 @@ const en = {
   'assistant.refreshingDocs': 'Refreshing...',
   'assistant.docsRefreshed': 'Directory docs refreshed',
 
-  // ?????? Taxonomy ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Taxonomy ──────────────────────────────────────────
   'assistant.taxonomyTitle': 'Taxonomy',
   'assistant.taxonomyDesc': 'Categories learned from your workspace structure',
   'assistant.taxonomyEmpty': 'No categories detected',
@@ -1276,7 +1358,7 @@ const en = {
   'assistant.taxonomySource': 'Source',
   'assistant.taxonomyPaths': 'Paths',
 
-  // ?????? Index ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Index ─────────────────────────────────────────────
   'assistant.indexTitle': 'File Index',
   'assistant.indexDesc': 'Indexed files for search and retrieval',
   'assistant.indexFiles': '{count} files indexed',
@@ -1286,14 +1368,14 @@ const en = {
   'assistant.indexReindex': 'Reindex',
   'assistant.indexReindexing': 'Reindexing...',
 
-  // ?????? Hotset ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Hotset ────────────────────────────────────────────
   'assistant.hotsetTitle': 'Hotset',
   'assistant.hotsetDesc': 'Frequently accessed files loaded into context',
   'assistant.hotsetEmpty': 'No frequent files yet',
   'assistant.hotsetPinned': 'Pinned',
   'assistant.hotsetFrequent': 'Frequent',
 
-  // ?????? Organize ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Organize ──────────────────────────────────────────
   'assistant.organizeTitle': 'Organization',
   'assistant.organizeDesc': 'Archive and organize workspace content',
   'assistant.organizeArchive': 'Archive Old Memories',
@@ -1302,12 +1384,12 @@ const en = {
   'assistant.organizeSuggest': 'Suggest Evolution',
   'assistant.organizeSuggesting': 'Analyzing...',
 
-  // ?????? Assistant Workspace Switch Banner ???????????????????????????????????????????????????
+  // ── Assistant Workspace Switch Banner ─────────────────
   'assistant.switchedBanner': 'Assistant directory has been switched to {path}. This session is no longer bound to assistant features.',
   'assistant.openNewAssistant': 'Open New Assistant Project',
   'assistant.sessionUnbound': 'Session unbound from assistant',
 
-  // ?????? Workspace Inspect & Confirmation ??????????????????????????????????????????????????????
+  // ── Workspace Inspect & Confirmation ──────────────────
   'assistant.inspecting': 'Checking...',
   'assistant.inspectFailed': 'Failed to inspect path',
   'assistant.pathNotExist': 'Path does not exist',
@@ -1344,8 +1426,8 @@ const en = {
   'assistant.panel.settings': 'Settings',
   'assistant.panel.assistantSettings': 'Assistant Settings',
   'assistant.panel.editHeartbeat': 'Edit HEARTBEAT.md',
-  // ?????? Scheduled Tasks (legacy toast / status copy ???`tasks.empty` is
-  // re-defined above for the Settings ???Tasks page; older copy lives
+  // ── Scheduled Tasks (legacy toast / status copy — `tasks.empty` is
+  // re-defined above for the Settings → Tasks page; older copy lives
   // here for Phase 2 toasts).
   'tasks.title': 'Scheduled Tasks',
   'tasks.created': 'Task created',
@@ -1367,19 +1449,19 @@ const en = {
   'assistant.configured': 'Configured',
   'assistant.reconfigure': 'Reconfigure',
   'assistant.personality': 'Personality',
-  // v12 ???`assistant.scheduledTasks` + tasksLink* keys retired.
+  // v12 — `assistant.scheduledTasks` + tasksLink* keys retired.
   // Assistant page no longer renders a scheduled-tasks block at all
   // (v9 removed the inline list, v12 removed the link card). Global
-  // tasks live in Settings ???Tasks. These keys had only one consumer
+  // tasks live in Settings → Tasks. These keys had only one consumer
   // each; safe to drop.
   'assistant.editHeartbeatHint': 'Edit HEARTBEAT.md in your workspace to customize checks',
-  // Phase 3 Step 4 ???heartbeat interval picker (Settings ???Assistant)
+  // Phase 3 Step 4 — heartbeat interval picker (Settings → Assistant)
   'assistant.heartbeatInterval': 'Heartbeat interval',
   'assistant.heartbeatInterval1h': 'Every hour',
   'assistant.heartbeatInterval6h': 'Every 6 hours',
   'assistant.heartbeatInterval12h': 'Every 12 hours',
   'assistant.heartbeatInterval24h': 'Once a day',
-  // Phase 3 Step 4 ???TaskRunMarker labels rendered in chat session
+  // Phase 3 Step 4 — TaskRunMarker labels rendered in chat session
   'chat.taskRunMarker.taskLabel': 'Scheduled task',
   'chat.taskRunMarker.heartbeatLabel': 'Heartbeat',
   'chat.taskRunMarker.running': 'Running',
@@ -1387,23 +1469,23 @@ const en = {
   'chat.taskRunMarker.failed': 'Failed',
   'chat.taskRunMarker.waitingForPermission': 'Waiting for permission',
   'chat.taskRunMarker.cancelled': 'Abandoned',
-  // Phase 3 Step 4b ???TaskWaitingForPermissionPanel
+  // Phase 3 Step 4b — TaskWaitingForPermissionPanel
   'chat.taskWaiting.title': 'Background task paused: needs permission',
-  'chat.taskWaiting.body': 'The background run hit a tool that requires permission and stopped to preserve context. This version does not support resuming from the pause point ???re-run starts fresh, or abandon to mark this run cancelled.',
+  'chat.taskWaiting.body': 'The background run hit a tool that requires permission and stopped to preserve context. This version does not support resuming from the pause point — re-run starts fresh, or abandon to mark this run cancelled.',
   'chat.taskWaiting.rerun': 'Re-run this task',
   'chat.taskWaiting.abandon': 'Abandon',
 
-  // ?????? Runtime status notices (SSE code+reason ???these keys) ??????
+  // ── Runtime status notices (SSE code+reason → these keys) ──
   // Emitted by agent-loop / claude-client as { code, reason, params } and
   // rendered client-side via src/lib/status-notice-i18n.ts, so the server
   // never has to guess the reader's language (Codex review P2, 2026-07-18).
   'chat.notice.samplingIgnored.title': 'Sampling settings not sent',
-  'chat.notice.samplingIgnored.modelRejects.one': '{model} only accepts its default sampling settings ???{names} was not sent. Use Effort to tune the response instead.',
-  'chat.notice.samplingIgnored.modelRejects.other': '{model} only accepts its default sampling settings ???{names} were not sent. Use Effort to tune the response instead.',
-  'chat.notice.samplingIgnored.runtimeCannotSend.one': 'Sampling settings ({names}) weren\'t sent on the SDK runtime ???{model} and/or the Claude Code SDK doesn\'t accept them. Use Effort to tune the response instead.',
-  'chat.notice.samplingIgnored.runtimeCannotSend.other': 'Sampling settings ({names}) weren\'t sent on the SDK runtime ???{model} and/or the Claude Code SDK doesn\'t accept them. Use Effort to tune the response instead.',
+  'chat.notice.samplingIgnored.modelRejects.one': '{model} only accepts its default sampling settings — {names} was not sent. Use Effort to tune the response instead.',
+  'chat.notice.samplingIgnored.modelRejects.other': '{model} only accepts its default sampling settings — {names} were not sent. Use Effort to tune the response instead.',
+  'chat.notice.samplingIgnored.runtimeCannotSend.one': 'Sampling settings ({names}) weren\'t sent on the SDK runtime — {model} and/or the Claude Code SDK doesn\'t accept them. Use Effort to tune the response instead.',
+  'chat.notice.samplingIgnored.runtimeCannotSend.other': 'Sampling settings ({names}) weren\'t sent on the SDK runtime — {model} and/or the Claude Code SDK doesn\'t accept them. Use Effort to tune the response instead.',
   'chat.notice.effortIgnored.unsupportedModel.title': 'Effort not supported by this model',
-  'chat.notice.effortIgnored.unsupportedModel.message': '{model} doesn\'t support the effort parameter ???your "{effort}" choice wasn\'t sent and the model runs at its own default reasoning depth. Pick a model that supports effort (e.g. Sonnet 4.6, Sonnet 5, Opus 4.7/4.8/5, Fable 5) to control it.',
+  'chat.notice.effortIgnored.unsupportedModel.message': '{model} doesn\'t support the effort parameter — your "{effort}" choice wasn\'t sent and the model runs at its own default reasoning depth. Pick a model that supports effort (e.g. Sonnet 4.6, Sonnet 5, Opus 4.7/4.8/5, Fable 5) to control it.',
   'chat.notice.effortIgnored.unsupportedTier.title': 'Effort level not supported by this model',
   'chat.notice.effortIgnored.unsupportedTier.message': '{model} doesn\'t support the "{effort}" effort level, so it wasn\'t sent. Supported levels: {supported}.',
   'chat.notice.effortIgnored.thirdPartyProxy.title': 'Effort not sent through this provider',
@@ -1416,20 +1498,41 @@ const en = {
   'assistant.advanced': 'Advanced',
   'assistant.editSoulHint': 'Edit soul.md in your workspace to customize personality',
 
-  // ?????? Composer ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Composer ──────────────────────────────────────────────
   'composer.slashCommand': 'Commands',
   'composer.slashCommandTooltip': 'Insert slash command',
   'composer.manageSkills': 'Manage skills',
   'composer.searchModels': 'Search models...',
+  'composer.chooseRuntimeModel': 'Choose runtime and model',
+  'composer.defaultShort': 'Default',
+  'composer.favoriteCombinations': 'Favorite model combinations',
+  'composer.favorites': 'Favorites',
+  'composer.availableModels': 'Available models',
+  'composer.favoriteCombination': 'Favorite model combination',
+  'composer.removeFavoriteCombination': 'Remove favorite combination',
+  'composer.noProvidersConfigured': 'No providers configured yet',
+  'composer.noMatchingModels': 'No matching available models',
+  'composer.noFavoriteCombinations': 'No favorite model combinations yet',
+  'composer.noModelsForRuntime': 'No models are available for this runtime',
+  'composer.modelParameters': 'Model parameters',
+  'composer.contextWindow': 'Context window',
+  'composer.context1mFixed': '1M (fixed)',
+  'composer.defaultContextWindow': 'Default window',
+  'composer.favoriteProviderUnavailable': 'Provider unavailable — remove this favorite or restore the provider',
+  'composer.favoriteModelUnavailable': 'Model unavailable — remove this favorite or restore the model',
+  'composer.favoriteRuntimeUnavailable': 'This model is unavailable on the saved Runtime',
   'composer.searchFiles': 'Search files and folders...',
   'composer.manageProviders': 'Manage providers',
   'composer.designAgent': 'Design Agent',
   'composer.designAgentTooltip': 'Enable AI design & image generation',
 
-  // ?????? Permission ????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Permission ────────────────────────────────────────────
   // Three profiles, three different things. `autoReview` is a reviewer,
-  // `fullAccess` is a bypass ???the copy must never let them blur.
-  'permission.default': 'Ask me when needed',
+  // `fullAccess` is a bypass — the copy must never let them blur.
+  'permission.readOnly': 'Read-only planning',
+  'permission.readOnlyDesc': 'Read-only; no workspace changes',
+  'permission.legacyAsk': 'Legacy Ask mode; it stays unchanged until you choose a level',
+  'permission.default': 'Request approval',
   'permission.autoReview': 'Review for me',
   'permission.fullAccess': 'Full Access',
   'permission.fullAccessWarning': 'Full Access mode will automatically approve all permission requests without confirmation. This includes file writes, shell commands, and network requests. Only enable this if you fully trust the current task.',
@@ -1437,24 +1540,24 @@ const en = {
   // denied outright by a deny rule, because the SDK offers no way to hand a
   // classifier-eligible tool back to a human. Promising a prompt that never
   // arrives would be worse than the restriction itself.
-  'permission.autoReviewWarning': 'Claude will review and answer permission requests for you. It is not full access: sandbox and working-directory limits still apply, and anything it refuses or fails to answer in time is blocked. buckyball.ai's own tools that spend money, publish externally or touch credentials are blocked outright rather than reviewed. Note that ordinary command execution is still judged by the model, which may approve a command you would have wanted to confirm yourself ???switch back to Ask me when needed to check each one.',
+  'permission.autoReviewWarning': 'Claude will review and answer permission requests for you. It is not full access: sandbox and working-directory limits still apply, and anything it refuses or fails to answer in time is blocked. CodePilot\'s own tools that spend money, publish externally or touch credentials are blocked outright rather than reviewed. Note that ordinary command execution is still judged by the model, which may approve a command you would have wanted to confirm yourself — switch back to Request approval to check each one.',
   'permission.autoReviewUnavailable': 'Requires Claude Agent SDK {minVersion} or later (installed: {installedVersion})',
   'permission.autoReviewUnavailableUnknownVersion': 'Requires Claude Agent SDK {minVersion} or later (installed version could not be read)',
   'permission.autoReviewCodexUnavailable': 'Requires Codex {minVersion} or later (installed: {installedVersion})',
   'permission.autoReviewCodexUnavailableUnknownVersion': 'Requires Codex {minVersion} or later (installed version could not be read)',
-  'permission.autoReviewChecking': 'Checking whether this environment supports it???,
-  'permission.autoReviewProbeFailed': 'Could not confirm support for Review for me ???unavailable for now',
-  'permission.autoReviewExternalMcp': 'An external MCP server is configured. Its tools are only declared at connect time, so we cannot tell in advance whether they touch credentials or spend money ???this profile is unavailable while it is enabled.',
-  'permission.autoReviewExternalMcpUnknown': 'Your MCP config could not be read, so we cannot confirm whether an external MCP server is present ???this profile is unavailable.',
-  'permission.autoReviewDegraded': 'This chat is saved as Review for me, but your environment cannot run it ???it is running as Ask me when needed.',
+  'permission.autoReviewChecking': 'Checking whether this environment supports it…',
+  'permission.autoReviewProbeFailed': 'Could not confirm support for Review for me — unavailable for now',
+  'permission.autoReviewExternalMcp': 'An external MCP server is configured. Its tools are only declared at connect time, so we cannot tell in advance whether they touch credentials or spend money — this profile is unavailable while it is enabled.',
+  'permission.autoReviewExternalMcpUnknown': 'Your MCP config could not be read, so we cannot confirm whether an external MCP server is present — this profile is unavailable.',
+  'permission.autoReviewDegraded': 'This chat is saved as Review for me, but your environment cannot run it — it is running as Request approval.',
   'permission.autoReviewUnsupportedRuntime': 'This runtime does not support review-for-me yet',
   'permission.deniedByReviewer': 'Denied by the model reviewing for you',
   'permission.deniedByUser': 'You denied this',
-  'permission.deniedByRules': 'Blocked by buckyball.ai permission rules',
-  'permission.humanOnlyNotice': 'Always asks you ???not delegated to the reviewer',
+  'permission.deniedByRules': 'Blocked by CodePilot permission rules',
+  'permission.humanOnlyNotice': 'Always asks you — not delegated to the reviewer',
   'permission.sessionPermission': 'Chat Permission',
 
-  // ?????? Context Usage ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Context Usage ─────────────────────────────────────────
   'context.usage': 'Context Usage',
   'context.model': 'Model',
   'context.used': 'Used',
@@ -1470,12 +1573,12 @@ const en = {
   'context.summary': 'Context Summary',
   'context.summaryActive': 'Active',
   'context.warningHint': 'Context nearing limit, auto-compression will activate',
-  'context.criticalHint': 'Context nearly full ???start a new chat or type /compact',
+  'context.criticalHint': 'Context nearly full — start a new chat or type /compact',
   'context.compressing': 'Compressing context...',
   'context.compressed': 'Context compressed',
   'context.compactManual': 'Context manually compressed',
 
-  // ?????? SDK Capabilities: Effort ??????????????????????????????????????????????????????????????????????????????????????????
+  // ── SDK Capabilities: Effort ──────────────────────────────
   'messageInput.effort.label': 'Effort Level',
   'messageInput.effort.auto': 'Auto',
   'messageInput.effort.low': 'Low',
@@ -1483,11 +1586,12 @@ const en = {
   'messageInput.effort.high': 'High',
   'messageInput.effort.xhigh': 'XHigh',
   'messageInput.effort.max': 'Max',
-  'messageInput.effort.note.glmCodePlan': 'GLM-5.3 CodePlan supports Low, High, and Max. Auto uses the provider default: Max.',
-  'messageInput.effort.note.kimiAuto': 'Kimi supports Low, High, and Max. Auto sends no level and lets Kimi pick.',
-  'messageInput.effort.resetOnModelSwitch': 'This model doesn\'t support the effort level you had selected ???reset to Auto.',
+  'messageInput.effort.note.glmCodePlan': 'Default uses Max',
+  'messageInput.effort.note.kimiAuto': 'Default lets Kimi decide',
+  'messageInput.effort.resetOnModelSwitch': 'This model doesn\'t support the effort level you had selected — reset to Auto.',
+  'messageInput.context1m.resetOnModelSwitch': '1M Beta is not used for this model route; the provider setting is unchanged.',
 
-  // ?????? SDK Capabilities: Terminal Reason (Phase 1 of agent-sdk-0-2-111) ??????
+  // ── SDK Capabilities: Terminal Reason (Phase 1 of agent-sdk-0-2-111) ──
   'terminal.completed': 'Completed',
   'terminal.max_turns': 'Max turns reached',
   'terminal.prompt_too_long': 'Context window full',
@@ -1502,7 +1606,7 @@ const en = {
   'terminal.tool_deferred': 'Tool awaiting response',
   'terminal.unknown': 'Turn ended',
 
-  // ?????? TerminalReason action buttons (Phase 1b) ??????
+  // ── TerminalReason action buttons (Phase 1b) ──
   'terminalAction.compressAndRetry': 'Compress & retry',
   'terminalAction.enable1mAndRetry': 'Enable 1M & retry',
   'terminalAction.compressOnly': 'Compress only',
@@ -1519,7 +1623,7 @@ const en = {
   'terminalAction.confirmCta': 'Confirm',
   'terminalAction.confirmCancel': 'Cancel',
 
-  // ?????? Subscription rate limit (Phase 2) ??????
+  // ── Subscription rate limit (Phase 2) ──
   'rateLimit.warningTitle': 'Subscription quota warning',
   'rateLimit.rejectedTitle': 'Subscription quota exhausted',
   'rateLimit.utilization': 'Used',
@@ -1535,13 +1639,13 @@ const en = {
   'context.sourceSnapshot': 'Precise (snapshot)',
   'context.sourceResultUsage': 'Precise (from last turn API usage)',
 
-  // ?????? SDK Capabilities: Rewind ??????????????????????????????????????????????????????????????????????????????????????????
+  // ── SDK Capabilities: Rewind ──────────────────────────────
   'messageList.rewindToHere': 'Rewind to here',
   'messageList.rewindConfirm': 'Confirm rewind',
   'messageList.rewindCancel': 'Cancel',
   'messageList.rewindDone': 'Files rewound successfully',
 
-  // ?????? SDK Capabilities: MCP Runtime ???????????????????????????????????????????????????????????????????????????
+  // ── SDK Capabilities: MCP Runtime ─────────────────────────
   'mcp.runtimeStatus': 'Runtime Status',
   'mcp.refresh': 'Refresh',
   'mcp.noActiveSession': 'Start a conversation to see live status',
@@ -1550,9 +1654,9 @@ const en = {
   'mcp.enable': 'Enable',
   'mcp.enabled': 'Enabled',
   'mcp.disabled': 'Disabled',
-  'mcp.managerDesc': 'Toggle controls buckyball.ai MCP injection. Servers in your Claude Code config may still be loaded by the SDK via its own settings sources.',
+  'mcp.managerDesc': 'Toggle controls CodePilot MCP injection. Servers in your Claude Code config may still be loaded by the SDK via its own settings sources.',
 
-  // ?????? SDK Capabilities: Thinking ????????????????????????????????????????????????????????????????????????????????????
+  // ── SDK Capabilities: Thinking ────────────────────────────
   'settings.thinkingMode': 'Thinking Mode',
   'settings.thinkingModeDesc': 'Control Claude\'s extended thinking behavior',
   'settings.thinkingAdaptive': 'Adaptive',
@@ -1562,13 +1666,13 @@ const en = {
   'settings.defaultModelDesc': 'Only affects new conversations. Existing conversations keep their selected model.',
   'settings.defaultModelAuto': 'Auto (first in list)',
 
-  // ?????? SDK Capabilities: Account ???????????????????????????????????????????????????????????????????????????????????????
+  // ── SDK Capabilities: Account ─────────────────────────────
   'settings.accountInfo': 'Account Information',
   'settings.email': 'Email',
   'settings.organization': 'Organization',
   'settings.subscription': 'Subscription',
 
-  // ?????? CLI Tools ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── CLI Tools ─────────────────────────────────────────────
   'cliTools.title': 'CLI Tools',
   'cliTools.description': 'Manage CLI tools for AI-assisted workflows',
   'cliTools.installed': 'Installed',
@@ -1586,27 +1690,27 @@ const en = {
   'cliTools.copy': 'Copy',
   'cliTools.homepage': 'Homepage',
   'cliTools.docs': 'Documentation',
-  'cliTools.noDescription': 'No description yet ???use AI Describe to generate',
+  'cliTools.noDescription': 'No description yet — use AI Describe to generate',
   'cliTools.toolInfo': 'Tool Info',
   'cliTools.version': 'Version',
   'cliTools.path': 'Path',
   'cliTools.brewNotInstalled': 'Homebrew not detected',
   'cliTools.brewInstallGuide': 'Most recommended tools require Homebrew. Run this command in your terminal to install it:',
-  'cliTools.viewDocs': 'View buckyball.ai documentation',
+  'cliTools.viewDocs': 'View CodePilot documentation',
   'cliTools.searchPlaceholder': 'Search CLI tools...',
   'cliTools.noToolsDetected': 'No installed CLI tools detected',
   'cliTools.goInstall': 'Go install CLI tools',
   'cliTools.manageCli': 'Manage CLI tools',
   'cliTools.selectTool': 'Select CLI tool',
   'cliTools.autoDescribe': 'AI-enhance description',
-  'cliTools.autoDescribeFailed': 'AI description failed ???check your provider settings',
+  'cliTools.autoDescribeFailed': 'AI description failed — check your provider settings',
   'cliTools.batchDescribe': 'AI Describe',
   'cliTools.batchDescribeIntro': 'Use AI to generate descriptions for installed tools. Results will be shown on each tool card.',
   'cliTools.batchProvider': 'Provider',
   'cliTools.batchModel': 'Model',
   'cliTools.batchSkipExisting': 'Skip tools with existing descriptions ({count})',
   'cliTools.batchToolCount': 'Will process {count} / {total} tools',
-  'cliTools.batchNoProvider': 'No compatible providers available. Coding Plan proxies (Kimi, GLM, MiniMax, etc.) are not supported ???please configure an Anthropic API or OpenRouter provider.',
+  'cliTools.batchNoProvider': 'No compatible providers available. Coding Plan proxies (Kimi, GLM, MiniMax, etc.) are not supported — please configure an Anthropic API or OpenRouter provider.',
   'cliTools.batchStart': 'Start',
   'cliTools.batchSuccess': '{count} succeeded',
   'cliTools.batchFailed': '{count} failed',
@@ -1644,15 +1748,14 @@ const en = {
   'cliTools.removeConfirm': 'Remove this custom tool?',
   'cliTools.tryTool': 'Try It',
 
-  // ?????? Top Bar ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  'topBar.fileTree': 'File Tree',
+  // ── Top Bar ───────────────────────────────────────────────────
   'topBar.git': 'Git',
   'topBar.dashboard': 'Dashboard',
   'topBar.commit': 'Commit All',
   'topBar.push': 'Push',
   'topBar.terminal': 'Terminal',
 
-  // ?????? Dashboard ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Dashboard ─────────────────────────────────────────────────
   'dashboard.title': 'Dashboard',
   'dashboard.empty': 'No widgets pinned yet. Pin widgets from chat to build your dashboard.',
   'dashboard.exportFailed': 'Export failed',
@@ -1672,7 +1775,7 @@ const en = {
   'dashboard.exportWidget': 'Export as image',
   'dashboard.commandPlaceholder': 'Ask about your dashboard...',
 
-  // ?????? Git ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Git ───────────────────────────────────────────────────────
   'git.title': 'Git',
   'git.placeholder': 'Git integration coming soon',
   'git.status': 'Status',
@@ -1692,7 +1795,7 @@ const en = {
   'git.behind': '{count} behind',
   'git.branchSelector': 'Switch branch',
   'git.worktreeOccupied': 'Occupied by worktree',
-  'git.dirtyWorkTree': 'Cannot switch ???dirty working tree',
+  'git.dirtyWorkTree': 'Cannot switch — dirty working tree',
   'git.deriveWorktree': 'Derive Worktree',
   'git.deriveBranch': 'Branch name',
   'git.derivePreview': 'Worktree path preview',
@@ -1703,6 +1806,11 @@ const en = {
   'git.noBranch': 'No branch',
   'git.noUpstream': 'No upstream',
   'git.notARepo': 'Not a Git repository',
+  'git.initialize': 'Initialize Git',
+  'git.initializing': 'Initializing Git…',
+  'git.initializeDesc': 'Create a Git repository in this workspace',
+  'git.initializeSuccess': 'Git repository initialized',
+  'git.initializeFailed': 'Could not initialize Git in this workspace',
   'git.statusSection': 'Status',
   'git.branchSection': 'Branches',
   'git.historySection': 'History',
@@ -1724,7 +1832,7 @@ const en = {
   'git.commitSuccess': 'Committed successfully',
   'git.commitEmpty': 'Nothing to commit',
 
-  // ?????? Terminal ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Terminal ──────────────────────────────────────────────────
   'terminal.title': 'Terminal',
   'terminal.close': 'Close terminal',
   'terminal.open': 'Open terminal',
@@ -1733,8 +1841,8 @@ const en = {
   'terminal.disconnected': 'Disconnected',
   'terminal.exited': 'Process exited',
 
-  // ?????? Setup Center ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-  'setup.title': 'Welcome to buckyball.ai',
+  // ── Setup Center ──────────────────────────────────────────────
+  'setup.title': 'Welcome to CodePilot',
   'setup.subtitle': 'Configure your Agent engine, providers, and workspace.',
   'setup.skipAndEnter': 'Skip and Enter',
   'setup.progress': '{completed}/3 completed',
@@ -1744,14 +1852,14 @@ const en = {
 
   // Setup: Welcome card
   'setup.welcome.title': 'Welcome',
-  'setup.welcome.description': 'buckyball.ai is a multi-model AI agent desktop client. Connect any AI provider, extend with MCP & skills, and let your assistant learn your workflow.',
+  'setup.welcome.description': 'CodePilot is a multi-model AI agent desktop client. Connect any AI provider, extend with MCP & skills, and let your assistant learn your workflow.',
 
   // Setup: Claude Code card
   'setup.claude.title': 'Claude Code CLI (Optional)',
-  'setup.claude.description': 'Install Claude Code CLI for full command-line capabilities. buckyball.ai works without it via the AI SDK engine.',
+  'setup.claude.description': 'Install Claude Code CLI for full command-line capabilities. CodePilot works without it via the AI SDK engine.',
   'setup.claude.detected': 'Claude Code detected',
   'setup.claude.notFound': 'Claude Code not found',
-  'setup.claude.conflict': 'Multiple installations detected ???this may cause version conflicts',
+  'setup.claude.conflict': 'Multiple installations detected — this may cause version conflicts',
   'setup.claude.conflictUsing': 'Currently using',
   'setup.claude.conflictOther': 'Also found',
   'setup.claude.conflictRemoveHint': 'To remove, run:',
@@ -1765,13 +1873,13 @@ const en = {
 
   // Setup: Provider card
   'setup.provider.title': 'API Provider',
-  'setup.provider.description': 'Configure how buckyball.ai connects to AI models.',
-  'setup.provider.envDetected': 'Environment variables detected ???use Claude Code env as your provider.',
+  'setup.provider.description': 'Configure how CodePilot connects to AI models.',
+  'setup.provider.envDetected': 'Environment variables detected — use Claude Code env as your provider.',
   'setup.provider.useEnv': 'Use Claude Code Env',
   'setup.provider.noProvider': 'No provider configured. Select a preset to get started.',
   'setup.provider.configured': 'Provider configured',
   'setup.provider.skip': 'Skip',
-  'setup.provider.skipped': 'Skipped. Add a provider anytime in Settings ???Providers.',
+  'setup.provider.skipped': 'Skipped. Add a provider anytime in Settings › Providers.',
   'setup.provider.openSettings': 'Open provider settings',
 
   // Setup: Project directory card
@@ -1798,7 +1906,7 @@ const en = {
   'chat.empty.assistant.open': 'Open Assistant',
   'chat.empty.assistant.dismiss': 'Dismiss assistant suggestion',
 
-  // New-chat welcome ???composed as "{salutation}{sep}{question}" by
+  // New-chat welcome — composed as "{salutation}{sep}{question}" by
   // NewChatWelcome.tsx. The salutation reflects time of day; the question
   // pool depends on context (assistant > named project > general). Keep
   // questions Capitalized so they read as a clean second sentence after
@@ -1831,6 +1939,7 @@ const en = {
   'error.pushFailed': 'Push failed',
   'error.directoryInvalid': 'Directory no longer exists',
   'error.providerUnavailable': 'No API provider available',
+  'error.providerCredentialUnavailable': 'Saved provider credential unavailable',
   'error.invalidDefault': 'Pinned default model unavailable',
   'error.invalidDefaultDesc': 'Your pinned default ({pinned}) cannot run under the current Runtime. Switch Runtime, enable the model, pick another default, or revert to Auto.',
   'error.invalidDefaultGoRuntime': 'Open Runtime',
@@ -1838,7 +1947,7 @@ const en = {
   'error.selectDirectory': 'Select Directory',
   'error.openSetup': 'Open Setup',
 
-  // ?????? Onboarding Wizard ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Onboarding Wizard ───────────────────────────────────────
   'wizard.step1Title': 'About You',
   'wizard.step1Subtitle': 'Tell us a bit about yourself so your assistant can personalize the experience.',
   'wizard.step2Title': 'Your Assistant',
@@ -1878,7 +1987,7 @@ const en = {
   'wizard.summaryStyle': 'Style:',
   'wizard.summaryBoundaries': 'Boundaries:',
 
-  // ?????? Widget (Generative UI) ????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Widget (Generative UI) ────────────────────────────────
   'widget.loading': 'Rendering widget...',
   'widget.streaming': 'Rendering visualization',
   'widget.addingInteractivity': 'Adding interactivity to visualization...',
@@ -1886,7 +1995,7 @@ const en = {
   'widget.showCode': 'Show code',
   'widget.hideCode': 'Hide code',
 
-  // ?????? Buddy (AI Pet Companion) ???????????????????????????????????????????????????????????????????????????????????????????????????
+  // ── Buddy (AI Pet Companion) ─────────────────────────────────
   'buddy.species': 'Species',
   'buddy.rarity': 'Rarity',
   'buddy.stats': 'Stats',
@@ -1920,12 +2029,12 @@ const en = {
   'buddy.nameHint': 'This will be your buddy\'s name',
   'buddy.reset': 'Reset buddy',
 
-  // ????????? Recovery block (i18n keys re-added after accidental git checkout) ?????????
+  // ─── Recovery block (i18n keys re-added after accidental git checkout) ───
   // Grouped by section. All recovered keys live here so the diff stays
   // localized; some keys may belong to historical sections above but are
   // appended at the end to avoid disturbing the rest of the file's order.
 
-  // about.* ???AboutSection
+  // about.* — AboutSection
   'about.platform.title': 'Platform',
   'about.platform.desc': 'Build details to copy into bug reports',
   'about.platform.os': 'OS',
@@ -1946,19 +2055,19 @@ const en = {
   'about.docs.releaseNotes': 'Release notes',
 
   // bridge.*
-  'bridge.enabledNotRunningHint': 'Bridge is enabled but not running yet ???start the service to allow external channels to reach Claude.',
+  'bridge.enabledNotRunningHint': 'Bridge is enabled but not running yet — start the service to allow external channels to reach Claude.',
 
-  // gallery.* ???GalleryGrid a11y
+  // gallery.* — GalleryGrid a11y
   'gallery.openItemAria': 'Open item: {prompt}',
   'gallery.playVideoAria': 'Play video: {prompt}',
   'gallery.playAudioAria': 'Play audio: {prompt}',
 
-  // mcp.builtin.trigger.* ???BuiltInMcpSection pill labels
+  // mcp.builtin.trigger.* — BuiltInMcpSection pill labels
   'mcp.builtin.trigger.always': 'Always on',
   'mcp.builtin.trigger.workspace': 'Workspace-scoped',
   'mcp.builtin.trigger.keyword': 'Keyword-triggered',
 
-  // messageInput.* ???ModeIndicator dropdown descriptions
+  // messageInput.* — ModeIndicator dropdown descriptions
   'messageInput.modeCodeDesc': 'Run tools, edit files, and execute changes in the current workspace.',
   'messageInput.modePlanDesc': 'Discuss and plan without writing files or running tools.',
 
@@ -1968,7 +2077,7 @@ const en = {
   // common.*
   'common.edit': 'Edit',
 
-  // plugins.* ???/plugins page tabs and search placeholders
+  // plugins.* — /plugins page tabs and search placeholders
   'plugins.tab.skills': 'Skills',
   'plugins.tab.mcp': 'MCP',
   'plugins.tab.cli': 'CLI tools',
@@ -1976,49 +2085,49 @@ const en = {
   'plugins.search.placeholder.mcp': 'Search MCP servers...',
   'plugins.search.placeholder.cli': 'Search CLI tools...',
 
-  // skills.source.* ???pill labels for skill row source attribution
+  // skills.source.* — pill labels for skill row source attribution
   'skills.source.global': 'Global',
   'skills.source.project': 'Project',
   'skills.source.installed': 'From marketplace',
   'skills.source.plugin': 'From plugin',
   'skills.source.sdk': 'SDK built-in',
 
-  // skills.readOnlyReason.* ???Lock badge tooltip on read-only skill rows
-  'skills.readOnlyReason.sdk': 'Read-only ???provided by the SDK runtime',
-  'skills.readOnlyReason.fileNotWritable': 'Read-only ???file is not writable',
-  'skills.readOnlyReason.outOfCwd': 'Read-only ???outside the current workspace',
+  // skills.readOnlyReason.* — Lock badge tooltip on read-only skill rows
+  'skills.readOnlyReason.sdk': 'Read-only — provided by the SDK runtime',
+  'skills.readOnlyReason.fileNotWritable': 'Read-only — file is not writable',
+  'skills.readOnlyReason.outOfCwd': 'Read-only — outside the current workspace',
 
   // usage.*
   'usage.costChart': 'Daily cost',
 
-  // provider.add.* ???ModelsSection manual-add dialog (plan vs. manual flow)
-  // Title aligned with the trigger button copy ("Add model") ???drop the
+  // provider.add.* — ModelsSection manual-add dialog (plan vs. manual flow)
+  // Title aligned with the trigger button copy ("Add model") — drop the
   // "SKU" jargon. Plan vs generic distinction now lives in the
   // description only.
   'provider.add.titlePlan': 'Add a model to {name}',
   'provider.add.titleManual': 'Add a model to {name}',
-  'provider.add.descriptionPlan': "Plan-based provider ???the model list is defined by your subscription whitelist. Use this dialog to add a model that's visible in your console but not yet listed here. Tagged \"manual\" ???refresh won't overwrite it.",
+  'provider.add.descriptionPlan': "Plan-based provider — the model list is defined by your subscription whitelist. Use this dialog to add a model that's visible in your console but not yet listed here. Tagged \"manual\" — refresh won't overwrite it.",
   'provider.add.descriptionManual': 'Enter the upstream model ID. Display name is optional and defaults to the ID.',
 
-  // provider.legacy.* ???"Not in current catalog" badge + tooltip
+  // provider.legacy.* — "Not in current catalog" badge + tooltip
   'provider.legacy.notInCatalogBadge': 'Not in current catalog',
-  'provider.legacy.notInCatalogTooltip': 'This model is no longer in the recommended catalog. It still works ???your settings are preserved.',
+  'provider.legacy.notInCatalogTooltip': 'This model is no longer in the recommended catalog. It still works — your settings are preserved.',
 
-  // provider.autoDiscover.* ???ProviderManager Add Service success path
+  // provider.autoDiscover.* — ProviderManager Add Service success path
   'provider.autoDiscover.catalogOnly': 'Added {name}. Models come from the plan whitelist; use Add model on the Models page to add custom SKUs.',
-  'provider.autoDiscover.openrouterAddOnly': 'Added {name}. OpenRouter starts with the 3 alias models ???use Add model on the Models page to search and add more.',
+  'provider.autoDiscover.openrouterAddOnly': 'Added {name}. OpenRouter starts with the 3 alias models — use Add model on the Models page to search and add more.',
 
-  // provider.refresh.* ???Models page per-card refresh tooltip
-  'provider.refresh.catalogOnlyTooltip': 'Plan-based providers do not need a refresh ???the model list is defined by your subscription whitelist.',
+  // provider.refresh.* — Models page per-card refresh tooltip
+  'provider.refresh.catalogOnlyTooltip': 'Plan-based providers do not need a refresh — the model list is defined by your subscription whitelist.',
 
-  // provider.validate.openrouter.* ???OpenRouter validate-models toasts + per-row badge
+  // provider.validate.openrouter.* — OpenRouter validate-models toasts + per-row badge
   'provider.validate.openrouter.allOk': 'All {verified} models are still available upstream.',
   'provider.validate.openrouter.someMissing': 'Verified {verified}; {missing} are no longer upstream.',
   'provider.validate.openrouter.error': 'Validation failed: {error}',
   'provider.validate.openrouter.missingBadge': 'Not on upstream',
   'provider.validate.openrouter.missingTooltip': 'This model is no longer returned by OpenRouter. The badge clears on the next successful refresh.',
 
-  // provider.search.openrouter.* ???OpenRouterSearchDialog
+  // provider.search.openrouter.* — OpenRouterSearchDialog
   'provider.search.openrouter.dialogTitle': 'Search OpenRouter models',
   'provider.search.dialogDescription': 'Pick from the model list this provider currently publishes. Use "Reload" if you suspect the list is stale.',
   'provider.search.openrouter.placeholder': 'Filter by name or ID...',
@@ -2033,6 +2142,12 @@ const en = {
   'provider.search.openrouter.restoreButton': 'Enable',
   'provider.search.openrouter.restoring': 'Enabling...',
   'provider.search.openrouter.restoreError': 'Could not enable model: {error}',
+  'provider.search.openrouter.upgradeButton': 'Upgrade catalog',
+  'provider.search.openrouter.upgrading': 'Upgrading...',
+  'provider.search.openrouter.identityConflict': 'Review identity conflict',
+  'provider.search.openrouter.identityConflictDetail': 'Rows {ids} claim this model identity. Review them in Models before retrying.',
+  'provider.search.openrouter.mutationIdentityConflict': 'Rows {ids} claimed this identity during the update. Candidates were reloaded; review Models before retrying.',
+  'provider.search.openrouter.reviewModels': 'Review models',
   'provider.search.openrouter.adding': 'Adding...',
   'provider.search.openrouter.addButton': 'Add',
   'provider.search.openrouter.addError': 'Could not add model: {error}',
@@ -2042,13 +2157,13 @@ const en = {
   'provider.search.openrouter.fetchErrorFallback': 'If loading keeps failing, you can still type a model ID manually.',
   'provider.search.openrouter.fallbackToManual': 'Type model ID manually',
 
-  // provider.cleanup.openrouter.* ???OpenRouterCleanupDialog + ModelsSection entry link
+  // provider.cleanup.openrouter.* — OpenRouterCleanupDialog + ModelsSection entry link
   'provider.cleanup.openrouter.entryLink': 'Tidy legacy model list',
-  'provider.cleanup.openrouter.entryLinkTooltip': "Hides only auto-imported rows you haven't toggled yet ???manually added, edited, or hidden models stay untouched. Preview shown before commit.",
+  'provider.cleanup.openrouter.entryLinkTooltip': "Hides only auto-imported rows you haven't toggled yet — manually added, edited, or hidden models stay untouched. Preview shown before commit.",
   'provider.cleanup.openrouter.dialogTitle': 'Tidy legacy OpenRouter entries',
-  'provider.cleanup.openrouter.description': 'Hide auto-imported OpenRouter rows you never enabled. Models you manually enabled, hid, or edited are skipped automatically ???they stay untouched in the database.',
+  'provider.cleanup.openrouter.description': 'Hide auto-imported OpenRouter rows you never enabled. Models you manually enabled, hid, or edited are skipped automatically — they stay untouched in the database.',
   'provider.cleanup.openrouter.fetchError': 'Failed to load preview: {error}',
-  'provider.cleanup.openrouter.empty': 'Nothing to tidy ???no auto-imported rows are eligible.',
+  'provider.cleanup.openrouter.empty': 'Nothing to tidy — no auto-imported rows are eligible.',
   'provider.cleanup.openrouter.previewCount': '{count} entries will be hidden',
   'provider.cleanup.openrouter.cancel': 'Cancel',
   'provider.cleanup.openrouter.confirm': 'Hide entries',
@@ -2056,12 +2171,12 @@ const en = {
   'provider.cleanup.openrouter.success': 'Hidden {count} legacy entries',
   'provider.cleanup.openrouter.error': 'Tidy failed: {error}',
 
-  // models.refreshAll.* ???only new keys here; progress/summaryOk/summaryNoChange/summaryFailed already exist near line 314.
-  'models.refreshAll.summaryValidated': 'Validated {providers} OpenRouter providers ? {verified} models still upstream',
-  'models.refreshAll.summaryValidatedSomeMissing': 'Validated {providers} OpenRouter providers ? {verified} verified ? {missing} no longer upstream',
+  // models.refreshAll.* — only new keys here; progress/summaryOk/summaryNoChange/summaryFailed already exist near line 314.
+  'models.refreshAll.summaryValidated': 'Validated {providers} OpenRouter providers · {verified} models still upstream',
+  'models.refreshAll.summaryValidatedSomeMissing': 'Validated {providers} OpenRouter providers · {verified} verified · {missing} no longer upstream',
   'models.refreshAll.summarySkippedPlan': 'Skipped {n} plan-based providers (refresh isn\'t applicable)',
 
-  // ????????? Recovery block 2 (keys referenced after chat/sidebar/plugins consolidation) ?????????
+  // ─── Recovery block 2 (keys referenced after chat/sidebar/plugins consolidation) ───
   // chat list / top bar
   'chatList.expandSidebar': 'Expand sidebar',
   'chatList.collapseSidebar': 'Collapse sidebar',
@@ -2073,7 +2188,7 @@ const en = {
   'messageInput.placeholderLoading': 'Preparing runtime...',
   'messageInput.placeholderWithBadges': 'Add optional details, then press Enter...',
   'messageInput.placeholderCli': 'Describe what you want this tool to do...',
-  'messageInput.placeholderDefault': 'What should buckyball.ai do?',
+  'messageInput.placeholderDefault': 'What should CodePilot do?',
   'messageInput.actionMenuTooltip': 'Add context or command',
   'messageInput.actionAddContext': 'Add file context',
   'messageInput.actionInsertCommand': 'Insert command',
@@ -2082,34 +2197,34 @@ const en = {
   'messageInput.submitAriaLabel': 'Send message',
   'messageInput.stopAriaLabel': 'Stop generating',
   'messageInput.queueAriaLabel': 'Queue message (sends after current response finishes)',
-  'permission.defaultDesc': 'File edits run directly; commands and other risky actions ask you first',
-  'permission.autoReviewDesc': "The model approves routine requests for you; buckyball.ai's credential, spending and publishing tools are blocked, not reviewed",
-  'permission.fullAccessDesc': 'Fewer confirmations; trusted projects only',
-  // Phase 2 Step 4c ???composer runtime selector (between mode and permission).
+  'permission.defaultDesc': 'Ask before risky actions',
+  'permission.autoReviewDesc': 'Model-reviewed; sensitive actions blocked',
+  'permission.fullAccessDesc': 'Fewer checks; trusted projects only',
+  // Phase 2 Step 4c — composer runtime selector (between mode and permission).
   'runtimeSelector.triggerAria': 'Switch this session\'s execution runtime',
   'runtimeSelector.claudeCode': 'Claude Code',
-  'runtimeSelector.claudeCodeDesc': 'Anthropic ? full tools',
-  'runtimeSelector.bbagentRuntime': 'buckyball.ai',
-  'runtimeSelector.bbagentRuntimeDesc': 'OpenAI-compatible',
+  'runtimeSelector.claudeCodeDesc': 'Anthropic · full tools',
+  'runtimeSelector.codepilotRuntime': 'CodePilot',
+  'runtimeSelector.codepilotRuntimeDesc': 'OpenAI-compatible',
   'runtimeSelector.codexRuntime': 'Codex',
-  'runtimeSelector.codexRuntimeDesc': 'Codex account ? native',
+  'runtimeSelector.codexRuntimeDesc': 'Codex account · native',
   'runtime.codexRecoveryAction': 'Copy command & open PowerShell',
-  'runtime.codexRecoveryPreparing': 'Preparing PowerShell???,
+  'runtime.codexRecoveryPreparing': 'Preparing PowerShell…',
   'runtime.codexRecoveryReady': 'Install command copied and PowerShell opened. Paste it, then press Enter.',
   'runtime.codexRecoveryReadyNpm': 'Compatible npm install command copied and PowerShell opened. Paste it, then press Enter.',
   'runtime.codexRecoveryCopiedOnly': 'Install command copied. PowerShell could not be opened; open it manually, paste, then press Enter.',
   'runtime.codexRecoveryFailed': 'Could not prepare the recovery command.',
-  'runtime.codexRecoveryNoAutoRun': 'buckyball.ai will not paste or run the command automatically.',
-  'runtime.codexRecoveryNpmHint': 'When npm is available, buckyball.ai prefers the official npm install path to avoid some Windows PowerShell 5.1 script compatibility failures.',
+  'runtime.codexRecoveryNoAutoRun': 'CodePilot will not paste or run the command automatically.',
+  'runtime.codexRecoveryNpmHint': 'When npm is available, CodePilot prefers the official npm install path to avoid some Windows PowerShell 5.1 script compatibility failures.',
   'runtimeSelector.pinnedBadge': 'session-pinned',
-  // Step 4c R6 ???transcript marker when user flips RuntimeSelector mid-chat.
-  'runtimeSwitchMarker.changedFromTo': 'Switched runtime: {from} ???{to}',
+  // Step 4c R6 — transcript marker when user flips RuntimeSelector mid-chat.
+  'runtimeSwitchMarker.changedFromTo': 'Switched runtime: {from} → {to}',
   'runtimeSwitchMarker.switchedTo': 'Switched to {to}',
   'runtimeSwitchMarker.followGlobal': 'Follow global',
 
   // context usage / run status
   'context.unknownCapacity': 'Capacity unknown',
-  'context.unknownCapacityHint': 'This model does not provide a context length. buckyball.ai can only count tokens already used.',
+  'context.unknownCapacityHint': 'This model does not provide a context length. CodePilot can only count tokens already used.',
   'runStatus.loading': 'Loading run status...',
   'runStatus.notConfigured': 'Not configured',
   'runStatus.runtimeFallback': 'Fallback',
@@ -2126,7 +2241,7 @@ const en = {
   'runStatus.modify': 'Modify',
   'runStatus.permissionFullAccess': 'Full access',
   'runStatus.permissionAutoReview': 'Reviewed for you',
-  'runStatus.permissionDefault': 'Asks when needed',
+  'runStatus.permissionDefault': 'Request approval',
   'runStatus.runtime': 'Runtime',
   'runStatus.model': 'Model',
   'runStatus.defaultMode': 'Default',
@@ -2137,7 +2252,7 @@ const en = {
   'runStatus.contextInput': 'Input',
   'runStatus.contextOutput': 'Output',
   'runStatus.contextCache': 'Cache',
-  // Phase 6 ???10-part context breakdown (rendered by ContextBreakdownList).
+  // Phase 6 — 10-part context breakdown (rendered by ContextBreakdownList).
   // Mirrors ContextBreakdownKind enum, mapped via LABEL_KEY in the component.
   'runStatus.breakdownSystemPrompt': 'System prompt',
   'runStatus.breakdownTools': 'Tools',
@@ -2156,10 +2271,10 @@ const en = {
   'runCheckpoint.noProvider.description': 'Add or enable a provider before sending this message.',
   'runCheckpoint.noProvider.action': 'Open providers',
   'runCheckpoint.pinnedInvalid.title': 'Default model unavailable under the current engine',
-  'runCheckpoint.pinnedInvalid.description': 'This chat has switched to an available model. Pick a new default in Settings ???Models when you have time.',
+  'runCheckpoint.pinnedInvalid.description': 'This chat has switched to an available model. Pick a new default in Settings → Models when you have time.',
   'runCheckpoint.pinnedInvalid.action': 'Change default',
   'runCheckpoint.runtimeFallback.title': 'Runtime fallback in effect',
-  'runCheckpoint.runtimeFallback.description': 'The selected runtime is unavailable, so buckyball.ai will use the available fallback for this message.',
+  'runCheckpoint.runtimeFallback.description': 'The selected runtime is unavailable, so CodePilot will use the available fallback for this message.',
   'runCheckpoint.runtimeFallback.action': 'Review runtime',
   'runCheckpoint.contextCost.title': 'This message adds substantial context',
   'runCheckpoint.contextCost.description': 'The attached context is large enough to noticeably change this run.',
@@ -2175,12 +2290,49 @@ const en = {
 
   // workspace sidebar / file tree
   'workspaceSidebar.toggle': 'Workspace sidebar',
-  'workspaceSidebar.collapse': 'Collapse workspace sidebar',
+  'workspaceSidebar.addSurface': 'Add surface',
+  'workspaceSidebar.noMoreSurfaces': 'All available surfaces are open',
   'workspaceSidebar.closeTabNamed': 'Close {name}',
   'workspaceSidebar.tab.git': 'Git',
   'workspaceSidebar.tab.widget': 'Dashboard',
   'workspaceSidebar.tab.files': 'Files',
-  'workspaceSidebar.pinFiles': 'Pin files to workspace sidebar',
+  'workspaceSidebar.tab.browser': 'Browser',
+  'workspaceSidebar.tab.agents': 'Agents',
+  'workspaceSidebar.tab.diff': 'Diff',
+  'workspaceSidebar.tab.artifact': 'Artifact',
+  'workspaceSidebar.tab.filePreview': 'Preview',
+  'workspaceSidebar.pinSurface': 'Pin this surface',
+  'workspaceSidebar.unpinSurface': 'Unpin this surface',
+  'workspaceSidebar.reorderHint': 'Alt+Left/Right to reorder',
+  'workspaceSidebar.openSurface': 'Open a surface',
+  'workspaceSidebar.openSurfaceDesc': 'Choose a project tool. Pin the ones you want restored for this workspace.',
+  'workspaceSidebar.filesDesc': 'Browse and read workspace files',
+  'workspaceSidebar.gitDesc': 'Review repository status and changes',
+  'workspaceSidebar.diffDesc': 'Open Git and choose a changed file to review its real diff',
+  'workspaceSidebar.browserDesc': 'Open localhost or a web address',
+  'workspaceSidebar.browserDesktopOnly': 'Available in the desktop client',
+  'workspaceSidebar.agentsHint': 'Open an agent run from its message card to inspect durable progress and results',
+  'browser.preparing': 'Preparing the isolated browser session',
+  'browser.loading': 'Loading page',
+  'browser.maxTabs': 'You can open up to 8 browser tabs at once',
+  'browser.back': 'Back',
+  'browser.forward': 'Forward',
+  'browser.reload': 'Reload',
+  'browser.stop': 'Stop loading',
+  'browser.address': 'Web address',
+  'browser.addressPlaceholder': 'Enter a URL or localhost:3000',
+  'browser.openExternal': 'Open in system browser',
+  'browser.emptyTitle': 'Open a web page',
+  'browser.emptyDescription': 'Enter an HTTPS address or a local development server above',
+  'browser.error.title': 'Could not open this page',
+  'browser.error.invalidUrl': 'Enter a valid web address',
+  'browser.error.insecureHttp': 'Plain HTTP is limited to localhost; use HTTPS for remote sites',
+  'browser.error.unsupportedScheme': 'This link type is not supported in the built-in browser',
+  'browser.error.embeddedCredentials': 'Addresses containing embedded credentials are blocked',
+  'browser.error.loadFailed': 'The page failed to load; check the address or local server',
+  'browser.error.crashed': 'The page process stopped unexpectedly',
+  'browser.error.downloadBlocked': 'Downloads are not enabled in the built-in browser yet',
+  'browser.retry': 'Try again',
   'subagent.cardLabel': '{name} sub-agent run',
   'subagent.openDetails': 'Details',
   'subagent.openDetailsNamed': 'Open {name} run details',
@@ -2209,7 +2361,7 @@ const en = {
   'subagent.details.task': 'Task',
   'subagent.details.result': 'Result',
   'subagent.details.error': 'Error',
-  'subagent.details.waiting': 'Waiting for the sub-agent to return???,
+  'subagent.details.waiting': 'Waiting for the sub-agent to return…',
   'subagent.details.warnings': 'Warnings',
   'subagent.details.sources': 'Sources',
   'subagent.details.artifacts': 'Artifacts',
@@ -2246,7 +2398,7 @@ const en = {
 
   // built-in MCP catalog
   'mcp.builtin.sectionTitle': 'Built-in capabilities',
-  'mcp.builtin.sectionDescription': 'buckyball.ai includes these MCP capabilities. They are injected only when relevant to the current message; this list does not mean every message has them enabled.',
+  'mcp.builtin.sectionDescription': 'CodePilot includes these MCP capabilities. They are injected only when relevant to the current message; this list does not mean every message has them enabled.',
   'mcp.builtin.toolCount': 'tools',
   'mcp.builtin.triggerHeading': 'When it appears',
   'mcp.builtin.toolsHeading': 'Tools',

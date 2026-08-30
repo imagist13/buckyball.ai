@@ -1,5 +1,5 @@
 /**
- * codepilot-cli-tools MCP �?in-process MCP server for CLI tool management.
+ * codepilot-cli-tools MCP — in-process MCP server for CLI tool management.
  *
  * Provides 6 tools:
  * - codepilot_cli_tools_list: List all CLI tools (text or JSON format)
@@ -49,9 +49,9 @@ function extractInstallMethod(command: string): string {
 
 /**
  * Extract the full package spec from an install command.
- * e.g. "brew install stripe/stripe-cli/stripe" �?"stripe/stripe-cli/stripe"
- *      "npm install -g @elevenlabs/cli" �?"@elevenlabs/cli"
- *      "pip install yt-dlp" �?"yt-dlp"
+ * e.g. "brew install stripe/stripe-cli/stripe" → "stripe/stripe-cli/stripe"
+ *      "npm install -g @elevenlabs/cli" → "@elevenlabs/cli"
+ *      "pip install yt-dlp" → "yt-dlp"
  */
 function extractPackageSpec(command: string): string | null {
   const parts = command.trim().split(/\s+/);
@@ -116,7 +116,7 @@ When listing tools with format="json", each tool includes: agentFriendly (design
  *  manage CLI tools (install / list / update / etc.) in this turn. Shared
  *  so both runtimes inject the cli MCPs on the SAME criterion (don't
  *  per-runtime rewrite). */
-export const CLI_TOOLS_KEYWORDS = /CLI\s*工具|cli.tool|安装.*工具|卸载.*工具|添加.*工具|更新.*工具|升级.*工具|入库.*工具|工具.*入库|加入.*工具库|添加�?*库|工具库|tool\s*library|codepilot_cli_tools|帮我装|帮我安装|帮我更新|帮我升级|\binstall\s+[@\w./-]+|\buninstall\s+[@\w./-]+|\bupdate\s+[@\w./-]+|\bupgrade\s+[@\w./-]+|brew\s+install|brew\s+upgrade|pip\s+install|pipx\s+install|npm\s+install\s+-g|npm\s+update\s+-g|cargo\s+install|apt\s+install|apt-get\s+install/i;
+export const CLI_TOOLS_KEYWORDS = /CLI\s*工具|cli.tool|安装.*工具|卸载.*工具|添加.*工具|更新.*工具|升级.*工具|入库.*工具|工具.*入库|加入.*工具库|添加到.*库|工具库|tool\s*library|codepilot_cli_tools|帮我装|帮我安装|帮我更新|帮我升级|\binstall\s+[@\w./-]+|\buninstall\s+[@\w./-]+|\bupdate\s+[@\w./-]+|\bupgrade\s+[@\w./-]+|brew\s+install|brew\s+upgrade|pip\s+install|pipx\s+install|npm\s+install\s+-g|npm\s+update\s+-g|cargo\s+install|apt\s+install|apt-get\s+install/i;
 
 /** Decide whether to inject the CLI tools MCP for this turn. Checks the
  *  current prompt + optionally the prior conversation. */
@@ -133,7 +133,8 @@ export function promptNeedsCli(
 
 export interface CliToolsMcpOpts {
   /**
-   * Optional allowlist of tool names. When set, only these tools register �?   * everything else is filtered out. Default: all 6 tools register.
+   * Optional allowlist of tool names. When set, only these tools register —
+   * everything else is filtered out. Default: all 6 tools register.
    *
    * Used by the Codex `codepilot_cli_tools_read` / `codepilot_cli_tools_write`
    * routes to split safe-read tools (`list` / `check_updates`, auto_accept)
@@ -161,7 +162,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
             const { catalog, extra } = await detectAllCliTools();
             const allCustom = getAllCustomCliTools();
             const descriptions = getAllCliToolDescriptions();
-            // Build a lookup from binPath �?shadow custom row (for install metadata)
+            // Build a lookup from binPath → shadow custom row (for install metadata)
             const catalogBinPaths = new Set(catalog.filter(c => c.binPath).map(c => c.binPath!));
             const shadowByBinPath = new Map(
               allCustom.filter(ct => catalogBinPaths.has(ct.binPath)).map(ct => [ct.binPath, ct])
@@ -244,7 +245,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
             for (const rt of catalog) {
               const def = CLI_TOOLS_CATALOG.find(c => c.id === rt.id);
               if (!def) continue;
-              const status = rt.status === 'installed' ? '�? : '�?;
+              const status = rt.status === 'installed' ? '✓' : '✗';
               const ver = rt.version ? ` v${rt.version}` : '';
               const desc = descriptions[rt.id]?.en ?? def.summaryEn;
               lines.push(`${status} ${def.name}${ver}: ${desc}`);
@@ -258,7 +259,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
                 const name = entry?.[1] ?? rt.id;
                 const ver = rt.version ? ` v${rt.version}` : '';
                 const desc = descriptions[rt.id] ? `: ${descriptions[rt.id].en}` : '';
-                lines.push(`�?${name}${ver}${desc}`);
+                lines.push(`✓ ${name}${ver}${desc}`);
               }
             }
 
@@ -270,7 +271,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
                 const desc = descriptions[ct.id]
                   ? `: ${descriptions[ct.id].en}`
                   : ` (${ct.binPath})`;
-                lines.push(`�?${ct.name}${ver}${desc}`);
+                lines.push(`✓ ${ct.name}${ver}${desc}`);
               }
             }
 
@@ -311,11 +312,11 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
             const output = (stdout + '\n' + stderr).trim();
 
             // Build a list of binary name candidates to try with `which`.
-            // Package spec �?binary name, so we try multiple candidates:
-            //   "brew install ffmpeg" �?["ffmpeg"]
-            //   "npm install -g @elevenlabs/cli" �?catalog binNames ["elevenlabs"], then ["cli"]
-            //   "brew install stripe/stripe-cli/stripe" �?["stripe"]
-            //   "npm install -g @music163/ncm-cli" �?catalog binNames ["ncm-cli"]
+            // Package spec ≠ binary name, so we try multiple candidates:
+            //   "brew install ffmpeg" → ["ffmpeg"]
+            //   "npm install -g @elevenlabs/cli" → catalog binNames ["elevenlabs"], then ["cli"]
+            //   "brew install stripe/stripe-cli/stripe" → ["stripe"]
+            //   "npm install -g @music163/ncm-cli" → catalog binNames ["ncm-cli"]
             const cmdParts = command.trim().split(/\s+/);
             const binCandidates: string[] = [];
             let rawPkgArg: string | null = null;
@@ -329,7 +330,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
               }
             }
 
-            // Priority 1: check if a catalog tool matches this package �?use its declared binNames
+            // Priority 1: check if a catalog tool matches this package — use its declared binNames
             if (rawPkgArg) {
               const matchingCatalog = CLI_TOOLS_CATALOG.find(c =>
                 c.installMethods.some(m => m.command.includes(rawPkgArg!))
@@ -417,7 +418,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
               );
               if (catalogDef?.setupType === 'needs_auth') {
                 resultLines.push('');
-                resultLines.push('�?This tool requires authentication before use:');
+                resultLines.push('⚠ This tool requires authentication before use:');
                 const steps = catalogDef.guideSteps.en;
                 // Skip the install step (usually first), show remaining setup steps
                 for (let i = 1; i < steps.length; i++) {
@@ -548,7 +549,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
             if (descriptionZh) {
               resultParts.push('Description saved.');
             } else {
-              // No description provided �?include help output so model can generate one
+              // No description provided — include help output so model can generate one
               const helpOutput = await getHelpOutput(binPath);
               if (helpOutput) {
                 resultParts.push('');
@@ -580,7 +581,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
       // ── REMOVE ───────────────────────────────────────────────────
       tool(
         'codepilot_cli_tools_remove',
-        'Remove a custom (user-added) CLI tool from the library. Only custom tools can be removed �?catalog and system-detected tools cannot be removed.',
+        'Remove a custom (user-added) CLI tool from the library. Only custom tools can be removed — catalog and system-detected tools cannot be removed.',
         {
           toolId: z.string().describe('The tool ID to remove, e.g. "custom-mytool"'),
         },
@@ -713,7 +714,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
 
             const lines = ['The following tools have available updates:', ''];
             for (const u of updates) {
-              lines.push(`- ${u.name}: ${u.current} �?${u.latest ?? 'newer version available'} (${u.method})`);
+              lines.push(`- ${u.name}: ${u.current} → ${u.latest ?? 'newer version available'} (${u.method})`);
             }
             lines.push('');
             lines.push('Use codepilot_cli_tools_update to update a specific tool.');
@@ -783,7 +784,7 @@ export function createCliToolsMcpServer(opts?: CliToolsMcpOpts) {
                   updateMethod = shadowRow.installMethod;
                   packageName = shadowRow.installPackage || shadowRow.binName;
                 } else {
-                  // No tracked install metadata �?use catalog default but flag as guessed
+                  // No tracked install metadata — use catalog default but flag as guessed
                   const primaryInstall = catalogTool.installMethods[0];
                   updateMethod = primaryInstall?.method ?? null;
                   packageName = primaryInstall ? (extractPackageSpec(primaryInstall.command) ?? catalogTool.id) : catalogTool.id;

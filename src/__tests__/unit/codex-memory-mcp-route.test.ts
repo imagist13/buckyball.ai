@@ -1,12 +1,12 @@
 /**
- * Phase 8 â€?CodePilot built-in MCP servers served to Codex over the generic
+ * Phase 8 â€” CodePilot built-in MCP servers served to Codex over the generic
  * streamable-HTTP route (/api/codex/mcp/[server]). Phase 1 (memory) + #31 (widget).
  *
  * Run: npx tsx --test src/__tests__/unit/codex-memory-mcp-route.test.ts
  *
  * Concerns:
  *  (a) REUSE: routes mount the SAME createSdkMcpServer the ClaudeCode path
- *      uses (no duplicated tool logic) â€?proven via an in-memory MCP client.
+ *      uses (no duplicated tool logic) â€” proven via an in-memory MCP client.
  *  (b) ROUTE: the generic POST handler authorizes per-server (memory scoped
  *      to the configured workspace; widget open) and answers initialize.
  */
@@ -89,7 +89,7 @@ describe('built-in MCP reuse (in-memory)', () => {
   // so the Codex route filters buddy out via the entry's `excludeTools`.
   // Audit guards: (1) the SDK MCP still gives ALL 5 to non-Codex callers
   // (no regression for ClaudeCode SDK / Native), (2) the Codex `codepilot_tasks`
-  // entry's create() yields EXACTLY 4 tools without buddy â€?no surprise
+  // entry's create() yields EXACTLY 4 tools without buddy â€” no surprise
   // additions if notification-mcp.ts gains tools later.
   it('notification MCP without excludeTools serves all 5 tools (SDK / Native unchanged)', async () => {
     const [clientT, serverT] = InMemoryTransport.createLinkedPair();
@@ -121,7 +121,7 @@ describe('built-in MCP reuse (in-memory)', () => {
     assert.deepEqual(
       tools,
       ['codepilot_cancel_task', 'codepilot_list_tasks', 'codepilot_notify', 'codepilot_schedule_task'],
-      'Codex tasks MCP must expose EXACTLY these 4 tools â€?no buddy, no surprise additions',
+      'Codex tasks MCP must expose EXACTLY these 4 tools â€” no buddy, no surprise additions',
     );
     assert.ok(!tools.includes('codepilot_hatch_buddy'), 'buddy must not leak to Codex');
     await client.close();
@@ -190,15 +190,15 @@ describe('built-in MCP reuse (in-memory)', () => {
   }
 });
 
-describe('built-in MCP route â€?/api/codex/mcp/[server]', () => {
+describe('built-in MCP route â€” /api/codex/mcp/[server]', () => {
   const accept = { 'content-type': 'application/json', accept: 'application/json, text/event-stream' };
 
-  it('unknown server â†?404', async () => {
+  it('unknown server â†’ 404', async () => {
     const res = await callRoute('nope', accept);
     assert.equal(res.status, 404);
   });
 
-  it('memory without/with wrong workspace â†?403 (scoped to configured workspace)', async () => {
+  it('memory without/with wrong workspace â†’ 403 (scoped to configured workspace)', async () => {
     assert.equal((await callRoute('codepilot_memory', accept)).status, 403); // no header
     assert.equal(
       (await callRoute('codepilot_memory', { ...accept, 'x-codepilot-workspace-path': otherWs })).status,
@@ -206,7 +206,7 @@ describe('built-in MCP route â€?/api/codex/mcp/[server]', () => {
     );
   });
 
-  it('memory with the configured workspace â†?200 initialize', async () => {
+  it('memory with the configured workspace â†’ 200 initialize', async () => {
     const res = await callRoute('codepilot_memory', { ...accept, 'x-codepilot-workspace-path': ws });
     assert.equal(res.status, 200);
     const json = (await res.json()) as { result?: { serverInfo?: { name?: string } }; error?: unknown };
@@ -214,7 +214,7 @@ describe('built-in MCP route â€?/api/codex/mcp/[server]', () => {
     assert.equal(json.result?.serverInfo?.name, 'codepilot-memory');
   });
 
-  it('widget â†?200 initialize WITHOUT a workspace header (no file access, not scoped)', async () => {
+  it('widget â†’ 200 initialize WITHOUT a workspace header (no file access, not scoped)', async () => {
     const res = await callRoute('codepilot_widget', accept);
     assert.equal(res.status, 200);
     const json = (await res.json()) as { result?: { serverInfo?: { name?: string } }; error?: unknown };

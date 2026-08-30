@@ -2,8 +2,8 @@
  * Tests for buildNativeErrorEventData (audit A3).
  *
  * Pure-function contract for the Native runtime `error` SSE event payload.
- * Asserts the normal error path (no snapshot â†?legacy shape) vs the tool-call
- * error path (snapshot present â†?context_accounting attached) â€?the
+ * Asserts the normal error path (no snapshot â†’ legacy shape) vs the tool-call
+ * error path (snapshot present â†’ context_accounting attached) â€” the
  * normal-vs-trigger difference required by the project's anti-fake-data rule.
  *
  * The agent-loop catch block that calls this can't be driven in a pure unit

@@ -1,9 +1,9 @@
 /**
- * MCP Server Loader â?shared module for loading MCP server configurations.
+ * MCP Server Loader — shared module for loading MCP server configurations.
  *
  * The SDK auto-loads MCP servers from settingSources (['user', 'project', 'local']).
- * We only manually pass servers that need buckyball.ai-specific processing:
- * ${...} env placeholder resolution from the buckyball.ai DB.
+ * We only manually pass servers that need CodePilot-specific processing:
+ * ${...} env placeholder resolution from the CodePilot DB.
  *
  * This eliminates redundant config passing and reduces initialization overhead.
  */
@@ -14,7 +14,7 @@ import os from 'os';
 import type { MCPServerConfig } from '@/types';
 import { getSetting } from '@/lib/db';
 
-// ââ Cache ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Cache ────────────────────────────────────────────────────────────
 
 interface CachedMcpConfig {
   allServers: Record<string, MCPServerConfig>;
@@ -30,7 +30,7 @@ export function invalidateMcpCache(): void {
   _cache = null;
 }
 
-// ââ Internal helpers âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Internal helpers ─────────────────────────────────────────────────
 
 function readJson(p: string): Record<string, unknown> {
   if (!fs.existsSync(p)) return {};
@@ -98,16 +98,16 @@ function loadAndMerge(): CachedMcpConfig {
   return _cache;
 }
 
-// ââ Public API âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Public API ───────────────────────────────────────────────────────
 
 /**
- * Load MCP servers that need buckyball.ai-specific processing.
+ * Load MCP servers that need CodePilot-specific processing.
  *
  * Returns only servers with ${...} env placeholders that were resolved
- * against the buckyball.ai DB. Returns undefined when no such servers exist
+ * against the CodePilot DB. Returns undefined when no such servers exist
  * (the common case), letting the SDK load everything natively.
  *
- * Used by: route.ts, conversation-engine.ts â?passed to streamClaude().
+ * Used by: route.ts, conversation-engine.ts — passed to streamClaude().
  */
 export function loadCodePilotMcpServers(): Record<string, MCPServerConfig> | undefined {
   try {
@@ -122,7 +122,7 @@ export function loadCodePilotMcpServers(): Record<string, MCPServerConfig> | und
  * Load ALL MCP servers (for UI display in MCP Manager).
  *
  * Returns the full merged config from all sources with overrides applied.
- * NOT intended for passing to the SDK â?use loadCodePilotMcpServers() instead.
+ * NOT intended for passing to the SDK — use loadCodePilotMcpServers() instead.
  *
  * Used by: MCP Manager UI, diagnostics.
  */
@@ -140,7 +140,7 @@ export function loadAllMcpServers(): Record<string, MCPServerConfig> | undefined
  *
  * Used to compensate for `settingSources: ['user']` on DB-provider requests
  * (which drops 'project' to prevent project-level settings env from
- * overriding the explicit provider's auth â?see provider-resolver.ts
+ * overriding the explicit provider's auth — see provider-resolver.ts
  * around line 800). Without this, project `.mcp.json` MCP servers would
  * silently disappear for DB-provider users, even though the project's MCP
  * servers are auth-neutral and should keep working.
@@ -153,7 +153,7 @@ export function loadAllMcpServers(): Record<string, MCPServerConfig> | undefined
  * code path knows.
  *
  * Servers with `${...}` env placeholders are resolved against the
- * buckyball.ai DB the same way loadAndMerge does. Disabled servers are
+ * CodePilot DB the same way loadAndMerge does. Disabled servers are
  * filtered out.
  *
  * @param projectCwd - The user's actual working directory (NOT process.cwd())
@@ -170,8 +170,8 @@ export function loadProjectMcpServers(projectCwd: string | undefined): Record<st
     if (Object.keys(rawServers).length === 0) return undefined;
 
     // Apply user-level `mcpServerOverrides` from ~/.claude/settings.json.
-    // The buckyball.ai MCP Manager UI persists per-server enable/disable state
-    // there (see mcp-loader.ts:57-62 â?original loadAndMerge does the same
+    // The CodePilot MCP Manager UI persists per-server enable/disable state
+    // there (see mcp-loader.ts:57-62 — original loadAndMerge does the same
     // for the cached path). Without this, a DB-provider session would
     // silently re-enable a project MCP the user toggled off (or fail to
     // enable one they overrode on), creating a state mismatch between the

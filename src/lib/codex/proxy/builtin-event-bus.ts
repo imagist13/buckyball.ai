@@ -1,6 +1,6 @@
 /**
- * @deprecated 2026-05-17 �?moved to `@/lib/harness/builtin-event-bus`
- * (Phase 5e Phase 0.5 P1 �?Native MediaBlock 補齐 promotes the bus to
+ * @deprecated 2026-05-17 — moved to `@/lib/harness/builtin-event-bus`
+ * (Phase 5e Phase 0.5 P1 — Native MediaBlock 補齐 promotes the bus to
  * a cross-runtime harness primitive: Native + Codex + future ClaudeCode
  * MCP marker path all share one side-channel).
  *

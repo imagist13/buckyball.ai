@@ -1,7 +1,7 @@
 /**
- * builtin-tools/memory-search.ts â€?Workspace memory search tools (Native Runtime).
+ * builtin-tools/memory-search.ts â€” Workspace memory search tools (Native Runtime).
  *
- * Phase 5d Phase 2 slice 2d (2026-05-17) â€?system prompt is now
+ * Phase 5d Phase 2 slice 2d (2026-05-17) â€” system prompt is now
  * re-exported from the canonical MCP-side source. Pre-fix this file
  * carried a 5-line abridged paraphrase that drifted from
  * `memory-search-mcp.ts MEMORY_SEARCH_SYSTEM_PROMPT` (the 15-line
@@ -29,13 +29,13 @@ export function createMemorySearchTools(workspacePath: string) {
           .describe('Filter by type: "daily" = memory/daily/*.md, "longterm" = memory.md, "notes" = other workspace files'),
         limit: z.number().optional(),
       }),
-      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€?pre-fix this
+      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€” pre-fix this
       // Native handler accepted `tags` / `file_type` parameters but
       // passed them straight through to `searchWorkspace` without
       // any filtering. The MCP-side handler (`memory-search-mcp.ts`)
       // applies both filters server-side. Native is the product
-      // baseline â†?must match. Mirror the MCP filter pipeline:
-      // type-filter â†?tag-filter â†?temporal decay handled inside
+      // baseline â†’ must match. Mirror the MCP filter pipeline:
+      // type-filter â†’ tag-filter â†’ temporal decay handled inside
       // searchWorkspace.
       execute: async ({ query, tags, file_type, limit }) => {
         try {
@@ -46,7 +46,7 @@ export function createMemorySearchTools(workspacePath: string) {
             limit: (limit || 5) * 3,
           });
 
-          // File-type filter â€?same logic as memory-search-mcp.ts:64-71
+          // File-type filter â€” same logic as memory-search-mcp.ts:64-71
           if (file_type && file_type !== 'all') {
             const isMemoryFile = (p: string) => /^memory\.md$/i.test(p);
             results = results.filter((r: { path: string }) => {
@@ -57,7 +57,7 @@ export function createMemorySearchTools(workspacePath: string) {
             });
           }
 
-          // Tag filter â€?manifest lookup. memory-search-mcp.ts:74-87
+          // Tag filter â€” manifest lookup. memory-search-mcp.ts:74-87
           if (tags && tags.length > 0) {
             const tagsLower = tags.map((t) => t.toLowerCase().replace(/^#/, ''));
             try {
@@ -72,7 +72,7 @@ export function createMemorySearchTools(workspacePath: string) {
                 return tagsLower.some((t) => entryTagsLower.includes(t));
               });
             } catch {
-              // manifest unavailable â€?skip tag filtering rather than
+              // manifest unavailable â€” skip tag filtering rather than
               // hide results the user might want
             }
           }
@@ -119,19 +119,19 @@ export function createMemorySearchTools(workspacePath: string) {
     codepilot_memory_recent: tool({
       description: 'Get recent daily memories (last 3 days) and long-term memory summary. Call at the START of each conversation to review recent context.',
       inputSchema: z.object({}),
-      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€?pre-fix this
+      // Phase 5e Phase 0.5 P1 parity (2026-05-17) â€” pre-fix this
       // Native handler read `<workspace>/daily/` + `<workspace>/longterm/summary.md`.
       // The MCP authority (`memory-search-mcp.ts:182-` recent tool)
       // uses `<workspace>/memory.md` (with `Memory.md` / `MEMORY.md`
       // case fallback) + `<workspace>/memory/daily/<YYYY-MM-DD>.md`.
-      // Native is the product baseline â†?must match the authoritative
+      // Native is the product baseline â†’ must match the authoritative
       // layout. Falls back to legacy `daily/` + `longterm/summary.md`
       // for users whose workspace still has the older shape.
       execute: async () => {
         try {
           const parts: string[] = [];
 
-          // Long-term memory summary â€?case-variant fallback like MCP
+          // Long-term memory summary â€” case-variant fallback like MCP
           const memoryVariants = ['memory.md', 'Memory.md', 'MEMORY.md'];
           for (const variant of memoryVariants) {
             const memPath = path.join(workspacePath, variant);
@@ -148,7 +148,7 @@ export function createMemorySearchTools(workspacePath: string) {
             }
           }
 
-          // Recent daily memories â€?primary layout `memory/daily/`
+          // Recent daily memories â€” primary layout `memory/daily/`
           const dailyDir = path.join(workspacePath, 'memory', 'daily');
           let dailyEntries: string[] = [];
           if (fs.existsSync(dailyDir)) {

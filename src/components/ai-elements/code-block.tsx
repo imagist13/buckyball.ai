@@ -26,7 +26,7 @@ import { useThemeFamily } from "@/lib/theme/context";
 import { resolveShikiTheme, resolveShikiThemes, SHIKI_DEFAULT_LIGHT, SHIKI_DEFAULT_DARK } from "@/lib/theme/code-themes";
 import type { Icon } from "@phosphor-icons/react";
 import { Check, CaretDown, CaretUp, Hash, Terminal, Code, File, FileCode } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   createElement,
   createContext,
@@ -42,14 +42,14 @@ import { createHighlighter } from "shiki";
 import { usePanel } from "@/hooks/usePanel";
 import type { PreviewSource } from "@/hooks/usePanel";
 
-// ââ Collapse/expand constants ââââââââââââââââââââââââââââââââââââââââââ
+// ── Collapse/expand constants ──────────────────────────────────────────
 const COLLAPSE_THRESHOLD = 20;
 const VISIBLE_LINES = 10;
 
-// ââ Terminal language detection ââââââââââââââââââââââââââââââââââââââââ
+// ── Terminal language detection ────────────────────────────────────────
 const TERMINAL_LANGUAGES = new Set(["bash", "sh", "shell", "terminal", "zsh", "console"]);
 
-// ââ Language icon mapping ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Language icon mapping ──────────────────────────────────────────────
 function getLanguageIcon(language: string): Icon {
   const lower = language.toLowerCase();
   if (TERMINAL_LANGUAGES.has(lower)) return Terminal;
@@ -151,7 +151,7 @@ const CodeBlockContext = createContext<CodeBlockContextType>({
   language: "text",
 });
 
-// Token cache â?bounded to 200 entries
+// Token cache — bounded to 200 entries
 const tokensCache = new LRUMap<string, TokenizedCode>(200);
 
 // Subscribers for async token updates
@@ -164,7 +164,7 @@ const getTokensCacheKey = (code: string, language: BundledLanguage, lightTheme: 
 };
 
 /**
- * Phase 5B â?main-thread FALLBACK tokenizer. The happy path runs this exact
+ * Phase 5B — main-thread FALLBACK tokenizer. The happy path runs this exact
  * engine inside the Shiki Web Worker (shiki.worker.ts); this instance only
  * runs when the worker is unavailable or a tokenize RPC fails, so
  * `createHighlighter` / `codeToTokens` no longer execute on the main thread on
@@ -195,7 +195,7 @@ const createRawTokens = (code: string): TokenizedCode => ({
 });
 
 /**
- * Shim TokenizedCode (this file's internal shape) â?Shiki's TokensResult
+ * Shim TokenizedCode (this file's internal shape) → Shiki's TokensResult
  * (the shape @streamdown/code's CodeHighlighterPlugin expects). Fills the
  * two optional metadata fields Streamdown's renderer reads when present:
  * themeName (used as a class hint on <pre>) and rootStyle (used as inline
@@ -222,7 +222,7 @@ function toTokensResult(
  * Create a Streamdown-compatible CodeHighlighterPlugin that routes through
  * this file's highlightCode(). Sharing the LRU + Shiki highlighter pool
  * with CodeBlockContent means chat messages and file previews don't each
- * spin up their own unbounded caches â?Phase 0.2 POC showed @streamdown/
+ * spin up their own unbounded caches — Phase 0.2 POC showed @streamdown/
  * code's default plugin maintains its own unbounded module-level Map,
  * which long chat sessions can grow without limit.
  *
@@ -290,7 +290,7 @@ export const highlightCode = (
     subscribers.get(tokensCacheKey)?.add(callback);
   }
 
-  // Start highlighting in the background â?fire-and-forget. Phase 5B: route
+  // Start highlighting in the background — fire-and-forget. Phase 5B: route
   // tokenization to the Shiki Web Worker off the main thread; on any worker
   // failure fall back to the identical main-thread engine so a code block is
   // never left blank.
@@ -727,11 +727,11 @@ const CodeBlockDefaultHeader = ({
         )}>{language.toUpperCase()}</span>
       </div>
       <div className="flex items-center gap-1 ml-2 shrink-0">
-        {/* Phase 4.B â?Open in Artifact action. Shown only for languages
+        {/* Phase 4.B — Open in Artifact action. Shown only for languages
             that have a configured preview renderer. The code itself
             doesn't go through any file scope; it's an inline-* source
             so the trust-tier pipeline is bypassed (the code is already
-            in the chat). HTML in particular uses inline-html â?strict
+            in the chat). HTML in particular uses inline-html → strict
             sandbox (no relative resources, no scripts) because we
             don't have a file scope to authorize. The code-fence
             Preview is for inspecting the *content*, not for running
@@ -755,7 +755,7 @@ const CodeBlockDefaultHeader = ({
             </>
           ) : (
             <>
-              <BuckyballIcon name="copy" size={12} aria-hidden />
+              <CodePilotIcon name="copy" size={12} aria-hidden />
               <span>Copy</span>
             </>
           )}
@@ -778,7 +778,7 @@ const CodeBlockDefaultHeader = ({
             </>
           ) : (
             <>
-              <BuckyballIcon name="file_code" size={12} aria-hidden />
+              <CodePilotIcon name="file_code" size={12} aria-hidden />
               <span>Markdown</span>
             </>
           )}
@@ -789,22 +789,22 @@ const CodeBlockDefaultHeader = ({
 };
 
 /**
- * Phase 4.B â?code-fence "Preview" button. Surfaces only when the
+ * Phase 4.B — code-fence "Preview" button. Surfaces only when the
  * fence's language is one we have a renderer for. The button uses
  * usePanel (rather than dispatching a window event) so the React
- * state update flows through AppShell's setPreviewSource â?same path
+ * state update flows through AppShell's setPreviewSource — same path
  * as the file-tree click and DiffSummary card.
  *
  * Mapping table:
- *   html / xml         â?inline-html  (strict sandbox; no file scope)
- *   jsx / tsx          â?inline-jsx   (Sandpack)
- *   json               â?inline-json  (tree viewer)
- *   diff / patch       â?inline-diff
- *   csv                â?inline-datatable (papaparse)
- *   tsv                â?inline-datatable (tab-delimited)
- *   markdown / md / mdxâ?inline-markdown
+ *   html / xml         → inline-html  (strict sandbox; no file scope)
+ *   jsx / tsx          → inline-jsx   (Sandpack)
+ *   json               → inline-json  (tree viewer)
+ *   diff / patch       → inline-diff
+ *   csv                → inline-datatable (papaparse)
+ *   tsv                → inline-datatable (tab-delimited)
+ *   markdown / md / mdx→ inline-markdown
  *
- * Other languages render no button â?the existing Copy / Markdown
+ * Other languages render no button — the existing Copy / Markdown
  * actions are sufficient for code that has no rendered preview form.
  */
 function CodeFencePreviewButton({
@@ -826,7 +826,7 @@ function CodeFencePreviewButton({
       className="flex items-center gap-1 rounded px-1.5 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
       title={`Open this ${language} in the Artifact preview`}
     >
-      <BuckyballIcon name="file_code" size={12} aria-hidden />
+      <CodePilotIcon name="file_code" size={12} aria-hidden />
       <span>Preview</span>
     </button>
   );
@@ -887,7 +887,7 @@ function parseCsvForFence(
   delim: string,
   virtualName: string,
 ): PreviewSource {
-  // Light CSV parser â?good enough for chat-pasted tables. We don't
+  // Light CSV parser — good enough for chat-pasted tables. We don't
   // pull papaparse here because the existing DataTableViewer reads
   // raw csv text in its csv= prop; we hand it the same. For the
   // PreviewSource we still produce inline-datatable shape with
@@ -966,7 +966,7 @@ export const CodeBlockCopyButton = ({
       variant="ghost"
       {...props}
     >
-      {children ?? (isCopied ? <Check size={14} /> : <BuckyballIcon name="copy" size="sm" aria-hidden />)}
+      {children ?? (isCopied ? <Check size={14} /> : <CodePilotIcon name="copy" size="sm" aria-hidden />)}
     </Button>
   );
 };
@@ -1022,7 +1022,7 @@ export const CodeBlockLanguageSelectorItem = (
   props: CodeBlockLanguageSelectorItemProps
 ) => <SelectItem {...props} />;
 
-// ââ InlineCode âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── InlineCode ─────────────────────────────────────────────────────────
 export function InlineCode({ children }: { children: ReactNode }) {
   return (
     <code className="rounded bg-muted px-1.5 py-0.5 text-sm font-mono">

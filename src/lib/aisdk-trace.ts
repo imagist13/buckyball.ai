@@ -1,12 +1,12 @@
 /**
- * aisdk-trace â€?redacted-by-default AI SDK telemetry trace (AI SDK 7 exec
- * plan Phase 4 â‘?.
+ * aisdk-trace â€” redacted-by-default AI SDK telemetry trace (AI SDK 7 exec
+ * plan Phase 4 â‘¢).
  *
  * ai@7 exposes a callback-based `Telemetry` integration surface
  * (`streamText({ telemetry: { integrations: [...] } })`) whose events carry
  * the FULL prompt messages in provider format, tool inputs/outputs, and
  * request/response bodies. Piping those events anywhere unredacted would
- * leak prompts and credentials into logs â€?exactly what the log-sanitize /
+ * leak prompts and credentials into logs â€” exactly what the log-sanitize /
  * doctor-export sanitizers exist to prevent.
  *
  * This module is the ONLY sanctioned way to enable that trace:
@@ -14,13 +14,13 @@
  *   - **Default OFF.** `isAiSdkTraceEnabled()` requires the explicit
  *     `CODEPILOT_AISDK_TRACE=1` env switch (same pattern as
  *     `CODEPILOT_CODEX_TRACE` from the log-bloat plan). Without it the
- *     production agent-loop passes NO telemetry option â€?wire-identical to
+ *     production agent-loop passes NO telemetry option â€” wire-identical to
  *     before this module existed.
  *   - **Redaction is structural and fail-closed.** Values survive only via
  *     an ALLOWLIST of known-safe metadata keys (model ids, tool names, step
  *     numbers, finish reasons, token counts, durations). Every other string
- *     â€?including any field a future SDK version adds â€?is replaced by a
- *     `[redacted sha256:â€?len:â€¦]` digest placeholder. Content-bearing
+ *     â€” including any field a future SDK version adds â€” is replaced by a
+ *     `[redacted sha256:â€¦ len:â€¦]` digest placeholder. Content-bearing
  *     subtrees (messages / prompt / input / output / request / response /
  *     error bodies) are collapsed to a single digest before recursion could
  *     even see them. The digest lets a developer correlate "same content"
@@ -30,7 +30,8 @@
  *     credential scrubber the persistent main-process log uses), so a key
  *     smuggled into a "safe" field still gets masked.
  *   - **No raw mode.** A "trace with prompts visible" switch would move the
- *     log-redaction boundary and is intentionally NOT implemented here â€? *     that is a human-gate decision (see plan Phase 4 stop conditions).
+ *     log-redaction boundary and is intentionally NOT implemented here â€”
+ *     that is a human-gate decision (see plan Phase 4 stop conditions).
  *
  * Trace destination: stdout lines prefixed `[aisdk-trace]` (JSONL). In the
  * packaged app stdout already flows through the main-process log pipeline
@@ -45,7 +46,7 @@ import { sanitizeLogLine } from '../../electron/log-sanitize';
 
 /**
  * Keys whose PRIMITIVE string values are safe diagnostic metadata. Anything
- * not listed here is redacted to a digest â€?fail-closed for unknown fields.
+ * not listed here is redacted to a digest â€” fail-closed for unknown fields.
  */
 const SAFE_STRING_KEYS = new Set([
   'operationId',
@@ -72,7 +73,7 @@ const SAFE_STRING_KEYS = new Set([
 
 /**
  * Keys whose ENTIRE subtree is content (prompts, tool payloads, wire
- * bodies). Collapsed to one digest without recursing â€?the shape of a
+ * bodies). Collapsed to one digest without recursing â€” the shape of a
  * user's conversation is already information.
  */
 const CONTENT_SUBTREE_KEYS = new Set([
@@ -137,7 +138,7 @@ export function redactTraceValue(value: unknown, key?: string, depth = 0): unkno
       }
       return out;
     }
-    // functions / symbols / bigints â€?nothing a trace needs verbatim
+    // functions / symbols / bigints â€” nothing a trace needs verbatim
     return digest(String(value));
   } catch {
     return '[redacted: redaction-error]';

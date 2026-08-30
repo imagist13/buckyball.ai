@@ -1,13 +1,13 @@
 /**
- * chat-runtime-shared â€?pure types + helpers safe to import from
+ * chat-runtime-shared â€” pure types + helpers safe to import from
  * client components.
  *
  * Why this file exists separately from `chat-runtime.ts`:
  *
  *   `chat-runtime.ts` calls `resolveRuntime()` from `./runtime`, which
- *   transitively pulls in `runtime/sdk-runtime.ts â†?claude-client.ts`,
+ *   transitively pulls in `runtime/sdk-runtime.ts â†’ claude-client.ts`,
  *   and that module imports Node-only things (Sentry, OpenTelemetry,
- *   `child_process`, `fs`, `async_hooks`, â€?. Any client component
+ *   `child_process`, `fs`, `async_hooks`, â€¦). Any client component
  *   that imports a value (not just a type) from `chat-runtime.ts`
  *   drags the whole server-side import graph into the client bundle
  *   and Next.js fails the build with `Module not found: Can't resolve
@@ -21,23 +21,25 @@
  *   so existing call sites don't break).
  *
  *   Caught by Phase 2 Step 3b review (2026-05-07): a sandbox dev build
- *   threw at `ChatView.tsx â†?chat-runtime.ts â†?runtime/index.ts â†? *   sdk-runtime.ts â†?claude-client.ts â†?async_hooks`. Splitting the
+ *   threw at `ChatView.tsx â†’ chat-runtime.ts â†’ runtime/index.ts â†’
+ *   sdk-runtime.ts â†’ claude-client.ts â†’ async_hooks`. Splitting the
  *   types/pure helpers off was the load-bearing fix.
  */
 
 /**
- * Phase 0.5 Slice E.1 (2026-05-13) â€?`ChatRuntime` is now an alias of
+ * Phase 0.5 Slice E.1 (2026-05-13) â€” `ChatRuntime` is now an alias of
  * the canonical `RuntimeId` from `runtime/runtime-id.ts`. Adding a
- * new runtime (Codex / Gemini / â€? goes through `RUNTIME_IDS` in
+ * new runtime (Codex / Gemini / â€¦) goes through `RUNTIME_IDS` in
  * runtime-id.ts; every consumer of `ChatRuntime` automatically picks
- * it up. The legacy two-state union was Codex's P1 finding â€? * hand-rolled string-literal blocked Codex Runtime from being added
+ * it up. The legacy two-state union was Codex's P1 finding â€”
+ * hand-rolled string-literal blocked Codex Runtime from being added
  * with a single-place edit.
  */
 import { isRuntimeId, type RuntimeId, type RuntimeIdParam } from './runtime/runtime-id';
 
 export type ChatRuntime = RuntimeId;
 
-/** Wire form for HTTP query params â€?adds 'auto' (server resolves). */
+/** Wire form for HTTP query params â€” adds 'auto' (server resolves). */
 export type ChatRuntimeParam = RuntimeIdParam;
 
 /** Type guard for parsing untrusted query strings. */
@@ -46,15 +48,15 @@ export function isChatRuntimeParam(v: unknown): v is ChatRuntimeParam {
 }
 
 /**
- * Phase 2 Step 3b â€?client-safe translator from a session's stored
+ * Phase 2 Step 3b â€” client-safe translator from a session's stored
  * `runtime_pin` to a `ChatRuntimeParam`. Used by ChatView /
  * MessageInput / picker to pass an explicit runtime into
  * `useProviderModels`, instead of the old `'auto'` default that made
  * the server resolve via the global `agent_runtime` setting (drift
  * point #4 from the Phase 2 Step 1 audit).
  *
- *   pin = <known RuntimeId>        â†?that RuntimeId  (session pinned)
- *   pin = '' / undefined / unknown â†?'auto'          (follow global)
+ *   pin = <known RuntimeId>        â†’ that RuntimeId  (session pinned)
+ *   pin = '' / undefined / unknown â†’ 'auto'          (follow global)
  *
  * Pure: no DB, no React, no Node-only deps. Safe to import from any
  * client component or server caller.
@@ -67,33 +69,33 @@ export function chatRuntimeParamForSession(runtimePin: string | undefined | null
 }
 
 /**
- * Phase 5 Phase 6 IA correction round 3 (2026-05-14) â€?translate the
+ * Phase 5 Phase 6 IA correction round 3 (2026-05-14) â€” translate the
  * stored `agent_runtime` setting (registry-id form) into the chat-side
  * `ChatRuntime` (canonical RuntimeId form) the chat composer's
  * `RuntimeSelector` consumes.
  *
- * Registry id â†?chat-runtime label mapping:
+ * Registry id â†” chat-runtime label mapping:
  *
- *   'claude-code-sdk' â†?'claude_code'        (legacy alias)
- *   'native'          â†?'bbagent'  (legacy alias)
- *   'codex_runtime'   â†?'codex_runtime'      (Phase 3 â€?identity)
+ *   'claude-code-sdk' â†’ 'claude_code'        (legacy alias)
+ *   'native'          â†’ 'codepilot_runtime'  (legacy alias)
+ *   'codex_runtime'   â†’ 'codex_runtime'      (Phase 3 â€” identity)
  *
  * Unknown / 'auto' / null defaults to 'claude_code' so the trigger
  * never renders empty during the first-paint window.
  *
  * Why this exists: pre-round-3 the chat composer hard-coded a binary
- * ternary `=== 'claude-code-sdk' ? 'claude_code' : 'bbagent'`
+ * ternary `=== 'claude-code-sdk' ? 'claude_code' : 'codepilot_runtime'`
  * at two callsites (chat/page.tsx + ChatView.tsx) that completely
  * dropped Codex Runtime. With `agent_runtime='codex_runtime'` stored,
  * the RuntimeSelector showed "Claude Code" while Models/Settings
- * already agreed Codex was the default â€?the IA-round-2 fix
+ * already agreed Codex was the default â€” the IA-round-2 fix
  * propagated to server-side but the chat composer's translation was
  * stuck in two-engine days.
  *
  * Pure: same constraints as `chatRuntimeParamForSession`.
  */
 export function agentRuntimeToChatRuntime(stored: string | undefined | null): ChatRuntime {
-  if (stored === 'native') return 'bbagent';
+  if (stored === 'native') return 'codepilot_runtime';
   if (stored === 'codex_runtime') return 'codex_runtime';
   // Default covers 'claude-code-sdk' + legacy 'auto' + undefined / null /
   // any unknown value, matching the resolver's first-paint default.
@@ -101,13 +103,13 @@ export function agentRuntimeToChatRuntime(stored: string | undefined | null): Ch
 }
 
 /**
- * Phase 6 P0 (2026-05-15) â€?resolve a session's effective ChatRuntime
+ * Phase 6 P0 (2026-05-15) â€” resolve a session's effective ChatRuntime
  * to a CONCRETE RuntimeId, never 'auto'. This is the input the chat
  * composer / picker should use for per-row compat gating.
  *
  * Resolution order:
  *   1. If the session has a stored `runtime_pin` that's a known
- *      RuntimeId â†?use it verbatim.
+ *      RuntimeId â†’ use it verbatim.
  *   2. Otherwise consult the global `agent_runtime` setting via
  *      `agentRuntimeToChatRuntime` (which maps the legacy
  *      `claude-code-sdk` / `native` registry ids + the new
@@ -117,7 +119,7 @@ export function agentRuntimeToChatRuntime(stored: string | undefined | null): Ch
  * `'auto'` when no session pin exists. That `'auto'` then flows into
  * `useProviderModels`, which treats `'auto'` as "no per-row gating
  * yet, follow the catalog". The picker then renders every model as
- * enabled â€?even under Codex Runtime where most providers can't yet
+ * enabled â€” even under Codex Runtime where most providers can't yet
  * route through the (still-scaffolded) provider proxy. Resolving to a
  * concrete RuntimeId at the boundary closes that hole.
  *

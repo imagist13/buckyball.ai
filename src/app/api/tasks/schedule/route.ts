@@ -21,25 +21,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Phase 3 Step 4 follow-up â€?guardrail: codepilot_schedule_task is
+    // Phase 3 Step 4 follow-up â€” guardrail: codepilot_schedule_task is
     // the only public surface that calls this route, and it MUST NOT
     // be able to create heartbeat-source tasks. `assistant_heartbeat`
     // is reserved for `ensureHeartbeatTask` (system-injected, single
     // row, special silent contract). Reject any explicit `source` in
-    // the body â€?`createScheduledTask` would already coerce non-
+    // the body â€” `createScheduledTask` would already coerce non-
     // 'assistant_heartbeat' values to 'user', but a 400 here makes
     // the contract loud + prevents silent ignored fields.
     if (body.source !== undefined) {
       return NextResponse.json(
         {
           error:
-            'source field is not accepted on this route â€?it is reserved for the system-injected heartbeat task and is set internally.',
+            'source field is not accepted on this route â€” it is reserved for the system-injected heartbeat task and is set internally.',
         },
         { status: 400 },
       );
     }
 
-    // Phase 3 Step 3 â€?`kind` is required and validated server-side. We do
+    // Phase 3 Step 3 â€” `kind` is required and validated server-side. We do
     // NOT default to 'ai_task' here: that would let an AI tool create a
     // "remind me" task without specifying kind and silently route it
     // through the model. The DB column has a default for migration of
@@ -70,13 +70,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid schedule_type' }, { status: 400 });
     }
 
-    // v7 fix â€?normalize `notify_on_complete` to 0/1 BEFORE handing it
+    // v7 fix â€” normalize `notify_on_complete` to 0/1 BEFORE handing it
     // to better-sqlite3. AI tool / external callers may POST `true` or
     // `false` (the natural JS shape); the column is INTEGER and
     // better-sqlite3 throws "SQLite3 can only bind numbers, strings,
     // bigints, buffers, and null" on raw booleans. Treat any of
     // (false, 0, '0') as 0; everything else (including undefined/null
-    // and missing field) as 1 â€?that matches the historical default
+    // and missing field) as 1 â€” that matches the historical default
     // "notify on complete" behavior.
     const notifyFlag: 0 | 1 =
       notify_on_complete === false || notify_on_complete === 0 || notify_on_complete === '0'

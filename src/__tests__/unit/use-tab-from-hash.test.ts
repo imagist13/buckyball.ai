@@ -4,7 +4,7 @@
  * The hook reads `window.location.hash` on mount, listens for hashchange,
  * and uses `history.replaceState` to update the URL when the tab is
  * switched. We assert each branch of that contract here against a
- * minimal jsdom-style window stub â€?no React renderer needed because
+ * minimal jsdom-style window stub â€” no React renderer needed because
  * the hook's behavior is pure-ish: it just reads/writes globals.
  *
  * Run with: npx tsx --test src/__tests__/unit/use-tab-from-hash.test.ts
@@ -96,7 +96,7 @@ describe("history.replaceState contract", () => {
       history.replaceState(null, "", nextHash);
     }
     assert.equal(replaceCalled, 1);
-    assert.equal(pushCalled, 0, "must not push â€?would pollute history with each tab click");
+    assert.equal(pushCalled, 0, "must not push â€” would pollute history with each tab click");
     assert.equal(fakeWindow.location.hash, "#mcp");
   });
 

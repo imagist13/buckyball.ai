@@ -1,29 +1,30 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { CaretDown } from '@/components/ui/icon';
+import { useCallback, useMemo, useState } from 'react';
+import { CaretDown, MagnifyingGlass, Star } from '@/components/ui/icon';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 import { PromptInputButton } from '@/components/ai-elements/prompt-input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 import type { ProviderModelGroup } from '@/types';
-import { compatLabel, compatTone } from '@/lib/runtime-compat';
 import { findModelOption } from '@/lib/model-option-match';
-import type { RuntimeId } from '@/lib/runtime/runtime-id';
+import { RUNTIME_IDS, type RuntimeId } from '@/lib/runtime/runtime-id';
+import { ProviderBrandIcon } from '@/components/ui/provider-brand-icon';
+import { RuntimeIcon, runtimeTranslationKeys } from './RuntimeSelector';
 import {
-  CommandList,
-  CommandListItems,
-  CommandListItem,
-  CommandListGroup,
-} from '@/components/patterns';
+  MODEL_ROUTE_FAVORITES_KEY,
+  modelRouteFavoriteIdentity,
+  modelRouteIdentity,
+  parseModelRouteFavorites,
+  rankModelRoutes,
+  serializeModelRouteFavorites,
+  toggleModelRouteFavorite,
+  type ModelRouteFavoriteV2,
+} from '@/lib/model-route-favorites';
 
-// Recent-models tracking. Persisted to localStorage so the picker can
-// surface "刚用过的几个" at the top �?an alternative to a global search
-// box (per April 2026 user feedback: search adds noise; recent-list
-// covers 80% of the "I want to switch back to that one" intent).
 const RECENT_MODELS_KEY = 'codepilot:recent-models';
-const RECENT_MODELS_DISPLAY = 3;
 const RECENT_MODELS_STORED = 8;
 
 interface RecentModelEntry {
@@ -35,13 +36,14 @@ interface RecentModelEntry {
 function readRecentModels(): RecentModelEntry[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem(RECENT_MODELS_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) return [];
-    return arr.filter((e): e is RecentModelEntry =>
-      e && typeof e.providerId === 'string' && typeof e.modelValue === 'string' && typeof e.ts === 'number',
-    );
+    const parsed = JSON.parse(localStorage.getItem(RECENT_MODELS_KEY) || '[]');
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is RecentModelEntry =>
+          entry
+          && typeof entry.providerId === 'string'
+          && typeof entry.modelValue === 'string'
+          && typeof entry.ts === 'number')
+      : [];
   } catch {
     return [];
   }
@@ -50,33 +52,26 @@ function readRecentModels(): RecentModelEntry[] {
 function pushRecentModel(providerId: string, modelValue: string): void {
   if (typeof window === 'undefined') return;
   try {
-    const existing = readRecentModels();
-    const filtered = existing.filter(e => !(e.providerId === providerId && e.modelValue === modelValue));
-    const next: RecentModelEntry[] = [
+    const next = [
       { providerId, modelValue, ts: Date.now() },
-      ...filtered,
+      ...readRecentModels().filter((entry) =>
+        !(entry.providerId === providerId && entry.modelValue === modelValue)),
     ].slice(0, RECENT_MODELS_STORED);
     localStorage.setItem(RECENT_MODELS_KEY, JSON.stringify(next));
   } catch {
-    // ignore quota errors
+    // Storage is an enhancement. Selection itself must continue to work.
   }
 }
 
 interface ModelOption {
   value: string;
   label: string;
+  upstreamModelId?: string;
   supportsEffort?: boolean;
   supportedEffortLevels?: string[];
-  /** i18n key for the effort menu's mapping note (GLM two-tier / Kimi Auto). */
   effortNoteKey?: string;
-  /** Phase 6 UI收口 P2 (2026-05-14) �?per-row runtime compat from
-   *  `getModelCompat`. Drives the disabled state for incompatible
-   *  rows alongside the tooltip below. Absent on rows that came
-   *  from DEFAULT_MODEL_OPTIONS / env synthetic fallbacks; absent
-   *  means "treat as universally supported". */
+  contextWindow?: number;
   supportedRuntimes?: string[];
-  /** Per-runtime "why is this unavailable" reason. Picker pipes
-   *  the entry for the active runtime into the HTML title tooltip. */
   unsupportedReasonByRuntime?: Record<string, string>;
 }
 
@@ -86,30 +81,51 @@ interface ModelSelectorDropdownProps {
   providerGroups: ProviderModelGroup[];
   modelOptions: ModelOption[];
   onModelChange?: (model: string) => void;
-  /** Phase 6 P0 (2026-05-15) �?`opts.isAuto` lets MessageInput's
-   *  auto-correct effect call this same prop without triggering the
-   *  manual-pick side effects (clearing pinned-default warnings,
-   *  writing localStorage, PATCHing session). Manual clicks here in
-   *  the dropdown always omit the flag. */
   onProviderModelChange?: (
     providerId: string,
     model: string,
     opts?: { isAuto?: boolean },
   ) => void;
-  /** Global default model value */
   globalDefaultModel?: string;
-  /** Global default model's provider ID */
   globalDefaultProvider?: string;
-  /** Which runtime the picker feed was filtered against (server-resolved
-   *  when caller passed `?runtime=auto`). Surfaced as a small status row
-   *  inside the dropdown so users understand why some configured
-   *  providers may not appear. Typed off the canonical `RuntimeId`
-   *  union so adding a new runtime (Codex etc.) requires no change here. */
   runtimeApplied?: RuntimeId;
-  /** Whether the provider/model fetch is still in flight. When true we
-   *  show a "loading" label on the trigger instead of an empty button so
-   *  the composer doesn't look broken during the brief async window. */
+  onRuntimeChange?: (runtime: RuntimeId) => void;
+  runtimeChangeDisabled?: boolean;
   isLoading?: boolean;
+}
+
+interface ModelRoute {
+  runtimeId: RuntimeId;
+  providerInstanceId: string;
+  providerName: string;
+  modelId: string;
+  modelName: string;
+  option?: ModelOption;
+  group?: ProviderModelGroup;
+  catalogOrder: number;
+  favorite: boolean;
+  recentAt?: number;
+  selectable: boolean;
+  unavailableReason?: string;
+}
+
+type PickerLane = 'favorites' | RuntimeId;
+
+interface ProviderRouteSection {
+  providerInstanceId: string;
+  providerName: string;
+  routes: ModelRoute[];
+}
+
+function ProviderGlyph({ name }: { name: string }) {
+  return (
+    <span
+      className="inline-flex size-5 shrink-0 items-center justify-center"
+      aria-hidden
+    >
+      <ProviderBrandIcon name={name} size={16} />
+    </span>
+  );
 }
 
 export function ModelSelectorDropdown({
@@ -122,220 +138,382 @@ export function ModelSelectorDropdown({
   globalDefaultModel,
   globalDefaultProvider,
   runtimeApplied,
+  onRuntimeChange,
+  runtimeChangeDisabled,
   isLoading,
 }: ModelSelectorDropdownProps) {
   const { t } = useTranslation();
-  const isZh = t('nav.chats') === '对话';
-  const [modelMenuOpen, setModelMenuOpen] = useState(false);
-  // Recent-model entries that still resolve to a (provider, model) pair
-  // present in the current `providerGroups`. Re-read from localStorage
-  // each time the menu opens so it reflects the latest selections, but
-  // memoised against `providerGroups` so the matching pass only re-runs
-  // when the data actually changes.
-  const recentMatches = useMemo(() => {
-    if (!modelMenuOpen) return [] as Array<{ group: ProviderModelGroup; option: ModelOption }>;
-    const recent = readRecentModels();
-    if (recent.length === 0) return [];
-    const matches: Array<{ group: ProviderModelGroup; option: ModelOption }> = [];
-    for (const entry of recent) {
-      const group = providerGroups.find(g => g.provider_id === entry.providerId);
-      if (!group) continue;
-      // Canonical-aware (tech-debt #37): a stored recent entry may carry a
-      // canonical id �?match by value OR upstreamModelId so it resolves.
-      const option = findModelOption(group.models, entry.modelValue);
-      if (!option) continue;
-      matches.push({ group, option });
-      if (matches.length >= RECENT_MODELS_DISPLAY) break;
-    }
-    return matches;
-  }, [modelMenuOpen, providerGroups]);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [lane, setLane] = useState<PickerLane>(runtimeApplied ?? RUNTIME_IDS[0]);
+  const [favorites, setFavorites] = useState<ModelRouteFavoriteV2[]>([]);
+  const [recent, setRecent] = useState<RecentModelEntry[]>([]);
 
-  // Canonical-aware (tech-debt #37): resolve the saved id to its alias row by
-  // value OR upstreamModelId so the trigger label shows the right model.
   const currentModelOption = findModelOption(modelOptions, currentModelValue) || modelOptions[0];
-
-  const isCurrentDefault = !!(
-    globalDefaultModel &&
-    globalDefaultProvider &&
-    currentModelValue === globalDefaultModel &&
-    currentProviderIdValue === globalDefaultProvider
+  const showLoading = isLoading || !currentModelOption;
+  const isCurrentDefault = Boolean(
+    globalDefaultModel
+    && globalDefaultProvider
+    && currentModelValue === globalDefaultModel
+    && currentProviderIdValue === globalDefaultProvider,
   );
 
-  const handleModelSelect = useCallback((providerId: string, modelValue: string) => {
-    onModelChange?.(modelValue);
-    onProviderModelChange?.(providerId, modelValue);
-    localStorage.setItem('codepilot:last-model', modelValue);
-    localStorage.setItem('codepilot:last-provider-id', providerId);
-    pushRecentModel(providerId, modelValue);
-    setModelMenuOpen(false);
-  }, [onModelChange, onProviderModelChange]);
+  const handleOpenChange = useCallback((nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      setQuery('');
+      return;
+    }
+    const activeRuntime = runtimeApplied ?? RUNTIME_IDS[0];
+    const currentRaw = typeof window === 'undefined'
+      ? null
+      : localStorage.getItem(MODEL_ROUTE_FAVORITES_KEY);
+    const storedFavorites = parseModelRouteFavorites(currentRaw);
+    setFavorites(storedFavorites);
+    setRecent(readRecentModels());
+    setLane(activeRuntime);
+  }, [runtimeApplied]);
 
-  const showLoading = isLoading || !currentModelOption;
+  const favoriteIds = useMemo(
+    () => new Set(favorites.map((favorite) =>
+      modelRouteFavoriteIdentity(
+        favorite.runtimeId,
+        favorite.providerInstanceId,
+        favorite.modelId,
+      ))),
+    [favorites],
+  );
+  const recentTimes = useMemo(
+    () => new Map(recent.map((entry) => [
+      modelRouteIdentity(entry.providerId, entry.modelValue),
+      entry.ts,
+    ])),
+    [recent],
+  );
+
+  const routes = useMemo(() => {
+    if (lane === 'favorites') {
+      return favorites.flatMap((favorite, catalogOrder): ModelRoute[] => {
+        const group = providerGroups.find((candidate) =>
+          candidate.provider_id === favorite.providerInstanceId);
+        const option = (group?.models as ModelOption[] | undefined)?.find((candidate) =>
+          candidate.value === favorite.modelId);
+        const selectable = Boolean(
+          group
+          && option
+          && (!option.supportedRuntimes || option.supportedRuntimes.includes(favorite.runtimeId)),
+        );
+        const unavailableReason = !group
+          ? t('composer.favoriteProviderUnavailable' as TranslationKey)
+          : !option
+            ? t('composer.favoriteModelUnavailable' as TranslationKey)
+            : !selectable
+              ? t('composer.favoriteRuntimeUnavailable' as TranslationKey)
+              : undefined;
+        return [{
+          runtimeId: favorite.runtimeId,
+          providerInstanceId: favorite.providerInstanceId,
+          providerName: group?.provider_name ?? favorite.providerNameSnapshot,
+          modelId: favorite.modelId,
+          modelName: option?.label ?? favorite.modelNameSnapshot,
+          option,
+          group,
+          catalogOrder,
+          favorite: true,
+          recentAt: recentTimes.get(modelRouteIdentity(
+            favorite.providerInstanceId,
+            favorite.modelId,
+          )),
+          selectable,
+          unavailableReason,
+        }];
+      });
+    }
+
+    let catalogOrder = 0;
+    const live: ModelRoute[] = [];
+    for (const group of providerGroups) {
+      for (const option of group.models as ModelOption[]) {
+        const selectable = !option.supportedRuntimes
+          || option.supportedRuntimes.includes(lane);
+        if (!selectable) continue;
+        const routeId = modelRouteIdentity(group.provider_id, option.value);
+        const favoriteId = modelRouteFavoriteIdentity(lane, group.provider_id, option.value);
+        live.push({
+          runtimeId: lane,
+          providerInstanceId: group.provider_id,
+          providerName: group.provider_name,
+          modelId: option.value,
+          modelName: option.label,
+          option,
+          group,
+          catalogOrder: catalogOrder++,
+          favorite: favoriteIds.has(favoriteId),
+          recentAt: recentTimes.get(routeId),
+          selectable: true,
+        });
+      }
+    }
+    return live;
+  }, [favoriteIds, favorites, lane, providerGroups, recentTimes, t]);
+
+  const visibleRoutes = useMemo(() => {
+    const ranked = rankModelRoutes(routes, query);
+    return lane === 'favorites'
+      ? ranked
+      : ranked.filter((route) => route.selectable && route.option);
+  }, [lane, query, routes]);
+
+  const providerSections = useMemo(() => {
+    const sections = new Map<string, ProviderRouteSection>();
+    for (const route of visibleRoutes) {
+      const existing = sections.get(route.providerInstanceId);
+      if (existing) {
+        existing.routes.push(route);
+      } else {
+        sections.set(route.providerInstanceId, {
+          providerInstanceId: route.providerInstanceId,
+          providerName: route.providerName,
+          routes: [route],
+        });
+      }
+    }
+    return [...sections.values()];
+  }, [visibleRoutes]);
+
+  const handleRuntimeSelect = useCallback((nextRuntime: RuntimeId) => {
+    if (runtimeChangeDisabled) return;
+    setLane(nextRuntime);
+    setQuery('');
+    if (nextRuntime !== runtimeApplied) onRuntimeChange?.(nextRuntime);
+  }, [onRuntimeChange, runtimeApplied, runtimeChangeDisabled]);
+
+  const handleModelSelect = useCallback((route: ModelRoute) => {
+    if (!route.selectable || !route.option) return;
+    if (route.runtimeId !== runtimeApplied) {
+      if (runtimeChangeDisabled) return;
+      onRuntimeChange?.(route.runtimeId);
+    }
+    onModelChange?.(route.modelId);
+    onProviderModelChange?.(route.providerInstanceId, route.modelId);
+    try {
+      localStorage.setItem('codepilot:last-model', route.modelId);
+      localStorage.setItem('codepilot:last-provider-id', route.providerInstanceId);
+    } catch {
+      // Selection remains authoritative even if local history is unavailable.
+    }
+    pushRecentModel(route.providerInstanceId, route.modelId);
+    setOpen(false);
+  }, [onModelChange, onProviderModelChange, onRuntimeChange, runtimeApplied, runtimeChangeDisabled]);
+
+  const handleFavorite = useCallback((route: ModelRoute) => {
+    const next = toggleModelRouteFavorite(favorites, {
+      runtimeId: route.runtimeId,
+      providerInstanceId: route.providerInstanceId,
+      modelId: route.modelId,
+      providerNameSnapshot: route.providerName,
+      modelNameSnapshot: route.modelName,
+      createdAt: Date.now(),
+    });
+    setFavorites(next);
+    try {
+      localStorage.setItem(MODEL_ROUTE_FAVORITES_KEY, serializeModelRouteFavorites(next));
+    } catch {
+      // Keep the in-memory interaction functional if storage is unavailable.
+    }
+  }, [favorites]);
 
   return (
-    <Popover open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <PromptInputButton disabled={showLoading}>
+        <PromptInputButton
+          disabled={showLoading}
+          aria-label={t('composer.chooseRuntimeModel' as TranslationKey)}
+        >
           {showLoading ? (
             <span className="text-xs text-muted-foreground">
               {t('composer.modelLoading' as TranslationKey)}
             </span>
           ) : (
             <>
-              {/* The selected model is toolbar chrome, not a code sample. Keep it
-                  on the same sans text token as effort; reserve monospace for
-                  raw identifiers that users need to compare character by character. */}
-              <span className="text-xs font-normal">{currentModelOption?.label}</span>
+              <RuntimeIcon runtime={runtimeApplied ?? RUNTIME_IDS[0]} size={16} />
+              <span className="max-w-40 truncate text-xs font-normal">{currentModelOption?.label}</span>
               {isCurrentDefault && (
-                <span className="ml-0.5 text-[10px] font-medium text-muted-foreground">
-                  {isZh ? '· 默认' : '· Default'}
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  · {t('composer.defaultShort' as TranslationKey)}
                 </span>
               )}
             </>
           )}
-          <CaretDown size={10} className={cn("transition-transform duration-200", modelMenuOpen && "rotate-180")} />
+          <CaretDown size={10} className={cn('transition-transform duration-200', open && 'rotate-180')} />
         </PromptInputButton>
       </PopoverTrigger>
 
-      {modelMenuOpen && (
-        // Radix owns side flipping, collision handling, and open/close
-        // animation. CommandList owns the shared list surface and rows.
+      {open && (
         <PopoverContent
           side="top"
           align="start"
           sideOffset={6}
           collisionPadding={16}
-          className="w-80 max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-2xl border bg-popover p-0 shadow-[var(--shadow-diffuse)] ring-0 duration-150"
+          className="w-[42rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border bg-popover p-0 shadow-[var(--shadow-diffuse)]"
         >
-          <CommandList positioning="inline" className="w-full rounded-none border-0 shadow-none">
-          {/* Phase 6 UI收口 P2 (2026-05-14) �?header disclosures removed.
-              The previous "only showing models for X" / "Codex currently
-              supports only ..." banners explained a server-side filter
-              that no longer exists; the picker now renders all models
-              and disables (with hover tooltip) the ones incompatible
-              with the current engine. The active engine is already
-              visible in the composer's bottom toolbar �?no need to
-              repeat it here. */}
-          <CommandListItems className="max-h-80">
-            {recentMatches.length > 0 && (
-              <CommandListGroup label={t('composer.recentModels' as TranslationKey)}>
-                {recentMatches.map(({ group, option }) => {
-                  // Canonical-aware active check (tech-debt #37) �?resolve the
-                  // current id within this group so a canonical id highlights
-                  // its alias row instead of nothing.
-                  const isActive = group.provider_id === currentProviderIdValue && findModelOption(group.models, currentModelValue)?.value === option.value;
-                  // Phase 6 UI收口 P2 (2026-05-14) �?recent rows honour
-                  // the same runtime gating as the main groups below.
-                  // Without this a "recently used GLM" entry could stay
-                  // clickable under Codex Runtime even though picking
-                  // it would route to a model the active engine can't
-                  // serve.
-                  const supportsCurrentRuntime =
-                    !runtimeApplied
-                    || !option.supportedRuntimes
-                    || option.supportedRuntimes.includes(runtimeApplied);
-                  const incompatTooltip = !supportsCurrentRuntime
-                    ? (option.unsupportedReasonByRuntime?.[runtimeApplied!]
-                        ?? (isZh
-                          ? '当前 Agent 引擎不支持此模型；切换到兼容引擎可启用�?
-                          : 'Current Agent engine does not support this model. Switch to a compatible engine to enable.'))
-                    : undefined;
-                  return (
-                    <CommandListItem
-                      key={`recent-${group.provider_id}-${option.value}`}
-                      active={isActive}
-                      disabled={!supportsCurrentRuntime}
-                      tooltip={incompatTooltip}
-                      onClick={() => handleModelSelect(group.provider_id, option.value)}
-                    >
-                      <span className="text-xs font-normal truncate">{option.label}</span>
-                      <span className="ml-auto text-[10px] font-normal text-muted-foreground truncate max-w-[100px]">
-                        {group.provider_name}
-                      </span>
-                    </CommandListItem>
-                  );
-                })}
-              </CommandListGroup>
-            )}
-            {providerGroups.map((group, groupIdx) => (
-              <CommandListGroup
-                key={group.provider_id}
-                label={
-                  <span className="flex items-center gap-1.5">
-                    <span>{group.provider_name}</span>
-                    {group.compat && (
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-1.5 py-px text-[9px] font-medium',
-                          compatTone(group.compat),
-                        )}
-                      >
-                        {compatLabel(group.compat, isZh)}
-                      </span>
-                    )}
-                  </span>
-                }
+          <div className="grid min-h-80 grid-cols-[9rem_minmax(0,1fr)]">
+            <nav className="border-r p-2" aria-label="Runtime">
+              <button
+                type="button"
+                onClick={() => {
+                  setLane('favorites');
+                  setQuery('');
+                }}
+                className={cn(
+                  'mb-2 flex h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-xs',
+                  lane === 'favorites' && 'bg-accent text-accent-foreground',
+                )}
+                aria-pressed={lane === 'favorites'}
+                aria-label={t('composer.favoriteCombinations' as TranslationKey)}
               >
-                {group.models.map((opt) => {
-                  // Canonical-aware active check (tech-debt #37) �?see recent rows above.
-                  const isActive = group.provider_id === currentProviderIdValue && findModelOption(group.models, currentModelValue)?.value === opt.value;
-                  const isDefault = !!(
-                    globalDefaultModel &&
-                    globalDefaultProvider &&
-                    opt.value === globalDefaultModel &&
-                    group.provider_id === globalDefaultProvider
-                  );
-                  // Phase 6 UI收口 P2 (2026-05-14) �?per-row compat gating.
-                  // Models that don't advertise support for the active
-                  // runtime render disabled, with the upstream reason
-                  // surfaced via the native HTML title tooltip. Rows
-                  // without a `supportedRuntimes` annotation fall back
-                  // to "compatible" (catalog rows without the canonical
-                  // contract �?DEFAULT_MODEL_OPTIONS fallback, env
-                  // synth group during API failures).
-                  const supportsCurrentRuntime =
-                    !runtimeApplied
-                    || !opt.supportedRuntimes
-                    || opt.supportedRuntimes.includes(runtimeApplied);
-                  const incompatTooltip = !supportsCurrentRuntime
-                    ? (opt.unsupportedReasonByRuntime?.[runtimeApplied!]
-                        ?? (isZh
-                          ? '当前 Agent 引擎不支持此模型；切换到兼容引擎可启用�?
-                          : 'Current Agent engine does not support this model. Switch to a compatible engine to enable.'))
-                    : undefined;
-                  return (
-                    <CommandListItem
-                      key={`${group.provider_id}-${opt.value}`}
-                      active={isActive}
-                      disabled={!supportsCurrentRuntime}
-                      tooltip={incompatTooltip}
-                      onClick={() => handleModelSelect(group.provider_id, opt.value)}
-                    >
-                      <span className="text-xs font-normal truncate">{opt.label}</span>
-                      {isDefault && (
-                        <span className="ml-auto text-[10px] font-medium text-muted-foreground">
-                          {isZh ? '默认' : 'Default'}
-                        </span>
-                      )}
-                    </CommandListItem>
-                  );
-                })}
-              </CommandListGroup>
-            ))}
-            {providerGroups.length === 0 && (
-              // Phase 6 UI收口 P2 (2026-05-14) �?the picker now shows the
-              // full catalog and uses per-row disabled state for runtime
-              // compat. An empty catalog here means the user has zero
-              // providers configured at all (rare); recovery is the
-              // Providers page.
-              <div className="px-3 py-6 text-center text-xs text-muted-foreground leading-relaxed">
-                {isZh
-                  ? '尚未配置任何服务商。请前往「设�?�?服务商」添加�?
-                  : 'No providers configured yet. Visit Settings �?Providers to add one.'}
+                <Star size={16} weight={lane === 'favorites' ? 'fill' : 'regular'} />
+                <span className="min-w-0 flex-1 truncate">
+                  {t('composer.favorites' as TranslationKey)}
+                </span>
+                {favorites.length > 0 && (
+                  <span className="rounded-full bg-muted px-1.5 text-[10px] text-muted-foreground">
+                    {favorites.length}
+                  </span>
+                )}
+              </button>
+              <div className="mb-1 border-t pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Runtime
               </div>
-            )}
-          </CommandListItems>
-          </CommandList>
+              {RUNTIME_IDS.map((runtimeId) => (
+                <button
+                  key={runtimeId}
+                  type="button"
+                  disabled={runtimeChangeDisabled}
+                  onClick={() => handleRuntimeSelect(runtimeId)}
+                  className={cn(
+                    'flex h-10 w-full items-center gap-2 rounded-lg px-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-50',
+                    lane === runtimeId && 'bg-accent text-accent-foreground',
+                  )}
+                  aria-pressed={lane === runtimeId}
+                >
+                  <RuntimeIcon runtime={runtimeId} size={16} />
+                  <span className="truncate">{t(runtimeTranslationKeys(runtimeId).label)}</span>
+                </button>
+              ))}
+            </nav>
+
+            <section className="min-w-0 p-3">
+              <div className="relative mb-3">
+                <MagnifyingGlass
+                  size={15}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  autoFocus
+                  value={query}
+                  onChange={(event) => setQuery(event.currentTarget.value)}
+                  placeholder={t('composer.searchModels' as TranslationKey)}
+                  className="h-9 pl-9"
+                />
+              </div>
+
+              <div
+                className="max-h-72 overflow-y-auto"
+                role="list"
+                aria-label={lane === 'favorites'
+                  ? t('composer.favoriteCombinations' as TranslationKey)
+                  : t('composer.availableModels' as TranslationKey)}
+              >
+                {providerSections.map((section) => (
+                  <div
+                    key={section.providerInstanceId}
+                    className="mb-2 last:mb-0"
+                    data-model-provider-section={section.providerInstanceId}
+                  >
+                    <div className="sticky top-0 z-10 flex h-7 items-center gap-2 bg-popover px-2 text-[10px] font-medium text-muted-foreground">
+                      <ProviderGlyph name={section.providerName} />
+                      <span className="truncate">{section.providerName}</span>
+                    </div>
+                    {section.routes.map((route) => {
+                      const group = route.group;
+                      const active = route.runtimeId === runtimeApplied
+                        && route.providerInstanceId === currentProviderIdValue
+                        && group !== undefined
+                        && findModelOption(group.models, currentModelValue)?.value === route.modelId;
+                      const defaultRoute = route.providerInstanceId === globalDefaultProvider
+                        && route.modelId === globalDefaultModel;
+                      const selectionDisabled = !route.selectable
+                        || (runtimeChangeDisabled && route.runtimeId !== runtimeApplied);
+                      return (
+                        <div
+                          key={modelRouteFavoriteIdentity(
+                            route.runtimeId,
+                            route.providerInstanceId,
+                            route.modelId,
+                          )}
+                          className={cn(
+                            'group flex min-h-12 items-center rounded-lg px-1',
+                            active && 'bg-accent',
+                            !active && 'hover:bg-accent/60',
+                          )}
+                          role="listitem"
+                        >
+                          <button
+                            type="button"
+                            aria-current={active ? 'true' : undefined}
+                            disabled={selectionDisabled}
+                            onClick={() => handleModelSelect(route)}
+                            title={route.unavailableReason}
+                            className="flex min-w-0 flex-1 items-center gap-2 px-2 py-2 text-left disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {lane === 'favorites' && <RuntimeIcon runtime={route.runtimeId} size={16} />}
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-medium">{route.modelName}</span>
+                              <span className="block truncate text-[10px] text-muted-foreground">
+                                {lane === 'favorites'
+                                  ? t(runtimeTranslationKeys(route.runtimeId).label)
+                                  : route.modelId}
+                                {route.unavailableReason ? ` · ${route.unavailableReason}` : ''}
+                              </span>
+                            </span>
+                            {defaultRoute && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {t('composer.defaultShort' as TranslationKey)}
+                              </span>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleFavorite(route)}
+                            className="mr-1 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
+                            aria-label={route.favorite
+                              ? t('composer.removeFavoriteCombination' as TranslationKey)
+                              : t('composer.favoriteCombination' as TranslationKey)}
+                          >
+                            <Star size={15} weight={route.favorite ? 'fill' : 'regular'} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                {providerGroups.length === 0 && favorites.length === 0 ? (
+                  <div className="px-3 py-10 text-center text-xs text-muted-foreground">
+                    {t('composer.noProvidersConfigured' as TranslationKey)}
+                  </div>
+                ) : visibleRoutes.length === 0 && (
+                  <div className="px-3 py-10 text-center text-xs text-muted-foreground">
+                    {query.trim()
+                      ? t('composer.noMatchingModels' as TranslationKey)
+                      : lane === 'favorites'
+                        ? t('composer.noFavoriteCombinations' as TranslationKey)
+                        : t('composer.noModelsForRuntime' as TranslationKey)}
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
         </PopoverContent>
       )}
     </Popover>

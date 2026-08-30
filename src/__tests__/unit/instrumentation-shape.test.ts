@@ -1,13 +1,14 @@
 /**
- * `src/instrumentation.ts` shape contract â€?dev-server memory guardrail.
+ * `src/instrumentation.ts` shape contract â€” dev-server memory guardrail.
  *
  * `next dev` runs `register()` at server start. Importing `@sentry/node`
  * here pulls the entire `@opentelemetry/*` instrumentation graph (HTTP,
- * fs, dns, undici, â€? into Turbopack's dev compile graph and inflates
+ * fs, dns, undici, â€¦) into Turbopack's dev compile graph and inflates
  * RSS by ~hundreds of MB. We don't ship dev-only crashes anywhere, so
  * Sentry init must be gated behind a non-development guard.
  *
- * `initRuntimeLog()` and `ensureSchedulerRunning()` are different â€? * runtime-log capture is needed in dev for the Doctor export feature,
+ * `initRuntimeLog()` and `ensureSchedulerRunning()` are different â€”
+ * runtime-log capture is needed in dev for the Doctor export feature,
  * and the scheduler must come back online on every cold boot. Both
  * MUST stay outside the dev-guard.
  *
@@ -30,14 +31,14 @@ const SRC_RAW = readFileSync(
 
 /**
  * Strip TS / JSX line and block comments. The "outside the guard"
- * assertions are about runtime behavior, not documentation â€?JSDoc that
+ * assertions are about runtime behavior, not documentation â€” JSDoc that
  * mentions `@sentry/node` to explain *why* the guard exists must not
  * trip the contract.
  */
 function stripComments(src: string): string {
   // Strip line comments FIRST so embedded `/*` fragments inside `//`
   // prose (e.g. a JSDoc explaining `@opentelemetry/*`) don't leak into
-  // the block-stripper as fake start markers â€?see the same fix in
+  // the block-stripper as fake start markers â€” see the same fix in
   // `sentry-dev-guard.test.ts`.
   return src
     .replace(/(^|[^:])\/\/.*$/gm, '$1')
@@ -47,10 +48,10 @@ function stripComments(src: string): string {
 const SRC = stripComments(SRC_RAW);
 
 /**
- * Find the `if (process.env.NODE_ENV !== 'development') { â€?}` block
+ * Find the `if (process.env.NODE_ENV !== 'development') { â€¦ }` block
  * and return its body text (between the opening `{` and the matching
  * closing `}`). Returns null if the guard isn't present or its braces
- * don't balance â€?both should fail the contract.
+ * don't balance â€” both should fail the contract.
  */
 function extractDevGuardBlock(src: string): string | null {
   const guardRe = /if\s*\(\s*process\.env\.NODE_ENV\s*!==\s*['"]development['"]\s*\)/;
@@ -79,7 +80,7 @@ describe('instrumentation.ts dev-memory guardrail', () => {
       SRC,
       /if\s*\(\s*process\.env\.NODE_ENV\s*!==\s*['"]development['"]\s*\)/,
       "instrumentation.ts must guard the Sentry init block with " +
-        "`if (process.env.NODE_ENV !== 'development')` â€?dev-mode init " +
+        "`if (process.env.NODE_ENV !== 'development')` â€” dev-mode init " +
         "of @sentry/node + the @opentelemetry/* graph is the dev RSS " +
         "regression we are trying to prevent",
     );
@@ -89,7 +90,7 @@ describe('instrumentation.ts dev-memory guardrail', () => {
     const block = extractDevGuardBlock(SRC);
     assert.ok(
       block,
-      "could not locate the `if (NODE_ENV !== 'development') { â€?}` block " +
+      "could not locate the `if (NODE_ENV !== 'development') { â€¦ }` block " +
         "(missing or unbalanced braces)",
     );
     assert.match(
@@ -102,7 +103,7 @@ describe('instrumentation.ts dev-memory guardrail', () => {
     assert.match(
       block!,
       /Sentry\.init\(/,
-      "Sentry.init(...) must also sit inside the dev guard â€?importing " +
+      "Sentry.init(...) must also sit inside the dev guard â€” importing " +
         "without init is incomplete; the contract is `dev never touches Sentry`",
     );
   });
@@ -127,14 +128,14 @@ describe('instrumentation.ts dev-memory guardrail', () => {
     assert.doesNotMatch(
       block,
       /initRuntimeLog/,
-      "initRuntimeLog must NOT be inside the dev guard â€?runtime-log " +
+      "initRuntimeLog must NOT be inside the dev guard â€” runtime-log " +
         "capture is needed in dev for the Doctor export feature",
     );
     // Positive: it must still appear somewhere in the file.
     assert.match(
       SRC,
       /initRuntimeLog\s*\(\s*\)/,
-      "initRuntimeLog() must still be called from register() â€?the dev " +
+      "initRuntimeLog() must still be called from register() â€” the dev " +
         "guard refactor is not allowed to drop it",
     );
   });
@@ -144,13 +145,13 @@ describe('instrumentation.ts dev-memory guardrail', () => {
     assert.doesNotMatch(
       block,
       /ensureSchedulerRunning/,
-      "ensureSchedulerRunning must NOT be inside the dev guard â€?the " +
+      "ensureSchedulerRunning must NOT be inside the dev guard â€” the " +
         "task scheduler has to resume on cold boot regardless of NODE_ENV",
     );
     assert.match(
       SRC,
       /ensureSchedulerRunning\s*\(\s*\)/,
-      "ensureSchedulerRunning() must still be called from register() â€?" +
+      "ensureSchedulerRunning() must still be called from register() â€” " +
         "the dev guard refactor is not allowed to drop it",
     );
   });

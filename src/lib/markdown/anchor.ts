@@ -1,13 +1,13 @@
 /**
- * Anchor parsing for PreviewSource â€?Phase 4 Markdown data layer.
+ * Anchor parsing for PreviewSource â€” Phase 4 Markdown data layer.
  *
  * A PreviewSource of kind `file` may carry an `anchor` string that
  * tells the panel where to scroll after the content loads. Three
  * forms are accepted, in this order of preference:
  *
- *   1. `#L12`         â†?line-jump (1-indexed)
- *   2. `:12`          â†?line-jump (alternate Codex-style)
- *   3. `#heading-id`  â†?heading slug (rendered Markdown only)
+ *   1. `#L12`         â†’ line-jump (1-indexed)
+ *   2. `:12`          â†’ line-jump (alternate Codex-style)
+ *   3. `#heading-id`  â†’ heading slug (rendered Markdown only)
  *
  * The classifier returns a discriminated union so callers can branch
  * on the kind without re-parsing.
@@ -22,9 +22,9 @@ export type ParsedAnchor =
   | { kind: 'invalid' };
 
 /**
- * Parse a raw anchor string. Empty / nullish input â†?invalid.
+ * Parse a raw anchor string. Empty / nullish input â†’ invalid.
  *
- * Line numbers are clamped to â‰?1 by the parser; values like `:0` or
+ * Line numbers are clamped to â‰¥ 1 by the parser; values like `:0` or
  * negative numbers fall through to `invalid` so callers don't have to
  * second-guess where the cursor should land.
  */
@@ -40,7 +40,7 @@ export function parseAnchor(raw: string | null | undefined): ParsedAnchor {
     return n >= 1 ? { kind: 'line', line: n } : { kind: 'invalid' };
   }
 
-  // Form 2: :12 (and optionally :12:34 â€?column is currently ignored
+  // Form 2: :12 (and optionally :12:34 â€” column is currently ignored
   // but parsed so a future column-jump doesn't break)
   const colonMatch = s.match(/^:(\d+)(?::\d+)?$/);
   if (colonMatch) {
@@ -60,15 +60,15 @@ export function parseAnchor(raw: string | null | undefined): ParsedAnchor {
 
 /**
  * Split a filesystem path that may carry an inline anchor at the end
- * â€?common in Codex-style output:
+ * â€” common in Codex-style output:
  *
- *   /abs/path/file.md:12       â†?{ filePath, anchor: ':12' }
- *   file.md#L12                â†?{ filePath, anchor: '#L12' }
- *   /abs/path/file.md#heading  â†?{ filePath, anchor: '#heading' }
- *   /abs/path/file.md          â†?{ filePath, anchor: undefined }
+ *   /abs/path/file.md:12       â†’ { filePath, anchor: ':12' }
+ *   file.md#L12                â†’ { filePath, anchor: '#L12' }
+ *   /abs/path/file.md#heading  â†’ { filePath, anchor: '#heading' }
+ *   /abs/path/file.md          â†’ { filePath, anchor: undefined }
  *
  * The classifier only splits when the trailing fragment LOOKS like a
- * line number or heading anchor â€?a colon in the middle of a path on
+ * line number or heading anchor â€” a colon in the middle of a path on
  * Windows (`C:\Users\...`) must not be mistaken for `:12`.
  */
 export function splitPathAndAnchor(input: string): {
@@ -82,7 +82,7 @@ export function splitPathAndAnchor(input: string): {
   if (lineColon) {
     return { filePath: lineColon[1], anchor: lineColon[2] };
   }
-  // `#L12` or `#heading` â€?only treat as anchor if the # is preceded
+  // `#L12` or `#heading` â€” only treat as anchor if the # is preceded
   // by what looks like a file path (has a dot or slash before it).
   const hash = input.lastIndexOf('#');
   if (hash > 0) {

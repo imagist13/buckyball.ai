@@ -7,22 +7,22 @@ interface ResizeHandleProps {
   side: "left" | "right";
   onResize: (delta: number) => void;
   onResizeEnd?: () => void;
-  /** Optional double-click handler â€?typical use is "reset to default width". */
+  /** Optional double-click handler â€” typical use is "reset to default width". */
   onReset?: () => void;
 }
 
 /**
  * Resize handle between two adjacent flex cards.
  *
- * Round 33 â€?reworked based on Craft Agent's `PanelResizeSash` pattern:
- *   â€?Hit area is ~8px wide (twice as easy to grab as the old 4px).
- *   â€?Visible line is only 2px and lives centered inside the hit area
- *     via `inset-x` negative offsets â€?so the line never visually
+ * Round 33 â€” reworked based on Craft Agent's `PanelResizeSash` pattern:
+ *   â€¢ Hit area is ~8px wide (twice as easy to grab as the old 4px).
+ *   â€¢ Visible line is only 2px and lives centered inside the hit area
+ *     via `inset-x` negative offsets â€” so the line never visually
  *     widens the gutter, just the hit area underneath does.
- *   â€?Hover paints a cursor-following gradient highlight, replacing
+ *   â€¢ Hover paints a cursor-following gradient highlight, replacing
  *     the previous "always invisible until drag" model that left
  *     users guessing where to grab.
- *   â€?Optional `onReset` handler runs on double-click so users can
+ *   â€¢ Optional `onReset` handler runs on double-click so users can
  *     snap back to default width without trial-and-error.
  */
 export function ResizeHandle({ side, onResize, onResizeEnd, onReset }: ResizeHandleProps) {
@@ -78,7 +78,7 @@ export function ResizeHandle({ side, onResize, onResizeEnd, onReset }: ResizeHan
   }, []);
 
   // Cursor-following gradient (mirrors Craft Agent's `useResizeGradient`)
-  // â€?the line is most intense where the cursor hovers and fades to
+  // â€” the line is most intense where the cursor hovers and fades to
   // transparent toward the top and bottom of the handle.
   const gradientBg = (() => {
     if (!dragging && hoverY === null) return undefined;
@@ -86,7 +86,7 @@ export function ResizeHandle({ side, onResize, onResizeEnd, onReset }: ResizeHan
       const h = containerRef.current.getBoundingClientRect().height;
       const cy = dragging ? h / 2 : (hoverY ?? h / 2);
       // Edge buffer keeps the brightest stop from kissing the rounded
-      // card corners above/below â€?matches Craft's 64px clamp.
+      // card corners above/below â€” matches Craft's 64px clamp.
       const edge = Math.min(64, h / 2);
       const center = Math.max(edge, Math.min(h - edge, cy));
       const near = Math.max(20, edge * 0.22);

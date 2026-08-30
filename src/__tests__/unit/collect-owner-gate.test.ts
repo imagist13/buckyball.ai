@@ -1,21 +1,21 @@
 /**
- * Session ownership â€?session-level write owner gate.
+ * Session ownership â€” session-level write owner gate.
  *
  * Behavioral (real-driven) test, NOT a source-pin. It drives the REAL exported
  * `collectStreamResponse` with a real SSE `ReadableStream` and a real DB lock
  * state (per-worker temp DB from db-isolation.setup.ts), then asserts against
  * the DB (getMessages / getSession / getTasksBySession).
  *
- * The I1/DP1 invariant: every session-level write inside collect â€?sdk_session_id,
- * model, SDK tasks, and the assistant `addMessage` â€?must be gated on
+ * The I1/DP1 invariant: every session-level write inside collect â€” sdk_session_id,
+ * model, SDK tasks, and the assistant `addMessage` â€” must be gated on
  * `isLockOwner(sessionId, lockId)`. A superseded turn (its lock taken over by a
  * newer send) reaches collect LATE carrying its OLD lockId and must write NOTHING.
  *
  *   - happy path (true owner still holds the lock): assistant message lands,
- *     sdk_session_id / model / tasks persisted â€?the reverse example that proves
+ *     sdk_session_id / model / tasks persisted â€” the reverse example that proves
  *     the gate does NOT drop the legitimate owner's writes.
  *   - stale path (lock taken over by lockB): assistant message DROPPED (DP1),
- *     sdk_session_id / model / tasks all left untouched â€?only diagnostic logs.
+ *     sdk_session_id / model / tasks all left untouched â€” only diagnostic logs.
  *
  * Ordering-safety note (why the owner is never falsely dropped): in production
  * `addMessage` runs inside collect's try, BEFORE onCompleteâ†’settleLock releases
@@ -89,7 +89,7 @@ describe('collectStreamResponse session-level write owner gate (Phase 3 B)', () 
 
     await collectStreamResponse(stream, sid, lockA, NO_TELEGRAM, undefined, OPTS);
 
-    // Assistant message DID land (reverse example â€?gate must not drop the owner).
+    // Assistant message DID land (reverse example â€” gate must not drop the owner).
     const msgs = assistantMessages(sid);
     assert.equal(msgs.length, 1, 'owner assistant message must be persisted');
     assert.equal(msgs[0].content, 'Hello from the true owner', 'persisted content matches');
@@ -112,7 +112,7 @@ describe('collectStreamResponse session-level write owner gate (Phase 3 B)', () 
     const lockB = 'lockB-newowner';
 
     // A originally owned the session, then a newer send takes over: production
-    // path is Stop â†?watchdog releaseSessionLock(A) â†?new request acquire(B).
+    // path is Stop â†’ watchdog releaseSessionLock(A) â†’ new request acquire(B).
     assert.equal(acquireSessionLock(sid, lockA, 'test-owner-A', 600), true, 'A acquires');
     assert.equal(releaseSessionLock(sid, lockA), true, 'watchdog releases A');
     assert.equal(acquireSessionLock(sid, lockB, 'test-owner-B', 600), true, 'B takes over');
@@ -136,7 +136,7 @@ describe('collectStreamResponse session-level write owner gate (Phase 3 B)', () 
     // DP1: the stale assistant content must NOT be persisted into `messages`.
     assert.equal(assistantMessages(sid).length, 0, 'stale assistant message must be dropped (DP1)');
 
-    // Session-level writes dropped â€?B's state is untouched.
+    // Session-level writes dropped â€” B's state is untouched.
     const row = getSession(sid)!;
     assert.equal(row.sdk_session_id, 'B-OWNED-SID', 'stale turn must not overwrite sdk_session_id');
     assert.equal(row.model, 'B-OWNED-MODEL', 'stale turn must not overwrite model');

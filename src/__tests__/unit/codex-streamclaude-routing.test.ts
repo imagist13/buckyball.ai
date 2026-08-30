@@ -1,5 +1,5 @@
 /**
- * Phase 5 review round 5 (2026-05-13) â€?streamClaude routing for
+ * Phase 5 review round 5 (2026-05-13) â€” streamClaude routing for
  * codex_runtime sessions + codex_account provider.
  *
  * Codex CDP smoke caught a silent runtime mismatch: a session pinned
@@ -12,7 +12,7 @@
  *
  * Source-level pin so a future edit can't quietly drop the codex
  * mapping again. Same style as round 3's runtime.ts pin (no live
- * codex binary in CI â€?we anchor on the source contract).
+ * codex binary in CI â€” we anchor on the source contract).
  */
 
 import { describe, it } from 'node:test';
@@ -25,7 +25,7 @@ const clientSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('streamClaude â€?codex_account provider force-route (P1 fix)', () => {
+describe('streamClaude â€” codex_account provider force-route (P1 fix)', () => {
   it('declares an isCodexAccountProvider early branch parallel to isNonAnthropicProvider', () => {
     // The early branch must exist BEFORE the transport-based SDK
     // detection so codex_account never reaches the SDK fallback.
@@ -43,7 +43,7 @@ describe('streamClaude â€?codex_account provider force-route (P1 fix)', () => {
   });
 
   it('codex_account branch fails closed when codex_runtime is unavailable', () => {
-    // No silent fallthrough to claude-code-sdk / native â€?Codex
+    // No silent fallthrough to claude-code-sdk / native â€” Codex
     // models cannot survive any other transport.
     assert.match(
       clientSrc,
@@ -66,7 +66,7 @@ describe('streamClaude â€?codex_account provider force-route (P1 fix)', () => {
   });
 });
 
-describe('streamClaude â€?pinâ†’registry mapping includes codex_runtime (P1 core fix)', () => {
+describe('streamClaude â€” pinâ†’registry mapping includes codex_runtime (P1 core fix)', () => {
   it('pin codex_runtime maps to registry id codex_runtime (identity)', () => {
     // Phase 3 decided the canonical RuntimeId for Codex matches its
     // registry id (no legacy alias). The ternary must reflect that
@@ -85,12 +85,12 @@ describe('streamClaude â€?pinâ†’registry mapping includes codex_runtime (P1 core
     );
     assert.match(
       clientSrc,
-      /sessionRuntimePin\s*===\s*'bbagent'[\s\S]{0,80}\?\s*'native'/,
+      /sessionRuntimePin\s*===\s*'codepilot_runtime'[\s\S]{0,80}\?\s*'native'/,
     );
   });
 });
 
-describe('streamClaude â€?codex_runtime pin guardrail (P1 fail-closed)', () => {
+describe('streamClaude â€” codex_runtime pin guardrail (P1 fail-closed)', () => {
   it('throws when pin === codex_runtime but resolver returned a different runtime', () => {
     // This is the load-bearing assertion: if anything in the routing
     // ladder above this guardrail decides "I'll just use Claude Code
@@ -103,7 +103,7 @@ describe('streamClaude â€?codex_runtime pin guardrail (P1 fail-closed)', () => {
   });
 
   it('guardrail message names the pin + the resolved runtime for debuggability', () => {
-    // The error message has to be diagnosable â€?include the actual
+    // The error message has to be diagnosable â€” include the actual
     // runtime.id so the user (and any future bug-report copy/paste)
     // pinpoints which fallback fired.
     assert.match(

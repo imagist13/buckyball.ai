@@ -1,19 +1,19 @@
 /**
- * GET /api/codex/status â€?read current status with automatic candidate-change
+ * GET /api/codex/status â€” read current status with automatic candidate-change
  * detection. POST forces a safe rescan for same-path in-place CLI upgrades.
  *
- * Phase 5 Phase 1 (2026-05-13) â€?Settings status card source.
+ * Phase 5 Phase 1 (2026-05-13) â€” Settings status card source.
  *
  * Returns the Codex app-server availability without spawning the
  * process. Two states matter to the UI:
  *
- *   - `not_installed` â€?Codex binary missing; UI shows install hint
- *   - `installed_idle` â€?binary exists; app-server has not been
+ *   - `not_installed` â€” Codex binary missing; UI shows install hint
+ *   - `installed_idle` â€” binary exists; app-server has not been
  *     initialized in this process yet
- *   - `ready`         â€?app-server already up; show version + home
+ *   - `ready`         â€” app-server already up; show version + home
  *
  * Intermediate states (`spawn_failed`, `too_old`, `unknown`) ride
- * through as-is â€?the Settings status card renders the message verbatim.
+ * through as-is â€” the Settings status card renders the message verbatim.
  */
 
 import { NextResponse } from 'next/server';

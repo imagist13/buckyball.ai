@@ -2,7 +2,7 @@
 
 /**
  * Read-only skill detail dialog. Replaces the legacy `SkillEditor`'s
- * MarkdownEditor surface â?Phase 2D.1 P3 (2026-05-01) decision: the
+ * MarkdownEditor surface — Phase 2D.1 P3 (2026-05-01) decision: the
  * inline editor was almost never used and added a Save path the API
  * still tolerates but no longer offers in the UI. To re-enable editing,
  * users edit the underlying file in their workspace and refresh.
@@ -24,7 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -71,7 +71,7 @@ export function SkillDetailDialog({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Reset the destructive-confirm state whenever the open skill changes
-  // â?otherwise navigating from one row to another would carry over a
+  // — otherwise navigating from one row to another would carry over a
   // primed delete from the previous selection.
   useEffect(() => {
     setConfirmDelete(false);
@@ -112,7 +112,7 @@ export function SkillDetailDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       {/* Flex column: header pinned at top, scroll region in the middle,
-          delete row pinned at bottom. Single scroll surface â?earlier
+          delete row pinned at bottom. Single scroll surface — earlier
           versions had nested overflow (outer dialog + inner markdown
           max-h-[40vh]) which silently clipped long bodies. */}
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col gap-0 overflow-hidden">
@@ -137,7 +137,7 @@ export function SkillDetailDialog({
             </span>
             {readOnlyReasonKey && (
               <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground shrink-0">
-                <BuckyballIcon name="permission" size={10} aria-hidden />
+                <CodePilotIcon name="permission" size={10} aria-hidden />
                 {t(readOnlyReasonKey)}
               </span>
             )}
@@ -195,7 +195,7 @@ export function SkillDetailDialog({
               onClick={handleDeleteClick}
               className="gap-1.5"
             >
-              <BuckyballIcon name="delete" size="sm" aria-hidden />
+              <CodePilotIcon name="delete" size="sm" aria-hidden />
               {confirmDelete
                 ? t("skills.deleteConfirm")
                 : t("common.delete" as TranslationKey)}

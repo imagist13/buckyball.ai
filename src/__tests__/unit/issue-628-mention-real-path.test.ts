@@ -1,13 +1,13 @@
 /**
- * #628 â€?@-mention of an in-tree project file must let the AI Read/Edit the
+ * #628 â€” @-mention of an in-tree project file must let the AI Read/Edit the
  * USER'S REAL FILE, not a `.codepilot-uploads` copy. Root cause: mention files
  * were fetched as base64-only attachments (real path discarded) and route.ts
  * copied every non-directory file, so the AI edited a throwaway.
  *
- * Fix: FileAttachment.originPath (set on mentions at MessageInput) â†?route
+ * Fix: FileAttachment.originPath (set on mentions at MessageInput) â†’ route
  * resolves it inside cwd and references the real path instead of copying.
  *
- * Security is the crux â€?the client path is NEVER trusted. Codex P1: a
+ * Security is the crux â€” the client path is NEVER trusted. Codex P1: a
  * string-level containment check is not enough, because an in-tree SYMLINK can
  * point outside the project (`linked-secret.txt -> ../outside`) and a
  * follow-the-link write escapes. The resolver now reuses the project's
@@ -27,7 +27,7 @@ import { resolveInTreeAttachmentPath } from '../../lib/in-tree-attachment';
 
 /**
  * Plant a symlink, returning true on success. On a restricted FS (Windows
- * without Developer Mode / Admin) symlink creation throws EPERM â€?return false
+ * without Developer Mode / Admin) symlink creation throws EPERM â€” return false
  * so the caller can skip the assertion instead of failing the suite.
  */
 function trySymlink(target: string, linkPath: string): boolean {
@@ -40,7 +40,7 @@ function trySymlink(target: string, linkPath: string): boolean {
   }
 }
 
-describe('#628 â€?resolveInTreeAttachmentPath (cwd + symlink containment)', () => {
+describe('#628 â€” resolveInTreeAttachmentPath (cwd + symlink containment)', () => {
   let workDir: string;
   let outsideFile: string;
   before(() => {
@@ -63,7 +63,7 @@ describe('#628 â€?resolveInTreeAttachmentPath (cwd + symlink containment)', () =
   it('resolves a nested in-cwd file', async () => {
     assert.equal(await resolveInTreeAttachmentPath('sub/nested.md', workDir), path.join(workDir, 'sub', 'nested.md'));
   });
-  it('rejects a ../ escape (returns null â†?caller copies)', async () => {
+  it('rejects a ../ escape (returns null â†’ caller copies)', async () => {
     assert.equal(await resolveInTreeAttachmentPath('../outside.ts', workDir), null);
   });
   it('rejects an absolute path outside cwd', async () => {
@@ -81,7 +81,7 @@ describe('#628 â€?resolveInTreeAttachmentPath (cwd + symlink containment)', () =
     assert.equal(await resolveInTreeAttachmentPath('real.ts', undefined), null);
   });
   it('[P1] rejects an in-tree SYMLINK that escapes cwd (Codex finding repro)', async () => {
-    // path looks in-tree but the real target is outside â€?must NOT reach the AI
+    // path looks in-tree but the real target is outside â€” must NOT reach the AI
     if (!trySymlink(outsideFile, path.join(workDir, 'linked-secret.txt'))) return; // FS w/o symlink support
     assert.equal(await resolveInTreeAttachmentPath('linked-secret.txt', workDir), null);
   });
@@ -91,7 +91,7 @@ describe('#628 â€?resolveInTreeAttachmentPath (cwd + symlink containment)', () =
   });
 });
 
-describe('#628 â€?wiring source pins', () => {
+describe('#628 â€” wiring source pins', () => {
   const types = readFileSync(path.resolve(__dirname, '../../types/index.ts'), 'utf8');
   const mi = readFileSync(path.resolve(__dirname, '../../components/chat/MessageInput.tsx'), 'utf8');
   const route = readFileSync(path.resolve(__dirname, '../../app/api/chat/route.ts'), 'utf8');

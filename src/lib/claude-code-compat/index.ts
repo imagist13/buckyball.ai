@@ -1,5 +1,5 @@
 /**
- * claude-code-compat/index.ts â€?Factory for Claude Code-compatible proxy adapter.
+ * claude-code-compat/index.ts â€” Factory for Claude Code-compatible proxy adapter.
  *
  * Creates a LanguageModelV3 instance that speaks the wire format
  * Claude Code proxy APIs expect (Anthropic Messages API with betas).

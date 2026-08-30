@@ -1,5 +1,5 @@
 /**
- * HTML preview URL builder + parser â€?Phase 4 Phase 1.5.
+ * HTML preview URL builder + parser â€” Phase 4 Phase 1.5.
  *
  * Background: serving an HTML file with `iframe srcDoc=<bytes>` makes
  * the document's effective URL the parent app's URL. Any relative
@@ -13,13 +13,14 @@
  * Why path segments instead of query strings: when the browser
  * resolves `./style.css` from a document at
  * `/api/files/html-preview/SCOPE/abs/dir/index.html?baseDir=...`,
- * it produces `/api/files/html-preview/SCOPE/abs/dir/style.css` â€? * the query string is NOT preserved across relative resolution.
+ * it produces `/api/files/html-preview/SCOPE/abs/dir/style.css` â€”
+ * the query string is NOT preserved across relative resolution.
  * Scope must live in the path so it survives.
  *
  * Scope tokens:
- *  - `ws.<base64url(baseDir)>` â€?workspace scope; resources must
+ *  - `ws.<base64url(baseDir)>` â€” workspace scope; resources must
  *    stay under baseDir.
- *  - `home`                    â€?home-directory scope; resources
+ *  - `home`                    â€” home-directory scope; resources
  *    must stay under the server's homedir. Used for user-selected
  *    external HTML files.
  *
@@ -144,7 +145,7 @@ function isWindowsRoot(root: string): boolean {
  * they're technically on the same hostname.
  *
  * Query parameters are added ONLY to the document URL the iframe
- * loads â€?relative resolution strips queries, so subresource fetches
+ * loads â€” relative resolution strips queries, so subresource fetches
  * never carry them. That's intentional:
  *  - `interactive=1` controls the document's CSP (script-src) once,
  *    at the document level. Subresources don't need it.
@@ -190,7 +191,7 @@ export function buildHtmlPreviewUrl(
 
 /**
  * POSIX-style dirname. Returns "/" for top-level files, "" for paths
- * without separators. Frontend-only â€?Node's `path.dirname` isn't
+ * without separators. Frontend-only â€” Node's `path.dirname` isn't
  * available in the browser bundle.
  */
 export function htmlPreviewDirname(filePath: string): string {
@@ -243,17 +244,18 @@ export const HTML_DEP_EXTENSIONS: ReadonlySet<string> = new Set([
  * iframe currently previewing `activeHtmlPath` under `scopeBaseDir`.
  *
  * Rules:
- *  1. The changed path itself matching the active file always counts â€? *     that's the existing same-file reload contract. The HTML-aware
+ *  1. The changed path itself matching the active file always counts â€”
+ *     that's the existing same-file reload contract. The HTML-aware
  *     reload kicks in only for siblings.
  *  2. Otherwise the path must be under `scopeBaseDir` (or under it
  *     when scope is workspace; for home scope we still require the
  *     path to be under the homedir, which the route already enforces
- *     for the subresource fetch itself â€?but the client-side decision
+ *     for the subresource fetch itself â€” but the client-side decision
  *     here uses the active HTML doc's containing directory as the
  *     conservative floor).
  *  3. The path must have a static-resource extension.
  *
- * Returns true â†?caller bumps reload nonce.
+ * Returns true â†’ caller bumps reload nonce.
  */
 export function shouldReloadHtmlForPath(
   changedPath: string,
@@ -274,11 +276,12 @@ export function shouldReloadHtmlForPath(
 
 /**
  * Decode the path segments the Next.js dynamic route hands us back
- * into `{ scope, absolutePath }`. Throws on malformed input â€? * route callers should map the throw to a 400 response.
+ * into `{ scope, absolutePath }`. Throws on malformed input â€”
+ * route callers should map the throw to a 400 response.
  *
  * Segment 0 is the scope token. Remaining segments form the absolute
  * filesystem path (we restore the leading slash). Path traversal
- * (`..`) is NOT collapsed here â€?the route handler runs
+ * (`..`) is NOT collapsed here â€” the route handler runs
  * `assertRealPathInBase` which catches any traversal that would
  * escape the scope.
  */

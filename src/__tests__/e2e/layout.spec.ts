@@ -23,7 +23,7 @@ test.describe('Layout', () => {
       await expect(sidebar(page)).toBeVisible();
       const box = await sidebar(page).boundingBox();
       expect(box).not.toBeNull();
-      // NavRail + ChatListPanel together �?NavRail is ~64px, ChatListPanel
+      // NavRail + ChatListPanel together — NavRail is ~64px, ChatListPanel
       // defaults to 240 (user-resizable). Assert a plausible window instead
       // of a hard-coded width so resize/layout tweaks don't keep breaking
       // the test.
@@ -33,8 +33,10 @@ test.describe('Layout', () => {
 
     test.skip('sidebar has navigation items', async ({ page }) => {
       // Stale: old "Chat / Plugins / MCP Servers / Settings" nav list is
-      // gone. The current sidebar renders Skills / MCP / CLI Tools / 素材�?      // / 远程桥接 plus a separate "新对�? button and chat list. Layout
-      // tests in this file need a full rewrite against the new structure �?      // tracked as tech debt #9. Keep the test as a skip placeholder so the
+      // gone. The current sidebar renders Skills / MCP / CLI Tools / 素材库
+      // / 远程桥接 plus a separate "新对话" button and chat list. Layout
+      // tests in this file need a full rewrite against the new structure —
+      // tracked as tech debt #9. Keep the test as a skip placeholder so the
       // rewrite is visible in the diff when someone picks it up.
       await goToChat(page);
       expect(page).toBeDefined();
@@ -42,12 +44,12 @@ test.describe('Layout', () => {
 
     test('sidebar has New Chat button', async ({ page }) => {
       await goToChat(page);
-      // The current sidebar renders "新对�? / "New Chat" as a <button>
+      // The current sidebar renders "新对话" / "New Chat" as a <button>
       // (InputGroupButton with a plus icon), not a link, so the older
       // newChatButton() helper (which scopes to <a>) misses it. Match
-      // any aside element whose text is "新对�? or "New Chat".
+      // any aside element whose text is "新对话" or "New Chat".
       await expect(
-        page.locator('aside button, aside a').filter({ hasText: /^(New Chat|新对�?$/ }).first(),
+        page.locator('aside button, aside a').filter({ hasText: /^(New Chat|新对话)$/ }).first(),
       ).toBeVisible();
     });
 
@@ -63,7 +65,7 @@ test.describe('Layout', () => {
 
   // Sidebar collapse/expand, theme switch, nav highlight, per-page header
   // titles, and the old three-column panel all live inside a layout that's
-  // been rewritten �?the toggles no longer carry the sr-only labels the
+  // been rewritten — the toggles no longer carry the sr-only labels the
   // helpers key on, and there are no <h1> titles in the header anymore.
   // Mark the whole blocks as skipped until the rewrite lands (tech debt #9);
   // leaving the cases in place so the diff surfaces what needs updating.

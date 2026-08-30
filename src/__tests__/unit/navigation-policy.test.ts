@@ -1,11 +1,11 @@
 /**
- * Behavior test for `classifyNavigation` â€?the pure policy behind the main
+ * Behavior test for `classifyNavigation` â€” the pure policy behind the main
  * window's `will-navigate` handler.
  *
  * Blocker it guards (Codex Loop-1 review of audit finding 1.7): the previous
  * inline handler ran the same-origin allow BEFORE the http/https whitelist.
- * The startup splash is a `data:` page (opaque origin â†?serializes to "null"),
- * so a `data:`/`file:`/`javascript:` target â€?also origin "null" â€?compared
+ * The startup splash is a `data:` page (opaque origin â†’ serializes to "null"),
+ * so a `data:`/`file:`/`javascript:` target â€” also origin "null" â€” compared
  * equal and was allowed as "same-origin", bypassing the whitelist. The helper
  * now requires BOTH sides to be http/https for an in-app allow.
  */
@@ -14,7 +14,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { classifyNavigation } from '../../lib/navigation-policy';
 
-describe('classifyNavigation â€?will-navigate policy (audit 1.7 + Codex Loop-1)', () => {
+describe('classifyNavigation â€” will-navigate policy (audit 1.7 + Codex Loop-1)', () => {
   it('same-origin http/https navigation is allowed in-app', () => {
     assert.equal(
       classifyNavigation('http://127.0.0.1:3000/', 'http://127.0.0.1:3000/chat/1'),
@@ -26,7 +26,7 @@ describe('classifyNavigation â€?will-navigate policy (audit 1.7 + Codex Loop-1)'
   it('cross-origin http/https target is opened externally', () => {
     assert.equal(classifyNavigation('http://127.0.0.1:3000/', 'https://example.com/'), 'open-external');
     assert.equal(classifyNavigation('http://127.0.0.1:3000/', 'http://other.host/'), 'open-external');
-    // scheme mismatch (http â†?https of same host) is still cross-origin â†?external
+    // scheme mismatch (http â†’ https of same host) is still cross-origin â†’ external
     assert.equal(classifyNavigation('http://app.local/', 'https://app.local/'), 'open-external');
   });
 
@@ -44,7 +44,7 @@ describe('classifyNavigation â€?will-navigate policy (audit 1.7 + Codex Loop-1)'
   });
 
   it('the startup data: page does NOT let opaque-origin targets pass as same-origin (the Codex blocker)', () => {
-    // Both sides are opaque â†?origin "null" === "null". Must NOT be allow-in-app.
+    // Both sides are opaque â†’ origin "null" === "null". Must NOT be allow-in-app.
     assert.equal(classifyNavigation('data:text/html,loading', 'data:text/html,evil'), 'block');
     assert.equal(classifyNavigation('data:text/html,loading', 'file:///etc/passwd'), 'block');
     assert.equal(classifyNavigation('data:text/html,loading', 'javascript:alert(1)'), 'block');

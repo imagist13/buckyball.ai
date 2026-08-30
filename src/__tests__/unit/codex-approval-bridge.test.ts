@@ -1,13 +1,14 @@
 /**
- * Phase 5 Phase 4 Slice 2 �?Codex approval bridge.
+ * Phase 5 Phase 4 Slice 2 — Codex approval bridge.
  *
- * Pins the PermissionResult �?Codex response-shape mapping. The
+ * Pins the PermissionResult → Codex response-shape mapping. The
  * mapping has FOUR axes:
  *
  *   - allow vs deny (behavior)
  *   - session-scope flag (updatedPermissions populated)
- *   - canonical method (item/commandExecution/... �?'accept'/'decline')
- *     vs legacy (execCommandApproval / applyPatchApproval �? *     'approved'/'denied')
+ *   - canonical method (item/commandExecution/... → 'accept'/'decline')
+ *     vs legacy (execCommandApproval / applyPatchApproval →
+ *     'approved'/'denied')
  *
  * The schema files in `资料/codex/.../v2/` defining these unions:
  *   CommandExecutionApprovalDecision = 'accept' | 'acceptForSession' |
@@ -36,42 +37,42 @@ const allowSession = {
 };
 const deny = { behavior: 'deny' as const, message: 'user denied' };
 
-describe('resultToCodexResponse �?canonical methods (accept/decline)', () => {
+describe('resultToCodexResponse — canonical methods (accept/decline)', () => {
   for (const method of [
     'item/commandExecution/requestApproval',
     'item/fileChange/requestApproval',
   ]) {
-    it(`${method}: allow �?{ decision: 'accept' }`, () => {
+    it(`${method}: allow → { decision: 'accept' }`, () => {
       assert.deepEqual(resultToCodexResponse(allow, method), { decision: 'accept' });
     });
-    it(`${method}: allow + session scope �?{ decision: 'acceptForSession' }`, () => {
+    it(`${method}: allow + session scope → { decision: 'acceptForSession' }`, () => {
       assert.deepEqual(resultToCodexResponse(allowSession, method), {
         decision: 'acceptForSession',
       });
     });
-    it(`${method}: deny �?{ decision: 'decline' }`, () => {
+    it(`${method}: deny → { decision: 'decline' }`, () => {
       assert.deepEqual(resultToCodexResponse(deny, method), { decision: 'decline' });
     });
   }
 });
 
-describe('resultToCodexResponse �?legacy methods (approved/denied)', () => {
+describe('resultToCodexResponse — legacy methods (approved/denied)', () => {
   for (const method of ['execCommandApproval', 'applyPatchApproval']) {
-    it(`${method}: allow �?{ decision: 'approved' } (legacy verb)`, () => {
+    it(`${method}: allow → { decision: 'approved' } (legacy verb)`, () => {
       assert.deepEqual(resultToCodexResponse(allow, method), { decision: 'approved' });
     });
-    it(`${method}: allow + session scope �?{ decision: 'approved_for_session' }`, () => {
+    it(`${method}: allow + session scope → { decision: 'approved_for_session' }`, () => {
       assert.deepEqual(resultToCodexResponse(allowSession, method), {
         decision: 'approved_for_session',
       });
     });
-    it(`${method}: deny �?{ decision: 'denied' }`, () => {
+    it(`${method}: deny → { decision: 'denied' }`, () => {
       assert.deepEqual(resultToCodexResponse(deny, method), { decision: 'denied' });
     });
   }
 });
 
-describe('resultToCodexPermissionsResponse �?current app-server permission profile wire', () => {
+describe('resultToCodexPermissionsResponse — current app-server permission profile wire', () => {
   const params = {
     permissions: {
       network: { enabled: true },
@@ -116,7 +117,7 @@ describe('resultToCodexPermissionsResponse �?current app-server permission prof
   });
 });
 
-describe('makeCodexPermissionRequestId �?stable prefix', () => {
+describe('makeCodexPermissionRequestId — stable prefix', () => {
   it('prepends "codex:" to the JSON-RPC id', () => {
     assert.equal(makeCodexPermissionRequestId(42), 'codex:42');
     assert.equal(makeCodexPermissionRequestId('abc'), 'codex:abc');
@@ -129,7 +130,7 @@ describe('makeCodexPermissionRequestId �?stable prefix', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5d Phase 3 review fix #3 (P1, 2026-05-17) �?duplicate approval
+// Phase 5d Phase 3 review fix #3 (P1, 2026-05-17) — duplicate approval
 // RPCs for the same `codex:${jsonRpcId}` must be idempotent. Pre-fix
 // the bridge always INSERTed and let the UNIQUE constraint failure
 // fall into a `console.warn` while still emitting a duplicate SSE
@@ -137,7 +138,7 @@ describe('makeCodexPermissionRequestId �?stable prefix', () => {
 // prompt then triggered 409 ALREADY_RESOLVED on the OTHER prompt.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('decodeStoredPermission �?replay stored decision for duplicate RPCs', () => {
+describe('decodeStoredPermission — replay stored decision for duplicate RPCs', () => {
   it('status=allow with updatedPermissions JSON decodes to behavior:allow + array', () => {
     const result = decodeStoredPermission({
       status: 'allow',
@@ -211,7 +212,7 @@ describe('decodeStoredPermission �?replay stored decision for duplicate RPCs', 
   });
 });
 
-describe('handleCodexApprovalRequest �?source pin (idempotent short-circuit shape)', () => {
+describe('handleCodexApprovalRequest — source pin (idempotent short-circuit shape)', () => {
   // Source-grep pin: the bridge MUST call getPermissionRequest BEFORE
   // createPermissionRequest so duplicate RPCs short-circuit cleanly.
   // Pre-fix the order was reversed and a UNIQUE constraint failure

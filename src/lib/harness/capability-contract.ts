@@ -1,15 +1,15 @@
 /**
- * Harness Capability Contract â?single source of truth for what
+ * Harness Capability Contract — single source of truth for what
  * CodePilot exposes to a model, across all three runtime
- * orchestrators (ClaudeCode SDK Runtime, buckyball.ai Native Runtime,
+ * orchestrators (ClaudeCode SDK Runtime, CodePilot Native Runtime,
  * Codex Runtime via provider proxy).
  *
  * Phase 5c slice 7 (2026-05-16).
  *
- * ââ Why this module exists âââââââââââââââââââââââââââââââââââââââââ
+ * ── Why this module exists ─────────────────────────────────────────
  *
  * ClaudeCode is stable because the SDK natively understands MCP /
- * tools / permissions â?CodePilot just feeds it in-process MCP
+ * tools / permissions — CodePilot just feeds it in-process MCP
  * servers and the SDK handles round-trips without translation.
  *
  * Codex Account is stable because Codex runs its own model + plugin
@@ -19,12 +19,13 @@
  * Codex Runtime + a CodePilot provider (GLM/Kimi/openai-oauth/etc.)
  * goes through a much longer pipeline:
  *
- *   Codex app-server â?Responses proxy â?AI SDK streamText â? *   upstream model â?Responses SSE â?Codex app-server â?CodePilot UI
+ *   Codex app-server → Responses proxy → AI SDK streamText →
+ *   upstream model → Responses SSE → Codex app-server → CodePilot UI
  *
  * Every link in that chain involves a translation we own
  * (`src/lib/codex/proxy/*`, `src/lib/codex/runtime.ts`,
  * `src/lib/codex/event-mapper.ts`). Each translation is a place
- * where the capability contract can drift â?three independent
+ * where the capability contract can drift — three independent
  * `WIDGET_SYSTEM_PROMPT` constants paraphrasing the same rules,
  * three independent tool schemas, three independent UI render
  * paths.
@@ -42,7 +43,7 @@
  * version; ClaudeCode users saw the MCP version; same product
  * surface, different rules.
  *
- * ââ What this module IS ââââââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module IS ────────────────────────────────────────────
  *
  * A declarative catalog. Each capability has exactly ONE entry that
  * names:
@@ -54,21 +55,21 @@
  *      builds the tool, what kind of tool wrapper it uses).
  *   3. The tool result shape + canonical event types the runtime
  *      MUST emit when the tool runs.
- *   4. The UI render path â?which component consumes the tool
+ *   4. The UI render path — which component consumes the tool
  *      result. If a capability emits media but no renderer can
  *      consume it, that's a contract violation visible here.
  *   5. The status: `live` (fully wired all three runtimes),
  *      `deferred` (planned, not yet implemented anywhere), or
  *      `unsupported` (deliberately disabled, with reason).
  *
- * ââ What this module IS NOT ââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module IS NOT ────────────────────────────────────────
  *
  * It does NOT replace the actual MCP server factories / AI SDK tool
- * factories / bridge tool builders â?those stay in their existing
+ * factories / bridge tool builders — those stay in their existing
  * files. The contract documents what they must satisfy. Drift tests
  * in `harness-capability-contract.test.ts` enforce the alignment.
  *
- * ââ New-runtime onboarding âââââââââââââââââââââââââââââââââââââââââ
+ * ── New-runtime onboarding ─────────────────────────────────────────
  *
  * Before adding a fourth runtime (Gemini app-server, OpenClaw, etc.)
  * the integration MUST:
@@ -93,13 +94,13 @@ import { NOTIFICATION_MCP_SYSTEM_PROMPT } from '@/lib/notification-mcp';
 import { MEDIA_CAPABILITY_SYSTEM_PROMPT } from '@/lib/media-capability-prompt';
 import { DASHBOARD_MCP_SYSTEM_PROMPT } from '@/lib/dashboard-mcp';
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Types
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export type CapabilityStatus =
   /**
-   * Phase 5d slice 7b (2026-05-16) â?strict semantics:
+   * Phase 5d slice 7b (2026-05-16) — strict semantics:
    *
    *   `live` REQUIRES every declared runtime exposure to be
    *   executable. No exposure may have `kind: 'unsupported'`. The
@@ -108,8 +109,8 @@ export type CapabilityStatus =
    *   exceptions).
    *
    *   Pre-strict semantics let one runtime fall back to `unsupported`
-   *   while the capability was still flagged `live` â?that was the
-   *   mixedå£å¾ the user flagged. Strict mode forces the catalog
+   *   while the capability was still flagged `live` — that was the
+   *   mixed口径 the user flagged. Strict mode forces the catalog
    *   author to either fix the missing runtime exposure or split the
    *   capability so each `live` entry maps to a coherent surface.
    */
@@ -118,13 +119,13 @@ export type CapabilityStatus =
    * One or more runtime exposures are intentionally `unsupported` for
    * now, with a documented `deferredReason` + a plan to land them.
    * The other exposures CAN be wired; tool names that only mount in
-   * the wired exposures still count â?but the `live` promise isn't
+   * the wired exposures still count — but the `live` promise isn't
    * being made.
    */
   | 'deferred'
   /**
    * Deliberately disabled in every runtime. `deferredReason` MUST
-   * explain why (security risk, design conflict, etc.) â?otherwise
+   * explain why (security risk, design conflict, etc.) — otherwise
    * it's just a `deferred` in disguise.
    */
   | 'unsupported';
@@ -142,7 +143,7 @@ export type RuntimeExposureKind =
   /** Codex-native tool surface (shell / namespace / etc.) that the
    *  proxy preserves on `passthroughTools` but doesn't execute. */
   | 'bridge_passthrough'
-  /** Runtime deliberately does not expose this capability â?either
+  /** Runtime deliberately does not expose this capability — either
    *  not applicable (e.g. workspace memory in a chat-less smoke) or
    *  intentionally disabled. */
   | 'unsupported';
@@ -152,7 +153,7 @@ export interface RuntimeExposure {
   /** Source file path (relative to repo root). Drift tests grep
    *  this file to confirm the factory exists. */
   readonly module?: string;
-  /** Exported function name. The test grep is on this symbol â?if
+  /** Exported function name. The test grep is on this symbol — if
    *  the factory gets renamed the test must be updated alongside. */
   readonly factory?: string;
   /** Short note for the contract reader, NOT for the test. */
@@ -165,7 +166,7 @@ export interface CapabilityArtifactContract {
   readonly fenceLanguage: string;
   /** A copy/paste-safe example the contract test can JSON.parse +
    *  feed into the renderer. Pre-slice-7 widget had a double-escaped
-   *  example that broke JSON.parse â?fixed by switching HTML attr
+   *  example that broke JSON.parse — fixed by switching HTML attr
    *  quotes to single quotes. */
   readonly canonicalJson: string;
   /** Required top-level JSON fields. Renderer-side parser fails fast
@@ -214,9 +215,9 @@ export interface CapabilityContract {
   readonly artifactContract?: CapabilityArtifactContract;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Catalog
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 const widget: CapabilityContract = {
   id: 'widget',
@@ -246,7 +247,7 @@ const widget: CapabilityContract = {
   systemPromptFragment: WIDGET_SYSTEM_PROMPT,
   toolResultShape: 'text',
   canonicalEventTypes: ['tool_started', 'tool_completed'],
-  uiRenderPath: 'parseAllShowWidgets â?PinnableWidget (src/components/chat/MessageItem.tsx); MalformedWidgetNotice for invalid fences (slice 6)',
+  uiRenderPath: 'parseAllShowWidgets → PinnableWidget (src/components/chat/MessageItem.tsx); MalformedWidgetNotice for invalid fences (slice 6)',
   artifactContract: {
     fenceLanguage: 'show-widget',
     canonicalJson: CANONICAL_SHOW_WIDGET_JSON,
@@ -289,7 +290,7 @@ const tasksAndNotify: CapabilityContract = {
   id: 'tasks_and_notify',
   displayName: 'Scheduled tasks + immediate notifications',
   status: 'live',
-  // Phase 5d slice 7b (2026-05-16) â?codepilot_hatch_buddy split out
+  // Phase 5d slice 7b (2026-05-16) — codepilot_hatch_buddy split out
   // to a separate `assistant_buddy` capability (deferred). Mixing it
   // in here made the entry technically dishonest: the bridge mounts
   // 4 of 5 names; strict drift test demands all-or-split.
@@ -322,23 +323,23 @@ const tasksAndNotify: CapabilityContract = {
   systemPromptFragment: NOTIFICATION_MCP_SYSTEM_PROMPT,
   toolResultShape: 'text',
   canonicalEventTypes: ['tool_started', 'tool_completed'],
-  uiRenderPath: 'Inline text; system notifications via NotificationManager.sendNotification (renderer toast + Electron + Telegram per priority)',
+  uiRenderPath: 'Inline text; system notifications via NotificationManager.sendNotification (Electron native for every priority; Telegram additionally for urgent)',
 };
 
 const assistantBuddy: CapabilityContract = {
   id: 'assistant_buddy',
   displayName: 'Assistant buddy hatching / naming',
-  // Phase 5e round 8 follow-up (2026-05-18) â?Native parity shipped
+  // Phase 5e round 8 follow-up (2026-05-18) — Native parity shipped
   // (ClaudeCode + Native both wire codepilot_hatch_buddy). Codex
   // Runtime proxy still doesn't bridge the hatch flow, so we keep
   // status='deferred' to satisfy the catalog hygiene invariant
-  // "status=live â?NO unsupported exposures" (Phase 5d slice 7b).
+  // "status=live ⇒ NO unsupported exposures" (Phase 5d slice 7b).
   // The round 7 matrix derivation reads per-runtime `exposure.kind`
   // directly, so the dialog correctly shows executable on Claude
-  // Code + buckyball.ai Native and perception_only on Codex â?the
+  // Code + CodePilot Native and perception_only on Codex — the
   // top-level status here doesn't gate that derivation.
   status: 'deferred',
-  deferredReason: 'Native parity shipped 2026-05-18 (round 8 follow-up): codepilot_hatch_buddy now mounted by createNotificationTools, mirroring the MCP authority. Codex Runtime proxy is the only unsupported path â?bridging buddy hatching into Codex requires a permission-round-trip design that hasn\'t been scheduled. Top-level status stays "deferred" until Codex parity ships; per-runtime support is already correct in exposure.kind + the matrix.',
+  deferredReason: 'Native parity shipped 2026-05-18 (round 8 follow-up): codepilot_hatch_buddy now mounted by createNotificationTools, mirroring the MCP authority. Codex Runtime proxy is the only unsupported path — bridging buddy hatching into Codex requires a permission-round-trip design that hasn\'t been scheduled. Top-level status stays "deferred" until Codex parity ships; per-runtime support is already correct in exposure.kind + the matrix.',
   toolNames: ['codepilot_hatch_buddy'],
   exposure: {
     claudecode_sdk: {
@@ -348,13 +349,13 @@ const assistantBuddy: CapabilityContract = {
       notes: 'codepilot_hatch_buddy registered inside the same MCP server as the task/notify tools (notification-mcp.ts:287).',
     },
     native: {
-      // Phase 5e round 8 follow-up (2026-05-18) â?Native factory now
+      // Phase 5e round 8 follow-up (2026-05-18) — Native factory now
       // mounts `codepilot_hatch_buddy` mirroring the MCP authority.
       // Same HTTP endpoint (`POST /api/workspace/hatch-buddy`), same
       // response parsing, same lazy `@/lib/buddy` import for label
-      // formatting. buckyball.ai's own Runtime is the "åºç¡ç? â?every
+      // formatting. CodePilot's own Runtime is the "基础盘" — every
       // capability we can plausibly mount on it, we mount. Driven by
-      // user direction: "CodePilot èªå·±è¿æ¯ 7/8 ä¸å¤ç¡?.
+      // user direction: "CodePilot 自己还是 7/8 不够硬".
       kind: 'ai_sdk_tool',
       module: 'src/lib/builtin-tools/notification.ts',
       factory: 'createNotificationTools',
@@ -362,7 +363,7 @@ const assistantBuddy: CapabilityContract = {
     },
     codex_proxy: {
       kind: 'unsupported',
-      notes: 'Not exposed via createCodePilotBuiltinTools. Codex Runtime users cannot hatch a buddy directly through the bridge; suggested workaround is to switch to ClaudeCode or bb-agent Runtime for the hatch flow.',
+      notes: 'Not exposed via createCodePilotBuiltinTools. Codex Runtime users cannot hatch a buddy directly through the bridge; suggested workaround is to switch to ClaudeCode or CodePilot Runtime for the hatch flow.',
     },
   },
   systemPromptFragment: NOTIFICATION_MCP_SYSTEM_PROMPT,
@@ -402,7 +403,7 @@ const imageGeneration: CapabilityContract = {
   systemPromptFragment: MEDIA_CAPABILITY_SYSTEM_PROMPT,
   toolResultShape: 'media',
   canonicalEventTypes: ['tool_started', 'tool_completed'],
-  uiRenderPath: 'SSE tool_result.media â?useSSEStream â?SSECallbacks.onToolResult â?MediaPreview (src/components/chat/MediaPreview.tsx)',
+  uiRenderPath: 'SSE tool_result.media → useSSEStream → SSECallbacks.onToolResult → MediaPreview (src/components/chat/MediaPreview.tsx)',
 };
 
 const mediaImport: CapabilityContract = {
@@ -412,7 +413,7 @@ const mediaImport: CapabilityContract = {
   toolNames: ['codepilot_import_media'],
   exposure: {
     claudecode_sdk: {
-      // Phase 5d slice 7b (2026-05-16) â?corrected from
+      // Phase 5d slice 7b (2026-05-16) — corrected from
       // `unsupported`. The MCP server has existed all along at
       // `src/lib/media-import-mcp.ts` and is registered by
       // `claude-client.ts:980` as `codepilot-media` whenever the
@@ -429,7 +430,7 @@ const mediaImport: CapabilityContract = {
       kind: 'ai_sdk_tool',
       module: 'src/lib/builtin-tools/media.ts',
       factory: 'createMediaTools (codepilot_import_media key)',
-      notes: 'Phase 5e Phase 0.5 P1 (2026-05-17) â?calls importFileToLibrary, constructs MediaBlock via mediaTypeOf(mimeType) + inferMimeFromPath helpers (image / video / audio per extension). Emits via harness side-channel; agent-loop.ts splices into SSE tool_result.media. Tool result shape parity with Codex bridge.',
+      notes: 'Phase 5e Phase 0.5 P1 (2026-05-17) — calls importFileToLibrary, constructs MediaBlock via mediaTypeOf(mimeType) + inferMimeFromPath helpers (image / video / audio per extension). Emits via harness side-channel; agent-loop.ts splices into SSE tool_result.media. Tool result shape parity with Codex bridge.',
     },
     codex_proxy: {
       kind: 'bridge_executable',
@@ -441,7 +442,7 @@ const mediaImport: CapabilityContract = {
   systemPromptFragment: MEDIA_CAPABILITY_SYSTEM_PROMPT,
   toolResultShape: 'media',
   canonicalEventTypes: ['tool_started', 'tool_completed'],
-  uiRenderPath: 'Same as image_generation â?tool_result.media â?MediaPreview.',
+  uiRenderPath: 'Same as image_generation — tool_result.media → MediaPreview.',
 };
 
 const dashboard: CapabilityContract = {
@@ -469,13 +470,13 @@ const dashboard: CapabilityContract = {
     },
     codex_proxy: {
       kind: 'unsupported',
-      notes: 'Legacy provider-proxy bridge is unsupported. Dashboard reaches Codex Runtime via the mutation-level MCP split â?codepilot_dashboard_read (auto_accept) + codepilot_dashboard_write (user_approval), injected into config.mcp_servers and served by /api/codex/mcp/[server]. Matrix-layer promotion lives in CODEX_NATIVE_PROMOTED_BY_CAP (capability-matrix.ts).',
+      notes: 'Legacy provider-proxy bridge is unsupported. Dashboard reaches Codex Runtime via the mutation-level MCP split — codepilot_dashboard_read (auto_accept) + codepilot_dashboard_write (user_approval), injected into config.mcp_servers and served by /api/codex/mcp/[server]. Matrix-layer promotion lives in CODEX_NATIVE_PROMOTED_BY_CAP (capability-matrix.ts).',
     },
   },
   systemPromptFragment: DASHBOARD_MCP_SYSTEM_PROMPT,
   toolResultShape: 'text',
   canonicalEventTypes: ['tool_started', 'tool_completed'],
-  uiRenderPath: 'Settings â?Dashboard panel; widget pinning surfaces via show-widget fence (cross-cutting with widget capability)',
+  uiRenderPath: 'Settings → Dashboard panel; widget pinning surfaces via show-widget fence (cross-cutting with widget capability)',
 };
 
 const cliTools: CapabilityContract = {
@@ -504,10 +505,10 @@ const cliTools: CapabilityContract = {
     },
     codex_proxy: {
       kind: 'unsupported',
-      notes: 'Legacy provider-proxy bridge is unsupported. CLI tools reach Codex Runtime via the mutation-level MCP split â?read MCP (list / check_updates, auto_accept) + write MCP (install / add / remove / update, user_approval), injected into config.mcp_servers. Matrix-layer promotion lives in CODEX_NATIVE_PROMOTED_BY_CAP.',
+      notes: 'Legacy provider-proxy bridge is unsupported. CLI tools reach Codex Runtime via the mutation-level MCP split — read MCP (list / check_updates, auto_accept) + write MCP (install / add / remove / update, user_approval), injected into config.mcp_servers. Matrix-layer promotion lives in CODEX_NATIVE_PROMOTED_BY_CAP.',
     },
   },
-  // CLI tools have no single SYSTEM_PROMPT export â?the prompt lives
+  // CLI tools have no single SYSTEM_PROMPT export — the prompt lives
   // inline in the MCP factory. Leave blank for now; future slice
   // refactor extracts it. Drift test for this capability is therefore
   // a status-only check, not a string comparison.
@@ -517,9 +518,9 @@ const cliTools: CapabilityContract = {
   uiRenderPath: 'Inline tool results; CLI tools panel in Settings reads the same underlying registry',
 };
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Catalog + accessors
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 /**
  * Ordered list, not a Record, so drift tests can iterate

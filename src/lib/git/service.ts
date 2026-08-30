@@ -32,6 +32,21 @@ export async function isGitRepo(cwd: string): Promise<boolean> {
   }
 }
 
+/**
+ * Initialize the user-selected workspace as a Git repository. The operation is
+ * explicit and idempotent: a directory already inside a repository is returned
+ * unchanged, and callers never synthesize or create the workspace path.
+ */
+export async function initializeRepo(cwd: string): Promise<string> {
+  if (!path.isAbsolute(cwd)) {
+    throw new Error(`cwd must be absolute: ${cwd}`);
+  }
+  if (!(await isGitRepo(cwd))) {
+    await runGit(['init'], { cwd, timeoutMs: 10_000 });
+  }
+  return getRepoRoot(cwd);
+}
+
 export async function getRepoRoot(cwd: string): Promise<string> {
   const result = await runGit(['rev-parse', '--show-toplevel'], { cwd, timeoutMs: 5000 });
   return result.trim();
@@ -179,7 +194,7 @@ export async function getBranches(cwd: string): Promise<GitBranch[]> {
 }
 
 export async function checkout(cwd: string, branch: string): Promise<void> {
-  // Validate branch name â€?reject suspicious characters
+  // Validate branch name â€” reject suspicious characters
   if (!/^[\w.\-/]+$/.test(branch)) {
     throw new Error(`Invalid branch name: ${branch}`);
   }
@@ -235,7 +250,7 @@ export async function commit(cwd: string, message: string): Promise<string> {
     if (err instanceof Error && err.message === 'Nothing to commit') {
       throw err;
     }
-    // Exit 1 (has changes) or real error â€?proceed to commit either way
+    // Exit 1 (has changes) or real error â€” proceed to commit either way
   }
 
   const commitMsg = message.trim() || 'Update';

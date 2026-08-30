@@ -8,10 +8,10 @@ import type { CliToolDefinition, CliToolRuntimeInfo, CustomCliTool } from "@/typ
 import { CliToolCard, computeAgentScore } from "./CliToolCard";
 import { CliToolDetailDialog } from "./CliToolDetailDialog";
 import { CliToolExtraDetailDialog } from "./CliToolExtraDetailDialog";
-// CliToolInstallDialog removed â?install now goes through chat AI
+// CliToolInstallDialog removed — install now goes through chat AI
 import { CliToolBatchDescribeDialog } from "./CliToolBatchDescribeDialog";
 import { SpinnerGap, Warning } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { EXTRA_WELL_KNOWN_BINS } from "@/lib/cli-tools-catalog";
 
@@ -20,7 +20,7 @@ type AutoDescCache = Record<string, { zh: string; en: string; structured?: unkno
 interface CliToolsManagerProps {
   /**
    * `standalone` (default) renders the legacy page chrome (title +
-   * description + Add Tool button). `embedded` strips that â?the
+   * description + Add Tool button). `embedded` strips that — the
    * unified `/plugins` ExtensionsPage owns the surrounding layout
    * (title, search, create dropdown) and triggers add via the
    * imperative ref.
@@ -30,7 +30,7 @@ interface CliToolsManagerProps {
    * Reports the installed-tool count (catalog installed + extra
    * detected + custom) to the host page so the unified filter pill
    * can render "CLI (N)". Recommended (not-installed) tools are
-   * excluded â?the user views them as "available", not "owned".
+   * excluded — the user views them as "available", not "owned".
    */
   onCountChange?: (count: number) => void;
   /**
@@ -64,7 +64,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
   // Dialog state
   const [detailTool, setDetailTool] = useState<{ tool: CliToolDefinition; canInstall: boolean } | null>(null);
   const [extraDetailTool, setExtraDetailTool] = useState<{ displayName: string; runtimeInfo: CliToolRuntimeInfo } | null>(null);
-  // installTool state removed â?install now navigates to chat
+  // installTool state removed — install now navigates to chat
   const [batchDescribeOpen, setBatchDescribeOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -110,7 +110,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
             }
             // If migration failed, keep localStorage intact for next attempt
           } else {
-            // Nothing to migrate â?all already in DB, safe to clean up
+            // Nothing to migrate — all already in DB, safe to clean up
             localStorage.removeItem('cli-tools-auto-desc');
           }
         }
@@ -140,7 +140,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
     return !info || info.status === 'not_installed';
   });
 
-  // Search filter â?runs against name + summary (catalog) or
+  // Search filter — runs against name + summary (catalog) or
   // displayName + id + AI-generated description (extra/custom). The
   // global ExtensionsPage search box scopes to whatever the active tab
   // shows, so the filter is per-list.
@@ -192,23 +192,23 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
 
     const lines: string[] = [];
     lines.push(isZh
-      ? `å¸®æå®è£ ${tool.name} å¹¶æ·»å å°å·¥å·åºã`
+      ? `帮我安装 ${tool.name} 并添加到工具库。`
       : `Install ${tool.name} and add it to the tool library.`);
-    lines.push(isZh ? `å®è£å½ä»¤ï¼?{installCmd}` : `Install command: ${installCmd}`);
-    lines.push(isZh ? 'å¦ææéä¸è¶³è¯·ç¨ sudo éè¯ã? : 'If permission denied, retry with sudo.');
+    lines.push(isZh ? `安装命令：${installCmd}` : `Install command: ${installCmd}`);
+    lines.push(isZh ? '如果权限不足请用 sudo 重试。' : 'If permission denied, retry with sudo.');
 
     // Include required post-install commands (e.g. skills install) that AI can't discover from --help
     if (tool.postInstallCommands && tool.postInstallCommands.length > 0) {
       lines.push('');
-      lines.push(isZh ? 'å®è£åè¿éè¦æ§è¡ï¼' : 'After installing, also run:');
+      lines.push(isZh ? '安装后还需要执行：' : 'After installing, also run:');
       tool.postInstallCommands.forEach(cmd => lines.push(cmd));
     }
 
-    // For tools that need auth, hint that setup is needed â?let AI determine steps from --help
+    // For tools that need auth, hint that setup is needed — let AI determine steps from --help
     if (tool.setupType === 'needs_auth') {
       lines.push('');
       lines.push(isZh
-        ? 'æ³¨æï¼è¿ä¸ªå·¥å·å®è£åéè¦ç»å½æéç½®è®¤è¯æè½ä½¿ç¨ï¼è¯·å®è£å®æåå¼å¯¼æå®æè®¤è¯è®¾ç½®ã?
+        ? '注意：这个工具安装后需要登录或配置认证才能使用，请安装完成后引导我完成认证设置。'
         : 'Note: This tool requires login or auth configuration after installation. Please guide me through the setup after installing.');
     }
 
@@ -217,7 +217,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
 
   const handleAddTool = useCallback(() => {
     const prefill = locale === 'zh'
-      ? 'ææ³å®è£ä¸ä¸ªæ°ç?CLI å·¥å·å¹¶æ·»å å°å·¥å·åºã\nå·¥å·åç§°ï¼\nå®è£å½ä»¤ï¼å¦ brew install xxxï¼ï¼'
+      ? '我想安装一个新的 CLI 工具并添加到工具库。\n工具名称：\n安装命令（如 brew install xxx）：'
       : 'I want to install a new CLI tool and add it to my tool library.\nTool name: \nInstall command (e.g. brew install xxx): ';
     // Use hard navigation to ensure the new page reads the prefill param fresh
     window.location.href = `/chat?prefill=${encodeURIComponent(prefill)}`;
@@ -253,12 +253,12 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
 
   if (isEmbedded) {
     // ExtensionsPage owns title / description / add button; we only
-    // render the body. No outer flex column either â?the parent
+    // render the body. No outer flex column either — the parent
     // already provides scroll + padding.
     return (
       <div className="flex flex-col gap-6">
 
-      {/* Installed â?catalog tools + extra system-detected tools + custom tools.
+      {/* Installed — catalog tools + extra system-detected tools + custom tools.
           When a search filters everything out, swallow the section
           entirely so an empty header doesn't read as broken. */}
       {(installedCatalogTools.length > 0 || extraDetected.length > 0 || customTools.length > 0) && (query ? installedHasMatches : true) && (
@@ -272,7 +272,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                 className="h-7 text-xs gap-1.5"
                 onClick={() => setBatchDescribeOpen(true)}
               >
-                <BuckyballIcon name="assistant" size="sm" aria-hidden />
+                <CodePilotIcon name="assistant" size="sm" aria-hidden />
                 {t('cliTools.batchDescribe')}
               </Button>
             </div>
@@ -310,7 +310,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                       setExtraDetailTool({ displayName, runtimeInfo: info });
                     }
                   }}
-                  aria-label={`${displayName} â?${desc ? (locale === 'zh' ? desc.zh : desc.en) : t('cliTools.systemDetected')}`}
+                  aria-label={`${displayName} — ${desc ? (locale === 'zh' ? desc.zh : desc.en) : t('cliTools.systemDetected')}`}
                   className="rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div className="flex items-center gap-2 flex-wrap">
@@ -334,7 +334,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                       <span className="text-[10px] text-muted-foreground">{t('cliTools.agentFriendliness' as TranslationKey)}</span>
                       <div className="flex gap-0.5">
                         {[1, 2, 3, 4, 5].map(i => (
-                          <BuckyballIcon key={i} name="rating" size={10} strokeWidth={i <= score ? 2 : undefined} className={i <= score ? 'text-primary' : 'text-muted-foreground/30'} aria-hidden />
+                          <CodePilotIcon key={i} name="rating" size={10} strokeWidth={i <= score ? 2 : undefined} className={i <= score ? 'text-primary' : 'text-muted-foreground/30'} aria-hidden />
                         ))}
                       </div>
                     </div>
@@ -363,7 +363,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                       openCustomDetail();
                     }
                   }}
-                  aria-label={`${ct.name} â?${desc ? (locale === 'zh' ? desc.zh : desc.en) : ct.binPath}`}
+                  aria-label={`${ct.name} — ${desc ? (locale === 'zh' ? desc.zh : desc.en) : ct.binPath}`}
                   className="group rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div className="flex items-center gap-2 flex-wrap">
@@ -388,7 +388,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                         <span className="text-[10px] text-muted-foreground">{t('cliTools.agentFriendliness' as TranslationKey)}</span>
                         <div className="flex gap-0.5">
                           {[1, 2, 3, 4, 5].map(i => (
-                            <BuckyballIcon key={i} name="rating" size={10} strokeWidth={i <= score ? 2 : undefined} className={i <= score ? 'text-primary' : 'text-muted-foreground/30'} aria-hidden />
+                            <CodePilotIcon key={i} name="rating" size={10} strokeWidth={i <= score ? 2 : undefined} className={i <= score ? 'text-primary' : 'text-muted-foreground/30'} aria-hidden />
                           ))}
                         </div>
                       </div>
@@ -403,7 +403,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
                       title={`${t('cliTools.removeCustomTool' as TranslationKey)} ${ct.name}`}
                       aria-label={`${t('cliTools.removeCustomTool' as TranslationKey)} ${ct.name}`}
                     >
-                      <BuckyballIcon name="delete" size="sm" aria-hidden />
+                      <CodePilotIcon name="delete" size="sm" aria-hidden />
                     </Button>
                   </div>
                 </div>
@@ -414,7 +414,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
       )}
 
       {/* Recommended (not installed). Hidden when search filters
-          everything out so we don't show an empty æ¨è header. */}
+          everything out so we don't show an empty 推荐 header. */}
       {(query ? filteredRecommended.length > 0 : true) && (
       <section>
         <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('cliTools.recommended')}</h2>
@@ -499,7 +499,7 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
     );
   }
 
-  // Standalone path â?only reached if a future caller mounts without
+  // Standalone path — only reached if a future caller mounts without
   // `variant="embedded"`. /cli-tools redirects to /plugins#cli already,
   // so this is just a defensive fallback that wraps the embedded body.
   return (
@@ -511,14 +511,14 @@ export const CliToolsManager = forwardRef<CliToolsManagerHandle, CliToolsManager
             <p className="text-sm text-muted-foreground mt-1">{t('cliTools.description')}</p>
           </div>
           <Button size="sm" className="gap-1.5 shrink-0" onClick={handleAddTool}>
-            <BuckyballIcon name="plus" size="sm" aria-hidden />
+            <CodePilotIcon name="plus" size="sm" aria-hidden />
             {t('cliTools.addTool' as TranslationKey)}
           </Button>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-6">
         <p className="text-xs text-muted-foreground italic">
-          Standalone CLI Tools view is deprecated â?use /plugins#cli.
+          Standalone CLI Tools view is deprecated — use /plugins#cli.
         </p>
       </div>
     </div>

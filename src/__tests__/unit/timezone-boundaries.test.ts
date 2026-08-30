@@ -86,14 +86,14 @@ describe('getLocalDateString timezone boundaries', () => {
   it('UTC+9: UTC 2026-03-09 15:00 crosses to local 2026-03-10 00:00', () => {
     setTZ('Asia/Tokyo');
     const utcTime = new Date('2026-03-09T15:00:00Z');
-    // Local: 2026-03-10 00:00 JST â€?midnight
+    // Local: 2026-03-10 00:00 JST â€” midnight
     assert.equal(getLocalDateString(utcTime), '2026-03-10');
   });
 
   it('UTC-5: UTC 2026-03-10 04:00 is still local 2026-03-09 23:00', () => {
     setTZ('America/New_York'); // UTC-5 (EST, no DST in March 2026 after spring forward)
     // Actually March 2026 is after spring forward (2nd Sunday of March)
-    // So it's EDT = UTC-4. UTC 04:00 â†?local 00:00 EDT on March 10.
+    // So it's EDT = UTC-4. UTC 04:00 â†’ local 00:00 EDT on March 10.
     // Let's use a January date to ensure EST (UTC-5).
     const utcTime = new Date('2026-01-10T04:30:00Z');
     // EST: 2026-01-09 23:30
@@ -124,7 +124,7 @@ describe('needsDailyCheckIn timezone boundaries', () => {
     setTZ('Asia/Tokyo');
     // now = UTC 2026-03-10 01:00 = JST 2026-03-10 10:00
     // localToday = '2026-03-10', utcToday = '2026-03-10'
-    // stored '2026-03-09' matches neither â†?triggers
+    // stored '2026-03-09' matches neither â†’ triggers
     const now = new Date('2026-03-10T01:00:00Z');
     const state = { onboardingComplete: true, lastHeartbeatDate: '2026-03-09', lastCheckInDate: '2026-03-09', heartbeatEnabled: true, dailyCheckInEnabled: true, schemaVersion: 5 };
     assert.equal(needsDailyCheckIn(state, now), true);
@@ -134,7 +134,7 @@ describe('needsDailyCheckIn timezone boundaries', () => {
     setTZ('Asia/Tokyo');
     // now = UTC 2026-03-09 15:00 = JST 2026-03-10 00:00
     // localToday = '2026-03-10', utcToday = '2026-03-09'
-    // stored '2026-03-09' matches utcToday â†?compat suppresses (correct:
+    // stored '2026-03-09' matches utcToday â†’ compat suppresses (correct:
     // old code could have written this just hours ago during the same UTC day)
     const now = new Date('2026-03-09T15:00:00Z');
     const state = { onboardingComplete: true, lastHeartbeatDate: '2026-03-09', lastCheckInDate: '2026-03-09', heartbeatEnabled: true, dailyCheckInEnabled: true, schemaVersion: 5 };
@@ -147,10 +147,10 @@ describe('needsDailyCheckIn timezone boundaries', () => {
     // Old code wrote '2026-03-09' (UTC). New local date is '2026-03-10'.
     // Without compat, this would be a spurious re-trigger because the user
     // DID check in today (local March 10, 1am), but old code wrote UTC date.
-    // The UTC fallback catches this: '2026-03-09' === utcToday â†?skip.
+    // The UTC fallback catches this: '2026-03-09' === utcToday â†’ skip.
     const now = new Date('2026-03-09T17:00:00Z');
     const state = { onboardingComplete: true, lastHeartbeatDate: '2026-03-09', lastCheckInDate: '2026-03-09', heartbeatEnabled: true, dailyCheckInEnabled: true, schemaVersion: 5 };
-    // utcToday = '2026-03-09' matches stored â†?should NOT trigger
+    // utcToday = '2026-03-09' matches stored â†’ should NOT trigger
     assert.equal(needsDailyCheckIn(state, now), false);
   });
 
@@ -158,7 +158,7 @@ describe('needsDailyCheckIn timezone boundaries', () => {
     setTZ('Asia/Shanghai');
     const now = new Date('2026-03-10T02:00:00Z'); // local March 10 10:00
     // localToday = '2026-03-10', utcToday = '2026-03-10'
-    // stored '2026-03-07' matches neither â†?triggers
+    // stored '2026-03-07' matches neither â†’ triggers
     const state = { onboardingComplete: true, lastHeartbeatDate: '2026-03-07', lastCheckInDate: '2026-03-07', heartbeatEnabled: true, dailyCheckInEnabled: true, schemaVersion: 5 };
     assert.equal(needsDailyCheckIn(state, now), true);
   });
@@ -210,7 +210,7 @@ describe('v2â†’v3 migration', () => {
     const stateDir = path.join(workDir, '.assistant');
     fs.mkdirSync(stateDir, { recursive: true });
 
-    // Old date from 5 days ago â€?should NOT be overwritten to today
+    // Old date from 5 days ago â€” should NOT be overwritten to today
     fs.writeFileSync(
       path.join(stateDir, 'state.json'),
       JSON.stringify({
@@ -421,7 +421,7 @@ describe('getTokenUsageStats DST transition', () => {
   afterEach(() => restoreTZ());
 
   it('messages across US DST spring-forward bucket by correct local date', () => {
-    // US spring forward 2026: March 8, 2:00 AM local â†?3:00 AM (UTC-5 â†?UTC-4)
+    // US spring forward 2026: March 8, 2:00 AM local â†’ 3:00 AM (UTC-5 â†’ UTC-4)
     // Before: EST = UTC-5.  After: EDT = UTC-4.
     setTZ('America/New_York');
 
@@ -460,14 +460,14 @@ describe('getTokenUsageStats DST transition', () => {
     const mar7Tokens = mar7.reduce((sum, d) => sum + d.input_tokens + d.output_tokens, 0);
     const mar8Tokens = mar8.reduce((sum, d) => sum + d.input_tokens + d.output_tokens, 0);
 
-    // msg-1 (UTC 04:00 March 8 â†?EST 23:00 March 7) should be in March 7 bucket
+    // msg-1 (UTC 04:00 March 8 â†’ EST 23:00 March 7) should be in March 7 bucket
     assert.equal(mar7Tokens, 150, 'March 7 local should have msg-1 (pre-DST, 100+50)');
 
-    // msg-2 (UTC 03:00 March 9 â†?EDT 23:00 March 8) should be in March 8 bucket
+    // msg-2 (UTC 03:00 March 9 â†’ EDT 23:00 March 8) should be in March 8 bucket
     assert.equal(mar8Tokens, 300, 'March 8 local should have msg-2 (post-DST, 200+100)');
 
     // If a single offset were used (e.g. current EDT = UTC-4):
-    // msg-1 would be UTC 04:00 + (-4h) = 00:00 March 8 â†?WRONG (should be March 7)
+    // msg-1 would be UTC 04:00 + (-4h) = 00:00 March 8 â†’ WRONG (should be March 7)
     // This test proves per-row DST-aware bucketing works.
 
     // Cleanup

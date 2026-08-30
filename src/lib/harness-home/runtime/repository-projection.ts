@@ -398,7 +398,7 @@ export function renderCanonicalHarnessFragment(
   for (const section of harness.sections) {
     lines.push(
       '',
-      `### ${sectionHeading(section.kind)} â€?${section.id}`,
+      `### ${sectionHeading(section.kind)} â€” ${section.id}`,
       `Source file: ${section.path}`,
       section.content,
     );
@@ -413,7 +413,7 @@ export function renderCanonicalHarnessFragment(
     );
     for (const definition of harness.definitions) {
       lines.push(
-        `- ${definition.kind}: ${definition.id} (${definition.path}) â€?`
+        `- ${definition.kind}: ${definition.id} (${definition.path}) â€” `
         + 'catalogued, not mounted by this projection',
       );
     }

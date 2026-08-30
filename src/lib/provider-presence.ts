@@ -1,5 +1,5 @@
 /**
- * provider-presence.ts â?Single-source-of-truth: "does CodePilot itself have
+ * provider-presence.ts — Single-source-of-truth: "does CodePilot itself have
  * a usable provider to talk to a model with?"
  *
  * Scope (intentionally narrow, by user requirement 2026-04-15):
@@ -9,10 +9,10 @@
  *   - OpenAI OAuth session (virtual provider, no DB record required)
  *
  * Out of scope (intentionally NOT checked):
- *   - ~/.claude/settings.json env block (cc-switch, hand-edit) â?that file
- *     lives under the Claude Code CLI's ownership; buckyball.ai treats CLI login
+ *   - ~/.claude/settings.json env block (cc-switch, hand-edit) — that file
+ *     lives under the Claude Code CLI's ownership; CodePilot treats CLI login
  *     state as "not our business". A user with only settings.json and no
- *     buckyball.ai-level provider will be intercepted and asked to add one.
+ *     CodePilot-level provider will be intercepted and asked to add one.
  *
  * Used by:
  *   - `/api/chat` entry precheck (412 + NEEDS_PROVIDER_SETUP when false)
@@ -28,7 +28,7 @@ import { isOAuthUsable } from '@/lib/openai-oauth-manager';
 import { isXaiOAuthUsable } from '@/lib/xai-oauth-manager';
 
 /**
- * True when a single DB provider has credentials buckyball.ai can dispatch on.
+ * True when a single DB provider has credentials CodePilot can dispatch on.
  *
  * Checks (in order):
  *   1. api_key non-empty
@@ -56,7 +56,7 @@ export function providerHasUsableCodePilotAuth(p: ApiProvider): boolean {
       if (vertex != null && vertex !== '' && vertex !== '0' && vertex !== false) return true;
     }
   } catch {
-    // Legacy plaintext â?fall through to substring match
+    // Legacy plaintext — fall through to substring match
     if (raw.includes('CLAUDE_CODE_USE_BEDROCK')) return true;
     if (raw.includes('CLAUDE_CODE_USE_VERTEX')) return true;
   }
@@ -65,7 +65,7 @@ export function providerHasUsableCodePilotAuth(p: ApiProvider): boolean {
 }
 
 /**
- * True when buckyball.ai has at least one provider the backend can dispatch to.
+ * True when CodePilot has at least one provider the backend can dispatch to.
  *
  * fail-open on DB errors: if a read throws (e.g. not initialized yet in a
  * cold worker), we return `true` and let the downstream resolver produce the

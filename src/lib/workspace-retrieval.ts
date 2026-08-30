@@ -1,6 +1,6 @@
 /**
  * Keyword-based search over the workspace index.
- * Pure text matching â€?no vector DB required.
+ * Pure text matching â€” no vector DB required.
  */
 
 import fs from 'fs';

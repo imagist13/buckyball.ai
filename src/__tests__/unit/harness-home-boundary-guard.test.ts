@@ -61,7 +61,7 @@ describe('Harness Home canonical neutrality guard', () => {
       );
       fs.writeFileSync(
         path.join(root, 'src/lib/harness-home/runtime/index.ts'),
-        "export const runtime = 'bbagent';\n",
+        "export const runtime = 'codepilot_runtime';\n",
       );
       const canonical = path.join(
         root,

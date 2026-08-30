@@ -4,9 +4,9 @@
  * Lightweight Context provider for the AI Elements `<Context>` family.
  *
  * Why this file exists separately:
- * `ai-elements/context.tsx` ships a full kit â€?Context provider +
+ * `ai-elements/context.tsx` ships a full kit â€” Context provider +
  * HoverCard wrapper + ContextIcon + ContextTrigger + ContextContentHeader/
- * Body/Footer + ContextInputUsage / OutputUsage / CacheUsage â€?and pulls
+ * Body/Footer + ContextInputUsage / OutputUsage / CacheUsage â€” and pulls
  * in `tokenlens`, `@/components/ui/hover-card`, `@/components/ui/progress`,
  * and `@/components/ui/button`. Surfaces that only need to publish
  * `usedTokens / maxTokens / usage / modelId` into React context (e.g.,
@@ -16,7 +16,7 @@
  * Memory contract (2026-05-09): `RunCockpit.tsx` imports `ContextProvider`
  * from this file; the lazy `RunCockpitPopoverContent.tsx` keeps importing
  * the full `Context` kit (`ContextContentHeader / Body / Footer / Input /
- * Output / Cache`). `ContextContext` is exported from THIS file â€?both
+ * Output / Cache`). `ContextContext` is exported from THIS file â€” both
  * the lightweight provider and the heavy ContextContent.* consumers
  * resolve to the same React context identity (single module, single
  * `createContext` call), so the popover's consumers read the values the

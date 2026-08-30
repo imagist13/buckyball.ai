@@ -1,16 +1,16 @@
 /**
- * Phase 5 review round 4 â€?codex_account virtual provider + atomic
+ * Phase 5 review round 4 â€” codex_account virtual provider + atomic
  * runtime_pin coherence on session PATCH.
  *
  * Codex CDP smoke (2026-05-13) caught two real wiring bugs:
  *
- *   P1.1 â€?Sending under (provider_id=codex_account, model=gpt-5.5)
+ *   P1.1 â€” Sending under (provider_id=codex_account, model=gpt-5.5)
  *          returned 409 "provider deleted" because
  *          `resolveProviderForSession` treated codex_account as a
  *          regular DB-row id and didn't find it (it's virtual,
  *          produced by buildCodexProviderModelGroup).
  *
- *   P1.2 â€?Picking a codex_account model in the picker persisted
+ *   P1.2 â€” Picking a codex_account model in the picker persisted
  *          provider_id=codex_account but left runtime_pin
  *          =codepilot_runtime. The composer's PATCH whitelist
  *          rejected runtime_pin='codex_runtime' (hardcoded two-id
@@ -38,8 +38,8 @@ import { resolveProvider } from '@/lib/provider-resolver';
 
 const repoRoot = path.resolve(__dirname, '../..');
 
-describe('resolveProvider â€?codex_account virtual provider (P1.1 fix)', () => {
-  it('codex_account is recognized as a virtual provider â€?no DB lookup, no 409', () => {
+describe('resolveProvider â€” codex_account virtual provider (P1.1 fix)', () => {
+  it('codex_account is recognized as a virtual provider â€” no DB lookup, no 409', () => {
     const resolved = resolveProvider({ providerId: 'codex_account', model: 'gpt-5.5' });
     // Virtual: no `invalidReason`, `hasCredentials: true` (account-managed),
     // `_codexAccount: true` marker so downstream code can branch.
@@ -52,14 +52,14 @@ describe('resolveProvider â€?codex_account virtual provider (P1.1 fix)', () => {
 
   it('codex_account never falls through to env / default fallback', () => {
     // If the route accidentally fell through, `provider` would be the
-    // default DB provider (or undefined for env) â€?not what we want.
+    // default DB provider (or undefined for env) â€” not what we want.
     // The marker is the load-bearing pin.
     const resolved = resolveProvider({ providerId: 'codex_account' });
     assert.equal((resolved as { _codexAccount?: boolean })._codexAccount, true);
   });
 });
 
-describe('Provider-resolver virtual-provider exception list â€?source-level pin', () => {
+describe('Provider-resolver virtual-provider exception list â€” source-level pin', () => {
   const resolverSrc = fs.readFileSync(
     path.join(repoRoot, 'lib/provider-resolver.ts'),
     'utf8',
@@ -85,7 +85,7 @@ describe('Provider-resolver virtual-provider exception list â€?source-level pin'
   });
 });
 
-describe('Session PATCH route â€?runtime_pin whitelist via isRuntimeId (P1.2 fix)', () => {
+describe('Session PATCH route â€” runtime_pin whitelist via isRuntimeId (P1.2 fix)', () => {
   const routeSrc = fs.readFileSync(
     path.join(repoRoot, 'app/api/chat/sessions/[id]/route.ts'),
     'utf8',
@@ -99,11 +99,11 @@ describe('Session PATCH route â€?runtime_pin whitelist via isRuntimeId (P1.2 fix
   });
 
   it('runtime_pin validation no longer hard-codes the two-id allowlist', () => {
-    // The earlier `body.runtime_pin !== 'claude_code' && body.runtime_pin !== 'bbagent'`
+    // The earlier `body.runtime_pin !== 'claude_code' && body.runtime_pin !== 'codepilot_runtime'`
     // check rejected codex_runtime. Round 4 fix replaced it with isRuntimeId.
     assert.doesNotMatch(
       routeSrc,
-      /body\.runtime_pin\s*!==\s*'claude_code'\s*&&\s*body\.runtime_pin\s*!==\s*'bbagent'/,
+      /body\.runtime_pin\s*!==\s*'claude_code'\s*&&\s*body\.runtime_pin\s*!==\s*'codepilot_runtime'/,
     );
   });
 
@@ -116,7 +116,7 @@ describe('Session PATCH route â€?runtime_pin whitelist via isRuntimeId (P1.2 fix
   });
 });
 
-describe('Session PATCH route â€?atomic coherence for codex_account + codex_runtime', () => {
+describe('Session PATCH route â€” atomic coherence for codex_account + codex_runtime', () => {
   const routeSrc = fs.readFileSync(
     path.join(repoRoot, 'app/api/chat/sessions/[id]/route.ts'),
     'utf8',

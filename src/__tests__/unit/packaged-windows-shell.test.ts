@@ -1,13 +1,13 @@
 /**
- * Phase 3 (2026-06-02) â€?Windows app shell / installer / packaged cache.
+ * Phase 3 (2026-06-02) â€” Windows app shell / installer / packaged cache.
  *
  * Three packaged-Windows blockers from preview feedback:
- *   3.1 Duplicate tray / multiple background processes â€?main process had no
+ *   3.1 Duplicate tray / multiple background processes â€” main process had no
  *       app.requestSingleInstanceLock(); ensureTray()'s `if (tray) return` only
  *       guards within ONE process, so relaunching spun up another process+tray.
- *   3.2 Installer offered no path choice â€?nsis.allowToChangeInstallationDirectory
+ *   3.2 Installer offered no path choice â€” nsis.allowToChangeInstallationDirectory
  *       was false.
- *   3.3 EPERM mkdir '...\standalone\.next\cache' â€?the standalone server runs
+ *   3.3 EPERM mkdir '...\standalone\.next\cache' â€” the standalone server runs
  *       with cwd inside the read-only install dir; Next's default FileSystemCache
  *       wrote there. Fixed with an in-memory cacheHandler (cache-handler.js).
  *
@@ -42,7 +42,7 @@ function freshHandler(): CacheHandlerLike {
   return new InMemoryCacheHandler();
 }
 
-describe('cache-handler.js â€?in-memory incremental cache (3.3, no disk writes)', () => {
+describe('cache-handler.js â€” in-memory incremental cache (3.3, no disk writes)', () => {
   it('round-trips a value with a lastModified timestamp', async () => {
     const h = freshHandler();
     await h.set('k1', { kind: 'PAGE', html: '<p>hi</p>' }, {});
@@ -84,7 +84,7 @@ describe('cache-handler.js â€?in-memory incremental cache (3.3, no disk writes)'
     assert.equal(await h.get('b'), null);
   });
 
-  it('is bounded â€?evicts the oldest entry past the FIFO cap (cap = 1000)', async () => {
+  it('is bounded â€” evicts the oldest entry past the FIFO cap (cap = 1000)', async () => {
     const h = freshHandler();
     for (let i = 0; i <= 1000; i++) {
       await h.set('cap-' + i, { v: i }, {});
@@ -99,7 +99,7 @@ describe('cache-handler.js â€?in-memory incremental cache (3.3, no disk writes)'
   });
 });
 
-describe('next.config.ts â€?cacheHandler wiring (3.3)', () => {
+describe('next.config.ts â€” cacheHandler wiring (3.3)', () => {
   const src = readFileSync(path.join(root, 'next.config.ts'), 'utf8');
   it('points cacheHandler at cache-handler.js', () => {
     assert.match(src, /cacheHandler:\s*path\.join\(import\.meta\.dirname,\s*['"]cache-handler\.js['"]\)/);
@@ -109,7 +109,7 @@ describe('next.config.ts â€?cacheHandler wiring (3.3)', () => {
   });
 });
 
-describe('electron-builder.yml â€?installer path choice (3.2)', () => {
+describe('electron-builder.yml â€” installer path choice (3.2)', () => {
   const yml = readFileSync(path.join(root, 'electron-builder.yml'), 'utf8');
   it('allows choosing the installation directory', () => {
     assert.match(yml, /allowToChangeInstallationDirectory:\s*true/);
@@ -119,7 +119,7 @@ describe('electron-builder.yml â€?installer path choice (3.2)', () => {
   });
 });
 
-describe('electron/main.ts â€?single-instance lock (3.1)', () => {
+describe('electron/main.ts â€” single-instance lock (3.1)', () => {
   const src = readFileSync(path.join(root, 'electron/main.ts'), 'utf8');
 
   it('acquires the single-instance lock', () => {

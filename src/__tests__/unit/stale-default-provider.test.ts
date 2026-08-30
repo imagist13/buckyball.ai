@@ -1,8 +1,9 @@
 /**
  * Tests for stale default_provider_id cleanup chain.
  *
- * Scenario: user deletes a provider that was set as default â†? * default_provider_id becomes a dangling reference â†?resolver falls back
- * to env vars â†?user's configured provider is bypassed.
+ * Scenario: user deletes a provider that was set as default â†’
+ * default_provider_id becomes a dangling reference â†’ resolver falls back
+ * to env vars â†’ user's configured provider is bypassed.
  *
  * This test suite verifies the three fix points:
  * 1. DELETE /api/providers/[id] clears stale default
@@ -84,7 +85,7 @@ describe('Stale default_provider_id cleanup', () => {
       const id = createTestProvider('__test_default');
       setDefaultProviderId(id);
 
-      // Raw deleteProvider only removes the record â€?stale default remains
+      // Raw deleteProvider only removes the record â€” stale default remains
       deleteProvider(id);
       assert.equal(getDefaultProviderId(), id, 'raw deleteProvider should not touch default setting');
       assert.equal(getProvider(id), undefined, 'provider record should be gone');
@@ -156,7 +157,7 @@ describe('Stale default_provider_id cleanup', () => {
 
       resolveProvider({});
 
-      // The stale ID should still be there â€?resolver is read-only
+      // The stale ID should still be there â€” resolver is read-only
       assert.equal(getDefaultProviderId(), staleId, 'resolver should not modify settings');
     });
   });
@@ -197,7 +198,7 @@ describe('Stale default_provider_id cleanup', () => {
 
         setDefaultProviderId(id);
 
-        // No opts â†?walks the "no effectiveProviderId" default branch
+        // No opts â†’ walks the "no effectiveProviderId" default branch
         const resolved = resolveProvider({});
         assert.ok(resolved.provider, 'should return a provider, not undefined');
         assert.equal(resolved.provider?.id, id, 'should return the default provider despite is_active=0');
@@ -262,7 +263,7 @@ describe('Stale default_provider_id cleanup', () => {
         // fallbackId: mark active so fallback chain finds it
         getDb().prepare('UPDATE api_providers SET is_active = 1 WHERE id = ?').run(fallbackId);
 
-        // No explicit providerId, only sessionProviderId â†?isExplicitRequest=false
+        // No explicit providerId, only sessionProviderId â†’ isExplicitRequest=false
         const resolved = resolveProvider({ sessionProviderId: staleId });
         assert.notEqual(
           resolved.provider?.id,
@@ -274,7 +275,7 @@ describe('Stale default_provider_id cleanup', () => {
       }
     });
 
-    it('inner default fallback (explicit providerId not found â†?default): honors is_active=0 default', () => {
+    it('inner default fallback (explicit providerId not found â†’ default): honors is_active=0 default', () => {
       // Covers the provider-resolver.ts line ~117 branch: requested provider
       // not found, walks the inner default fallback. That branch also had a
       // stale is_active check that the fix removes.
@@ -284,7 +285,7 @@ describe('Stale default_provider_id cleanup', () => {
         // defaultId: is_active=0 by default
         setDefaultProviderId(defaultId);
 
-        // Explicit ID that doesn't exist â†?inner fallback chain
+        // Explicit ID that doesn't exist â†’ inner fallback chain
         const resolved = resolveProvider({ providerId: 'nonexistent_id_xyz' });
         assert.equal(
           resolved.provider?.id,
@@ -331,7 +332,7 @@ describe('Stale default_provider_id cleanup', () => {
 
 describe('FileTreeFolder keyboard accessibility', () => {
   it('CollapsibleTrigger div has tabIndex=0 for keyboard focus', async () => {
-    // This is a structural test â€?verify the component source has the right attributes.
+    // This is a structural test â€” verify the component source has the right attributes.
     // We can't render React components in node:test, but we can verify the source code.
     const fs = await import('fs');
     const path = await import('path');
@@ -347,7 +348,7 @@ describe('FileTreeFolder keyboard accessibility', () => {
     );
 
     // The FileTreeFolder component (between its export and FileTreeFile) should have
-    // exactly 1 tabIndex â€?on the trigger, not on the outer treeitem div.
+    // exactly 1 tabIndex â€” on the trigger, not on the outer treeitem div.
     // (Verified more precisely in the dedicated count test below)
 
     // The trigger should handle Enter and Space
@@ -376,7 +377,7 @@ describe('FileTreeFolder keyboard accessibility', () => {
     const folderEnd = source.indexOf('export const FileTreeFile');
     const folderSource = source.slice(folderStart, folderEnd);
 
-    // Count tabIndex={0} occurrences â€?should be exactly 1
+    // Count tabIndex={0} occurrences â€” should be exactly 1
     const tabIndexMatches = folderSource.match(/tabIndex=\{0\}/g) || [];
     assert.equal(
       tabIndexMatches.length,

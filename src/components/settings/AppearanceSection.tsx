@@ -9,7 +9,7 @@ import {
   resolveShikiThemes,
 } from "@/lib/theme/code-themes";
 import { useTranslation } from "@/hooks/useTranslation";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 import {
   Select,
   SelectContent,
@@ -22,9 +22,9 @@ import { cn } from "@/lib/utils";
 import { SettingsCard } from "@/components/patterns/SettingsCard";
 import { FieldRow } from "@/components/patterns/FieldRow";
 
-// ââ Theme Mode Pill Selector ââââââââââââââââââââââââââââââââââââââââ
+// ── Theme Mode Pill Selector ────────────────────────────────────────
 
-const MODE_OPTIONS: ReadonlyArray<{ value: string; icon: BuckyballIconName; labelKey: "settings.modeLight" | "settings.modeDark" | "settings.modeSystem" }> = [
+const MODE_OPTIONS: ReadonlyArray<{ value: string; icon: CodePilotIconName; labelKey: "settings.modeLight" | "settings.modeDark" | "settings.modeSystem" }> = [
   { value: "light", icon: "theme_light", labelKey: "settings.modeLight" },
   { value: "dark", icon: "theme_dark", labelKey: "settings.modeDark" },
   { value: "system", icon: "desktop", labelKey: "settings.modeSystem" },
@@ -57,7 +57,7 @@ function ThemeModePills({
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
-            <BuckyballIcon name={opt.icon} size="sm" aria-hidden />
+            <CodePilotIcon name={opt.icon} size="sm" aria-hidden />
             {t(opt.labelKey)}
           </Button>
         );
@@ -66,7 +66,7 @@ function ThemeModePills({
   );
 }
 
-// ââ Shiki Code Preview ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Shiki Code Preview ──────────────────────────────────────────────
 
 const PREVIEW_CODE = `function greet(name: string) {
   const time = new Date().getHours();
@@ -81,7 +81,7 @@ function ShikiCodePreview({ isDark }: { isDark: boolean }) {
   const theme: BundledTheme = isDark ? dark : light;
   const [html, setHtml] = useState("");
 
-  // Phase 5B â?this preview stays on the main thread on purpose (it is NOT
+  // Phase 5B — this preview stays on the main thread on purpose (it is NOT
   // routed through the shiki Web Worker). Rationale: it's a single tiny,
   // one-shot snippet rendered only while the Appearance settings page is open,
   // not the streaming chat hot path the worker offload targets; and it needs
@@ -114,13 +114,14 @@ function ShikiCodePreview({ isDark }: { isDark: boolean }) {
         />
       ) : (
         <div className="h-24 flex items-center justify-center text-xs text-muted-foreground">
-          Loadingâ?        </div>
+          Loading…
+        </div>
       )}
     </div>
   );
 }
 
-// ââ UI Token Preview ââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── UI Token Preview ────────────────────────────────────────────────
 
 function UIPreview() {
   return (
@@ -141,7 +142,7 @@ function UIPreview() {
   );
 }
 
-// ââ Main Appearance Section âââââââââââââââââââââââââââââââââââââââââ
+// ── Main Appearance Section ─────────────────────────────────────────
 
 /** Persist theme setting to DB so it survives across sessions */
 function persistThemeSetting(key: string, value: string) {
@@ -177,12 +178,12 @@ export function AppearanceSection() {
   if (!mounted) return null;
 
   return (
-    // Top-level Settings page wrapper â?matches RuntimePanel / ModelsSection
+    // Top-level Settings page wrapper — matches RuntimePanel / ModelsSection
     // / GeneralSection. AppearanceSection used to render inline at the
     // bottom of GeneralSection; promotion to a sibling sidebar entry needs
     // its own page-shell width + spacing so it doesn't read as half-width.
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Section header â?outside card */}
+      {/* Section header — outside card */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">{t("settings.appearance")}</h2>
         <p className="text-xs text-muted-foreground">{t("settings.appearanceDesc")}</p>

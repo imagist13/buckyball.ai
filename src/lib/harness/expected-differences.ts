@@ -1,19 +1,19 @@
 /**
- * Expected Differences Ledger â?Phase 5d Phase 2 (2026-05-17).
+ * Expected Differences Ledger — Phase 5d Phase 2 (2026-05-17).
  *
  * The equivalence harness in
  * `harness-context-compiler-equivalence.test.ts` compares what the
  * compiler emits against what each Runtime's current implementation
  * actually injects (by reading the canonical source files). Many
  * pre-existing differences are KNOWN drift documented in slice-7b
- * tech-debt â?those are not regressions, they're the canonicalisation
+ * tech-debt — those are not regressions, they're the canonicalisation
  * targets later Phase 2 slices intend to consume.
  *
  * This ledger is the explicit allow-list:
  *
  *   - 2b harness: compiler-vs-runtime fragment diff MUST be a subset
  *     of the ledger; un-listed differences trip the test.
- *   - 2câ?e migration: when a runtime adopts the compiler, the
+ *   - 2c–2e migration: when a runtime adopts the compiler, the
  *     corresponding ledger entry is **manually** removed by the
  *     migrating slice (deliberate non-automation: keeps an audit
  *     trail of what each slice actually consumed).
@@ -23,7 +23,7 @@
  *
  * If the ledger ever points at a capability or file that no longer
  * exists, the consistency test (`harness-context-compiler.test.ts`
- * `Expected Differences Ledger â?internal consistency`) fails. Update
+ * `Expected Differences Ledger — internal consistency`) fails. Update
  * the ledger first, then remove the source.
  */
 
@@ -52,7 +52,7 @@ export type ExpectedDifferenceKind =
 
 export type ExpectedDifferenceResolution =
   | 'slice_2c'  // ClaudeCode SDK Runtime adopts compiler
-  | 'slice_2d'  // buckyball.ai Native Runtime adopts compiler
+  | 'slice_2d'  // CodePilot Native Runtime adopts compiler
   | 'slice_2e'  // Codex Runtime bridge adopts compiler
   | 'follow_up';
 
@@ -74,7 +74,8 @@ export interface ExpectedDifference {
     readonly sourceExport: string;
   };
   /** What the runtime currently emits (the drift side). Optional
-   *  because some diff kinds â?e.g. `capability_fragment_added` â?   *  have no runtime-side source. */
+   *  because some diff kinds — e.g. `capability_fragment_added` —
+   *  have no runtime-side source. */
   readonly runtimeSource?: {
     readonly sourceFile: string;
     readonly sourceExport: string;
@@ -82,25 +83,26 @@ export interface ExpectedDifference {
 }
 
 /**
- * Initial ledger after Phase 5d Phase 2 slice 2d (2026-05-17) â?the
+ * Initial ledger after Phase 5d Phase 2 slice 2d (2026-05-17) — the
  * three Native paraphrase entries for memory / tasks_and_notify /
  * media_import have been consumed. Native source files now consume
  * the same canonical prompt authorities as the MCP adapters:
  *
- *   - `src/lib/builtin-tools/memory-search.ts` â?re-exports
+ *   - `src/lib/builtin-tools/memory-search.ts` → re-exports
  *     `MEMORY_SEARCH_SYSTEM_PROMPT` from `memory-search-mcp.ts`
- *   - `src/lib/builtin-tools/notification.ts` â?re-exports
+ *   - `src/lib/builtin-tools/notification.ts` → re-exports
  *     `NOTIFICATION_MCP_SYSTEM_PROMPT` (keeping the local name
  *     `NOTIFICATION_SYSTEM_PROMPT` for call-site stability)
- *   - `src/lib/builtin-tools/media.ts` and `media-import-mcp.ts` â? *     both derive from dependency-free `media-capability-prompt.ts`
+ *   - `src/lib/builtin-tools/media.ts` and `media-import-mcp.ts` →
+ *     both derive from dependency-free `media-capability-prompt.ts`
  *
- * Phase 5e Phase 0.5 P1 (2026-05-17 Native MediaBlock è£é½) â?the
+ * Phase 5e Phase 0.5 P1 (2026-05-17 Native MediaBlock 補齐) — the
  * final `tool_result_shape_canonicalized` follow_up entry for
  * `image_generation` is now resolved. `builtin-tools/media.ts`
  * emits MediaBlock[] via the harness side-channel
  * (`@/lib/harness/builtin-event-bus`); `agent-loop.ts` splices the
  * blocks into the SSE `tool_result.media` field. Ledger is now
- * EMPTY â?that is by design: any new entry here must come with a
+ * EMPTY — that is by design: any new entry here must come with a
  * documented `plannedResolution`, and adding entries silently
  * (without a slice owner) is forbidden by the consistency test in
  * `harness-context-compiler.test.ts`.
@@ -111,9 +113,9 @@ export interface ExpectedDifference {
  */
 export const EXPECTED_DIFFERENCES: readonly ExpectedDifference[] = [];
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Accessors
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export function expectedDifferencesFor(
   runtimeId: RuntimeId,

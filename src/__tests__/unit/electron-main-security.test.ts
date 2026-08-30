@@ -2,8 +2,8 @@
  * Source-pin guardrails for two Loop-1 Electron security fixes (audit 2026-07).
  *
  * These invariants can't be exercised behaviorally in a node:test unit run
- * (Electron isn't loadable here), so â€?like `instrumentation-shape.test.ts`
- * and `sentry-dev-guard.test.ts` â€?we assert them against the source text,
+ * (Electron isn't loadable here), so â€” like `instrumentation-shape.test.ts`
+ * and `sentry-dev-guard.test.ts` â€” we assert them against the source text,
  * stripping comments first so the explanatory comments (which necessarily
  * mention `outPath` / `http/https`) don't defeat the checks.
  *
@@ -59,7 +59,7 @@ describe('electron main security guardrails (audit 2026-07 Loop 1)', () => {
   const preload = stripComments(readFileSync(PRELOAD, 'utf-8'));
   const openRoute = stripComments(readFileSync(OPEN_ROUTE, 'utf-8'));
 
-  it('1.1 â€?artifact export never accepts or writes a renderer-supplied outPath', () => {
+  it('1.1 â€” artifact export never accepts or writes a renderer-supplied outPath', () => {
     assert.doesNotMatch(
       main,
       /outPath/,
@@ -77,7 +77,7 @@ describe('electron main security guardrails (audit 2026-07 Loop 1)', () => {
     );
   });
 
-  it('1.7 â€?mainWindow will-navigate delegates to classifyNavigation and only opens on the open-external decision', () => {
+  it('1.7 â€” mainWindow will-navigate delegates to classifyNavigation and only opens on the open-external decision', () => {
     const idx = main.indexOf("mainWindow.webContents.on('will-navigate'");
     assert.ok(idx >= 0, 'mainWindow will-navigate handler must exist');
     const body = balancedBlock(main, idx);
@@ -94,7 +94,7 @@ describe('electron main security guardrails (audit 2026-07 Loop 1)', () => {
       'openExternal must be gated on the open-external decision',
     );
 
-    // The open-external gate must PRECEDE openExternal â€?it cannot be called
+    // The open-external gate must PRECEDE openExternal â€” it cannot be called
     // unconditionally on any path.
     const gateIdx = body.search(/decision\s*===\s*['"]open-external['"]/);
     const openIdx = body.indexOf('openExternal');
@@ -102,6 +102,37 @@ describe('electron main security guardrails (audit 2026-07 Loop 1)', () => {
       gateIdx >= 0 && gateIdx < openIdx,
       'the open-external decision check must precede shell.openExternal',
     );
+  });
+
+  it('the embedded browser is partition-gated and hardened again at attachment time', () => {
+    assert.match(main, /webviewTag:\s*true/);
+    assert.match(main, /sandbox:\s*true/);
+    const attachIndex = main.indexOf("mainWindow.webContents.on('will-attach-webview'");
+    assert.ok(attachIndex >= 0, 'main window must guard every guest attachment');
+    const attachBody = balancedBlock(main, attachIndex);
+    assert.match(attachBody, /issuedBrowserPartitions\.has\(partition\)/);
+    assert.match(attachBody, /isAllowedBrowserGuestUrl\(params\.src\)/);
+    assert.match(attachBody, /delete webPreferences\.preload/);
+    assert.match(attachBody, /webPreferences\.sandbox\s*=\s*true/);
+    assert.match(attachBody, /webPreferences\.contextIsolation\s*=\s*true/);
+    assert.match(attachBody, /webPreferences\.nodeIntegration\s*=\s*false/);
+    assert.match(attachBody, /webPreferences\.nodeIntegrationInSubFrames\s*=\s*false/);
+    assert.match(attachBody, /webPreferences\.nodeIntegrationInWorker\s*=\s*false/);
+    assert.match(attachBody, /webPreferences\.webviewTag\s*=\s*false/);
+    assert.match(attachBody, /webPreferences\.webSecurity\s*=\s*true/);
+
+    const configIndex = main.indexOf("ipcMain.handle('browser:get-config'");
+    assert.ok(configIndex >= 0, 'browser config IPC must exist');
+    const configBody = balancedBlock(main, configIndex);
+    assert.match(configBody, /isTrustedMainWindowSender\(event\)/);
+    assert.match(configBody, /isCanonicalBrowserWorkspaceId\(workspaceId\)/);
+    assert.match(main, /setPermissionRequestHandler\([^]*callback\(false\)/);
+    assert.match(main, /setPermissionCheckHandler\(\(\)\s*=>\s*false\)/);
+    assert.match(preload, /browser:get-config/);
+    const preloadBrowserIndex = preload.indexOf('browser: {');
+    assert.ok(preloadBrowserIndex >= 0, 'browser preload namespace must exist');
+    const preloadBrowserBody = balancedBlock(preload, preloadBrowserIndex);
+    assert.doesNotMatch(preloadBrowserBody, /executeJavaScript|debugger|sendCommand/);
   });
 
   it('local paths expose no generic openPath bridge and directories are reveal-only', () => {

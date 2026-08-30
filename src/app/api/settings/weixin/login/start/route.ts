@@ -1,6 +1,6 @@
 /**
  * Start WeChat QR code login.
- * POST â€?generates a QR code for scanning
+ * POST â€” generates a QR code for scanning
  */
 
 import { NextResponse } from 'next/server';

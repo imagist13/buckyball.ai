@@ -3,7 +3,7 @@
  *
  * Priority:
  * 1. Session's stored model (if non-empty)
- * 2. Global default model â€?only if it belongs to the session's provider (or session has no provider)
+ * 2. Global default model â€” only if it belongs to the session's provider (or session has no provider)
  * 3. First available model within the session's provider
  * 4. Global default model + provider (when session has neither)
  * 5. localStorage last-used model (cross-session fallback)
@@ -23,21 +23,21 @@ interface ResolveContext {
 }
 
 /**
- * Pure resolution logic â€?no I/O, fully testable.
+ * Pure resolution logic â€” no I/O, fully testable.
  */
 export function resolveSessionModelPure(
   sessionModel: string,
   sessionProviderId: string,
   ctx: ResolveContext,
 ): { model: string; providerId: string } {
-  // Session already has a model â€?use it as-is
+  // Session already has a model â€” use it as-is
   if (sessionModel) {
     return { model: sessionModel, providerId: sessionProviderId };
   }
 
   const { globalModel, globalProvider, groups, lsModel, lsProvider } = ctx;
 
-  // Case 1: Session has a provider â€?resolve model within that provider
+  // Case 1: Session has a provider â€” resolve model within that provider
   if (sessionProviderId) {
     const sessionGroup = groups.find(g => g.provider_id === sessionProviderId);
 
@@ -55,12 +55,12 @@ export function resolveSessionModelPure(
     }
   }
 
-  // Case 2: Session has no provider â€?use global default as-is
+  // Case 2: Session has no provider â€” use global default as-is
   if (globalModel) {
     return { model: globalModel, providerId: globalProvider || '' };
   }
 
-  // Case 3: No global default either â€?localStorage last-used
+  // Case 3: No global default either â€” localStorage last-used
   return {
     model: lsModel || 'sonnet',
     providerId: lsProvider || '',
@@ -74,7 +74,7 @@ export async function resolveSessionModel(
   sessionModel: string,
   sessionProviderId: string,
 ): Promise<{ model: string; providerId: string }> {
-  // Session already has a model â€?skip fetches
+  // Session already has a model â€” skip fetches
   if (sessionModel) {
     return { model: sessionModel, providerId: sessionProviderId };
   }

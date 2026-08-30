@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { NotePencil, CaretDown } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 
 interface ModeIndicatorProps {
   mode: 'code' | 'plan' | string;
@@ -19,7 +19,7 @@ interface ModeIndicatorProps {
 
 // Composer select trigger: invisible default + hover-only bg-accent
 // per `feedback_composer_invisible_until_hover`. Both Code and Plan
-// states render in muted weight â?the icon and label do the
+// states render in muted weight — the icon and label do the
 // disambiguation, no colour cue.
 export function ModeIndicator({ mode, onModeChange, disabled }: ModeIndicatorProps) {
   const { t } = useTranslation();
@@ -35,14 +35,14 @@ export function ModeIndicator({ mode, onModeChange, disabled }: ModeIndicatorPro
           disabled={disabled}
           className="h-7 rounded-md text-xs font-normal text-muted-foreground"
         >
-          {isPlan ? <NotePencil size={12} /> : <BuckyballIcon name="code" size={12} aria-hidden />}
+          {isPlan ? <NotePencil size={12} /> : <CodePilotIcon name="code" size={12} aria-hidden />}
           <span>{label}</span>
           <CaretDown size={10} className="opacity-60" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="min-w-[220px]">
         <DropdownMenuItem onClick={() => onModeChange('code')} className="items-start py-2">
-          <BuckyballIcon name="code" size="sm" className="mt-0.5" aria-hidden />
+          <CodePilotIcon name="code" size="sm" className="mt-0.5" aria-hidden />
           <div className="flex flex-col items-start gap-0.5">
             <span>{t('messageInput.modeCode')}</span>
             <span className="text-[11px] text-muted-foreground leading-tight">

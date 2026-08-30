@@ -11,7 +11,7 @@
  * flash next to the "Thinking" shimmer.
  *
  * Pin the guard so a future refactor can't strip it and re-introduce
- * the flash. Pure source-grep â€?the helper is internal to the
+ * the flash. Pure source-grep â€” the helper is internal to the
  * StreamingMessage module (not exported), so we read the source and
  * assert the structural shape rather than calling it directly.
  */
@@ -26,11 +26,11 @@ const SRC = fs.readFileSync(
   'utf8',
 );
 
-describe('ElapsedTimer â€?guards against pre-stream startedAt flash', () => {
+describe('ElapsedTimer â€” guards against pre-stream startedAt flash', () => {
   it('declares a startedAtIsReady gate using Number.isFinite + positive check', () => {
     // The gate must be a real numeric validation, not just `startedAt
     // > 0` (which would let `NaN > 0` slip through as `false`, but
-    // `undefined > 0` also slips through â€?Number.isFinite is the
+    // `undefined > 0` also slips through â€” Number.isFinite is the
     // load-bearing piece because it rejects both NaN and undefined).
     assert.match(
       SRC,
@@ -40,7 +40,7 @@ describe('ElapsedTimer â€?guards against pre-stream startedAt flash', () => {
 
   it('ElapsedTimer early-returns null when startedAt is not ready', () => {
     // Without this early return the JSX still renders the
-    // `${secs}s` span â€?even if the elapsed state was clamped to
+    // `${secs}s` span â€” even if the elapsed state was clamped to
     // 0 in the useState init, the user would see a static "0s"
     // flash next to "Thinking", which is just as wrong (the timer
     // shouldn't appear until streaming has actually started).
@@ -52,10 +52,10 @@ describe('ElapsedTimer â€?guards against pre-stream startedAt flash', () => {
 
   it('useState initialiser respects the gate so elapsed never starts as NaN', () => {
     // Pre-fix the init was `Math.floor((Date.now() - startedAt) /
-    // 1000)` â€?with `startedAt = undefined`, that's NaN. With
+    // 1000)` â€” with `startedAt = undefined`, that's NaN. With
     // `startedAt = 0`, that's a 1.7e9 huge number. Both bad.
     // (Regex uses `[\s\S]*?` because the init body contains nested
-    // parens â€?a `[^)]*` token would stop at the first `)`.)
+    // parens â€” a `[^)]*` token would stop at the first `)`.)
     assert.match(
       SRC,
       /useState\([\s\S]*?startedAtIsReady\s*\?\s*Math\.floor\(\(Date\.now\(\)\s*-\s*startedAt\)\s*\/\s*1000\)\s*:\s*0/,
@@ -66,7 +66,7 @@ describe('ElapsedTimer â€?guards against pre-stream startedAt flash', () => {
     // Without the gate inside the effects, setInterval would keep
     // calling setElapsed with NaN until startedAt landed. The
     // visible flash would persist for at least one tick of the
-    // 1000ms interval â€?not the single-render flicker we want.
+    // 1000ms interval â€” not the single-render flicker we want.
     const intervalGate = SRC.match(
       /useEffect\([\s\S]{0,200}?if\s*\(\s*!startedAtIsReady\s*\)\s*return\s*;[\s\S]{0,200}?setInterval/,
     );

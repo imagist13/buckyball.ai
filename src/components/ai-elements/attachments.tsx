@@ -9,8 +9,8 @@ import {
 import { cn } from "@/lib/utils";
 import { X } from "@/components/ui/icon";
 import {
-  BuckyballIcon,
-  type BuckyballIconName,
+  CodePilotIcon,
+  type CodePilotIconName,
 } from "@/components/ui/semantic-icon";
 import type { FileUIPart, SourceDocumentUIPart } from "ai";
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
@@ -34,11 +34,11 @@ export type AttachmentMediaCategory =
 
 export type AttachmentVariant = "grid" | "inline" | "list";
 
-const mediaCategoryIcons: Record<AttachmentMediaCategory, BuckyballIconName> = {
+const mediaCategoryIcons: Record<AttachmentMediaCategory, CodePilotIconName> = {
   audio: "media_audio",
   document: "file",
   image: "image",
-  // No dedicated "link / external source" alias yet â?`attachment`
+  // No dedicated "link / external source" alias yet — `attachment`
   // (paperclip) is the closest match for "external reference"
   // semantics until we add a `link` alias if the need arises.
   source: "attachment",
@@ -241,8 +241,8 @@ export const AttachmentPreview = ({
 
   const iconSize: "sm" | "md" = variant === "inline" ? "sm" : "md";
 
-  const renderIcon = (name: BuckyballIconName) => (
-    <BuckyballIcon name={name} size={iconSize} className="text-muted-foreground" />
+  const renderIcon = (name: CodePilotIconName) => (
+    <CodePilotIcon name={name} size={iconSize} className="text-muted-foreground" />
   );
 
   const renderContent = () => {

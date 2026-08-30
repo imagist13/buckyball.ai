@@ -1,5 +1,5 @@
 /**
- * Phase 2 (2026-06-02) â€?GitHub #578: after interrupting a running/long task
+ * Phase 2 (2026-06-02) â€” GitHub #578: after interrupting a running/long task
  * the composer was locked (clicking send did nothing).
  *
  * Root cause was in stopStream: the force-abort safety net was scheduled
@@ -9,13 +9,13 @@
  * (= phase==='active') queued every new message but never dequeued.
  *
  * The fix extracts the control flow into stopStreamWith() and schedules the
- * force-abort FIRST + UNCONDITIONALLY. These tests pin that ordering â€?the
- * exact regression â€?without needing the un-injectable module-level streams map.
+ * force-abort FIRST + UNCONDITIONALLY. These tests pin that ordering â€” the
+ * exact regression â€” without needing the un-injectable module-level streams map.
  *
  * Interrupt lifecycle extends the contract: the interrupt
  * response now carries the backend's authoritative runtime_status, and
  * stopStreamWith converges the client phase to a TERMINAL phase when the backend
- * is already terminal â€?bounding phase off 'active' even if the reader never
+ * is already terminal â€” bounding phase off 'active' even if the reader never
  * rejects (I4). The convergence tests below drive that through injected deps
  * (mirrors session-lock-settle.test.ts's DI style), so they exercise real
  * runtime behavior rather than pinning source.
@@ -49,7 +49,7 @@ function makeDeps(over: Partial<Parameters<typeof stopStreamWith>[1]> = {}) {
   };
 }
 
-describe('stopStreamWith â€?force-abort is independent of the interrupt request (#578)', () => {
+describe('stopStreamWith â€” force-abort is independent of the interrupt request (#578)', () => {
   it('on an active stream: schedules the force-abort AND requests the interrupt (synchronously)', () => {
     const { stream } = makeStream('active');
     const order: string[] = [];
@@ -62,7 +62,7 @@ describe('stopStreamWith â€?force-abort is independent of the interrupt request 
     assert.deepEqual(order, ['schedule', 'interrupt']);
   });
 
-  it('schedules the force-abort BEFORE the interrupt â€?never gated behind it (the regression)', () => {
+  it('schedules the force-abort BEFORE the interrupt â€” never gated behind it (the regression)', () => {
     const { stream } = makeStream('active');
     let scheduled = false;
     let scheduledBeforeInterrupt = false;
@@ -122,8 +122,8 @@ describe('stopStreamWith â€?force-abort is independent of the interrupt request 
   });
 });
 
-describe('stopStreamWith â€?phase converges on the authoritative runtime_status (Phase 3 D, I4)', () => {
-  it("backend 'interrupted' â†?converges to 'stopped' even though the reader never rejected", async () => {
+describe('stopStreamWith â€” phase converges on the authoritative runtime_status (Phase 3 D, I4)', () => {
+  it("backend 'interrupted' â†’ converges to 'stopped' even though the reader never rejected", async () => {
     const { stream, calls } = makeStream('active');
     const converged: string[] = [];
     stopStreamWith(stream, makeDeps({
@@ -134,11 +134,11 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
     }), 2000);
     await flush();
     assert.deepEqual(converged, ['stopped'], 'interrupted backend must bound the client phase to stopped');
-    assert.equal(stream.snapshot.phase, 'stopped', 'client phase is off active â†?composer unlocks');
-    assert.deepEqual(calls, [], 'convergence flips phase only â€?it must NOT abort the controller itself');
+    assert.equal(stream.snapshot.phase, 'stopped', 'client phase is off active â†’ composer unlocks');
+    assert.deepEqual(calls, [], 'convergence flips phase only â€” it must NOT abort the controller itself');
   });
 
-  it("backend 'idle' (normal completion) â†?converges to 'completed'", async () => {
+  it("backend 'idle' (normal completion) â†’ converges to 'completed'", async () => {
     const { stream } = makeStream('active');
     const converged: string[] = [];
     stopStreamWith(stream, makeDeps({
@@ -149,7 +149,7 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
     assert.deepEqual(converged, ['completed']);
   });
 
-  it("backend 'error' â†?converges to 'error'", async () => {
+  it("backend 'error' â†’ converges to 'error'", async () => {
     const { stream } = makeStream('active');
     const converged: string[] = [];
     stopStreamWith(stream, makeDeps({
@@ -160,7 +160,7 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
     assert.deepEqual(converged, ['error']);
   });
 
-  it("backend still 'running' â†?does NOT converge (force-abort net remains the sole bound; no reader-less re-lock)", async () => {
+  it("backend still 'running' â†’ does NOT converge (force-abort net remains the sole bound; no reader-less re-lock)", async () => {
     const { stream } = makeStream('active');
     const converged: string[] = [];
     stopStreamWith(stream, makeDeps({
@@ -168,11 +168,11 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
       convergePhase: (p) => converged.push(p),
     }), 2000);
     await flush();
-    assert.deepEqual(converged, [], 'a running backend maps back to active â†?no correction');
+    assert.deepEqual(converged, [], 'a running backend maps back to active â†’ no correction');
     assert.equal(stream.snapshot.phase, 'active');
   });
 
-  it('unknown / null runtime_status (interrupt failed/timed out) â†?does NOT converge', async () => {
+  it('unknown / null runtime_status (interrupt failed/timed out) â†’ does NOT converge', async () => {
     const { stream } = makeStream('active');
     const converged: string[] = [];
     stopStreamWith(stream, makeDeps({
@@ -195,7 +195,7 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
     stream.snapshot.phase = 'stopped';
     resolveStatus('interrupted');
     await flush();
-    assert.deepEqual(converged, [], 'phase already left active â†?the interrupt response must not re-converge');
+    assert.deepEqual(converged, [], 'phase already left active â†’ the interrupt response must not re-converge');
   });
 
   it('a rejected interrupt promise does not throw out of stopStreamWith', async () => {
@@ -207,7 +207,7 @@ describe('stopStreamWith â€?phase converges on the authoritative runtime_status 
   });
 });
 
-describe('stopStream wiring â€?source pins (#578)', () => {
+describe('stopStream wiring â€” source pins (#578)', () => {
   const src = readFileSync(
     path.resolve(__dirname, '../../lib/stream-session-manager.ts'),
     'utf8',

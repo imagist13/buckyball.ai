@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SpinnerGap, ArrowSquareOut, CheckCircle } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { ProviderForm } from "./ProviderForm";
 import type { ProviderFormData } from "./ProviderForm";
 import { PresetConnectDialog } from "./PresetConnectDialog";
@@ -62,7 +62,7 @@ import {
 // 5-bucket categorization for the user-task-oriented Add Service Modal +
 // connected services section. Splits the old "Code Plan" catch-all into
 // "official direct API" (Anthropic / Bedrock / Vertex / DeepSeek) vs
-// "Claude Code å¼å®¹å¥é¤" (brand-specific anthropic-compat presets). The
+// "Claude Code 兼容套餐" (brand-specific anthropic-compat presets). The
 // remaining anthropic-thirdparty wildcard + relay/local presets fall to
 // "third-party / relay". Image providers stay in their own bucket.
 const OFFICIAL_DIRECT_API_KEYS = new Set([
@@ -77,7 +77,7 @@ const CODING_PLAN_KEYS = new Set([
 ]);
 
 /**
- * Step 4 ææ¡æ¶å£: AccessType â?i18n key. Kept in this file (not in
+ * Step 4 文案收口: AccessType → i18n key. Kept in this file (not in
  * provider-catalog.ts) because the catalog file is server-safe and must
  * not depend on the i18n bundle.
  */
@@ -93,23 +93,23 @@ const ACCESS_TYPE_I18N: Record<AccessType, TranslationKey> = {
 /**
  * Coarse relative-time formatter for the Provider card "Last refresh" row.
  *
- * Buckets: "just now" (<60s) â?minutes â?hours â?days â?ISO date.
+ * Buckets: "just now" (<60s) → minutes → hours → days → ISO date.
  * SQLite stores `last_refreshed_at` as `'YYYY-MM-DD HH:MM:SS'` (no timezone)
- * â?that's UTC by convention here, so append `Z` before parsing.
+ * — that's UTC by convention here, so append `Z` before parsing.
  */
 function formatRelativeTime(value: string, isZh: boolean): string {
   const iso = value.includes('T') ? value : value.replace(' ', 'T') + 'Z';
   const t = Date.parse(iso);
   if (Number.isNaN(t)) return value;
   const diffSec = Math.max(0, Math.floor((Date.now() - t) / 1000));
-  if (diffSec < 60) return isZh ? 'åå' : 'just now';
+  if (diffSec < 60) return isZh ? '刚刚' : 'just now';
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return isZh ? `${diffMin} åéå` : `${diffMin} min ago`;
+  if (diffMin < 60) return isZh ? `${diffMin} 分钟前` : `${diffMin} min ago`;
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return isZh ? `${diffHr} å°æ¶å` : `${diffHr}h ago`;
+  if (diffHr < 24) return isZh ? `${diffHr} 小时前` : `${diffHr}h ago`;
   const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return isZh ? `${diffDay} å¤©å` : `${diffDay}d ago`;
-  // Older than ~a month â?show the date in YYYY-MM-DD; relative numbers
+  if (diffDay < 30) return isZh ? `${diffDay} 天前` : `${diffDay}d ago`;
+  // Older than ~a month — show the date in YYYY-MM-DD; relative numbers
   // start to mislead at this scale ("3 months ago" is unhelpful precision).
   return iso.slice(0, 10);
 }
@@ -124,9 +124,9 @@ export function ProviderManager() {
   const [error, setError] = useState<string | null>(null);
   const [envDetected, setEnvDetected] = useState<Record<string, string>>({});
   const { t } = useTranslation();
-  const isZh = t('nav.chats') === 'å¯¹è¯';
+  const isZh = t('nav.chats') === '对话';
 
-  // Edit dialog state â?fallback ProviderForm for providers that don't match any preset
+  // Edit dialog state — fallback ProviderForm for providers that don't match any preset
   const [formOpen, setFormOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<ApiProvider | null>(null);
 
@@ -173,7 +173,7 @@ export function ProviderManager() {
   } | null>(null);
   const xaiPollTimerRef = useRef<number | null>(null);
 
-  // Codex Account state â?Phase 5 Phase 6 IA correction (2026-05-14).
+  // Codex Account state — Phase 5 Phase 6 IA correction (2026-05-14).
   // Mirrors the openai-oauth pattern: virtual provider surfaces here
   // as a ProviderCard alongside other OAuth-connected sources. The
   // login dialog is rendered inline (no window.open per
@@ -186,10 +186,10 @@ export function ProviderManager() {
 
   // Doctor dialog state
 
-  // Add Service browse sheet (placeholder for Step 2 â?will become 4-category mode)
+  // Add Service browse sheet (placeholder for Step 2 — will become 4-category mode)
   const [addServiceOpen, setAddServiceOpen] = useState(false);
 
-  // Model discovery â?refresh now returns a *diff* and waits for the user
+  // Model discovery — refresh now returns a *diff* and waits for the user
   // to apply it. The dialog walks through new / will-update / preserved /
   // hidden / orphan buckets so renames and hidden flags survive a refresh.
   type DiffStatus = 'new' | 'will-update' | 'preserve-edited' | 'hidden-but-upstream' | 'unchanged' | 'orphan';
@@ -329,7 +329,7 @@ export function ProviderManager() {
 
   useEffect(() => { fetchProviders(); }, [fetchProviders]);
 
-  // Focus signal from ModelsSection's "å»å·æ? jump. Once providers
+  // Focus signal from ModelsSection's "去刷新" jump. Once providers
   // have loaded, scroll the matching provider card into view and
   // clear the sessionStorage flag so subsequent visits don't re-trigger.
   useEffect(() => {
@@ -357,7 +357,7 @@ export function ProviderManager() {
   }, []);
   useEffect(() => { fetchActiveImageProvider(); }, [fetchActiveImageProvider]);
   // Also refresh when providers change (e.g. user clears the api_key of the
-  // active row â?the badge must flip to the stale variant without requiring
+  // active row — the badge must flip to the stale variant without requiring
   // a full page reload).
   useEffect(() => {
     const handler = () => fetchActiveImageProvider();
@@ -394,7 +394,7 @@ export function ProviderManager() {
       if (accJson?.state) setCodexAccount(accJson.state as CodexAccountState);
       if (rlJson?.snapshot) setCodexRateLimits(rlJson.snapshot as CodexRateLimitSnapshot);
       else if (rlJson && rlJson.snapshot === null) setCodexRateLimits(null);
-    } catch { /* best effort â?keep stale state */ }
+    } catch { /* best effort — keep stale state */ }
   }, []);
   useEffect(() => {
     fetchCodexAccount();
@@ -411,7 +411,7 @@ export function ProviderManager() {
         if (data?.groups) setProviderGroups(data.groups);
       })
       .catch(() => {});
-    // Phase 2C.4: removed the global-default fetch â?the inline picker
+    // Phase 2C.4: removed the global-default fetch — the inline picker
     // it powered is gone. Models page now reads the same `__global__`
     // options endpoint and is the single write surface.
   }, []);
@@ -487,8 +487,8 @@ export function ProviderManager() {
     //   - Plan-based (sdkProxyOnly + coding/token plan): /v1/models 404s or
     //     returns the wider Ark/DashScope catalog that mostly 4xx on use.
     //     Skip auto-discover; show a one-line success toast pointing at
-    //     "Add model" for SKUè¡¥å.
-    //   - OpenRouter: 300+ aggregator catalog â?full materialization is the
+    //     "Add model" for SKU补充.
+    //   - OpenRouter: 300+ aggregator catalog — full materialization is the
     //     wrong UX. Eager seed (3-alias) happened on the server; we just
     //     tell the user how to add more (search-and-add path).
     //   - Other: standard auto-discover. The user just typed a Key, the
@@ -613,7 +613,7 @@ export function ProviderManager() {
         if (pollCount >= maxPolls) {
           clearInterval(poll);
           setOpenaiLoggingIn(false);
-          setOpenaiError(isZh ? 'ç»å½è¶æ¶ï¼è¯·éè¯' : 'Login timed out, please try again');
+          setOpenaiError(isZh ? '登录超时，请重试' : 'Login timed out, please try again');
           return;
         }
         try {
@@ -669,7 +669,7 @@ export function ProviderManager() {
     const timer = window.setInterval(async () => {
       if (Date.now() >= deadline) {
         cancelXaiOAuthAttempt();
-        setXaiError(isZh ? 'xAI ç»å½è¶æ¶ï¼è¯·éè¯' : 'xAI login timed out. Please try again.');
+        setXaiError(isZh ? 'xAI 登录超时，请重试' : 'xAI login timed out. Please try again.');
         return;
       }
       try {
@@ -754,12 +754,12 @@ export function ProviderManager() {
     } catch { /* best effort */ }
   }, [fetchModels]);
 
-  // ââ Codex Account login / logout ââ
+  // ── Codex Account login / logout ──
   // Login is a two-step UX: POST kicks off the flow and returns an
   // authUrl; we show that URL as an explicit click-to-open link (no
   // window.open() per feedback_no_silent_auto_irreversible). After
-  // the user completes login in their browser, they click "æå·²å®æ
-  // ç»å½" and we refetch account + models.
+  // the user completes login in their browser, they click "我已完成
+  // 登录" and we refetch account + models.
   const handleCodexLogin = useCallback(async () => {
     setCodexLoggingIn(true);
     setCodexError(null);
@@ -776,7 +776,7 @@ export function ProviderManager() {
       }
       if (!json?.login) {
         setCodexError(isZh
-          ? 'Codex ç»å½æªè¿åææä¼è¯ï¼è¯·éè¯ã?
+          ? 'Codex 登录未返回有效会话，请重试。'
           : 'Codex login did not return a login session. Please retry.');
         return false;
       }
@@ -833,7 +833,7 @@ export function ProviderManager() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Page title â?matches other Settings sub-pages. */}
+      {/* Page title — matches other Settings sub-pages. */}
       <div>
         <h2 className="text-xl font-semibold tracking-tight">{t('settings.providers')}</h2>
       </div>
@@ -844,10 +844,10 @@ export function ProviderManager() {
         </div>
       )}
 
-      {/* Section 0ãæå¡è®¾ç½®ã?è¿æ¥è¯æ­ + é»è®¤æ¨¡å) removed 2026-05-06.
+      {/* Section 0「服务设置」(连接诊断 + 默认模型) removed 2026-05-06.
           Both options have canonical entries elsewhere now:
-            - è¿æ¥è¯æ­ â?Settings â?Health (Phase 2C.5)
-            - é»è®¤æ¨¡å â?Settings â?Models (Phase 2C.2 â?pin button per row) */}
+            - 连接诊断 → Settings → Health (Phase 2C.5)
+            - 默认模型 → Settings → Models (Phase 2C.2 — pin button per row) */}
 
       {/* Loading */}
       {loading && (
@@ -857,7 +857,7 @@ export function ProviderManager() {
         </div>
       )}
 
-      {/* âââ Section 1: Connected Services â?categorized cards âââ
+      {/* ─── Section 1: Connected Services — categorized cards ───
            5 user-task buckets (was 4: split "official direct API" out
            of the old "Code Plan" catch-all so Anthropic / Bedrock /
            Vertex / DeepSeek don't sit next to GLM / Kimi / Volcengine
@@ -888,7 +888,7 @@ export function ProviderManager() {
         const officialDbProviders = llmDbProviders.filter(p => categorizeProvider(p) === 'official');
         const codePlanDbProviders = llmDbProviders.filter(p => categorizeProvider(p) === 'codeplan');
         const thirdpartyDbProviders = llmDbProviders.filter(p => categorizeProvider(p) === 'thirdparty');
-        // Only API_KEY / AUTH_TOKEN count as a credential â?ANTHROPIC_BASE_URL
+        // Only API_KEY / AUTH_TOKEN count as a credential — ANTHROPIC_BASE_URL
         // alone shouldn't mark Claude Code as Ready (matches SetupCenter's
         // ProviderCard credentialKeys check).
         const hasEnvClaude = !!envDetected && (
@@ -914,7 +914,7 @@ export function ProviderManager() {
         const getLastRefreshedAt = (providerId: string) =>
           providerGroups.find(g => g.provider_id === providerId)?.last_refreshed_at ?? null;
 
-        // LLM ç¬¬ä¸æ?(DB API key) provider card â?keeps Anthropic-official options block beneath
+        // LLM 第三方 (DB API key) provider card — keeps Anthropic-official options block beneath
         const renderLlmDbProviderCard = (provider: ApiProvider) => {
           const matched = findMatchingPreset(provider);
           const identity = resolveProviderPresetIdentity(provider);
@@ -922,36 +922,38 @@ export function ProviderManager() {
           const status: ProviderCardStatus = needsPresetChoice
             ? 'needs-config'
             : provider.api_key ? 'available' : 'needs-config';
-          // Step 4 ææ¡æ¶å£: æå·¥ç¨æä¸?(Auth Token / API Key) æ å°æ?          // ç¨æ·é¢æ¥å¥æ¹å¼åç±»ï¼å¥é¤ Token / API Key / ææç»å½ / æ¬å°æå¡
-          // / ä¸­è½¬ç½å³ / äºè´¦å·å­è¯ï¼ï¼è§ `getProviderAccessType` æ³¨éã?          const accessType = getProviderAccessType(provider);
+          // Step 4 文案收口: 把工程枚举 (Auth Token / API Key) 映射成
+          // 用户面接入方式分类（套餐 Token / API Key / 授权登录 / 本地服务
+          // / 中转网关 / 云账号凭证），见 `getProviderAccessType` 注释。
+          const accessType = getProviderAccessType(provider);
           const authMethod = needsPresetChoice
-            ? (isZh ? 'å¥é¤ç±»åå¾ç¡®è®? : 'Plan type needs confirmation')
+            ? (isZh ? '套餐类型待确认' : 'Plan type needs confirmation')
             : t(ACCESS_TYPE_I18N[accessType]);
           const totalCount = getTotalModelCount(provider.id);
           const enabledCount = getEnabledModelCount(provider.id);
           const lastRefreshedAt = getLastRefreshedAt(provider.id);
           const info: ProviderCardInfoRow[] = [];
           if (totalCount !== null) {
-            // Show "å·²å¯ç?/ æ»æ°" so the card carries both the runtime
+            // Show "已启用 / 总数" so the card carries both the runtime
             // exposure and the synced inventory at a glance.
             info.push({
-              label: isZh ? 'å¯ç¨æ¨¡å' : 'Models',
+              label: isZh ? '可用模型' : 'Models',
               value: isZh
-                ? `${enabledCount ?? 0} / ${totalCount} å¯ç¨`
+                ? `${enabledCount ?? 0} / ${totalCount} 启用`
                 : `${enabledCount ?? 0} / ${totalCount} enabled`,
             });
           }
           if (lastRefreshedAt) {
-            // Relative time so the card stays a glance â?exact timestamp goes
+            // Relative time so the card stays a glance — exact timestamp goes
             // in the title attr for users who need precision.
             info.push({
-              label: isZh ? 'ä¸æ¬¡å·æ°' : 'Last refresh',
+              label: isZh ? '上次刷新' : 'Last refresh',
               value: formatRelativeTime(lastRefreshedAt, isZh),
               title: lastRefreshedAt + ' UTC',
             });
           }
-          info.push({ label: isZh ? 'æ¥å¥æ¹å¼' : 'Auth', value: authMethod });
-          // Surface base_url only when it's not the default vendor URL â?it's
+          info.push({ label: isZh ? '接入方式' : 'Auth', value: authMethod });
+          // Surface base_url only when it's not the default vendor URL — it's
           // signal for users routing through a third-party gateway. Render
           // through `sanitizeEndpointForDisplay` so accidental key paste into
           // base_url doesn't leak the secret onto the card / tooltip.
@@ -959,11 +961,11 @@ export function ProviderManager() {
             const sanitizeT: SanitizeTranslator = (key, vars) => t(key as TranslationKey, vars);
             const endpoint = sanitizeEndpointForDisplay(provider.base_url, sanitizeT);
             info.push({
-              label: isZh ? 'æ¥å¥å°å' : 'Endpoint',
+              label: isZh ? '接入地址' : 'Endpoint',
               value: endpoint.display,
               // When suspicious: tooltip explains the masking; do NOT echo the
               // raw value (would defeat the masking on hover). Otherwise no
-              // tooltip â?the host/path string is already readable.
+              // tooltip — the host/path string is already readable.
               ...(endpoint.tooltip ? { title: endpoint.tooltip } : {}),
             });
           }
@@ -980,16 +982,16 @@ export function ProviderManager() {
                   name: provider.name,
                   status,
                   statusLabel: needsPresetChoice
-                    ? (isZh ? 'è¯·éæ©å¥é¤ç±»å' : 'Choose plan type')
+                    ? (isZh ? '请选择套餐类型' : 'Choose plan type')
                     : undefined,
                   compat: getProviderCompat(provider),
                   info,
                 }}
                 onEdit={() => handleEdit(provider)}
                 onDelete={() => setDeleteTarget(provider)}
-                /* Phase 1 Step 2 æ¶æ (2026-05-06): Manage models / Refresh
+                /* Phase 1 Step 2 收敛 (2026-05-06): Manage models / Refresh
                    models inline buttons removed. Provider cards are for
-                   "connect a service" â?model browsing + refresh live on
+                   "connect a service" — model browsing + refresh live on
                    the Models page (and refresh only renders for providers
                    where `canReliablyFetchModels` returns true). */
               />
@@ -1006,7 +1008,7 @@ export function ProviderManager() {
           );
         };
 
-        // Per-image-provider card â?same shape as LLM cards, with model
+        // Per-image-provider card — same shape as LLM cards, with model
         // selector chips in the children slot and "set as default" as the
         // primary action when this provider isn't the active image generator.
         const renderImageProviderCard = (provider: ApiProvider) => {
@@ -1018,7 +1020,7 @@ export function ProviderManager() {
           const showStale = isActive && activeImageProviderStale;
           const status: ProviderCardStatus = provider.api_key ? 'available' : 'needs-config';
           const statusLabel = showStale
-            ? (isZh ? 'å·²å¤±æ? : 'Stale')
+            ? (isZh ? '已失效' : 'Stale')
             : isActive
               ? t('provider.activeForImage')
               : undefined;
@@ -1034,7 +1036,7 @@ export function ProviderManager() {
                 statusLabel,
                 compat: 'media_only',
                 info: currentLabel
-                  ? [{ label: isZh ? 'å½åæ¨¡å' : 'Active model', value: currentLabel }]
+                  ? [{ label: isZh ? '当前模型' : 'Active model', value: currentLabel }]
                   : undefined,
               }}
               primaryAction={
@@ -1045,7 +1047,7 @@ export function ProviderManager() {
                     className="h-8 px-3 text-xs text-muted-foreground"
                     onClick={() => setActiveImageProvider('')}
                   >
-                    {isZh ? 'æ¸é¤' : 'Clear'}
+                    {isZh ? '清除' : 'Clear'}
                   </Button>
                 ) : !isActive && provider.api_key ? (
                   <Button
@@ -1060,13 +1062,13 @@ export function ProviderManager() {
               }
               onEdit={() => handleEdit(provider)}
               onDelete={() => setDeleteTarget(provider)}
-              /* No onRefreshModels for image providers â?their /v1/models
+              /* No onRefreshModels for image providers — their /v1/models
                  returns the entire vendor catalogue (text + audio + embedding),
                  not just image models, so discovery is meaningless. The chip
                  selector below uses the curated image-only list directly. */
             >
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] text-muted-foreground mr-1">{isZh ? 'æ¨¡å' : 'Model'}:</span>
+                <span className="text-[11px] text-muted-foreground mr-1">{isZh ? '模型' : 'Model'}:</span>
                 {models.map((m) => {
                   const active = current === m.value;
                   return (
@@ -1102,7 +1104,7 @@ export function ProviderManager() {
           const usable = xaiAuth?.usable ?? !!xaiAuth?.authenticated;
           const status: ProviderCardStatus = usable ? 'available' : 'needs-config';
           const statusLabel = showStale
-            ? (isZh ? 'ææå·²å¤±æ? : 'Authorization stale')
+            ? (isZh ? '授权已失效' : 'Authorization stale')
             : isActive
               ? t('provider.activeForImage')
               : undefined;
@@ -1118,9 +1120,9 @@ export function ProviderManager() {
                 statusLabel,
                 compat: 'media_only',
                 info: [
-                  { label: isZh ? 'å¾çæ¨¡å' : 'Image model', value: 'Grok Imagine Image 2.0' },
-                  { label: isZh ? 'è§é¢æ¨¡å' : 'Video model', value: 'Grok Imagine Video 1.5' },
-                  { label: isZh ? 'æ¥å¥æ¹å¼' : 'Auth', value: isZh ? 'Grok Build ææç»å½' : 'Grok Build OAuth' },
+                  { label: isZh ? '图片模型' : 'Image model', value: 'Grok Imagine Image 2.0' },
+                  { label: isZh ? '视频模型' : 'Video model', value: 'Grok Imagine Video 1.5' },
+                  { label: isZh ? '接入方式' : 'Auth', value: isZh ? 'Grok Build 授权登录' : 'Grok Build OAuth' },
                 ],
               }}
               primaryAction={
@@ -1131,7 +1133,7 @@ export function ProviderManager() {
                     className="h-8 px-3 text-xs text-muted-foreground"
                     onClick={() => setActiveImageProvider('')}
                   >
-                    {isZh ? 'æ¸é¤' : 'Clear'}
+                    {isZh ? '清除' : 'Clear'}
                   </Button>
                 ) : !isActive && usable ? (
                   <Button
@@ -1164,7 +1166,7 @@ export function ProviderManager() {
                 className="gap-1.5 shrink-0"
                 onClick={() => { setPresetEditProvider(null); setAddServiceOpen(true); }}
               >
-                <BuckyballIcon name="plus" size="sm" strokeWidth={2} aria-hidden />
+                <CodePilotIcon name="plus" size="sm" strokeWidth={2} aria-hidden />
                 {t('provider.addService')}
               </Button>
             </div>
@@ -1178,7 +1180,7 @@ export function ProviderManager() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-amber-700 dark:text-amber-400">
                     {isZh
-                      ? 'å½åâå¾ççæé»è®¤âæåçæå¡åå·²ä¸å¯ç¨ï¼è¢«å é¤æç±»åå·²åæ´ï¼ï¼å¾ççæä¼åéå°å¶ä»æå¡å'
+                      ? '当前“图片生成默认”指向的服务商已不可用（被删除或类型已变更），图片生成会回退到其他服务商'
                       : 'The provider currently marked as the image-generation default is unavailable (deleted or type changed). Image generation will fall back to another provider.'}
                   </p>
                 </div>
@@ -1188,13 +1190,13 @@ export function ProviderManager() {
                   className="h-6 text-[11px] text-amber-700 dark:text-amber-400 shrink-0"
                   onClick={() => setActiveImageProvider('')}
                 >
-                  {isZh ? 'æ¸é¤' : 'Clear'}
+                  {isZh ? '清除' : 'Clear'}
                 </Button>
               </div>
             )}
 
             {isCompletelyEmpty ? (
-              /* Empty state â?no env, no oauth, no db providers */
+              /* Empty state — no env, no oauth, no db providers */
               <div className="rounded-lg bg-card border border-border/50 p-10 flex flex-col items-center text-center gap-3">
                 <div className="text-sm font-medium">{t('provider.emptyTitle')}</div>
                 <div className="text-xs text-muted-foreground max-w-md">
@@ -1206,16 +1208,16 @@ export function ProviderManager() {
                   className="gap-1.5 mt-1"
                   onClick={() => { setPresetEditProvider(null); setAddServiceOpen(true); }}
                 >
-                  <BuckyballIcon name="plus" size="sm" strokeWidth={2} aria-hidden />
+                  <CodePilotIcon name="plus" size="sm" strokeWidth={2} aria-hidden />
                   {t('provider.addService')}
                 </Button>
               </div>
             ) : (
               <>
-                {/* OAuth section â?only rendered when at least one OAuth is
+                {/* OAuth section — only rendered when at least one OAuth is
                     actually connected. The unsigned entry lives in the Add
                     Service full-screen flow, so the default page stays
-                    "å·²è¿æ¥æå? only and the empty-state can still trigger. */}
+                    "已连接服务" only and the empty-state can still trigger. */}
                 {(openaiAuth?.authenticated || xaiAuth?.authenticated || codexAccount?.kind === 'logged_in') && (
                   <section className="space-y-3">
                     <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -1229,11 +1231,11 @@ export function ProviderManager() {
                             icon: getProviderIcon('OpenAI', ''),
                             name: 'OpenAI',
                             status: 'available',
-                            statusLabel: openaiAuth.plan || (isZh ? 'å·²ç»å½? : 'Signed in'),
-                            compat: 'bbagent_only',
+                            statusLabel: openaiAuth.plan || (isZh ? '已登录' : 'Signed in'),
+                            compat: 'codepilot_only',
                             info: [
-                              ...(openaiAuth.plan ? [{ label: isZh ? 'è®¢é' : 'Plan', value: openaiAuth.plan }] : []),
-                              ...(openaiAuth.email ? [{ label: isZh ? 'è´¦å·' : 'Account', value: openaiAuth.email }] : []),
+                              ...(openaiAuth.plan ? [{ label: isZh ? '订阅' : 'Plan', value: openaiAuth.plan }] : []),
+                              ...(openaiAuth.email ? [{ label: isZh ? '账号' : 'Account', value: openaiAuth.email }] : []),
                             ],
                           }}
                           onDelete={handleOpenAILogout}
@@ -1246,17 +1248,17 @@ export function ProviderManager() {
                             icon: getProviderIcon('xAI Grok', 'https://api.x.ai/v1'),
                             name: 'Grok Build OAuth',
                             status: 'available',
-                            statusLabel: isZh ? 'å·²ç»å½? : 'Signed in',
-                            compat: 'bbagent_only',
+                            statusLabel: isZh ? '已登录' : 'Signed in',
+                            compat: 'codepilot_only',
                             info: [
-                              { label: isZh ? 'é¢åº¦æ¸ é' : 'Billing source', value: 'Grok Build subscription' },
-                              ...(xaiAuth.email ? [{ label: isZh ? 'è´¦å·' : 'Account', value: xaiAuth.email }] : []),
+                              { label: isZh ? '额度渠道' : 'Billing source', value: 'Grok Build subscription' },
+                              ...(xaiAuth.email ? [{ label: isZh ? '账号' : 'Account', value: xaiAuth.email }] : []),
                             ],
                           }}
                           primaryAction={
                             <Button asChild variant="ghost" size="sm" className="h-8 px-3 text-xs">
                               <a href={xaiAuth.accountUrl} target="_blank" rel="noreferrer">
-                                {isZh ? 'ç®¡çè´¦å·' : 'Manage account'}
+                                {isZh ? '管理账号' : 'Manage account'}
                               </a>
                             </Button>
                           }
@@ -1268,29 +1270,29 @@ export function ProviderManager() {
                           isZh={isZh}
                           data={{
                             icon: getProviderIcon('OpenAI', ''),
-                            name: isZh ? 'Codex è´¦æ·' : 'Codex Account',
+                            name: isZh ? 'Codex 账户' : 'Codex Account',
                             status: 'available',
                             // Phase 6 IA correction (2026-05-14): show
                             // planType-only as the headline. Earlier
                             // builds put `type: chatgpt` here, which
-                            // users read as "plan = chatgpt" â?confusing
+                            // users read as "plan = chatgpt" — confusing
                             // because type is the *login method*, not
                             // the subscription tier.
                             statusLabel: codexAccount.account.planType
-                              || (isZh ? 'å·²ç»å½? : 'Signed in'),
+                              || (isZh ? '已登录' : 'Signed in'),
                             compat: 'codex_account',
                             info: [
                               ...(codexAccount.account.email
-                                ? [{ label: isZh ? 'è´¦å·' : 'Account', value: codexAccount.account.email }]
+                                ? [{ label: isZh ? '账号' : 'Account', value: codexAccount.account.email }]
                                 : []),
                               ...(codexAccount.account.planType
-                                ? [{ label: isZh ? 'å¥é¤' : 'Plan', value: codexAccount.account.planType }]
+                                ? [{ label: isZh ? '套餐' : 'Plan', value: codexAccount.account.planType }]
                                 : []),
                               {
-                                // Renamed from "ç±»å" / "Type" â?the
+                                // Renamed from "类型" / "Type" — the
                                 // chatgpt/apiKey/amazonBedrock value is
                                 // how you *signed in*, not your plan.
-                                label: isZh ? 'ç»å½æ¹å¼' : 'Login method',
+                                label: isZh ? '登录方式' : 'Login method',
                                 value: codexAccount.account.type,
                               },
                             ],
@@ -1312,14 +1314,14 @@ export function ProviderManager() {
                   </section>
                 )}
 
-                {/* Official direct API â?Anthropic / Bedrock / Vertex /
+                {/* Official direct API — Anthropic / Bedrock / Vertex /
                     DeepSeek + env-detected Claude Code. These are the
                     "fill in your API Key from the vendor's console"
                     bucket; no relay, no Code Plan subscription. */}
                 {hasOfficial && (
                   <section className="space-y-3">
                     <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {isZh ? 'å®æ¹ APIï¼ç´è¿ï¼' : 'Official API (direct)'}
+                      {isZh ? '官方 API（直连）' : 'Official API (direct)'}
                     </h4>
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                       {hasEnvClaude && (
@@ -1329,10 +1331,10 @@ export function ProviderManager() {
                             icon: getProviderIcon('Claude', 'https://api.anthropic.com'),
                             name: 'Claude Code',
                             status: 'available',
-                            statusLabel: isZh ? 'å·²å°±ç»? : 'Ready',
+                            statusLabel: isZh ? '已就绪' : 'Ready',
                             compat: 'claude_code_ready',
                             info: [
-                              { label: isZh ? 'æ¥æº' : 'Source', value: isZh ? 'ç¯å¢åé' : 'Environment' },
+                              { label: isZh ? '来源' : 'Source', value: isZh ? '环境变量' : 'Environment' },
                             ],
                           }}
                           primaryAction={
@@ -1347,13 +1349,13 @@ export function ProviderManager() {
                   </section>
                 )}
 
-                {/* Claude Code å¼å®¹å¥é¤ â?verified brand presets (GLM /
+                {/* Claude Code 兼容套餐 — verified brand presets (GLM /
                     Kimi / Volcengine / MiniMax / Bailian / Xiaomi MiMo /
                     Moonshot). Subscription / coding-plan style billing. */}
                 {hasCodePlan && (
                   <section className="space-y-3">
                     <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {isZh ? 'Claude Code å¼å®¹å¥é¤' : 'Claude Code-compatible plans'}
+                      {isZh ? 'Claude Code 兼容套餐' : 'Claude Code-compatible plans'}
                     </h4>
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                       {codePlanDbProviders.map(renderLlmDbProviderCard)}
@@ -1361,13 +1363,13 @@ export function ProviderManager() {
                   </section>
                 )}
 
-                {/* Third-party / relay â?generic anthropic-thirdparty
+                {/* Third-party / relay — generic anthropic-thirdparty
                     template + OpenRouter / Ollama / LiteLLM relays + any
                     custom URL that didn't match a brand preset. */}
                 {hasThirdparty && (
                   <section className="space-y-3">
                     <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                      {isZh ? 'ç¬¬ä¸æ?/ ä¸­è½¬å¼å®¹' : 'Third-party / relay'}
+                      {isZh ? '第三方 / 中转兼容' : 'Third-party / relay'}
                     </h4>
                     <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
                       {thirdpartyDbProviders.map(renderLlmDbProviderCard)}
@@ -1375,7 +1377,7 @@ export function ProviderManager() {
                   </section>
                 )}
 
-                {/* Image services â?one card per provider (consistent with LLM section) */}
+                {/* Image services — one card per provider (consistent with LLM section) */}
                 {hasImage && (
                   <section className="space-y-3">
                     <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
@@ -1393,9 +1395,9 @@ export function ProviderManager() {
         );
       })()}
 
-      {/* âââ Add Service dialog â?modal preset picker.
-           Presets are bucketed into 5 user-facing categories (å®æ¹ç´è¿ API
-           / å¥é¤å?/ ç¬¬ä¸æ¹ä¸­è½?/ æ¬å°æå¡ / å¾åçæ) below â?see the
+      {/* ─── Add Service dialog — modal preset picker.
+           Presets are bucketed into 5 user-facing categories (官方直连 API
+           / 套餐型 / 第三方中转 / 本地服务 / 图像生成) below — see the
            OFFICIAL_DIRECT_API_KEYS / CODING_PLAN_KEYS sets at the top of
            this file. */}
       <Dialog open={addServiceOpen} onOpenChange={setAddServiceOpen}>
@@ -1407,7 +1409,7 @@ export function ProviderManager() {
               <DialogDescription className="text-sm">{t('provider.addServiceDesc')}</DialogDescription>
             </DialogHeader>
             {(() => {
-              // 5-bucket categorization for Add Service Modal â?mirrors
+              // 5-bucket categorization for Add Service Modal — mirrors
               // the connected services section above. Image presets stay
               // image-only; LLM presets split into official direct API /
               // Coding Plan / third-party + relay.
@@ -1424,16 +1426,16 @@ export function ProviderManager() {
               );
               const imagePresets = QUICK_PRESETS.filter(p => p.category === 'media');
 
-              // OAuth entries â?synthetic (not preset-based). Always shown so the
+              // OAuth entries — synthetic (not preset-based). Always shown so the
               // category stays visible; already-connected entries are rendered
-              // disabled with a "å·²ç»å½? tag instead of being hidden.
+              // disabled with a "已登录" tag instead of being hidden.
               type OAuthEntry = { key: string; name: string; description: string; descriptionZh: string; icon: ReactNode; onClick: () => void; connected?: boolean; loading?: boolean; disabled?: boolean };
               const oauthEntries: OAuthEntry[] = [
                 {
                   key: 'openai-oauth',
                   name: 'OpenAI',
-                  description: 'Sign in with ChatGPT Plus/Pro â?no API key required',
-                  descriptionZh: 'ä½¿ç¨ ChatGPT Plus/Pro è®¢éç»å½ï¼æ é API Key',
+                  description: 'Sign in with ChatGPT Plus/Pro — no API key required',
+                  descriptionZh: '使用 ChatGPT Plus/Pro 订阅登录，无需 API Key',
                   icon: getProviderIcon('OpenAI', ''),
                   onClick: () => { setAddServiceOpen(false); handleOpenAILogin(); },
                   connected: !!openaiAuth?.authenticated,
@@ -1444,7 +1446,7 @@ export function ProviderManager() {
                   description: xaiAuth?.disabledReason
                     || 'Grok Build browser or device login; depends on xAI upstream policy. API Key remains available.',
                   descriptionZh: xaiAuth?.disabledReason
-                    || 'Grok Build æµè§å?è®¾å¤ç ç»å½ï¼ä¾èµ xAI ä¸æ¸¸ç­ç¥ï¼å¯æ¹ç¨ API Keyã?,
+                    || 'Grok Build 浏览器/设备码登录，依赖 xAI 上游策略；可改用 API Key。',
                   icon: getProviderIcon('xAI Grok', 'https://api.x.ai/v1'),
                   onClick: () => {
                     setAddServiceOpen(false);
@@ -1458,15 +1460,16 @@ export function ProviderManager() {
                   disabled: xaiAuth?.enabled === false,
                 },
                 {
-                  // Phase 5 Phase 6 IA correction (2026-05-14) â?Codex
-                  // Account joins OAuth-style entries. Login flow â?                  // OpenAI OAuth's window.open() path; we kick the
+                  // Phase 5 Phase 6 IA correction (2026-05-14) — Codex
+                  // Account joins OAuth-style entries. Login flow ≠
+                  // OpenAI OAuth's window.open() path; we kick the
                   // /api/codex/login RPC and render the returned
                   // authUrl as an explicit click-to-open link in a
                   // dialog. No silent browser navigation.
                   key: 'codex-account',
                   name: 'Codex Account',
-                  description: 'Sign in to Codex with ChatGPT Plus/Pro â?gpt-5.5 etc.',
-                  descriptionZh: 'ç»å½ Codexï¼ChatGPT Plus/Pro è´¦æ·ï¼â?å¯ä½¿ç?gpt-5.5 ç­?,
+                  description: 'Sign in to Codex with ChatGPT Plus/Pro — gpt-5.5 etc.',
+                  descriptionZh: '登录 Codex（ChatGPT Plus/Pro 账户）— 可使用 gpt-5.5 等',
                   icon: getProviderIcon('OpenAI', ''),
                   // Keep the picker open until the app-server accepts the
                   // login request. On failure, the error below remains in the
@@ -1513,17 +1516,17 @@ export function ProviderManager() {
                       {entry.name}
                       {entry.connected && (
                         <span className="inline-flex items-center rounded-full bg-status-success-muted px-1.5 py-0.5 text-[10px] font-medium text-status-success-foreground">
-                          {isZh ? 'å·²ç»å½? : 'Signed in'}
+                          {isZh ? '已登录' : 'Signed in'}
                         </span>
                       )}
                       {entry.loading && (
                         <span className="text-[10px] font-normal text-muted-foreground">
-                          {isZh ? 'è¿æ¥ä¸­â? : 'Connectingâ?}
+                          {isZh ? '连接中…' : 'Connecting…'}
                         </span>
                       )}
                       {entry.disabled && (
                         <span className="text-[10px] font-normal text-muted-foreground">
-                          {isZh ? 'å·²å³é? : 'Disabled'}
+                          {isZh ? '已关闭' : 'Disabled'}
                         </span>
                       )}
                     </div>
@@ -1559,7 +1562,7 @@ export function ProviderManager() {
                   {officialPresets.length > 0 && (
                     <div>
                       <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                        {isZh ? 'å®æ¹ APIï¼ç´è¿ï¼' : 'Official API (direct)'}
+                        {isZh ? '官方 API（直连）' : 'Official API (direct)'}
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {officialPresets.map(renderPresetButton)}
@@ -1570,7 +1573,7 @@ export function ProviderManager() {
                   {codePlanPresets.length > 0 && (
                     <div>
                       <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                        {isZh ? 'Claude Code å¼å®¹å¥é¤' : 'Claude Code-compatible plans'}
+                        {isZh ? 'Claude Code 兼容套餐' : 'Claude Code-compatible plans'}
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {codePlanPresets.map(renderPresetButton)}
@@ -1581,7 +1584,7 @@ export function ProviderManager() {
                   {thirdpartyPresets.length > 0 && (
                     <div>
                       <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-3">
-                        {isZh ? 'ç¬¬ä¸æ?/ ä¸­è½¬å¼å®¹' : 'Third-party / relay'}
+                        {isZh ? '第三方 / 中转兼容' : 'Third-party / relay'}
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {thirdpartyPresets.map(renderPresetButton)}
@@ -1607,17 +1610,17 @@ export function ProviderManager() {
         </DialogContent>
       </Dialog>
 
-      {/* Codex Account login dialog â?Phase 5 Phase 6 IA correction.
+      {/* Codex Account login dialog — Phase 5 Phase 6 IA correction.
           Mirrors what CodexPanel briefly shipped before the IA
           correction: explicit click-to-open authUrl, no window.open. */}
       <Dialog open={!!codexLoginStart} onOpenChange={(open) => { if (!open) void handleCodexLoginCancel(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{isZh ? 'ç»å½ Codex' : 'Login to Codex'}</DialogTitle>
+            <DialogTitle>{isZh ? '登录 Codex' : 'Login to Codex'}</DialogTitle>
             <DialogDescription>
               {isZh
-                ? 'å¨æµè§å¨ä¸­å®æç»å½åï¼åå°è¿éç¹å»ãæå·²å®æç»å½ãã?
-                : 'Complete login in your browser, then click "Iâve completed login" below.'}
+                ? '在浏览器中完成登录后，回到这里点击「我已完成登录」。'
+                : 'Complete login in your browser, then click "I’ve completed login" below.'}
             </DialogDescription>
           </DialogHeader>
           {codexLoginStart?.type === 'chatgpt' && (
@@ -1633,10 +1636,10 @@ export function ProviderManager() {
               </a>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => void handleCodexLoginCancel()}>
-                  {isZh ? 'åæ¶' : 'Cancel'}
+                  {isZh ? '取消' : 'Cancel'}
                 </Button>
                 <Button size="sm" onClick={handleCodexLoginComplete}>
-                  {isZh ? 'æå·²å®æç»å½' : 'Iâve completed login'}
+                  {isZh ? '我已完成登录' : 'I’ve completed login'}
                 </Button>
               </div>
             </div>
@@ -1653,23 +1656,23 @@ export function ProviderManager() {
                 <span>{codexLoginStart.verificationUrl}</span>
               </a>
               <div className="rounded bg-card border border-border/60 px-3 py-2 flex items-center justify-between gap-2">
-                <span className="text-xs text-muted-foreground">{isZh ? 'è®¾å¤ç ? : 'Device code'}</span>
+                <span className="text-xs text-muted-foreground">{isZh ? '设备码' : 'Device code'}</span>
                 <span className="font-mono text-sm font-semibold tracking-wider">{codexLoginStart.userCode}</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => { void navigator.clipboard.writeText(codexLoginStart.userCode); }}
-                  aria-label={isZh ? 'å¤å¶' : 'Copy'}
+                  aria-label={isZh ? '复制' : 'Copy'}
                 >
-                  <BuckyballIcon name="copy" size={12} aria-hidden />
+                  <CodePilotIcon name="copy" size={12} aria-hidden />
                 </Button>
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => void handleCodexLoginCancel()}>
-                  {isZh ? 'åæ¶' : 'Cancel'}
+                  {isZh ? '取消' : 'Cancel'}
                 </Button>
                 <Button size="sm" onClick={handleCodexLoginComplete}>
-                  {isZh ? 'æå·²å®æç»å½' : 'Iâve completed login'}
+                  {isZh ? '我已完成登录' : 'I’ve completed login'}
                 </Button>
               </div>
             </div>
@@ -1678,10 +1681,10 @@ export function ProviderManager() {
             <div className="flex flex-col gap-3">
               <p className="text-xs text-foreground/85">
                 <CheckCircle size={12} weight="fill" className="inline-block mr-1 text-status-success-foreground" />
-                {isZh ? 'API key å·²ä¿å­ï¼å¯ä»¥å³é­æ­¤å¯¹è¯æ¡ã? : 'API key saved. You can close this dialog.'}
+                {isZh ? 'API key 已保存，可以关闭此对话框。' : 'API key saved. You can close this dialog.'}
               </p>
               <div className="flex justify-end">
-                <Button size="sm" onClick={handleCodexLoginComplete}>{isZh ? 'å®æ' : 'Done'}</Button>
+                <Button size="sm" onClick={handleCodexLoginComplete}>{isZh ? '完成' : 'Done'}</Button>
               </div>
             </div>
           )}
@@ -1695,11 +1698,11 @@ export function ProviderManager() {
       >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>{isZh ? 'è¯·éæ©å¥é¤ç±»å' : 'Choose the plan type'}</DialogTitle>
+            <DialogTitle>{isZh ? '请选择套餐类型' : 'Choose the plan type'}</DialogTitle>
             <DialogDescription>
               {isZh
-                ? 'è¿ä¸ªæ§éç½®ä½¿ç¨ä¸ªäººçä¸å¢éçå±ç¨çå°åï¼CodePilot æ æ³ä»å°åæ?Key å¤æ­å¥é¤ãéæ©å®éè´­ä¹°çç±»ååï¼ç®å½ç®¡ççæ¨¡åä¼æ´æ°ä¸ºè¯¥å¥é¤ç½ååï¼æå¨æ·»å ææå¨ç¼è¾çæ¨¡åä¼ä¿çã?
-                : 'This legacy configuration uses an endpoint shared by Personal and Team plans. buckyball.ai cannot infer the product from the endpoint or key. Choosing your plan updates catalog-managed models to its allowlist; manually added or edited models are preserved.'}
+                ? '这个旧配置使用个人版与团队版共用的地址，CodePilot 无法从地址或 Key 判断套餐。选择实际购买的类型后，目录管理的模型会更新为该套餐白名单；手动添加或手动编辑的模型会保留。'
+                : 'This legacy configuration uses an endpoint shared by Personal and Team plans. CodePilot cannot infer the product from the endpoint or key. Choosing your plan updates catalog-managed models to its allowlist; manually added or edited models are preserved.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 mt-2">
@@ -1757,25 +1760,25 @@ export function ProviderManager() {
         editProvider={presetEditProvider}
       />
 
-      {/* Model discovery result â?read-only spike. The result is shown so the
+      {/* Model discovery result — read-only spike. The result is shown so the
           user can decide whether to act on it; nothing is auto-applied. */}
       <Dialog open={!!discoverState} onOpenChange={(open) => { if (!open) setDiscoverState(null); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {isZh ? 'æ¨¡ååæ­¥ç»æ' : 'Model discovery result'} Â· {discoverState?.providerName}
+              {isZh ? '模型同步结果' : 'Model discovery result'} · {discoverState?.providerName}
             </DialogTitle>
             <DialogDescription>
               {isZh
-                ? 'åªè¯»æ¢æµï¼ä¸ä¼èªå¨åå¥ä½ çéç½®ãå¤±è´¥æ¶å¯ä»¥åéå°åç½®ç®å½ã?
-                : 'Read-only probe â?your configuration is not changed. Falls back to the built-in catalog when the upstream call fails.'}
+                ? '只读探测，不会自动写入你的配置。失败时可以回退到内置目录。'
+                : 'Read-only probe — your configuration is not changed. Falls back to the built-in catalog when the upstream call fails.'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {discoverState?.loading && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
                 <SpinnerGap size={14} className="animate-spin" />
-                {isZh ? 'æ­£å¨æ¢æµâ? : 'Probingâ?}
+                {isZh ? '正在探测…' : 'Probing…'}
               </div>
             )}
             {discoverState?.result && (() => {
@@ -1785,38 +1788,38 @@ export function ProviderManager() {
                 : r.ok ? 'bg-status-success-muted text-status-success-foreground'
                 : 'bg-status-warning-muted text-status-warning-foreground';
               const classLabel =
-                r.classification === 'api' ? (isZh ? 'å¯åæ­? : 'Discoverable')
-                : r.classification === 'experimental' ? (isZh ? 'å®éªæ§åæ­? : 'Experimental')
-                : (isZh ? 'ä½¿ç¨åç½®ç®å½' : 'Catalog only');
+                r.classification === 'api' ? (isZh ? '可同步' : 'Discoverable')
+                : r.classification === 'experimental' ? (isZh ? '实验性同步' : 'Experimental')
+                : (isZh ? '使用内置目录' : 'Catalog only');
               return (
                 <>
                   <div className="rounded-md bg-card border border-border/50">
                     <div className="px-4 divide-y divide-border/50">
                       <div className="py-2.5 flex items-center justify-between gap-3">
-                        <span className="text-[11px] text-muted-foreground">{isZh ? 'åç±»' : 'Category'}</span>
+                        <span className="text-[11px] text-muted-foreground">{isZh ? '分类' : 'Category'}</span>
                         <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium', tone)}>
                           {classLabel}
                         </span>
                       </div>
                       <div className="py-2.5 flex items-center justify-between gap-3">
-                        <span className="text-[11px] text-muted-foreground">{isZh ? 'åè®®' : 'Protocol'}</span>
+                        <span className="text-[11px] text-muted-foreground">{isZh ? '协议' : 'Protocol'}</span>
                         <span className="text-xs font-mono text-foreground/85">{r.protocol}</span>
                       </div>
                       {r.endpoint && (
                         <div className="py-2.5 flex items-center justify-between gap-3 min-w-0">
-                          <span className="text-[11px] text-muted-foreground shrink-0">{isZh ? 'ç«¯ç¹' : 'Endpoint'}</span>
+                          <span className="text-[11px] text-muted-foreground shrink-0">{isZh ? '端点' : 'Endpoint'}</span>
                           <span className="text-xs font-mono text-foreground/85 truncate text-right">{r.endpoint}</span>
                         </div>
                       )}
                       {typeof r.modelCount === 'number' && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-muted-foreground">{isZh ? 'æ¨¡åæ? : 'Model count'}</span>
+                          <span className="text-[11px] text-muted-foreground">{isZh ? '模型数' : 'Model count'}</span>
                           <span className="text-xs font-medium text-foreground/85">{r.modelCount}</span>
                         </div>
                       )}
                       {typeof r.durationMs === 'number' && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-muted-foreground">{isZh ? 'èæ¶' : 'Duration'}</span>
+                          <span className="text-[11px] text-muted-foreground">{isZh ? '耗时' : 'Duration'}</span>
                           <span className="text-xs font-mono text-foreground/85">{r.durationMs} ms</span>
                         </div>
                       )}
@@ -1841,7 +1844,7 @@ export function ProviderManager() {
                   {r.sampleModels && r.sampleModels.length > 0 && (
                     <div>
                       <p className="text-[11px] text-muted-foreground mb-2">
-                        {isZh ? `æ¨¡ååè¡¨ï¼?{r.sampleModels.length} æ¡ï¼` : `Models (${r.sampleModels.length})`}
+                        {isZh ? `模型列表（${r.sampleModels.length} 条）` : `Models (${r.sampleModels.length})`}
                       </p>
                       <div className="rounded-md bg-muted/40 px-3 py-2 max-h-48 overflow-y-auto">
                         <ul className="text-xs font-mono text-foreground/85 space-y-1">
@@ -1851,19 +1854,19 @@ export function ProviderManager() {
                     </div>
                   )}
 
-                  {/* Diff summary â?counts per status, shown only when diff exists */}
+                  {/* Diff summary — counts per status, shown only when diff exists */}
                   {r.diff && r.diff.length > 0 && !discoverState?.applied && (() => {
                     const counts = r.diff.reduce<Record<DiffStatus, number>>((acc, e) => {
                       acc[e.status] = (acc[e.status] || 0) + 1;
                       return acc;
                     }, { 'new': 0, 'will-update': 0, 'preserve-edited': 0, 'hidden-but-upstream': 0, 'unchanged': 0, 'orphan': 0 });
                     const labelZh: Record<DiffStatus, string> = {
-                      'new': 'æ°å¢',
-                      'will-update': 'å°æ´æ?,
-                      'preserve-edited': 'ä¿çç¼è¾',
-                      'hidden-but-upstream': 'ä¿æéè',
-                      'unchanged': 'æ åå?,
-                      'orphan': 'ä¸æ¸¸å·²ä¸çº?,
+                      'new': '新增',
+                      'will-update': '将更新',
+                      'preserve-edited': '保留编辑',
+                      'hidden-but-upstream': '保持隐藏',
+                      'unchanged': '无变化',
+                      'orphan': '上游已下线',
                     };
                     const labelEn: Record<DiffStatus, string> = {
                       'new': 'New',
@@ -1888,12 +1891,12 @@ export function ProviderManager() {
                     );
                   })()}
 
-                  {/* Applied summary â?replaces the diff once committed */}
+                  {/* Applied summary — replaces the diff once committed */}
                   {discoverState?.applied && (
                     <div className="rounded-md bg-status-success-muted/40 border border-status-success-border/40 px-3 py-2">
                       <p className="text-xs text-status-success-foreground">
                         {isZh
-                          ? `åºç¨å®æï¼æ°å¢?${discoverState.applied.inserted}ãå·æ?${discoverState.applied.refreshedPristine}ãä¿çç¨æ·ç¼è¾?${discoverState.applied.refreshedPreserved}ã`
+                          ? `应用完成：新增 ${discoverState.applied.inserted}、刷新 ${discoverState.applied.refreshedPristine}、保留用户编辑 ${discoverState.applied.refreshedPreserved}。`
                           : `Applied: ${discoverState.applied.inserted} new, ${discoverState.applied.refreshedPristine} refreshed, ${discoverState.applied.refreshedPreserved} edits preserved.`}
                       </p>
                     </div>
@@ -1901,11 +1904,11 @@ export function ProviderManager() {
 
                   {r.ok && r.modelCount === 0 && (
                     <p className="text-[11px] text-muted-foreground">
-                      {isZh ? 'ä¸æ¸¸è¿åç©ºæ¨¡ååè¡¨ï¼æ²¡æå¯åºç¨çååã? : 'Upstream returned an empty list â?nothing to apply.'}
+                      {isZh ? '上游返回空模型列表，没有可应用的变化。' : 'Upstream returned an empty list — nothing to apply.'}
                     </p>
                   )}
 
-                  {/* Apply button â?only when there is something actionable and not yet applied */}
+                  {/* Apply button — only when there is something actionable and not yet applied */}
                   {!discoverState?.applied && r.diff && r.diff.some(e =>
                     e.status === 'new' || e.status === 'will-update' || e.status === 'preserve-edited' || e.status === 'hidden-but-upstream',
                   ) && (
@@ -1918,7 +1921,7 @@ export function ProviderManager() {
                         onClick={handleApplyDiff}
                       >
                         {discoverState?.applying && <SpinnerGap size={12} className="animate-spin" />}
-                        {isZh ? 'åºç¨æ´æ¹' : 'Apply changes'}
+                        {isZh ? '应用更改' : 'Apply changes'}
                       </Button>
                     </div>
                   )}
@@ -1940,10 +1943,10 @@ export function ProviderManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isZh ? 'ç»å½ Grok Build OAuth' : 'Sign in to Grok Build OAuth'}</DialogTitle>
+            <DialogTitle>{isZh ? '登录 Grok Build OAuth' : 'Sign in to Grok Build OAuth'}</DialogTitle>
             <DialogDescription>
               {isZh
-                ? 'è¿æ¯å¼å®¹æ¥å¥ï¼å¤ç?Grok Build å¬å¼ OAuth clientï¼å¯è½å xAI ä¸æ¸¸ç­ç¥è°æ´å½±åãxAI API Key æ¯ç¬ç«ä¸æ´ç¨³å®çå¤ç¨æ¸ éã?
+                ? '这是兼容接入，复用 Grok Build 公开 OAuth client，可能受 xAI 上游策略调整影响。xAI API Key 是独立且更稳定的备用渠道。'
                 : 'This compatibility login reuses the public Grok Build OAuth client and may be affected by xAI policy changes. xAI API Key remains a separate, more stable fallback.'}
             </DialogDescription>
           </DialogHeader>
@@ -1955,26 +1958,26 @@ export function ProviderManager() {
                 disabled={xaiLoggingIn}
                 onClick={() => void handleXaiLogin('browser')}
               >
-                {isZh ? 'æµè§å¨ç»å½? : 'Browser login'}
+                {isZh ? '浏览器登录' : 'Browser login'}
               </Button>
               <Button
                 variant="outline"
                 disabled={xaiLoggingIn}
                 onClick={() => void handleXaiLogin('device')}
               >
-                {isZh ? 'è®¾å¤ç ç»å½? : 'Device-code login'}
+                {isZh ? '设备码登录' : 'Device-code login'}
               </Button>
             </div>
           ) : xaiLoginMethod === 'browser' ? (
             <div className="rounded-md border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
               {isZh
-                ? 'æµè§å¨ææé¡µé¢å·²æå¼ãè¯·å¨æµè§å¨ä¸­å®æç»å½ï¼æ­¤æµç¨ä¸éè¦è®¾å¤ç ï¼å®æåçªå£ä¼èªå¨æ¶èµ·ã?
+                ? '浏览器授权页面已打开。请在浏览器中完成登录；此流程不需要设备码，完成后窗口会自动收起。'
                 : 'The browser authorization page is open. Complete sign-in there; no device code is required, and this dialog will close automatically.'}
             </div>
           ) : xaiDevice ? (
             <div className="space-y-3 py-3">
               <p className="text-sm text-muted-foreground">
-                {isZh ? 'æå¼éªè¯é¡µé¢å¹¶è¾å¥è®¾å¤ç ï¼? : 'Open the verification page and enter this device code:'}
+                {isZh ? '打开验证页面并输入设备码：' : 'Open the verification page and enter this device code:'}
               </p>
               <div className="rounded-md bg-muted px-4 py-3 text-center font-mono text-xl tracking-widest">
                 {xaiDevice.userCode}
@@ -1989,19 +1992,19 @@ export function ProviderManager() {
                 <ArrowSquareOut size={14} />
               </a>
               <p className="text-xs text-muted-foreground">
-                {isZh ? `è®¾å¤ç çº¦ ${Math.ceil(xaiDevice.expiresIn / 60)} åéåè¿æã` : `The code expires in about ${Math.ceil(xaiDevice.expiresIn / 60)} minutes.`}
+                {isZh ? `设备码约 ${Math.ceil(xaiDevice.expiresIn / 60)} 分钟后过期。` : `The code expires in about ${Math.ceil(xaiDevice.expiresIn / 60)} minutes.`}
               </p>
             </div>
           ) : (
             <p className="py-3 text-sm text-muted-foreground">
-              {isZh ? 'æ­£å¨è·åè®¾å¤ç â? : 'Requesting a device codeâ?}
+              {isZh ? '正在获取设备码…' : 'Requesting a device code…'}
             </p>
           )}
 
           {xaiLoggingIn && (
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
               <SpinnerGap size={13} className="animate-spin" />
-              {isZh ? 'ç­å¾ xAI ææå®æâ? : 'Waiting for xAI authorizationâ?}
+              {isZh ? '等待 xAI 授权完成…' : 'Waiting for xAI authorization…'}
             </p>
           )}
           {xaiError && <p className="text-xs text-destructive" role="alert">{xaiError}</p>}

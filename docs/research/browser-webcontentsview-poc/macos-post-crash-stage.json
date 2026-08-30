@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "startedAt": "2026-08-25T13:18:15.323Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "electron": "40.10.6",
+  "chrome": "144.0.7559.236",
+  "checks": [],
+  "events": [],
+  "stage": "waiting-app-ready",
+  "note": "Sanitized durable copy of the next isolated launch checkpoint after the native SIGTRAP."
+}

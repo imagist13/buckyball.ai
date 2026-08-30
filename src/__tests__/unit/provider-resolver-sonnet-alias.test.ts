@@ -1,8 +1,9 @@
 /**
- * P0.5 (2026-06-01) �?bare Anthropic alias must never reach a Claude-compat
+ * P0.5 (2026-06-01) — bare Anthropic alias must never reach a Claude-compat
  * gateway verbatim.
  *
- * Packaged log showed `Claude Code compat API error: 503 ... 分组 auto 下模�? * sonnet 无可用渠道`: a legacy DB row `model_id='sonnet'` (NULL upstream) on a
+ * Packaged log showed `Claude Code compat API error: 503 ... 分组 auto 下模型
+ * sonnet 无可用渠道`: a legacy DB row `model_id='sonnet'` (NULL upstream) on a
  * New-API / Claude-compat provider flowed to the gateway as `sonnet`. The
  * existing single-model "first in list" fallback doesn't fire for multi-model
  * gateways, so the alias leaked. Fix: a DETERMINISTIC alias→upstream map
@@ -24,7 +25,7 @@ import {
 
 // ── Pure map ────────────────────────────────────────────────────────
 
-describe('canonicalAnthropicAliasUpstream �?deterministic alias �?upstream', () => {
+describe('canonicalAnthropicAliasUpstream — deterministic alias → upstream', () => {
   it('maps the three bare aliases to their canonical upstream ids', () => {
     assert.equal(canonicalAnthropicAliasUpstream('sonnet'), 'claude-sonnet-4-6');
     assert.equal(canonicalAnthropicAliasUpstream('opus'), 'claude-opus-4-7');
@@ -80,12 +81,12 @@ describe('legacy `sonnet` row on a Claude-compat provider does not leak verbatim
       provider_type: 'anthropic',
       base_url: 'https://gateway.example.com',
       api_key: 'sk-gw',
-      // default role is the bare alias �?exactly the legacy gateway config.
+      // default role is the bare alias — exactly the legacy gateway config.
       role_models_json: JSON.stringify({ default: 'sonnet' }),
     });
     // Legacy materialized row: model_id='sonnet', NULL upstream (stored as '').
     // DB-wins merge means availableModels['sonnet'] carries no upstream, so the
-    // catalog can't canonicalize it �?only the P0.5 alias map can.
+    // catalog can't canonicalize it — only the P0.5 alias map can.
     upsertProviderModel({ provider_id: provider.id, model_id: 'sonnet', enabled: 1 });
     return provider;
   }
@@ -111,12 +112,12 @@ describe('legacy `sonnet` row on a Claude-compat provider does not leak verbatim
 
 // ── Wiring source pins (both send paths) ────────────────────────────
 
-describe('provider-resolver �?P0.5 canonicalization wired on both send paths', () => {
+describe('provider-resolver — P0.5 canonicalization wired on both send paths', () => {
   const src = fs.readFileSync(
     path.resolve(__dirname, '../../lib/provider-resolver.ts'),
     'utf8',
   );
-  it('roleModelForEnv (toClaudeCodeEnv �?ANTHROPIC_MODEL) canonicalizes the resolved id', () => {
+  it('roleModelForEnv (toClaudeCodeEnv → ANTHROPIC_MODEL) canonicalizes the resolved id', () => {
     // `canonicalAnthropicAliasUpstream(resolvedId)` is unique to roleModelForEnv
     // (toAiSdkConfig's call passes `modelId`), so this single match pins the
     // ANTHROPIC_MODEL send-path wiring.

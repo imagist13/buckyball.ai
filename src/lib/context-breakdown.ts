@@ -1,12 +1,12 @@
 /**
- * Phase 6 �?Context Usage Breakdown contract.
+ * Phase 6 — Context Usage Breakdown contract.
  *
  * Pure data layer for the upcoming dot-matrix Context UI (Phase 2-3).
  * Decomposes total token usage into 10 user-facing categories so the chat
  * input dot-matrix bar can show which source is heavy.
  *
  * Categories mirror Cursor's Context Usage Breakdown (System prompt / Tools /
- * Rules / Skills / MCP / Subagents �?mapped to Memory) + CodePilot real
+ * Rules / Skills / MCP / Subagents → mapped to Memory) + CodePilot real
  * sources (files_attachments / conversation / pending_next_turn /
  * cache_or_previous).
  *
@@ -16,7 +16,7 @@
  *
  * Invariants:
  * - Parts ordering is stable (matches CONTEXT_BREAKDOWN_KIND_ORDER).
- * - When known parts �?usedTokens: sum of "used" parts === usedTokens
+ * - When known parts ≤ usedTokens: sum of "used" parts === usedTokens
  *   (conversation absorbs the residual).
  * - When known parts > usedTokens: conversation clamps to 0, so sum of
  *   "used" parts === knownParts > usedTokens. The contract intentionally
@@ -25,7 +25,7 @@
  *   inputs. UI may surface this via tooltip later. (Codex P2 finding
  *   2026-05-19.)
  * - pending parts (files_attachments + pending_next_turn) are NOT in
- *   usedTokens �?they describe what would join the next turn.
+ *   usedTokens — they describe what would join the next turn.
  * - ratio and remainingTokens are undefined when contextWindow is unknown
  *   or non-positive.
  *
@@ -65,7 +65,7 @@ export const CONTEXT_BREAKDOWN_KIND_ORDER: readonly ContextBreakdownKind[] = [
  *
  * **Do NOT render these directly in user-facing UI.** The UI surface
  * (`ContextBreakdownList.tsx`) MUST use `useTranslation()` with
- * `runStatus.breakdown*` keys �?see that component's LABEL_KEY map.
+ * `runStatus.breakdown*` keys — see that component's LABEL_KEY map.
  *
  * Codex P1 finding (2026-05-19): rendering `part.label` directly mixed
  * Chinese DEFAULT_LABELS into the English UI. Labels are now wired through
@@ -80,9 +80,9 @@ export const DEFAULT_LABELS: Record<ContextBreakdownKind, string> = {
   skills: 'Skills',
   mcp: 'MCP',
   memory: 'Memory',
-  files_attachments: '文件与附�?,
+  files_attachments: '文件与附件',
   conversation: '对话历史',
-  pending_next_turn: '本次待加�?,
+  pending_next_turn: '本次待加入',
   cache_or_previous: '缓存 / 上轮',
 };
 
@@ -101,7 +101,7 @@ export interface ContextBreakdownPart {
   label: string;
   /** Token count. 0 when data source not wired or empty. */
   tokens: number;
-  /** Internal debug breadcrumb �?never rendered to user. */
+  /** Internal debug breadcrumb — never rendered to user. */
   source: string;
   /** Optional sub-detail for popover (e.g. file name list). */
   detail?: string;
@@ -112,7 +112,7 @@ export interface ContextUsageBreakdown {
   usedTokens: number;
   /** Resolved model context window, or undefined when unknown / invalid. */
   contextWindow?: number;
-  /** Window - usedTokens, clamped �?0; undefined when window unknown. */
+  /** Window - usedTokens, clamped ≥ 0; undefined when window unknown. */
   remainingTokens?: number;
   /** usedTokens / contextWindow clamped to [0,1]; undefined when unknown. */
   ratio?: number;
@@ -141,7 +141,7 @@ export interface ContextBreakdownPending {
 }
 
 /**
- * Compiler / harness-side fragments. All fields optional �?undefined means
+ * Compiler / harness-side fragments. All fields optional — undefined means
  * "data source not yet wired" and the part shows 0 tokens.
  */
 export interface ContextBreakdownCompiler {
@@ -166,7 +166,7 @@ export interface ContextBreakdownInputs {
 }
 
 /**
- * Build the breakdown. Pure function �?no React, no I/O, no side effects.
+ * Build the breakdown. Pure function — no React, no I/O, no side effects.
  *
  * @param inputs Optional baseline / contextWindow / pending / compiler.
  * @returns 10-part breakdown with stable ordering and clamped invariants.
@@ -206,7 +206,7 @@ export function buildContextUsageBreakdown(
   // expose real per-turn token cost (entries.tools/skills/mcp + outputTokens).
   // Promote effective used to the floor of "what we DO know is in context".
   // No double-count risk on ClaudeCode where reportedUsedTokens already
-  // includes everything �?max() always picks the larger.
+  // includes everything — max() always picks the larger.
   const usedTokens = Math.max(
     reportedUsedTokens,
     knownUsedNonConversation + outputTokens,

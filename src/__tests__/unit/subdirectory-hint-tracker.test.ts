@@ -10,24 +10,24 @@ import {
 } from '../../lib/subdirectory-hint-tracker';
 
 // ────────────────────────────────────────────────────────────────
-// Test filesystem fixture �?mimics a monorepo layout
+// Test filesystem fixture — mimics a monorepo layout
 // ────────────────────────────────────────────────────────────────
 //
 // tmpRoot/
-// ├─ AGENTS.md            �?root hint
+// ├─ AGENTS.md            ← root hint
 // ├─ src/
-// �? ├─ main.ts           �?file, no hints in this dir
-// �? └─ utils/
-// �?    ├─ CLAUDE.md      �?sub-package hint
-// �?    └─ helper.ts
+// │  ├─ main.ts           ← file, no hints in this dir
+// │  └─ utils/
+// │     ├─ CLAUDE.md      ← sub-package hint
+// │     └─ helper.ts
 // ├─ docs/
-// �? ├─ .cursorrules      �?cursor rule
-// �? └─ readme.md
-// ├─ empty/               �?dir with no hint files
+// │  ├─ .cursorrules      ← cursor rule
+// │  └─ readme.md
+// ├─ empty/               ← dir with no hint files
 // ├─ huge-hint/
-// �? └─ AGENTS.md         �?> 8 KB, will be truncated
+// │  └─ AGENTS.md         ← > 8 KB, will be truncated
 // └─ priorities/
-//    ├─ AGENTS.md         �?wins over CLAUDE.md because AGENTS is listed first
+//    ├─ AGENTS.md         ← wins over CLAUDE.md because AGENTS is listed first
 //    └─ CLAUDE.md
 
 let tmpRoot: string;
@@ -101,20 +101,20 @@ describe('tokenizeShellCommand', () => {
     assert.deepEqual(tokenizeShellCommand('foo\tbar\nbaz'), ['foo', 'bar', 'baz']);
   });
 
-  it('empty string �?empty array', () => {
+  it('empty string → empty array', () => {
     assert.deepEqual(tokenizeShellCommand(''), []);
   });
 });
 
 // ────────────────────────────────────────────────────────────────
-// SubdirectoryHintTracker �?core behavior
+// SubdirectoryHintTracker — core behavior
 // ────────────────────────────────────────────────────────────────
 
-describe('SubdirectoryHintTracker �?discovery', () => {
+describe('SubdirectoryHintTracker — discovery', () => {
   it('loading the working dir itself returns null (pre-marked as loaded)', () => {
     const tracker = new SubdirectoryHintTracker(tmpRoot);
     const result = tracker.checkToolCall('Read', { path: 'AGENTS.md' });
-    // AGENTS.md resolves to a file �?parent is tmpRoot itself, which is pre-loaded.
+    // AGENTS.md resolves to a file → parent is tmpRoot itself, which is pre-loaded.
     assert.equal(result, null);
   });
 
@@ -128,7 +128,7 @@ describe('SubdirectoryHintTracker �?discovery', () => {
     assert.ok(result!.includes('[Subdirectory context discovered:'));
   });
 
-  it('deduplicates �?second call to the same directory returns null', () => {
+  it('deduplicates — second call to the same directory returns null', () => {
     const tracker = new SubdirectoryHintTracker(tmpRoot);
     const first = tracker.checkToolCall('Read', { path: 'src/utils/helper.ts' });
     assert.ok(first);
@@ -172,9 +172,9 @@ describe('SubdirectoryHintTracker �?discovery', () => {
 // Ancestor walking
 // ────────────────────────────────────────────────────────────────
 
-describe('SubdirectoryHintTracker �?ancestor walking', () => {
+describe('SubdirectoryHintTracker — ancestor walking', () => {
   it('walks up from a nested file to find a parent AGENTS.md', () => {
-    // Fresh tracker �?src has no hint but tmpRoot has AGENTS.md.
+    // Fresh tracker — src has no hint but tmpRoot has AGENTS.md.
     // Because tmpRoot is pre-loaded, we should NOT see it as a hint.
     // But if we point inside src/utils/helper.ts the first ancestor
     // is src/utils (has CLAUDE.md), so we find that instead.
@@ -187,7 +187,7 @@ describe('SubdirectoryHintTracker �?ancestor walking', () => {
   });
 
   it('stops at the working directory (pre-loaded)', () => {
-    // src/ has no hint, parent is tmpRoot (pre-loaded) �?no hint.
+    // src/ has no hint, parent is tmpRoot (pre-loaded) → no hint.
     const tracker = new SubdirectoryHintTracker(tmpRoot);
     const result = tracker.checkToolCall('Read', { path: 'src/main.ts' });
     assert.equal(result, null);
@@ -206,7 +206,7 @@ describe('SubdirectoryHintTracker �?ancestor walking', () => {
 // Argument key handling
 // ────────────────────────────────────────────────────────────────
 
-describe('SubdirectoryHintTracker �?argument keys', () => {
+describe('SubdirectoryHintTracker — argument keys', () => {
   it('honors file_path key (CodePilot Write/Edit convention)', () => {
     const tracker = new SubdirectoryHintTracker(tmpRoot);
     const result = tracker.checkToolCall('Write', {
@@ -243,7 +243,7 @@ describe('SubdirectoryHintTracker �?argument keys', () => {
 // Bash command path extraction
 // ────────────────────────────────────────────────────────────────
 
-describe('SubdirectoryHintTracker �?Bash command extraction', () => {
+describe('SubdirectoryHintTracker — Bash command extraction', () => {
   it('extracts a path from a simple Bash command', () => {
     const tracker = new SubdirectoryHintTracker(tmpRoot);
     const result = tracker.checkToolCall('Bash', {
@@ -266,7 +266,7 @@ describe('SubdirectoryHintTracker �?Bash command extraction', () => {
     const result = tracker.checkToolCall('Bash', {
       command: 'curl https://example.com/docs/thing',
     });
-    // curl has a URL arg but no filesystem path �?no hint
+    // curl has a URL arg but no filesystem path → no hint
     assert.equal(result, null);
   });
 

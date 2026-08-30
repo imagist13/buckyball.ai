@@ -36,7 +36,7 @@ import {
  * Must be rendered inside <Conversation> (StickToBottom provider).
  *
  * Phase 5A prepend-anchor fix: the count-growth effect must NOT fire on
- * "load earlier" prepend �?inserting older messages at the head grows the count
+ * "load earlier" prepend — inserting older messages at the head grows the count
  * but should keep the user where they were. We distinguish append vs. prepend by
  * `firstId` (messages[0]?.id): append never changes the head, prepend (incl.
  * capped-prepend that trims the tail) always changes it. When the head changes we
@@ -203,7 +203,7 @@ interface MessageListProps {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
-  /** SDK rewind points �?only emitted for visible prompt-level user messages (not tool results or auto-triggers), mapped by position */
+  /** SDK rewind points — only emitted for visible prompt-level user messages (not tool results or auto-triggers), mapped by position */
   rewindPoints?: RewindPoint[];
   sessionId?: string;
   startedAt?: number;
@@ -212,7 +212,7 @@ interface MessageListProps {
   /** Assistant name for avatar display */
   assistantName?: string;
   /**
-   * Phase 3 Step 4 �?inline-joined task_run_logs metadata, keyed by
+   * Phase 3 Step 4 — inline-joined task_run_logs metadata, keyed by
    * run id, delivered by `/api/chat/sessions/[id]/messages`. When a
    * message has `task_run_id` and that run is the FIRST occurrence
    * for this run id in the visible list, MessageList renders a
@@ -221,7 +221,7 @@ interface MessageListProps {
    */
   taskRuns?: Record<string, TaskRunSummary>;
   /**
-   * Codex P2 �?invoked after the WaitingForPermissionPanel finishes a
+   * Codex P2 — invoked after the WaitingForPermissionPanel finishes a
    * Re-run / Abandon action. The panel itself only knows the new run
    * exists in the DB; only the parent ChatView holds the message +
    * taskRuns state, so we bubble up here for it to call
@@ -257,7 +257,7 @@ export function MessageList({
 
   if (messages.length === 0 && !isStreaming) {
     if (isAssistantProject) {
-      // Assistant workspace �?show buddy or egg welcome
+      // Assistant workspace — show buddy or egg welcome
       const buddyInfo = typeof globalThis !== 'undefined'
         ? (globalThis as Record<string, unknown>).__codepilot_buddy_info__ as { species?: string; rarity?: string } | undefined
         : undefined;
@@ -359,14 +359,16 @@ interface VirtualTranscriptProps {
 }
 
 /**
- * Phase 5A �?虚拟化的 transcript 主体。必须渲染在 <Conversation>
+ * Phase 5A — 虚拟化的 transcript 主体。必须渲染在 <Conversation>
  * (StickToBottom) 内部，才能通过 `useStickToBottomContext().scrollRef`
- * 拿到真实滚动容器交给 `@tanstack/react-virtual`�? *
- * 设计：只虚拟�?`messages`（每条消�?= 一行，marker / rewind 渲染在行内，
- * 与虚拟化�?1:1）；load-more 按钮、waiting panel、StreamingMessage 保持
- * 普通文档流的兄弟节点，行为与旧实现一致。置�?/ 上滚不强�?/ 首次瞬时置底
+ * 拿到真实滚动容器交给 `@tanstack/react-virtual`。
+ *
+ * 设计：只虚拟化 `messages`（每条消息 = 一行，marker / rewind 渲染在行内，
+ * 与虚拟化前 1:1）；load-more 按钮、waiting panel、StreamingMessage 保持
+ * 普通文档流的兄弟节点，行为与旧实现一致。置底 / 上滚不强拉 / 首次瞬时置底
  * 全部沿用 use-stick-to-bottom（`ScrollOnStream` + `initial="instant"` +
- * resize 自动锁底，escapedFromLock 时不打扰），本组件不重造滚动引擎�? */
+ * resize 自动锁底，escapedFromLock 时不打扰），本组件不重造滚动引擎。
+ */
 function VirtualTranscript({
   messages,
   rewindPoints,
@@ -391,15 +393,18 @@ function VirtualTranscript({
   const { t } = useTranslation();
   const { scrollRef } = useStickToBottomContext();
 
-  // 虚拟列表容器（高�?totalSize，行绝对定位）。用它的 offsetTop 作为
-  // react-virtual �?scrollMargin —�?上方还有 load-more 按钮 + content
-  // �?padding，列表不是从滚动容器顶部开始的�?  const listRef = useRef<HTMLDivElement>(null);
+  // 虚拟列表容器（高度=totalSize，行绝对定位）。用它的 offsetTop 作为
+  // react-virtual 的 scrollMargin —— 上方还有 load-more 按钮 + content
+  // 的 padding，列表不是从滚动容器顶部开始的。
+  const listRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
   // Scroll anchor: preserve position when older messages are prepended.
   const anchorIdRef = useRef<string | null>(null);
 
-  // A2 (audit 2026-06): 可见 user 消息列表驱动 rewind-point 位置映射�?  // memoize 一次（旧代码在 map 回调里重�?�?流式重渲染时 O(n²)）�?  const userMessages = useMemo(
+  // A2 (audit 2026-06): 可见 user 消息列表驱动 rewind-point 位置映射；
+  // memoize 一次（旧代码在 map 回调里重算 → 流式重渲染时 O(n²)）。
+  const userMessages = useMemo(
     () => messages.filter((m) => m.role === 'user'),
     [messages],
   );
@@ -408,14 +413,18 @@ function VirtualTranscript({
     count: messages.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => MESSAGE_ROW_ESTIMATE,
-    // stable key = message.id：流式更新时不整表重挂，只有真正新增/删除才动 key�?    getItemKey: (index) => messages[index]?.id ?? index,
+    // stable key = message.id：流式更新时不整表重挂，只有真正新增/删除才动 key。
+    getItemKey: (index) => messages[index]?.id ?? index,
     // dynamic measurement：行高差异极大，每行挂载后经 `ref={virtualizer.measureElement}`
-    // �?ResizeObserver 校正真实高度（见下方虚拟行）；estimateSize 只是未测量行的种子�?    overscan: MESSAGE_ROW_OVERSCAN,
+    // 用 ResizeObserver 校正真实高度（见下方虚拟行）；estimateSize 只是未测量行的种子。
+    overscan: MESSAGE_ROW_OVERSCAN,
     scrollMargin,
   });
 
   // 重测 scrollMargin：load-more 按钮出现/消失改变列表顶部偏移。用 useEffect
-  // （非 layoutEffect）避�?SSR 警告；首帧的微小偏移�?use-stick-to-bottom �?  // initial 置底掩盖。offsetTop 只随按钮存在与否变化，与消息条数无关�?  useEffect(() => {
+  // （非 layoutEffect）避免 SSR 警告；首帧的微小偏移被 use-stick-to-bottom 的
+  // initial 置底掩盖。offsetTop 只随按钮存在与否变化，与消息条数无关。
+  useEffect(() => {
     if (listRef.current) {
       setScrollMargin(listRef.current.offsetTop);
     }
@@ -429,9 +438,11 @@ function VirtualTranscript({
     onLoadMore?.();
   }, [messages, onLoadMore]);
 
-  // Prepend 后重新锚定。旧实现�?getElementById(`msg-…`) + scrollIntoView�?  // 虚拟化后锚点行此刻不一定在渲染窗口内，改用 virtualizer.scrollToIndex
-  // (align:'start') —�?用记录的 anchorId �?NEW 数组里查 index。capped prepend
-  // 裁的是尾部新消息不是头部，锚点必然存活；查不到（-1）则跳过滚动�?  useEffect(() => {
+  // Prepend 后重新锚定。旧实现用 getElementById(`msg-…`) + scrollIntoView，
+  // 虚拟化后锚点行此刻不一定在渲染窗口内，改用 virtualizer.scrollToIndex
+  // (align:'start') —— 用记录的 anchorId 在 NEW 数组里查 index。capped prepend
+  // 裁的是尾部新消息不是头部，锚点必然存活；查不到（-1）则跳过滚动。
+  useEffect(() => {
     const anchorId = anchorIdRef.current;
     if (!anchorId) return;
     const index = findAnchorIndex(messages, anchorId);
@@ -441,8 +452,9 @@ function VirtualTranscript({
     anchorIdRef.current = null;
   }, [messages, virtualizer]);
 
-  // 每条消息渲染成一行——与虚拟化前�?messages.map 回调逐一对应�?  const renderMessageRow = (message: Message, idx: number): React.ReactNode => {
-    // Step 4c R6 �?runtime-switch transcript marker. ChatView appends a
+  // 每条消息渲染成一行——与虚拟化前的 messages.map 回调逐一对应。
+  const renderMessageRow = (message: Message, idx: number): React.ReactNode => {
+    // Step 4c R6 — runtime-switch transcript marker. ChatView appends a
     // marker message (`role='user'` carrying a `[__RUNTIME_SWITCH__ …]`
     // sentinel) whenever the user flips RuntimeSelector mid-conversation.
     // Render as an inline checkpoint instead of a normal user bubble.
@@ -457,16 +469,16 @@ function VirtualTranscript({
       }
     }
 
-    // Phase 3 Step 4 �?TaskRunMarker before the FIRST message of a given
+    // Phase 3 Step 4 — TaskRunMarker before the FIRST message of a given
     // task_run_id. Built from the inline-joined `taskRuns` map (no per-marker
-    // fetch); marker is React-only �?`task_run_id` never enters `content` or
+    // fetch); marker is React-only — `task_run_id` never enters `content` or
     // the LLM prompt builder.
     const leadingMarker = isFirstMessageOfTaskRun(messages, idx) && message.task_run_id
       ? <TaskRunMarker run={taskRuns?.[message.task_run_id]} />
       : null;
 
     // Map rewind points to visible user messages by position (backend emits
-    // rewind_point only for prompt-level user messages �?1:1 with userMessages).
+    // rewind_point only for prompt-level user messages → 1:1 with userMessages).
     const rewindSdkUuid = resolveRewindUuid({ message, userMessages, rewindPoints, sessionId });
 
     return (
@@ -499,8 +511,8 @@ function VirtualTranscript({
         </div>
       )}
 
-      {/* 虚拟列表容器：高�?= totalSize，行绝对定位。虚拟化前由 flex `gap-6`
-          提供的行间距并入每行�?pb-6（被 measureElement 一并测量）�?*/}
+      {/* 虚拟列表容器：高度 = totalSize，行绝对定位。虚拟化前由 flex `gap-6`
+          提供的行间距并入每行的 pb-6（被 measureElement 一并测量）。 */}
       <div
         ref={listRef}
         className="relative w-full"
@@ -523,7 +535,7 @@ function VirtualTranscript({
         })}
       </div>
 
-      {/* Phase 3 Step 4b �?when the LAST message belongs to a
+      {/* Phase 3 Step 4b — when the LAST message belongs to a
           waiting_for_permission run (and not streaming), render the
           TaskWaitingForPermissionPanel inline at the bottom of the transcript. */}
       {run && (

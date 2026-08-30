@@ -41,7 +41,7 @@ function useLocalStorageFlag(key: string) {
     } catch {
       // ignore persistence failures
     }
-    // Force re-render â€?storage event doesn't fire for same-window writes
+    // Force re-render â€” storage event doesn't fire for same-window writes
     window.dispatchEvent(new StorageEvent('storage', { key }));
   }, [key]);
 

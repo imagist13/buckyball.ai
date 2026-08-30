@@ -1,5 +1,5 @@
 /**
- * Phase 5b â€?Structured error helpers for the Codex Responses proxy.
+ * Phase 5b â€” Structured error helpers for the Codex Responses proxy.
  *
  * Two surfaces every adapter / route writer hits:
  *
@@ -15,7 +15,7 @@
  *     Used when the underlying provider returns 4xx/5xx, the
  *     connection times out, etc.
  *
- * The adapter MUST go through one of these â€?never throw raw â€?so
+ * The adapter MUST go through one of these â€” never throw raw â€” so
  * Codex's HTTP client sees a deterministic envelope instead of a
  * Next.js generic error page.
  */
@@ -66,7 +66,7 @@ export function makeErrorResult(
  * ai-sdk wraps provider HTTP failures in `APICallError` (and similar
  * subclasses) carrying `statusCode` and `responseBody`. Network /
  * abort errors come through as `AbortError` or vanilla Error. The
- * classifier is intentionally narrow â€?anything we don't recognise
+ * classifier is intentionally narrow â€” anything we don't recognise
  * lands in `internal_error` with the raw message + a `cause` context
  * so the user can still see what happened.
  */
@@ -81,7 +81,7 @@ export function classifyUpstreamError(
     const responseBody = anyErr.responseBody;
 
     if (name === 'AbortError' || /\baborted?\b/i.test(msg)) {
-      // Codex closing the connection â€?surface as cancelled, not as
+      // Codex closing the connection â€” surface as cancelled, not as
       // an error from the user's perspective. Adapter still wraps
       // this in a `response.failed` event because Codex's reader
       // doesn't have a "cancelled" event class today.

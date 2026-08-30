@@ -1,14 +1,14 @@
 'use client';
 
 /**
- * TaskCheckpoint â?inline TODO panel above the chat composer.
+ * TaskCheckpoint — inline TODO panel above the chat composer.
  *
  * UX contract:
  *   1. Position: directly above MessageInput, the user reads it before
  *      typing the next instruction.
- *   2. Default: expanded â?shows all task items with a numbered list.
+ *   2. Default: expanded — shows all task items with a numbered list.
  *   3. Minimize: top-right toggle. When minimized, only the summary
- *      header ("å?N ä¸ªä»»å¡ï¼å·²ç»å®æ M ä¸?) is visible.
+ *      header ("共 N 个任务，已经完成 M 个") is visible.
  *   4. Auto-hide: when there are zero tasks OR all tasks are completed,
  *      the component renders nothing. The user is never asked to dismiss
  *      a stale checklist by hand.
@@ -16,13 +16,13 @@
  * Data: re-uses the existing `/api/tasks?session_id=` endpoint and the
  * `tasks-updated` window event the SDK fires when TodoWrite syncs.
  * Click-to-toggle a task's completion state is preserved from the
- * sidebar TaskList â?the previous component stays for now and we'll
+ * sidebar TaskList — the previous component stays for now and we'll
  * remove the sidebar mount in ChatView's surrounding patch.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowsIn, ArrowsOut } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
@@ -47,7 +47,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
       const data = await res.json();
       setTasks(data.tasks || []);
     } catch {
-      // Silent fail â?the panel just stays empty (and therefore hidden).
+      // Silent fail — the panel just stays empty (and therefore hidden).
     }
   }, [sessionId]);
 
@@ -55,7 +55,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
     fetchTasks();
   }, [fetchTasks]);
 
-  // SDK TodoWrite sync â?same event the sidebar TaskList listened for.
+  // SDK TodoWrite sync — same event the sidebar TaskList listened for.
   useEffect(() => {
     const handler = () => { fetchTasks(); };
     window.addEventListener('tasks-updated', handler);
@@ -74,7 +74,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
       const data = await res.json();
       setTasks((prev) => prev.map((task2) => (task2.id === task.id ? data.task : task2)));
     } catch {
-      // Silent fail â?next /api/tasks fetch will reconcile.
+      // Silent fail — next /api/tasks fetch will reconcile.
     }
   }, []);
 
@@ -82,7 +82,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
   const allDone = tasks.length > 0 && completedCount === tasks.length;
 
   // Auto-hide: no tasks at all, or every task is complete. The whole
-  // point of the panel is "what's next" â?when there's nothing next,
+  // point of the panel is "what's next" — when there's nothing next,
   // it has no business taking up vertical space.
   if (tasks.length === 0 || allDone) return null;
 
@@ -106,7 +106,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
             announce the action they're about to perform. */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-            <BuckyballIcon name="task" size="sm" className="shrink-0" aria-hidden />
+            <CodePilotIcon name="task" size="sm" className="shrink-0" aria-hidden />
             <span className="truncate">{summary}</span>
           </div>
           <Button
@@ -123,7 +123,7 @@ export function TaskCheckpoint({ sessionId, className }: TaskCheckpointProps) {
           </Button>
         </div>
 
-        {/* Body â?numbered list. Click a row to toggle the task's
+        {/* Body — numbered list. Click a row to toggle the task's
             completion state (same behavior as the old sidebar TaskList).
             in_progress / failed states render with the same circle for
             now; richer state glyphs can be a follow-up. */}

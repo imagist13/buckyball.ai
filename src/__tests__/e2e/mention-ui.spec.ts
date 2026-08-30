@@ -17,8 +17,8 @@ test.describe('@mention UI/UX', () => {
   });
 
   test.skip('@mentions send structured files/mentions without dumping directory contents', async ({ page }) => {
-    // Complex mocked flow â€?mocks /api/files/suggest, /files/serve, /files?,
-    // /chat/sessions, /chat and then races through a type â†?click â†?Enter
+    // Complex mocked flow â€” mocks /api/files/suggest, /files/serve, /files?,
+    // /chat/sessions, /chat and then races through a type â†’ click â†’ Enter
     // chain. Reliably passes on a freshly-restarted dev server but flakes
     // when the server has accumulated route state across earlier tests.
     // mention-picker-style.spec.ts already covers the picker shell;
@@ -138,7 +138,7 @@ test.describe('@mention UI/UX', () => {
 
   test.skip('removing one mention keeps others and chip order follows selection order', async ({ page }) => {
     // Same flakiness profile as the other multi-step mention test in this
-    // file â€?it opens the picker twice, clicks chips, types in between,
+    // file â€” it opens the picker twice, clicks chips, types in between,
     // and depends on the popover staying open during a click that
     // sometimes detaches it. Unit coverage in
     // message-input-interactions.test.ts asserts the same ordering

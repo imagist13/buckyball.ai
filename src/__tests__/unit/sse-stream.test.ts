@@ -46,7 +46,7 @@ function noopCallbacks(overrides: Partial<SSECallbacks> = {}): SSECallbacks {
   };
 }
 
-describe('SSE Stream �?thinking events', () => {
+describe('SSE Stream — thinking events', () => {
   it('dispatches onThinking for thinking-type events', async () => {
     const deltas: string[] = [];
     const reader = mockReader([
@@ -82,7 +82,7 @@ describe('SSE Stream �?thinking events', () => {
   });
 });
 
-describe('SSE Stream �?is_error propagation', () => {
+describe('SSE Stream — is_error propagation', () => {
   it('extracts is_error from tool_result events', async () => {
     const results: Array<{ tool_use_id: string; content: string; is_error?: boolean }> = [];
     const reader = mockReader([
@@ -109,7 +109,7 @@ describe('SSE Stream �?is_error propagation', () => {
   });
 });
 
-describe('SSE Stream �?media in tool_result', () => {
+describe('SSE Stream — media in tool_result', () => {
   it('passes through media array from tool_result', async () => {
     const results: Array<{ tool_use_id: string; media?: Array<{ type: string }> }> = [];
     const reader = mockReader([
@@ -155,7 +155,7 @@ describe('SSE Stream �?media in tool_result', () => {
 // context_compressed SSE events
 // ────────────────────────────────────────────────────────────────
 
-describe('SSE Stream �?context_compressed events', () => {
+describe('SSE Stream — context_compressed events', () => {
   it('dispatches onContextCompressed for subtype=context_compressed status events', async () => {
     const events: Array<{ message: string; messagesCompressed: number; tokensSaved: number }> = [];
     const statusCalls: string[] = [];
@@ -211,7 +211,7 @@ describe('SSE Stream �?context_compressed events', () => {
     // without a subtype. After useSSEStream switched to subtype-based dispatch
     // (useSSEStream.ts:204) that payload was silently dropped. Both the
     // pre-compression wrapper and the retry path now route through the shared
-    // builder �?this test pins the builder's output to the consumer contract.
+    // builder — this test pins the builder's output to the consumer contract.
     const events: Array<{ message: string; messagesCompressed: number; tokensSaved: number }> = [];
     const statusCalls: string[] = [];
 
@@ -257,7 +257,7 @@ describe('SSE Stream �?context_compressed events', () => {
 // skill_nudge SSE events
 // ────────────────────────────────────────────────────────────────
 
-describe('SSE Stream �?skill_nudge events', () => {
+describe('SSE Stream — skill_nudge events', () => {
   it('dispatches onSkillNudge for subtype=skill_nudge status events', async () => {
     const events: Array<{ message: string; step: number; distinctToolCount: number; toolNames: string[] }> = [];
     const statusCalls: string[] = [];

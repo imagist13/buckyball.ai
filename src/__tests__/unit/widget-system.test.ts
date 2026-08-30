@@ -146,7 +146,7 @@ describe('parseAllShowWidgets', () => {
     assert.strictEqual(w2.data.title, 'chart_2');
   });
 
-  it('handles truncated fence (streaming â€?no closing ```)', () => {
+  it('handles truncated fence (streaming â€” no closing ```)', () => {
     const input = 'Some intro\n```show-widget\n{"title":"partial","widget_code":"<div>loading...</div>"}';
     const segments = parseAllShowWidgets(input);
 
@@ -163,7 +163,7 @@ describe('parseAllShowWidgets', () => {
     const input = '```show-widget\n{"title":"test","widget_code":"<div>partial';
     const segments = parseAllShowWidgets(input);
 
-    // Should attempt extraction â€?may or may not succeed depending on minimum length
+    // Should attempt extraction â€” may or may not succeed depending on minimum length
     // At least should not throw
     assert.ok(Array.isArray(segments));
   });
@@ -278,7 +278,7 @@ describe('finalizeHtml CDN script handling', () => {
   });
 
   it('does NOT re-inject inline scripts on CDN load (no duplicate execution)', () => {
-    // _appendInline should only be called once â€?no _runInline on every onload
+    // _appendInline should only be called once â€” no _runInline on every onload
     // The function is named _appendInline (not _runInline) and called via _onCdnDone counter
     assert.ok(srcdoc.includes('function _onCdnDone'), 'should use counter-based callback');
     assert.ok(srcdoc.includes('n.onload=_onCdnDone'), 'onload should use counter, not direct _appendInline');
@@ -376,8 +376,8 @@ describe('WIDGET_SYSTEM_PROMPT', () => {
 
   it('is smaller than the original full prompt but includes core rules', () => {
     assert.ok(WIDGET_SYSTEM_PROMPT.length > 500, 'should include core hard constraints');
-    // Phase 5c slice 6 (2026-05-16, post-smoke) â€?ceiling bumped from
-    // 2000 â†?3500. Real GLM/Kimi smoke (session 2e2f8c6d3ab99fbc...)
+    // Phase 5c slice 6 (2026-05-16, post-smoke) â€” ceiling bumped from
+    // 2000 â†’ 3500. Real GLM/Kimi smoke (session 2e2f8c6d3ab99fbc...)
     // showed the original loose-format prompt let the model emit a
     // raw HTML show-widget fence; adding the explicit
     // WIDGET_WIRE_FORMAT_SPEC + image-gen rule needs ~1100 extra
@@ -448,14 +448,15 @@ describe('getGuidelines', () => {
 // StreamingMessage.tsx computes a React key for the partial widget during
 // streaming. When the fence closes, parseAllShowWidgets produces segments
 // whose map-index key (`w-${i}`) must match the partial key exactly.
-// If they differ, React unmounts + remounts the WidgetRenderer â†?iframe
-// is destroyed â†?height collapses â†?scroll jump.
+// If they differ, React unmounts + remounts the WidgetRenderer â†’ iframe
+// is destroyed â†’ height collapses â†’ scroll jump.
 //
 // This tests the actual key-computation invariant extracted from
 // StreamingMessage.tsx lines 284-337 and 268-279.
 
-describe('widget key stability (partial â†?complete transition)', () => {
-  // Uses the PRODUCTION computePartialWidgetKey from MessageItem.tsx â€?  // the same function that StreamingMessage.tsx calls. Any drift in the
+describe('widget key stability (partial â†’ complete transition)', () => {
+  // Uses the PRODUCTION computePartialWidgetKey from MessageItem.tsx â€”
+  // the same function that StreamingMessage.tsx calls. Any drift in the
   // production code will be caught here.
 
   function computeClosedWidgetKey(content: string, widgetIndex: number): string {

@@ -4,16 +4,16 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/chat/interrupt �?Interrupt an active session.
+ * POST /api/chat/interrupt — Interrupt an active session.
  *
  * We don't know which runtime owns this session, so fan out best-effort to
  * EVERY interruptable runtime. One runtime erroring must not stop the others:
  * - Native:        AbortController-based interrupt
  * - Codex Runtime: turn/interrupt against the active Codex app-server turn
- *                  (codex-stop-recovery Phase 1 �?previously missing, so a
+ *                  (codex-stop-recovery Phase 1 — previously missing, so a
  *                  Stop under Codex never reached the backend turn; the turn
  *                  kept running, the stream never closed, and the session lock
- *                  renewed forever �?"Stop 后无法发送新指令")
+ *                  renewed forever → "Stop 后无法发送新指令")
  * - SDK:           conversation.interrupt() on the CLI subprocess
  */
 export async function POST(request: NextRequest) {
@@ -69,18 +69,18 @@ export async function POST(request: NextRequest) {
     try {
       const { cancelSubagentRunsForParentSession } = await import('@/lib/db');
       cancelSubagentRunsForParentSession(sessionId);
-    } catch { /* DB unavailable �?runtime abort remains best effort */ }
+    } catch { /* DB unavailable — runtime abort remains best effort */ }
 
-    // Diagnostic breadcrumb only �?never logs prompt / files / credentials.
+    // Diagnostic breadcrumb only — never logs prompt / files / credentials.
     console.debug('[interrupt] fan-out', { sessionId, attempted });
 
-    // Interrupt/phase reconcile �?return the backend's authoritative runtime_status so the
+    // Interrupt/phase reconcile — return the backend's authoritative runtime_status so the
     // client can reconcile its stream phase (I2 / d-interrupt-returns-status). We
     // ONLY read chat_sessions.runtime_status here.
     //
     // We deliberately do NOT release or settle the session lock: this route only
     // carries a sessionId (no owner lockId), and a sessionId-wide release/settle
-    // would clobber a newer turn that already took over the lock �?killing an
+    // would clobber a newer turn that already took over the lock — killing an
     // already-reclaimed new owner (Codex I1 correction, d-interrupt-no-kill-
     // newowner). Real lock release + terminal-status write stay with the chat
     // route's lockId-scoped settleLock / watchdog.
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       const { getSession } = await import('@/lib/db');
       runtime_status = getSession(sessionId)?.runtime_status ?? null;
     } catch {
-      // DB unavailable �?return null; the client falls back to its force-abort
+      // DB unavailable — return null; the client falls back to its force-abort
       // safety net rather than converging on an authoritative status.
     }
 

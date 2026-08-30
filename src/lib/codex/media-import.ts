@@ -1,5 +1,5 @@
 /**
- * Phase 5b smoke round 9 (2026-05-16) â€?Codex media import bridge.
+ * Phase 5b smoke round 9 (2026-05-16) â€” Codex media import bridge.
  *
  * Codex's `imageGeneration.savedPath` and `imageView.path` are
  * arbitrary filesystem paths (e.g. `/tmp/codex-out.png`,
@@ -7,7 +7,7 @@
  * `MediaPreview` component requests these through
  * `/api/media/serve?path=...`, which deliberately allows ONLY paths
  * inside `~/.codepilot/.codepilot-media/` (directory-traversal
- * protection â€?see `src/app/api/media/serve/route.ts`). So a
+ * protection â€” see `src/app/api/media/serve/route.ts`). So a
  * MediaBlock with a `localPath` outside that directory gets a 403
  * from the serve route, and the image never renders.
  *
@@ -24,7 +24,7 @@
  * <img src=403>".
  *
  * Pure-base64 MediaBlocks (no `localPath`, only `data`) are passed
- * through untouched â€?`MediaPreview` renders those via `data:` URL
+ * through untouched â€” `MediaPreview` renders those via `data:` URL
  * and never hits the serve route.
  *
  * Already-imported blocks (those whose `localPath` is already inside
@@ -33,12 +33,12 @@
  */
 
 import path from 'path';
-import os from 'os';
 import {
   findReusableImportedFile,
   importFileToLibrary,
   stageFileForMediaPreview,
 } from '@/lib/media-saver';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
 import type { MediaBlock } from '@/types';
 import type { RuntimeRunEvent } from '@/lib/runtime/contract';
 
@@ -51,8 +51,7 @@ interface MaterializeOptions {
 }
 
 function getMediaDir(): string {
-  const dataDir = process.env.CLAUDE_GUI_DATA_DIR || path.join(os.homedir(), '.codepilot');
-  return path.resolve(dataDir, '.codepilot-media');
+  return path.resolve(resolveCodePilotDataDir(), '.codepilot-media');
 }
 
 function isInsideMediaDir(filePath: string): boolean {
@@ -64,7 +63,7 @@ function isInsideMediaDir(filePath: string): boolean {
 /**
  * Walk `event.media[]` and import any block whose `localPath` points
  * outside the media library. Returns a NEW event with rewritten media
- * â€?never mutates the input. If a block fails to import the function
+ * â€” never mutates the input. If a block fails to import the function
  * drops just that block; if every block fails the event is returned
  * with `media: undefined` so the chat side falls back to the
  * structured output card.
@@ -95,7 +94,7 @@ export function materializeCodexEventMedia(
       : '';
     const persistence = block.sourceMetadata?.persistence
       ?? (outputType === 'imageView' ? 'preview_only' : 'durable_asset');
-    // Foreign path â†?import into the library. Pull `prompt` + `model` from
+    // Foreign path â†’ import into the library. Pull `prompt` + `model` from
     // the block's sourceMetadata so a Codex-generated image lands in the
     // gallery with its real revised prompt + a recognizable model tag
     // ('codex-image'), not the meaningless temp filename.
@@ -158,7 +157,7 @@ export function materializeCodexEventMedia(
   }
 
   if (imported.length === 0) {
-    // Every block failed â†?emit the event without media so the chat
+    // Every block failed â†’ emit the event without media so the chat
     // side renders the structured output card instead of an empty
     // grid of broken images.
     const { media: _dropped, ...rest } = event;

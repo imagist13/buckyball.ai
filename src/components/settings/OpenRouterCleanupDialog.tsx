@@ -16,10 +16,10 @@ import type { TranslationKey } from "@/i18n";
 import { showToast } from "@/hooks/useToast";
 
 /**
- * "整理 OpenRouter 早期导入的目�? �?opt-in cleanup for users carrying
+ * "整理 OpenRouter 早期导入的目录" — opt-in cleanup for users carrying
  * the 300+ rows from old auto-materialization. Two-step:
- *   1. Open dialog �?preview fetch lists candidate rows
- *   2. Confirm �?bulk hide (rows stay in DB, enabled=0, marked manual_hidden)
+ *   1. Open dialog → preview fetch lists candidate rows
+ *   2. Confirm → bulk hide (rows stay in DB, enabled=0, marked manual_hidden)
  *
  * The server's WHERE clause guarantees `manual_enabled` / `manual_hidden`
  * / `user_edited=1` rows are excluded. Description copy spells that out
@@ -156,7 +156,7 @@ export function OpenRouterCleanupDialog({
           {loading && (
             <div className="flex items-center justify-center py-12 text-muted-foreground gap-2">
               <SpinnerGap size={16} className="animate-spin" />
-              <span className="text-xs">�?/span>
+              <span className="text-xs">…</span>
             </div>
           )}
           {fetchError && !loading && (

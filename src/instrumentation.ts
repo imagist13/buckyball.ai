@@ -1,10 +1,10 @@
 /**
- * Next.js instrumentation hook â€?runs once when the server starts.
+ * Next.js instrumentation hook â€” runs once when the server starts.
  * Used to initialize runtime log capture for the Doctor export feature.
  *
  * Sentry server-side init is gated behind a non-development guard. The
  * `@sentry/node` package eagerly registers a chain of `@opentelemetry/*`
- * instrumentations (HTTP, fs, dns, undici, â€? on import â€?under
+ * instrumentations (HTTP, fs, dns, undici, â€¦) on import â€” under
  * `next dev` with Turbopack this graph is one of the heaviest single
  * contributors to the dev-server RSS floor, and we don't ship dev-only
  * crashes anywhere. Production / packaged builds keep the original
@@ -12,7 +12,7 @@
  * `~/.codepilot/sentry-disabled` opt-out marker, and call `Sentry.init`.
  *
  * `initRuntimeLog()` and `ensureSchedulerRunning()` deliberately stay
- * OUTSIDE the dev-guard â€?runtime-log capture and persisted task
+ * OUTSIDE the dev-guard â€” runtime-log capture and persisted task
  * scheduling have to work in `next dev` too.
  *
  * Locked in by `src/__tests__/unit/instrumentation-shape.test.ts`.
@@ -29,11 +29,11 @@ export async function register() {
       // Initialize Sentry for server-side error capture (respects opt-out marker file)
       const fs = await import('fs');
       const path = await import('path');
-      const os = await import('os');
+      const { resolveCodePilotDataDir } = await import('@/lib/codepilot-data-dir');
       const { configureNextServerIntegrations, resolveTelemetryConfig, TELEMETRY_IGNORE_ERRORS } = await import('@/lib/telemetry/contract');
-      const { isProviderFailureHandled } = await import('@/lib/telemetry/provider-marker');
+      const { isTelemetryFailureHandled } = await import('@/lib/telemetry/provider-marker');
       const { sanitizeTelemetryBreadcrumb, sanitizeTelemetryEvent } = await import('@/lib/telemetry/sanitize');
-      const markerPath = path.join(os.homedir(), '.codepilot', 'sentry-disabled');
+      const markerPath = path.join(resolveCodePilotDataDir(), 'sentry-disabled');
       const optedOut = fs.existsSync(markerPath) && fs.readFileSync(markerPath, 'utf-8').trim() === 'true';
       const config = resolveTelemetryConfig({
         dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -63,7 +63,7 @@ export async function register() {
             return sanitizeTelemetryBreadcrumb(breadcrumb);
           },
           beforeSend(event, hint) {
-            if (isProviderFailureHandled(hint.originalException)) return null;
+            if (isTelemetryFailureHandled(hint.originalException)) return null;
             return sanitizeTelemetryEvent(event, {
               layer: 'next_server',
               channel: config.channel,

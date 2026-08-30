@@ -1,5 +1,5 @@
 /**
- * Phase 8 Phase 2 â€?Codex thread start/resume MCP injection.
+ * Phase 8 Phase 2 â€” Codex thread start/resume MCP injection.
  *
  * Run: npx tsx --test src/__tests__/unit/codex-mcp-injection.test.ts
  *
@@ -22,7 +22,7 @@ const MCP: CodexMcpServersConfig = {
   codepilot_memory: { url: 'http://127.0.0.1:3000/api/codex/mcp/memory', http_headers: { 'x-codepilot-workspace-path': '/ws' } },
 };
 
-describe('buildCodexThreadParams â€?MCP merge', () => {
+describe('buildCodexThreadParams â€” MCP merge', () => {
   it('codex_account branch carries mcp_servers only (no model_providers / modelProvider)', () => {
     const params = buildCodexThreadParams({
       providerId: 'codex_account',
@@ -82,7 +82,7 @@ describe('buildCodexThreadParams â€?MCP merge', () => {
   });
 });
 
-describe('runtime.ts â€?start/resume injection wiring (source pins)', () => {
+describe('runtime.ts â€” start/resume injection wiring (source pins)', () => {
   const runtimeSrc = fs.readFileSync(
     path.resolve(__dirname, '../../lib/codex/runtime.ts'),
     'utf-8',

@@ -22,7 +22,7 @@ export interface CodexNamespaceTools {
 }
 
 /**
- * Codex's native collaboration namespace cannot honour buckyball.ai's exact
+ * Codex's native collaboration namespace cannot honour CodePilot's exact
  * cross-Provider routes. Exposing it beside `codepilot_spawn_subagent` lets
  * the parent model launch an inherited-model worker as well as the requested
  * managed child, producing duplicate runs and misleading "Codex worker"

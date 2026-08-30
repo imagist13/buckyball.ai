@@ -1,27 +1,27 @@
 /**
- * Harness Context Compiler â?single pure function that produces the
+ * Harness Context Compiler — single pure function that produces the
  * system prompt + tool surface + artifact contracts that any Runtime
- * adapter (ClaudeCode SDK, buckyball.ai Native, Codex Runtime via
+ * adapter (ClaudeCode SDK, CodePilot Native, Codex Runtime via
  * provider proxy) feeds to the model.
  *
  * Phase 5d Phase 2 (2026-05-17).
  *
- * ââ What this module is ââââââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module is ────────────────────────────────────────────
  *
  * `compileContext(input)` returns a `CompiledContext` describing what
  * to inject + in what order + how much budget went to each category.
- * The compiler is a PURE FUNCTION: same input â?same output, no IO,
+ * The compiler is a PURE FUNCTION: same input → same output, no IO,
  * no network calls, no Date.now / random reads, no provider calls.
  * That property is what makes the compiler testable in isolation and
  * what lets Phase 3 Runtime Capability Adapters layer on a single
  * deterministic input.
  *
  * Each runtime's adapter calls the compiler ONCE per turn and then
- * adapts the output â?it does NOT re-build prompt text, re-paraphrase
+ * adapts the output — it does NOT re-build prompt text, re-paraphrase
  * capability rules, or re-define artifact wire formats. The compiler
  * is the only producer of capability-level prompt fragments.
  *
- * ââ What this module is NOT ââââââââââââââââââââââââââââââââââââââââ
+ * ── What this module is NOT ────────────────────────────────────────
  *
  * Compiler does not:
  *   - execute tools (those stay in MCP / AI SDK / bridge factories)
@@ -33,7 +33,7 @@
  *   - mutate session state
  *   - make permission decisions (consumes the hint, does not round-trip)
  *
- * ââ Source-of-truth references âââââââââââââââââââââââââââââââââââââ
+ * ── Source-of-truth references ─────────────────────────────────────
  *
  *   - Capability catalog: `src/lib/harness/capability-contract.ts`
  *   - Widget wire format: `src/lib/widget-guidelines.ts`
@@ -54,9 +54,9 @@ import {
   CANONICAL_SHOW_WIDGET_JSON,
 } from '@/lib/widget-guidelines';
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Input types
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface AssistantMemorySnapshot {
   /** Pre-fetched recent daily memory entries. Compiler does NOT read
@@ -89,7 +89,7 @@ export interface CompilerInput {
   /** Model id. Same rationale as providerId. */
   readonly model: string;
   /** The user's prompt. Compiler does not parse it for keyword
-   *  gating â?that's the caller's job. Kept on input for adapters
+   *  gating — that's the caller's job. Kept on input for adapters
    *  that want to attach it as diagnostic context. */
   readonly userPrompt: string;
   /** Capabilities the caller authorises. `null` means "default to
@@ -122,12 +122,12 @@ export interface CompilerInput {
   readonly flags?: Readonly<Record<string, boolean>>;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Output types
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 interface FragmentBase {
-  /** Stable id. Drift tests pin against this â?never derive a model-
+  /** Stable id. Drift tests pin against this — never derive a model-
    *  facing string from a fragmentId. */
   readonly fragmentId: string;
   /** Capability id (from `capability-contract.ts`) the fragment
@@ -194,7 +194,7 @@ export interface NativeHints {
 }
 
 export interface CodexProxyHints {
-  /** Names the Codex bridge translates from `tool-call` â?no
+  /** Names the Codex bridge translates from `tool-call` → no
    *  Responses function_call (suppression set). */
   readonly builtinToolNames: ReadonlySet<string>;
   /** Multi-step ai-sdk stopWhen mode. */
@@ -232,7 +232,7 @@ export interface BudgetReport {
 
 export interface CompiledContext {
   /** Runtime-agnostic CodePilot opening (always empty in Phase 2;
-   *  each Runtime still owns its own framing for now â?adapters
+   *  each Runtime still owns its own framing for now — adapters
    *  prepend their Runtime-specific header to `systemPromptText`). */
   readonly basePrompt: string;
   readonly capabilityFragments: readonly CapabilityFragment[];
@@ -241,7 +241,7 @@ export interface CompiledContext {
   readonly workspaceFragments: readonly WorkspaceFragment[];
   readonly toolDescriptors: readonly ToolDescriptor[];
   /** Runtime-specific adapter hints. Each Hints type is strictly
-   *  IDs / refs / adapter options â?NO prose, NO paraphrase, NO tool
+   *  IDs / refs / adapter options — NO prose, NO paraphrase, NO tool
    *  schema redefinition. Source of every model-facing string must
    *  be a fragment with `sourceFile + sourceExport`, NOT a hint. */
   readonly runtimeHints: {
@@ -251,7 +251,7 @@ export interface CompiledContext {
   };
   readonly budget: BudgetReport;
   /** Pre-assembled system prompt. Consumers SHOULD prefer this over
-   *  re-assembling from individual fragments â?that avoids drift. */
+   *  re-assembling from individual fragments — that avoids drift. */
   readonly systemPromptText: string;
   readonly diagnostics: {
     readonly droppedFragments: readonly DroppedFragment[];
@@ -260,12 +260,12 @@ export interface CompiledContext {
   };
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Helpers
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 /** Cheap char/4 token estimate. Good enough for budget enforcement
- *  in Phase 2 â?accuracy < Â±20% across all current model families.
+ *  in Phase 2 — accuracy < ±20% across all current model families.
  *  If a runtime later observes systematic budget under/overshoot,
  *  swap this for a model-specific tokenizer. */
 function estimateTokens(text: string): number {
@@ -275,13 +275,14 @@ function estimateTokens(text: string): number {
 /**
  * The AI SDK multi-step ceiling for Codex Runtime when the bridge has
  * mounted at least one CodePilot built-in tool. 8 is the empirical
- * value pinned by Phase 5c smoke (memory â?image gen â?narration â? * schedule task chains). Lives here so the proxy adapter no longer
+ * value pinned by Phase 5c smoke (memory → image gen → narration →
+ * schedule task chains). Lives here so the proxy adapter no longer
  * keeps a parallel `BUILTIN_BRIDGE_STEP_LIMIT` constant that could
  * drift from the compiler hint.
  */
 const CODEX_BRIDGE_STEP_LIMIT = 8;
 
-/** Map `RuntimeId` (canonical runtime label) â?the
+/** Map `RuntimeId` (canonical runtime label) → the
  *  `capability.exposure` key (machine-friendly exposure-method label).
  *  These intentionally differ: RuntimeId is product-facing; exposure
  *  keys describe HOW each runtime hosts the capability. */
@@ -291,7 +292,7 @@ function exposureKeyForRuntime(
   switch (runtimeId) {
     case 'claude_code':
       return 'claudecode_sdk';
-    case 'bbagent':
+    case 'codepilot_runtime':
       return 'native';
     case 'codex_runtime':
       return 'codex_proxy';
@@ -310,7 +311,7 @@ function resolveEnabledCapabilities(
 }
 
 /** Build a capability fragment from a contract entry. Returns null if
- *  the runtime's exposure for this capability is `unsupported` â?in
+ *  the runtime's exposure for this capability is `unsupported` — in
  *  that case the capability is not exposed in this runtime. */
 function buildCapabilityFragment(
   cap: CapabilityContract,
@@ -380,7 +381,7 @@ function deriveSourceExport(cap: CapabilityContract): string {
 
 /** Build an artifact-contract fragment if the capability has one.
  *  This is the SOLE source of the wire-format spec for that
- *  artifact â?the capability fragment must NOT also embed it. */
+ *  artifact — the capability fragment must NOT also embed it. */
 function buildArtifactContract(
   cap: CapabilityContract,
 ): ArtifactContractFragment | null {
@@ -444,7 +445,7 @@ function buildMemoryFragments(
 
 /** Sanity check: capability fragment text must NOT embed an artifact
  *  contract's canonicalJson. If it does the compiler is about to
- *  duplicate the wire spec â?fail loudly. */
+ *  duplicate the wire spec — fail loudly. */
 function detectWireFormatDuplication(
   capFragments: readonly CapabilityFragment[],
   artifactContracts: readonly ArtifactContractFragment[],
@@ -455,7 +456,7 @@ function detectWireFormatDuplication(
       if (cap.sourceCapability === ac.sourceCapability) {
         if (cap.text.includes(ac.canonicalJson)) {
           errors.push(
-            `Capability fragment "${cap.fragmentId}" embeds the artifact contract's canonicalJson â?this would duplicate the wire format in the compiled prompt. Strip the spec from the capability source (e.g. WIDGET_SYSTEM_PROMPT should not embed WIDGET_WIRE_FORMAT_SPEC).`,
+            `Capability fragment "${cap.fragmentId}" embeds the artifact contract's canonicalJson — this would duplicate the wire format in the compiled prompt. Strip the spec from the capability source (e.g. WIDGET_SYSTEM_PROMPT should not embed WIDGET_WIRE_FORMAT_SPEC).`,
           );
         }
       }
@@ -464,9 +465,9 @@ function detectWireFormatDuplication(
   return errors;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Compiler
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export function compileContext(input: CompilerInput): CompiledContext {
   const exposureKey = exposureKeyForRuntime(input.runtimeId);
@@ -542,7 +543,7 @@ export function compileContext(input: CompilerInput): CompiledContext {
       }
     }
     // Tool descriptors (one per declared tool name; the compiler
-    // doesn't know per-tool schemas â?those stay in MCP / AI SDK /
+    // doesn't know per-tool schemas — those stay in MCP / AI SDK /
     // bridge factories).
     for (const toolName of cap.toolNames) {
       if (input.availableToolNames && !input.availableToolNames.has(toolName)) {
@@ -578,14 +579,14 @@ export function compileContext(input: CompilerInput): CompiledContext {
   // Memory fragments (from pre-fetched snapshot).
   const memoryFragments = buildMemoryFragments(input.assistantMemory);
 
-  // Workspace fragments â?Phase 2 minimum: none. Future phases will
+  // Workspace fragments — Phase 2 minimum: none. Future phases will
   // populate from workspace hooks / rules pre-fetched by caller.
   const workspaceFragments: WorkspaceFragment[] = [];
 
   const basePrompt = '';
   const dropped: DroppedFragment[] = [];
 
-  // Build runtime hints â?strictly IDs / refs / adapter options.
+  // Build runtime hints — strictly IDs / refs / adapter options.
   // Mutable accumulator inside the function, then frozen into the
   // readonly shape via Object spread on return.
   const runtimeHintsBuilder: {
@@ -606,7 +607,7 @@ export function compileContext(input: CompilerInput): CompiledContext {
       mcpServerNames,
       allowedToolNames: toolDescriptors.map((t) => t.name),
     };
-  } else if (input.runtimeId === 'bbagent') {
+  } else if (input.runtimeId === 'codepilot_runtime') {
     runtimeHintsBuilder.native = {
       toolSetKeys: toolDescriptors.map((t) => t.name),
     };
@@ -621,10 +622,10 @@ export function compileContext(input: CompilerInput): CompiledContext {
   }
   const runtimeHints: CompiledContext['runtimeHints'] = runtimeHintsBuilder;
 
-  // Assemble system prompt text: artifactContracts â?capability
+  // Assemble system prompt text: artifactContracts → capability
   // fragments. Memory + workspace land in CompiledContext fields but
   // not in the system prompt itself (callers decide where they
-  // belong â?some adapters prepend to system prompt, some attach as
+  // belong — some adapters prepend to system prompt, some attach as
   // user-context messages).
   const systemPromptParts: string[] = [];
   if (basePrompt.length > 0) systemPromptParts.push(basePrompt);
@@ -632,7 +633,7 @@ export function compileContext(input: CompilerInput): CompiledContext {
   for (const c of capabilityFragments) systemPromptParts.push(c.text);
   const systemPromptText = systemPromptParts.join('\n\n');
 
-  // Budget â?compute per-category usage. Phase 2 doesn't actively
+  // Budget — compute per-category usage. Phase 2 doesn't actively
   // drop based on budget yet (most prompts are well under 4 KB); the
   // diagnostic record is populated so callers can observe usage.
   const tokenize = (frags: readonly { tokens: number }[]): number =>
@@ -708,8 +709,8 @@ function mcpServerForCapability(id: string): string | null {
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Re-export referenced canonicals so tests can import them in one go.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export { CANONICAL_SHOW_WIDGET_JSON, WIDGET_WIRE_FORMAT_SPEC };

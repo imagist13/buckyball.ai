@@ -1,0 +1,140 @@
+appId: com.codepilot.app
+productName: CodePilot
+publish:
+  provider: github
+  owner: op7418
+  repo: CodePilot
+directories:
+  output: release
+files:
+  - dist-electron/**/*
+  - "!dist-electron/**/*.map"
+  - "!node_modules"
+  - "!src"
+  - "!electron"
+  - "!.next"
+  - "!build"
+  - "!scripts"
+  - "!docs"
+  - "!release"
+  - "!data"
+extraResources:
+  - from: .next/standalone/
+    to: standalone/
+    filter:
+      # Root runtime files only. Keep this set disjoint from the dedicated
+      # node_modules/ and .next/ FileSets below: electron-builder copies
+      # extraResources concurrently, and overlapping destinations can race on
+      # Windows with EBUSY while signing/copying the same file.
+      - "server.js"
+      - "package.json"
+      - "cache-handler.js"
+  - from: .next/standalone/node_modules/
+    to: standalone/node_modules/
+    filter: ["**/*", "!**/*.map"]
+  - from: .next/standalone/.next/
+    to: standalone/.next/
+    filter:
+      # electron-builder always filters a FileSet's root node_modules directory.
+      # Keep it explicitly disjoint here and copy it with the dedicated FileSet
+      # below so Next's hashed external-module aliases reach the packaged app.
+      - "**/*"
+      - "!node_modules{,/**/*}"
+      - "!**/*.map"
+  - from: .next/standalone/.next/node_modules/
+    to: standalone/.next/node_modules/
+    filter: ["**/*", "!**/*.map"]
+  - from: .next/static/
+    to: standalone/.next/static/
+    filter: ["**/*", "!**/*.map"]
+  - from: public/
+    to: standalone/public/
+    filter: ["**/*"]
+  - from: themes/
+    to: standalone/themes/
+    filter: ["*.json"]
+  - from: resources/macos-keychain-guard/
+    to: macos-keychain-guard/
+    filter: ["security"]
+  - from: build/
+    to: .
+    # icon.* = Dock/app/window icons; trayTemplate*.png = macOS menubar template
+    # (16x16 + @2x retina). Both land at process.resourcesPath root.
+    filter: ["icon.*", "trayTemplate*.png"]
+afterPack: scripts/after-pack.js
+afterSign: scripts/after-sign.js
+asarUnpack:
+  - "**/*.node"
+  - "**/better-sqlite3/**"
+mac:
+  icon: build/icon.icns
+  category: public.app-category.developer-tools
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  # Prebuilt per-architecture helpers and already-universal trash helpers are
+  # intentionally identical between the two app trees. Preserve only these
+  # exact runtime-selected files instead of attempting a second lipo. Native
+  # modules such as better-sqlite3/zlib-sync are deliberately excluded: they
+  # must differ per target so @electron/universal can merge their real slices.
+  x64ArchFiles: "Contents/Resources/standalone/{.next/server/assets/macos-trash.*,node_modules/{@anthropic-ai/claude-agent-sdk/vendor/{audio-capture/{arm64,x64}-darwin/audio-capture.node,ripgrep/{arm64,x64}-darwin/rg},@img/{sharp-darwin-arm64/lib/sharp-darwin-arm64.node,sharp-darwin-x64/lib/sharp-darwin-x64.node,sharp-libvips-darwin-arm64/lib/libvips-cpp.8.17.3.dylib,sharp-libvips-darwin-x64/lib/libvips-cpp.8.17.3.dylib},trash/lib/macos-trash}}"
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
+  # With no Apple credentials electron-builder skips notarization for explicit
+  # local ad-hoc smoke builds. Official stable/preview CI checks the API-key
+  # secrets before packaging, so distributable builds fail closed.
+  notarize: true
+  target:
+    - dmg
+    - zip
+dmg:
+  # DMGs are manual bootstrap assets. They are stapled after electron-builder
+  # writes update metadata, which changes their bytes. Keeping them out of the
+  # updater graph prevents a post-staple sha512 mismatch; macOS auto-update
+  # uses the signed/notarized ZIP and its external blockmap instead.
+  # Apple requires the distributed DMG container itself to carry the same
+  # Developer ID Application identity before it is notarized and stapled.
+  sign: true
+  writeUpdateInfo: false
+win:
+  icon: build/icon.ico
+  forceCodeSigning: true
+  verifyUpdateCodeSignature: true
+  signAndEditExecutable: true
+  signtoolOptions:
+    signingHashAlgorithms:
+      - sha256
+    rfc3161TimeStampServer: http://timestamp.digicert.com
+  target:
+    - nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  # Produce the external installer blockmap consumed by electron-updater.
+  # Differential download remains opportunistic and falls back to the full
+  # NSIS installer when the previous installer or either blockmap is missing.
+  differentialPackage: true
+  # Let users pick the install location — Windows feedback: the installer
+  # offered no path choice. Requires oneClick:false (kept above).
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  deleteAppDataOnUninstall: false
+  artifactName: "${productName}.Setup.${version}.${ext}"
+linux:
+  icon: build/icon.png
+  category: Development
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  desktop:
+    entry:
+      Name: CodePilot
+      Comment: A native desktop GUI for Claude Code
+      Categories: Development;IDE;
+      StartupWMClass: codepilot
+  # arch is NOT specified here — controlled by CI via --x64 / --arm64 CLI flags.
+  # Listing both arches here causes electron-builder to build both on every job,
+  # which fails when cross-compiling native modules (zlib-sync -m64 on arm64).
+  target:
+    - AppImage
+    - deb
+    - rpm

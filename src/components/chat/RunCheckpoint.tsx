@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * RunCheckpoint ‚Ä?single inline-banner component that renders the
+ * RunCheckpoint ‚Äî single inline-banner component that renders the
  * trust-layer reasons returned from `buildCheckpoints`. Lives in the
  * chat composer area, above MessageInput.
  *
@@ -10,7 +10,7 @@
  *   - One severity tone per reason: error (red) / warning (amber) /
  *     info (blue), driven by `tone` from the builder
  *   - One primary action per banner (label + nav target)
- *   - Renders nothing when reasons[] is empty ‚Ä?composer stays as-is
+ *   - Renders nothing when reasons[] is empty ‚Äî composer stays as-is
  *
  * Existing scattered banners (RateLimitBanner / TerminalReasonChip /
  * PermissionPrompt / chat-page invalid-default) remain in place for
@@ -44,7 +44,7 @@ interface RunCheckpointProps {
 const TONE_CLASSES: Record<CheckpointTone, string> = {
   // Same tokens as TerminalReasonChip and RateLimitBanner so the three
   // surfaces read as the same visual family even though the state
-  // machines are distinct (Round 1 unification ‚Ä?see plan ¬ßB).
+  // machines are distinct (Round 1 unification ‚Äî see plan ¬ßB).
   error: 'border-status-error-muted bg-status-error-muted text-status-error-foreground',
   warning: 'border-status-warning-muted bg-status-warning-muted text-status-warning-foreground',
   info: 'border-status-info-muted bg-status-info-muted text-status-info-foreground',
@@ -71,11 +71,11 @@ export function RunCheckpoint({ reasons, className, onAction }: RunCheckpointPro
         const Icon = TONE_ICON[reason.tone];
         const handleAction = () => {
           // Precedence:
-          //   1. confirm-* actionId + onAction ‚Ü?invoke handler (Round 2
+          //   1. confirm-* actionId + onAction ‚Üí invoke handler (Round 2
           //      "confirm and send" wiring; the page sets state +
           //      dispatches the run-checkpoint-confirm-send event).
-          //   2. explicit onClick ‚Ü?invoke
-          //   3. href ‚Ü?router.push
+          //   2. explicit onClick ‚Üí invoke
+          //   3. href ‚Üí router.push
           // We deliberately DO NOT invoke onAction for open-* actionIds
           // (open-providers / open-runtime). Those reasons carry an
           // href and the user expects "ÂâçÂæÄ‰øÆÂ§ç" to navigate to settings.
@@ -93,7 +93,7 @@ export function RunCheckpoint({ reasons, className, onAction }: RunCheckpointPro
             return;
           }
           if (reason.action?.href) {
-            // `/settings/xxx` route-level paths ‚Ä?Next.js router.push handles
+            // `/settings/xxx` route-level paths ‚Äî Next.js router.push handles
             // SPA navigation directly into the section without paying the
             // /settings root redirect compile cost.
             router.push(reason.action.href);

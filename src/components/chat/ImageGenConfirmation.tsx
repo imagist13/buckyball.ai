@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageGenCard } from './ImageGenCard';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePanel } from '@/hooks/usePanel';
 import type { TranslationKey } from '@/i18n';
@@ -17,7 +17,7 @@ import type { ReferenceImage } from '@/types';
  * the now-deleted hooks/useImageGen module, which carried a dead toggle
  * that was never user-reachable. The shape mirrors the response of
  * `/api/media/generate`, which is what `ImageGenConfirmation` actually
- * fetches â?no React context needed.
+ * fetches — no React context needed.
  */
 export interface ImageGenResult {
   id: string;
@@ -50,7 +50,7 @@ interface ImageGenConfirmationProps {
   initialPrompt: string;
   initialAspectRatio: string;
   initialResolution: string;
-  /** The original raw ```image-gen-request...``` block â?used for exact DB matching */
+  /** The original raw ```image-gen-request...``` block — used for exact DB matching */
   rawRequestBlock?: string;
   referenceImages?: ReferenceImage[];
 }
@@ -175,7 +175,7 @@ export function ImageGenConfirmation({
         id: data.id,
         text: data.text,
         images: data.images || [],
-        // The generate endpoint echoes the resolved model id â?carry it into
+        // The generate endpoint echoes the resolved model id — carry it into
         // the completed card so the badge reflects the *actual* model that
         // ran (may differ from activeInfo if the user toggled mid-request).
         model: data.model,
@@ -214,7 +214,7 @@ export function ImageGenConfirmation({
           });
           doPut().then(r => {
             if (!r.ok && !messageId) {
-              // Retry after 3s â?message should be persisted by then
+              // Retry after 3s — message should be persisted by then
               setTimeout(() => doPut().catch(() => {}), 3000);
             }
           }).catch(() => {
@@ -258,7 +258,7 @@ export function ImageGenConfirmation({
     setStatus('idle');
   }, []);
 
-  // ââ Completed: show result only ââ
+  // ── Completed: show result only ──
   if (status === 'completed' && result && result.images.length > 0) {
     // Prefer the model the backend actually ran; fall back to the label we
     // fetched for the active provider if the generate endpoint didn't echo
@@ -283,29 +283,29 @@ export function ImageGenConfirmation({
     );
   }
 
-  // ââ Idle / Generating / Error: show params card ââ
+  // ── Idle / Generating / Error: show params card ──
   return (
     <div className="rounded-lg border border-border/50 bg-card overflow-hidden my-2">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-border/30 bg-muted/30">
         <span className="text-sm font-medium">{t('imageGen.confirmTitle' as TranslationKey)}</span>
         {/* Active-model badge. Three possible states:
-              â?Healthy active provider â?show `<ModelLabel> Â· <ProviderName>`
-              â?Stored active is stale (key cleared / type changed / deleted)
-                â?muted warning chip pointing the user at Settings
-              â?No active set at all (fresh install) â?muted hint
+              • Healthy active provider → show `<ModelLabel> · <ProviderName>`
+              • Stored active is stale (key cleared / type changed / deleted)
+                → muted warning chip pointing the user at Settings
+              • No active set at all (fresh install) → muted hint
             The endpoint already computes the modelLabel + stale flag; we
             just map them to the three UI variants here. */}
         {activeInfo && !activeInfo.stale && activeInfo.modelLabel ? (
           <span
             className="inline-flex items-center gap-1 text-[11px] text-muted-foreground max-w-[55%] min-w-0"
-            title={`${activeInfo.modelLabel} Â· ${activeInfo.providerName ?? ''}`}
+            title={`${activeInfo.modelLabel} · ${activeInfo.providerName ?? ''}`}
           >
-            <BuckyballIcon name="appearance" size={12} className="shrink-0" aria-hidden />
+            <CodePilotIcon name="appearance" size={12} className="shrink-0" aria-hidden />
             <span className="truncate">
               <span className="text-foreground/80">{activeInfo.modelLabel}</span>
               {activeInfo.providerName ? (
-                <span className="ml-1 text-muted-foreground/80">Â· {activeInfo.providerName}</span>
+                <span className="ml-1 text-muted-foreground/80">· {activeInfo.providerName}</span>
               ) : null}
             </span>
           </span>
@@ -315,7 +315,7 @@ export function ImageGenConfirmation({
             className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400 hover:underline"
             title={t('imageGen.activeProviderStaleHint' as TranslationKey)}
           >
-            <BuckyballIcon name="appearance" size={12} className="shrink-0" aria-hidden />
+            <CodePilotIcon name="appearance" size={12} className="shrink-0" aria-hidden />
             <span>{t('imageGen.activeProviderStale' as TranslationKey)}</span>
           </a>
         ) : activeInfo ? (
@@ -323,14 +323,14 @@ export function ImageGenConfirmation({
             href="/settings/providers"
             className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground hover:underline"
           >
-            <BuckyballIcon name="appearance" size={12} className="shrink-0" aria-hidden />
+            <CodePilotIcon name="appearance" size={12} className="shrink-0" aria-hidden />
             <span>{t('imageGen.noActiveProvider' as TranslationKey)}</span>
           </a>
         ) : null}
       </div>
 
       <div className="p-4 space-y-3">
-        {/* Reference images preview â?unified loop over all reference images */}
+        {/* Reference images preview — unified loop over all reference images */}
         {referenceImages && referenceImages.length > 0 && (
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">

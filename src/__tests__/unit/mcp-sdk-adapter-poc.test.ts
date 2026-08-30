@@ -1,26 +1,26 @@
 /**
- * mcp-sdk-adapter-poc.test.ts �?AI SDK 7 Phase 4 �? @ai-sdk/mcp adapter POC
+ * mcp-sdk-adapter-poc.test.ts — AI SDK 7 Phase 4 ④: @ai-sdk/mcp adapter POC
  * evidence (src/lib/experimental/mcp-sdk-adapter-poc.ts).
  *
  * The fixture MCP server is a REAL @modelcontextprotocol/sdk `Server`
- * connected over `InMemoryTransport.createLinkedPair()` �?every tool call in
+ * connected over `InMemoryTransport.createLinkedPair()` — every tool call in
  * this file crosses a genuine MCP JSON-RPC session (initialize handshake,
  * tools/list, tools/call), driven from the @ai-sdk/mcp `createMCPClient`.
  *
  * Coverage per the required check:
  *   - read-only tool (fixture_read_note) executes through the adapter AND
- *     the REAL production permission wrapper (default-ask �?approve), and
+ *     the REAL production permission wrapper (default-ask → approve), and
  *     the approval token issued on the permission_request event verifies
- *     against the persisted expiry (�?and �?compose).
- *   - write/approval tool (fixture_write_note): deny �?denial string AND the
- *     server-side write did NOT happen (反例); approve �?write happened.
+ *     against the persisted expiry (② and ④ compose).
+ *   - write/approval tool (fixture_write_note): deny → denial string AND the
+ *     server-side write did NOT happen (反例); approve → write happened.
  *   - naming contract `mcp__{server}__{tool}` pinned (permission rules key
  *     on it).
  *   - result-extraction parity with mcp-tool-adapter.ts on canned MCP result
  *     shapes (multi-text join, isError, non-content fallback).
  *
  * Zero-regression for the EXISTING MCP path is carried by the untouched
- * production files (mcp-connection-manager.ts / mcp-tool-adapter.ts �?see
+ * production files (mcp-connection-manager.ts / mcp-tool-adapter.ts — see
  * diff) plus the existing suite (mcp-loader / builtin-mcp-catalog /
  * mcp-config / project-mcp-injection) staying green.
  */
@@ -50,7 +50,7 @@ import type { SSEEvent } from '@/types';
 
 // ── Fixture MCP server (real protocol, in-memory pipe) ──────────
 
-const NOTE_CONTENT = 'POC NOTE CONTENT �?read-only fixture payload';
+const NOTE_CONTENT = 'POC NOTE CONTENT — read-only fixture payload';
 const serverWrites: string[] = [];
 
 function buildFixtureServer(): Server {
@@ -107,7 +107,7 @@ before(async () => {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   server = buildFixtureServer();
   await server.connect(serverTransport);
-  // Structural match: @modelcontextprotocol Transport �?@ai-sdk/mcp MCPTransport
+  // Structural match: @modelcontextprotocol Transport ⊇ @ai-sdk/mcp MCPTransport
   client = await connectMcpSdkClientPoc(clientTransport as unknown as MCPTransport);
   pocTools = await buildMcpSdkToolSetPoc(client, 'fixture');
 });
@@ -150,7 +150,7 @@ function permissionHarness() {
 
 // ── Contract point 1: naming + schema ────────────────────────────
 
-describe('@ai-sdk/mcp adapter POC �?tool naming contract', () => {
+describe('@ai-sdk/mcp adapter POC — tool naming contract', () => {
   it('exposes fully qualified mcp__{server}__{tool} names with descriptions', () => {
     assert.deepEqual(
       Object.keys(pocTools).sort(),
@@ -163,7 +163,7 @@ describe('@ai-sdk/mcp adapter POC �?tool naming contract', () => {
 
 // ── Read-only tool through real permission flow (approve) ────────
 
-describe('@ai-sdk/mcp adapter POC �?read-only tool', () => {
+describe('@ai-sdk/mcp adapter POC — read-only tool', () => {
   it('default-ask is preserved; approve executes over the real MCP session', async () => {
     const h = permissionHarness();
     const pending = h.nextPermissionRequest();
@@ -171,7 +171,7 @@ describe('@ai-sdk/mcp adapter POC �?read-only tool', () => {
 
     const req = await pending;
     assert.equal(req.toolName, 'mcp__fixture__fixture_read_note');
-    // �?composes with �? the event carries a verifying approval token.
+    // ② composes with ④: the event carries a verifying approval token.
     const dbRow = getPermissionRequest(req.permissionRequestId);
     assert.ok(dbRow, 'permission request persisted');
     assert.ok(
@@ -188,7 +188,7 @@ describe('@ai-sdk/mcp adapter POC �?read-only tool', () => {
 
 // ── Write tool: deny blocks the server-side effect (反例) ────────
 
-describe('@ai-sdk/mcp adapter POC �?write/approval tool', () => {
+describe('@ai-sdk/mcp adapter POC — write/approval tool', () => {
   it('deny returns the denial string AND the server-side write does not happen', async () => {
     const before_ = serverWrites.length;
     const h = permissionHarness();
@@ -218,7 +218,7 @@ describe('@ai-sdk/mcp adapter POC �?write/approval tool', () => {
 
 // ── Contract point 2: result-extraction parity ───────────────────
 
-describe('@ai-sdk/mcp adapter POC �?result extraction parity with mcp-tool-adapter', () => {
+describe('@ai-sdk/mcp adapter POC — result extraction parity with mcp-tool-adapter', () => {
   it('joins multiple text blocks with newline (production behavior)', () => {
     assert.equal(
       extractMcpResultText({ content: [{ type: 'text', text: 'a' }, { type: 'image', data: 'x' }, { type: 'text', text: 'b' }] }),
@@ -226,7 +226,7 @@ describe('@ai-sdk/mcp adapter POC �?result extraction parity with mcp-tool-adap
     );
   });
 
-  it('prefixes Error: on isError results �?live via the real fixture_error tool too', async () => {
+  it('prefixes Error: on isError results — live via the real fixture_error tool too', async () => {
     assert.equal(
       extractMcpResultText({ content: [{ type: 'text', text: 'boom' }], isError: true }),
       'Error: boom',

@@ -48,7 +48,7 @@ export function SplitColumn({ sessionId, isActive, onClose, onFocus }: SplitColu
           setProjectName(data.session.project_name || "");
           setSessionWorkingDir(data.session.working_directory || "");
 
-          // Resolve model: session â†?global default â†?provider's first â†?localStorage
+          // Resolve model: session â†’ global default â†’ provider's first â†’ localStorage
           const { resolveSessionModel } = await import("@/lib/resolve-session-model");
           if (cancelled) return;
           const resolved = await resolveSessionModel(data.session.model || "", data.session.provider_id || "");

@@ -443,7 +443,7 @@ async function startBrowserServer(): Promise<string> {
       saveXaiBrowserTokensIfActive(tokens, pending.controller.signal);
       state.lastError = undefined;
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(callbackHtml(true, 'Return to buckyball.ai. You may close this tab.'));
+      res.end(callbackHtml(true, 'Return to CodePilot. You may close this tab.'));
       pending.resolve();
     } catch (error) {
       const safeMessage = error instanceof Error ? error.message : String(error);

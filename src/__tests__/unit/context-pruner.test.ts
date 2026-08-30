@@ -10,7 +10,7 @@ import {
 } from '../../lib/context-pruner';
 
 // ────────────────────────────────────────────────────────────────
-// Test helpers �?build minimal ModelMessage shapes
+// Test helpers — build minimal ModelMessage shapes
 // ────────────────────────────────────────────────────────────────
 
 function userMsg(text: string): ModelMessage {
@@ -36,7 +36,7 @@ function toolMsg(toolCallId: string, resultText: string, toolName = 'Read'): Mod
 }
 
 // ────────────────────────────────────────────────────────────────
-// pruneOldToolResults (legacy) �?unchanged behavior
+// pruneOldToolResults (legacy) — unchanged behavior
 // ────────────────────────────────────────────────────────────────
 
 describe('pruneOldToolResults (legacy fixed-window mode)', () => {
@@ -107,7 +107,7 @@ describe('pruneOldToolResults (legacy fixed-window mode)', () => {
 });
 
 // ────────────────────────────────────────────────────────────────
-// pruneOldToolResultsByBudget �?enhanced mode
+// pruneOldToolResultsByBudget — enhanced mode
 // ────────────────────────────────────────────────────────────────
 
 describe('pruneOldToolResultsByBudget (enhanced)', () => {
@@ -218,8 +218,8 @@ describe('pruneOldToolResultsByBudget (enhanced)', () => {
   it('does not modify user or assistant text messages in the middle', () => {
     const msgs: ModelMessage[] = [
       userMsg('head'),
-      userMsg('middle user �?stays'),
-      assistantMsg('middle assistant �?stays'),
+      userMsg('middle user — stays'),
+      assistantMsg('middle assistant — stays'),
       userMsg('tail'),
     ];
     // Force pruning with a tiny budget

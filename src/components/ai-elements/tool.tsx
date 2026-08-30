@@ -17,7 +17,7 @@ import {
   Clock,
   XCircle,
 } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { createContext, isValidElement, useContext, useState } from "react";
 
 import { CodeBlock } from "./code-block";
@@ -109,7 +109,7 @@ export const ToolHeader = ({
       {...props}
     >
       <div className="flex items-center gap-2">
-        <BuckyballIcon name="wrench" size="md" className="text-muted-foreground" aria-hidden />
+        <CodePilotIcon name="wrench" size="md" className="text-muted-foreground" aria-hidden />
         <span className="font-medium text-sm">{title ?? derivedName}</span>
         {getStatusBadge(state)}
       </div>

@@ -2,11 +2,11 @@
  * Unit tests for Feishu App Registration state machine.
  *
  * Covers:
- * - startRegistration â€?successful begin response parsing, session persistence
- * - pollRegistration â€?authorization_pending (keeps waiting), slow_down (increases interval),
+ * - startRegistration â€” successful begin response parsing, session persistence
+ * - pollRegistration â€” authorization_pending (keeps waiting), slow_down (increases interval),
  *   access_denied (failed + user_denied code), expired_token (expired + timeout code),
  *   successful completion writes credentials to DB + returns completed
- * - Lark fallback â€?empty client_secret + tenant_brand=lark switches to larksuite endpoint
+ * - Lark fallback â€” empty client_secret + tenant_brand=lark switches to larksuite endpoint
  *   and continues polling if Lark returns authorization_pending
  * - Error code contract (timeout / user_denied / empty_credentials / lark_empty_credentials)
  * - cancelRegistration removes the session from memory
@@ -216,7 +216,7 @@ describe('pollRegistration', () => {
   });
 });
 
-describe('pollRegistration â€?Lark fallback', () => {
+describe('pollRegistration â€” Lark fallback', () => {
   let sessionId: string;
 
   beforeEach(async () => {
@@ -381,7 +381,7 @@ describe('cancelRegistration', () => {
   });
 });
 
-describe('pollRegistration â€?terminal states are idempotent', () => {
+describe('pollRegistration â€” terminal states are idempotent', () => {
   it('does not re-poll after completion', async () => {
     globalThis.fetch = mockFetch(new Map([
       [FEISHU_REG_URL, [
@@ -410,7 +410,7 @@ describe('pollRegistration â€?terminal states are idempotent', () => {
     assert.equal(first.status, 'completed');
 
     // Second poll should return the same session without additional fetch calls
-    // (no more mocks queued â€?would throw if fetch was called)
+    // (no more mocks queued â€” would throw if fetch was called)
     const second = await feishuReg.pollRegistration(r.sessionId);
     assert.equal(second.status, 'completed');
     assert.equal(second.appId, 'cli_idem');

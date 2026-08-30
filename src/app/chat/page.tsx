@@ -6,14 +6,10 @@ import type { Message, SSEEvent, SessionResponse, TokenUsage, PermissionRequestE
 import type { SessionPermissionProfile } from '@/lib/permission/profile';
 import { MessageList } from '@/components/chat/MessageList';
 import { MessageInput, composerDraftKey } from '@/components/chat/MessageInput';
-import { ChatComposerActionBar } from '@/components/chat/ChatComposerActionBar';
-import { ModeIndicator } from '@/components/chat/ModeIndicator';
 import { ChatPermissionSelector } from '@/components/chat/ChatPermissionSelector';
-import { RuntimeSelector } from '@/components/chat/RuntimeSelector';
-import { agentRuntimeToChatRuntime, effectiveChatRuntime } from '@/lib/chat-runtime-shared';
+import { effectiveChatRuntime } from '@/lib/chat-runtime-shared';
 import { toWireEffort, resolveModelSwitchEffortEffect } from '@/lib/effort-levels';
 import { refreshSessionTitle } from '@/lib/session-title-events';
-import type { ChatRuntime } from '@/lib/chat-runtime-shared';
 import { PermissionPrompt } from '@/components/chat/PermissionPrompt';
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState';
 import { NewChatWelcome } from '@/components/chat/NewChatWelcome';
@@ -27,11 +23,11 @@ import { buildCheckpoints } from '@/lib/run-checkpoint';
 // fans out to 6+ /api endpoints + transitively pulls runtime/effective
 // + provider-catalog). RunCheckpoint now only carries session-scoped
 // "can this send go through" reasons; full health signals belong to
-// /settings/health and the lazy RunCockpit popover. RuntimeSelector
+// /settings/health and the lazy RunCockpit popover. The unified picker
 // only needs the global agent_runtime label, which the lightweight
 // hook below fetches from /api/settings/app alone.
 // `computeEffectiveRuntime` and `useClaudeStatus` were here ONLY to
-// compute `runtimeFallback` for the checkpoint banner â€?that signal
+// compute `runtimeFallback` for the checkpoint banner â€” that signal
 // was global health, not session blocking, so it's no longer surfaced
 // at the chat first-paint. See chat-static-graph.test.ts.
 import { useGlobalAgentRuntime } from '@/hooks/useGlobalAgentRuntime';
@@ -46,7 +42,7 @@ import {
 } from '@/hooks/useSSEStream';
 import { seedSnapshotPatch } from '@/lib/stream-session-manager';
 import { createFirstTurnNavGuard, type FirstTurnNavGuard } from '@/lib/first-turn-navigation';
-// `runtime/effective` stays â€?it's needed for the local resolver effect
+// `runtime/effective` stays â€” it's needed for the local resolver effect
 // that produces `invalidDefault` (runtime-aware pinned-default check).
 // That's the only contributor to RunCheckpoint's pinned-invalid
 // reason on the new-chat page.
@@ -73,8 +69,8 @@ export default function NewChatPage() {
   // NewChatPage was previously reading window.location.search inside a
   // `useMemo([])` to avoid that wrapper, but `useMemo([])` only runs once
   // per mount, so URL changes after mount (e.g. router.push to
-  // /chat?prefill=â€?while /chat is already mounted, or back-forward
-  // navigation) didn't update `prefillText`. Result: Tasks page â†?"æ–°å»ºä»»åŠ¡"
+  // /chat?prefill=â€¦ while /chat is already mounted, or back-forward
+  // navigation) didn't update `prefillText`. Result: Tasks page â†’ "æ–°å»ºä»»åŠ¡"
   // could land on /chat with the prefill query in the URL but an empty
   // textarea. Suspense + useSearchParams makes prefill reactive without
   // breaking SSR/static prerender.
@@ -89,7 +85,7 @@ function NewChatPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillText = searchParams.get('prefill') || '';
-  // #4/#5 (Codex P2) â€?the prefill enters the composer via `initialValue`, which
+  // #4/#5 (Codex P2) â€” the prefill enters the composer via `initialValue`, which
   // MessageInput prioritises OVER the draft. So clearing only the sessionStorage
   // draft at send-accept (below) leaves the URL prefill, and the accept-time
   // composer remount re-seeds the just-sent text from `initialValue`. Track which
@@ -97,15 +93,15 @@ function NewChatPageInner() {
   // a genuinely NEW prefill (different text) still shows.
   const [consumedPrefill, setConsumedPrefill] = useState<string | null>(null);
   const effectivePrefill = prefillText && prefillText !== consumedPrefill ? prefillText : '';
-  // #4/#5 (Codex P2, warm-nav) â€?live ref to the URL prefill so the accept path
+  // #4/#5 (Codex P2, warm-nav) â€” live ref to the URL prefill so the accept path
   // in `sendFirstMessage` consumes the *current* prefill even after a warm
-  // navigation (/chat already mounted, then router.push to /chat?prefill=â€?.
+  // navigation (/chat already mounted, then router.push to /chat?prefill=â€¦).
   // `sendFirstMessage` is a stable useCallback that intentionally omits
-  // prefillText from its deps â€?adding it would churn the callback identity and
+  // prefillText from its deps â€” adding it would churn the callback identity and
   // cascade through `handleCommand`. Reading prefillText from that stale closure
   // saw the OLD (often empty) prefill, so `setConsumedPrefill` never fired and
   // the prefill kept re-seeding the composer. The ref is synced in an effect
-  // (not during render â€?react-hooks/refs); the effect flushes before the next
+  // (not during render â€” react-hooks/refs); the effect flushes before the next
   // user event, so the accept-time consume always sees the live prefill.
   const prefillTextRef = useRef(prefillText);
   useEffect(() => { prefillTextRef.current = prefillText; }, [prefillText]);
@@ -125,17 +121,21 @@ function NewChatPageInner() {
   const [statusText, setStatusText] = useState<string | undefined>();
   const [workingDir, setWorkingDir] = useState('');
   const [folderPickerOpen, setFolderPickerOpen] = useState(false);
-  const [errorBanner, setErrorBanner] = useState<{ message: string; description?: string } | null>(null);
+  const [errorBanner, setErrorBanner] = useState<{
+    message: string;
+    description?: string;
+    providerRecovery?: boolean;
+  } | null>(null);
   const [hasProvider, setHasProvider] = useState(true); // assume true until checked
   // True when the runtime-filtered /api/providers/models call succeeded
-  // but returned an empty list â€?i.e. user has providers configured but
+  // but returned an empty list â€” i.e. user has providers configured but
   // none are compatible with the active runtime. Distinct from
   // !hasProvider (no provider at all). Send is gated, picker shows empty.
   const [noCompatibleProvider, setNoCompatibleProvider] = useState(false);
   // Phase 2C contract: when global_default_mode='pinned' AND the pinned
   // provider/model isn't reachable under the effective Runtime, we set
   // this state to block sends. We DO NOT silently substitute another
-  // provider/model â€?that's the entire point of pinning. Recovery
+  // provider/model â€” that's the entire point of pinning. Recovery
   // actions (switch Runtime / enable model / pick new / revert to Auto)
   // live on the Runtime page banner (Phase 2C.3) + Health page (2C.5);
   // here we just gate send + surface a minimal inline notice.
@@ -152,7 +152,7 @@ function NewChatPageInner() {
   const [assistantConfigured, setAssistantConfigured] = useState(false);
   const [assistantWorkspacePath, setAssistantWorkspacePath] = useState('');
   const [mode, setMode] = useState('code');
-  // Model/provider start empty â€?populated by the async global-default fetch.
+  // Model/provider start empty â€” populated by the async global-default fetch.
   // This prevents the race where a user sends before the fetch completes and
   // gets the stale localStorage model instead of the configured default.
   const [modelReady, setModelReady] = useState(false);
@@ -178,14 +178,14 @@ function NewChatPageInner() {
   const [streamingToolOutput, setStreamingToolOutput] = useState('');
   const [permissionProfile, setPermissionProfile] = useState<SessionPermissionProfile>('default');
   const [pendingContextTokens, setPendingContextTokens] = useState(0);
-  // Phase 6 Phase 3 â€?per-source split (attachment / mention / directory).
-  // Flows through RunCockpit â†?useContextUsage â†?breakdown so the popover's
+  // Phase 6 Phase 3 â€” per-source split (attachment / mention / directory).
+  // Flows through RunCockpit â†’ useContextUsage â†’ breakdown so the popover's
   // files_attachments row renders real numbers, not 0.
   const [pendingContextSubTotals, setPendingContextSubTotals] = useState<
     import('@/lib/message-input-logic').PendingContextSubTotals | undefined
   >(undefined);
 
-  // Phase 6 P0 follow-up round 2 (2026-05-15) â€?split the legacy
+  // Phase 6 P0 follow-up round 2 (2026-05-15) â€” split the legacy
   // `hasProvider` gate into two derived states so virtual providers
   // (Codex Account / OpenAI OAuth) don't get falsely blocked by the
   // /api/setup gate that doesn't know about them:
@@ -200,17 +200,17 @@ function NewChatPageInner() {
   //     a provider" onboarding card when Codex is fully signed in
   //     and the resolver has landed on (codex_account, gpt-5.5).
   //
-  // Both bypasses are the same shape â€?virtual providers
+  // Both bypasses are the same shape â€” virtual providers
   // (`codex_account` / `openai-oauth`) are sendable regardless of
   // /api/setup state because they're authenticated through their
   // own routes. Legacy DB providers still require `hasProvider`.
   // `hasProvider` itself is preserved verbatim for the onboarding
-  // empty-state branch inside ChatEmptyState â€?that surface is
+  // empty-state branch inside ChatEmptyState â€” that surface is
   // about "have you ever set up a traditional provider", which is
   // still a meaningful question even when codex is available.
   const canSendWithCurrentProvider = useMemo(() => {
     if (!currentModel || !currentProviderId) return false;
-    // Codex Account bypasses the /api/setup gate â€?the resolver
+    // Codex Account bypasses the /api/setup gate â€” the resolver
     // already proved this pair is reachable under the active runtime
     // (it wouldn't have landed in `currentProviderId` otherwise).
     if (currentProviderId === 'codex_account') return true;
@@ -233,29 +233,29 @@ function NewChatPageInner() {
   // on every mount.
   //
   // Once `modelReady === true`, the resolver has done its job:
-  //   - currentProviderId === 'codex_account' â†?Codex is available,
+  //   - currentProviderId === 'codex_account' â†’ Codex is available,
   //     no empty state.
-  //   - currentProviderId is a DB provider â†?hasProvider true (we
+  //   - currentProviderId is a DB provider â†’ hasProvider true (we
   //     wouldn't have a usable DB provider id otherwise), no empty
   //     state.
-  //   - currentProviderId === '' â†?genuinely no provider reachable
-  //     under the active runtime â†?empty state shows.
+  //   - currentProviderId === '' â†’ genuinely no provider reachable
+  //     under the active runtime â†’ empty state shows.
   const hasSendableProviderForCurrentRuntime = useMemo(() => {
     if (!modelReady) return true; // still loading; don't flash the empty state
     return canSendWithCurrentProvider;
   }, [modelReady, canSendWithCurrentProvider]);
 
-  // Phase 2 Step 4c â€?runtime pin for the not-yet-created session.
-  // RuntimeSelector writes here; on first send we PATCH the new
+  // Phase 2 Step 4c â€” runtime pin for the not-yet-created session.
+  // The unified Runtime/model picker writes here; on first send we PATCH the new
   // session row with this value before the chat POST runs (so the
   // chat route's lazy-seed sees the user's choice instead of falling
   // through to the global default). Empty string = follow global.
   // **Hoisted above checkpointReasons** because round-2 review needs
   // the value inside the checkpoint memo (suppressing stale
   // overview.defaultInvalid under explicit override) AND inside the
-  // resolver effects (mode override) â€?declaring it after would TDZ.
+  // resolver effects (mode override) â€” declaring it after would TDZ.
   const [runtimePin, setRuntimePin] = useState<string>('');
-  // Round-1 review fix â€?derive the chat-runtime param up front so
+  // Round-1 review fix â€” derive the chat-runtime param up front so
   // the default-resolver fetches and effect deps can both stay in
   // sync when the user switches runtime mid-page.
   //
@@ -271,7 +271,7 @@ function NewChatPageInner() {
   const globalRuntime = useGlobalAgentRuntime();
   const sessionRuntimeParam = effectiveChatRuntime(runtimePin, globalRuntime.agentRuntime);
 
-  // Run Checkpoint signals â€?session-scoped only, no global health.
+  // Run Checkpoint signals â€” session-scoped only, no global health.
   //
   // Phase 2 originally pulled the full `useOverviewData()` snapshot
   // here so RunCheckpoint and RunCockpit could "agree on the same
@@ -280,7 +280,7 @@ function NewChatPageInner() {
   // Overview / runtime/effective / provider catalog. The 2026-05-09
   // memory cut moves global health (provider count / models enabled /
   // workspace state / global default invalid / runtime fallback) out
-  // of this surface entirely â€?RunCockpit's lazy popover still shows
+  // of this surface entirely â€” RunCockpit's lazy popover still shows
   // them when the user opens it, /settings/health is the canonical
   // dashboard. RunCheckpoint here keeps only the reasons that gate
   // "can this send go through":
@@ -289,7 +289,7 @@ function NewChatPageInner() {
   //                                   under the active runtime
   //   - !!invalidDefault:            local state from the runtime-aware
   //                                   resolver effect (NOT OR'd with
-  //                                   any global flag â€?under explicit
+  //                                   any global flag â€” under explicit
   //                                   pin the local check is canonical;
   //                                   under follow-default it's the
   //                                   runtime-aware substitute for the
@@ -297,7 +297,7 @@ function NewChatPageInner() {
   //   - context-cost: per-send confirmation gate, unrelated to runtime
   //
   // /chat (new conversation page) hasn't accumulated messages yet, so
-  // usedContextTokens is 0 â€?the context-cost trigger collapses to the
+  // usedContextTokens is 0 â€” the context-cost trigger collapses to the
   // 10K hard cap on the pending side.
   const usedContextTokens = 0;
   const checkpointReasons = useMemo(() => {
@@ -318,7 +318,7 @@ function NewChatPageInner() {
     usedContextTokens,
   ]);
   // (globalRuntime is now declared above near sessionRuntimeParam so the
-  // 'auto' â†?concrete runtime resolution happens once at the top.
+  // 'auto' â†’ concrete runtime resolution happens once at the top.
   // Phase 6 P0, 2026-05-15.)
   const blockingReasonIds = useMemo(
     () => checkpointReasons.filter((r) => r.requiresConfirm).map((r) => r.id),
@@ -327,7 +327,7 @@ function NewChatPageInner() {
   const handleCheckpointAction = useCallback((actionId: string) => {
     // Generic confirmâ†’bypass bridge (MessageInput listens for this event and
     // re-runs submit with bypass=true). As of #632 no built-in reason emits
-    // 'confirm-context-cost' â€?context-cost is now a non-blocking heads-up;
+    // 'confirm-context-cost' â€” context-cost is now a non-blocking heads-up;
     // this is retained dormant for any future real-danger confirm reason.
     if (actionId === 'confirm-context-cost') {
       window.dispatchEvent(new Event('run-checkpoint-confirm-send'));
@@ -335,7 +335,7 @@ function NewChatPageInner() {
   }, []);
   const [createdSessionId, setCreatedSessionId] = useState<string | undefined>();
   const abortControllerRef = useRef<AbortController | null>(null);
-  // Phase 2 â‘?â€?first-turn navigation guard. The inline first-turn stream
+  // Phase 2 â‘¢ â€” first-turn navigation guard. The inline first-turn stream
   // router.push()es to the new session on completion; if the user navigated
   // away mid-stream (this page unmounted) that push must be suppressed so they
   // aren't dragged back. The unmount cleanup below deactivates the guard and
@@ -356,18 +356,22 @@ function NewChatPageInner() {
   // isStreaming / optimistic-bubble flips until the backend ACCEPTS the message
   // (otherwise flipping `isNewChat` remounts the composer and eats the
   // screenshot), which means the usual `if (isStreaming) return` re-entry guard
-  // isn't armed during that window â€?this ref blocks a double-submit instead.
+  // isn't armed during that window â€” this ref blocks a double-submit instead.
   const firstSendInFlightRef = useRef(false);
-  // Effort level â€?lifted here so the first message includes it
+  // Effort level â€” lifted here so the first message includes it
   const [selectedEffort, setSelectedEffort] = useState<string | undefined>(undefined);
   // Provider options (thinking mode + 1M context)
   const [thinkingMode, setThinkingMode] = useState<string>('adaptive');
   const [context1m, setContext1m] = useState(false);
+  const [effectiveContext1m, setEffectiveContext1m] = useState(false);
 
   // Fetch provider-specific options (with abort to prevent stale responses on fast switch)
   useEffect(() => {
     const pid = currentProviderId || 'env';
     const controller = new AbortController();
+    // Keep the provider preference intact while failing closed for the current
+    // route until MessageInput resolves its model capability descriptor.
+    setEffectiveContext1m(false);
     fetch(`/api/providers/options?providerId=${encodeURIComponent(pid)}`, { signal: controller.signal })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
@@ -380,13 +384,29 @@ function NewChatPageInner() {
     return () => controller.abort();
   }, [currentProviderId]);
 
+  const handleContext1mChange = useCallback((enabled: boolean) => {
+    setContext1m(enabled);
+    setEffectiveContext1m(enabled);
+    fetch('/api/providers/options', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        providerId: currentProviderId || 'env',
+        options: { context_1m: enabled },
+      }),
+    }).catch(() => {
+      // Optimistic provider option; the existing fetch reconciles on route
+      // changes/reload if persistence fails.
+    });
+  }, [currentProviderId]);
+
   // Validate restored model/provider against actual available providers/models.
   // For NEW conversations, the global default model takes priority
   // over localStorage's last-model (which is a cross-session global memory).
   useEffect(() => {
     let cancelled = false;
 
-    // Step 4c round 1 review â€?re-run on `sessionRuntimeParam` change
+    // Step 4c round 1 review â€” re-run on `sessionRuntimeParam` change
     // (was `[]` before, runtime-pin flips just updated the picker hook
     // and left the rest stale: red RunCheckpoint stayed up, send button
     // stayed disabled). Reset `modelReady` for the duration of the new
@@ -394,7 +414,8 @@ function NewChatPageInner() {
     // of the previous run's verdict.
     setModelReady(false);
 
-    // Fetch models filtered by the **current** session runtime param â€?    // empty pin â†?'auto' (server resolves), explicit pin â†?that value
+    // Fetch models filtered by the **current** session runtime param â€”
+    // empty pin â†’ 'auto' (server resolves), explicit pin â†’ that value
     // exactly. Without this the user-picked runtime never feeds back
     // into invalidDefault / noCompatibleProvider, and the resolved pair
     // could lock onto a provider the new runtime can't reach.
@@ -404,12 +425,12 @@ function NewChatPageInner() {
     Promise.all([modelsP, globalP]).then(([modelsData, globalData]) => {
       if (cancelled) return;
       // Three outcomes from a runtime-filtered fetch:
-      //   1. API unreachable / malformed â†?fall back to localStorage so
+      //   1. API unreachable / malformed â†’ fall back to localStorage so
       //      the picker still has *something* to show.
-      //   2. Groups present â†?run validation chain below.
-      //   3. Groups present but empty array â†?meaningful "no provider
+      //   2. Groups present â†’ run validation chain below.
+      //   3. Groups present but empty array â†’ meaningful "no provider
       //      compatible with the active runtime" state. Don't restore
-      //      the saved provider/model from localStorage â€?that would
+      //      the saved provider/model from localStorage â€” that would
       //      put back the very combination the runtime gate just
       //      filtered out. Clear and let the empty-state UI surface.
       if (!modelsData?.groups) {
@@ -421,21 +442,21 @@ function NewChatPageInner() {
         return;
       }
       // Phase 2C: resolver branches on default_mode (Auto vs Pinned).
-      // Auto walks the savedPair â†?apiDefault â†?first chain; Pinned
+      // Auto walks the savedPair â†’ apiDefault â†’ first chain; Pinned
       // demands an exact match and returns 'invalid-default' otherwise.
-      // No silent substitution for Pinned â€?see invalidDefault state.
+      // No silent substitution for Pinned â€” see invalidDefault state.
       //
-      // Step 4c round 2 â€?when the user has explicitly switched runtime
-      // via RuntimeSelector (`runtimePin !== ''`), the global pinned
+      // Step 4c round 2 â€” when the user has explicitly switched runtime
+      // via the unified picker (`runtimePin !== ''`), the global pinned
       // policy no longer reflects their intent for THIS conversation:
       // they've actively asked for a different runtime, so blocking
       // them on a global pinned default that's incompatible with that
       // runtime forces them to "fix global settings" when the right
       // answer is "use the picker's auto-resolved pair under the new
       // runtime". Treat this case as 'auto' mode so the resolver
-      // walks savedPair â†?apiDefault â†?first instead of demanding the
+      // walks savedPair â†’ apiDefault â†’ first instead of demanding the
       // global pinned. When `runtimePin === ''` (still following the
-      // global runtime), keep the strict pinned semantics â€?the
+      // global runtime), keep the strict pinned semantics â€” the
       // memory rule "pinned default is a hard promise" still holds
       // for that path.
       const opts = globalData?.options;
@@ -462,7 +483,7 @@ function NewChatPageInner() {
         // unreachable under the active runtime, but we MUST land
         // parent state on a working fallback pair so the chat is
         // still sendable. Pre-round-3 this branch cleared
-        // currentProviderId/Model â€?the banner said "auto-switched
+        // currentProviderId/Model â€” the banner said "auto-switched
         // to an available model" but the parent state went empty,
         // and MessageInput's useProviderModels resolved a DIFFERENT
         // visible fallback. Composer rendered as usable + send gate
@@ -489,7 +510,7 @@ function NewChatPageInner() {
           setCurrentProviderId(autoFallback.providerId ?? '');
           setCurrentModel(autoFallback.modelValue ?? '');
         } else {
-          // Auto chain also failed â†?parent state stays empty.
+          // Auto chain also failed â†’ parent state stays empty.
           // The pinned-invalid warning still shows; the no-provider
           // empty-state overlay surfaces because canSendWithCurrent*
           // is false.
@@ -505,7 +526,7 @@ function NewChatPageInner() {
       }
       setModelReady(true);
     }).catch(() => {
-      // Fetch failed â€?fall back to localStorage best-effort
+      // Fetch failed â€” fall back to localStorage best-effort
       const savedModel = localStorage.getItem('codepilot:last-model') || 'sonnet';
       const savedProvider = localStorage.getItem('codepilot:last-provider-id') || '';
       setCurrentModel(savedModel);
@@ -549,7 +570,7 @@ function NewChatPageInner() {
         if (await validateDir(saved) && !cancelled) {
           setWorkingDir(saved);
         } else if (!cancelled) {
-          // Stale â€?clear and try setup default
+          // Stale â€” clear and try setup default
           localStorage.removeItem('codepilot:last-working-directory');
           await tryFallbackToDefault();
         }
@@ -584,7 +605,7 @@ function NewChatPageInner() {
       .catch(() => {});
   }, []);
 
-  // Check provider availability â€?only 'completed' counts, 'skipped' means user deferred but has no real credentials
+  // Check provider availability â€” only 'completed' counts, 'skipped' means user deferred but has no real credentials
   useEffect(() => {
     const checkProvider = () => {
       // Lock sending while we re-resolve the model/provider
@@ -602,7 +623,7 @@ function NewChatPageInner() {
 
       // Fetch models + global default in parallel. Same runtime gating as
       // the initial-load branch above: server filters by the **current**
-      // session runtime param (Step 4c round 1 review fix â€?was hardcoded
+      // session runtime param (Step 4c round 1 review fix â€” was hardcoded
       // 'auto'; that locked the saved-provider validation to whatever
       // runtime resolved at mount even after the user switched it).
       const modelsP = fetch(`/api/providers/models?runtime=${sessionRuntimeParam}`).then(r => r.ok ? r.json() : null);
@@ -610,8 +631,8 @@ function NewChatPageInner() {
 
       Promise.all([modelsP, globalP]).then(([modelsData, globalData]) => {
         // Distinguish failure (modelsData null) from valid empty result.
-        // Failure â†?keep existing state, just unlock send. Valid empty
-        // (runtime filter dropped every group) â†?clear stale provider/
+        // Failure â†’ keep existing state, just unlock send. Valid empty
+        // (runtime filter dropped every group) â†’ clear stale provider/
         // model so we don't leak the just-filtered-out combination back
         // into the picker; UI's empty state surfaces "no compatible
         // provider for this runtime".
@@ -620,10 +641,11 @@ function NewChatPageInner() {
           return;
         }
         // Phase 2C: same shared resolver as the initial-load branch.
-        // 'no-compatible' / 'invalid-default' / 'ok' / 'auto-resolved' â€?        // no silent substitution for Pinned (see invalidDefault state).
+        // 'no-compatible' / 'invalid-default' / 'ok' / 'auto-resolved' â€”
+        // no silent substitution for Pinned (see invalidDefault state).
         //
-        // Step 4c round 2 â€?same `runtimePin` override as the
-        // initial-load branch above: explicit runtime pick â†?'auto'
+        // Step 4c round 2 â€” same `runtimePin` override as the
+        // initial-load branch above: explicit runtime pick â†’ 'auto'
         // mode, no global-pinned enforcement.
         const opts = globalData?.options;
         const effectiveMode: 'pinned' | 'auto' = runtimePin
@@ -645,7 +667,7 @@ function NewChatPageInner() {
           setNoCompatibleProvider(true);
           setInvalidDefault(null);
         } else if (resolved.status === 'invalid-default') {
-          // Phase 6 P0 round 3 (2026-05-15) â€?see the matching
+          // Phase 6 P0 round 3 (2026-05-15) â€” see the matching
           // round-3 fix in the initial-load resolver above. Surface
           // the pinned-invalid warning AND re-resolve as Auto so
           // parent state lands on a sendable (provider, model) pair.
@@ -705,7 +727,7 @@ function NewChatPageInner() {
 
     window.addEventListener('provider-changed', checkProvider);
     return () => window.removeEventListener('provider-changed', checkProvider);
-  }, [sessionRuntimeParam]); // Step 4c round 1 â€?re-run on runtime pin flip
+  }, [sessionRuntimeParam]); // Step 4c round 1 â€” re-run on runtime pin flip
 
   const handleSelectFolder = useCallback(async () => {
     if (isElectron) {
@@ -746,7 +768,7 @@ function NewChatPageInner() {
     const body: { permissionRequestId: string; approvalToken?: string; decision: { behavior: 'allow'; updatedInput?: Record<string, unknown>; updatedPermissions?: unknown[] } | { behavior: 'deny'; message?: string } } = {
       permissionRequestId: pendingPermission.permissionRequestId,
       // Echo the server-issued HMAC token; the route rejects responses
-      // without a valid one (Phase 4 â‘?hardening).
+      // without a valid one (Phase 4 â‘¡ hardening).
       ...(pendingPermission.approvalToken ? { approvalToken: pendingPermission.approvalToken } : {}),
       decision: decision === 'deny'
         ? { behavior: 'deny', message: denyMessage || 'User denied permission' }
@@ -789,7 +811,7 @@ function NewChatPageInner() {
       if (!modelReady) return false;
 
       // Block send when the runtime-filtered API returned an empty group
-      // list â€?user has providers but none are compatible with the
+      // list â€” user has providers but none are compatible with the
       // active runtime. Without this gate, sendFirstMessage would post
       // `model: '', provider_id: ''` to /api/chat/sessions and the server
       // would resolve them via the env-default chain, silently bypassing
@@ -799,13 +821,13 @@ function NewChatPageInner() {
           message: t('error.providerUnavailable'),
           description: t('chat.empty.noProvider'),
         });
-        return false; // not delivered â†?preserve composer (#615)
+        return false; // not delivered â†’ preserve composer (#615)
       }
 
       // Phase 6 UIæ”¶å£ P0 (2026-05-14): pinned-invalid is a GLOBAL
       // warning, not a per-session block. If the picker has resolved
       // to a usable (currentProviderId, currentModel) pair that lives
-      // in the runtime-filtered group set, the user can send â€?the
+      // in the runtime-filtered group set, the user can send â€” the
       // global pinned default being broken is a separate concern
       // (surfaced as a non-error checkpoint banner with a "fix default"
       // jump link). We still honour the "no silent substitution of
@@ -816,15 +838,16 @@ function NewChatPageInner() {
       // `invalidDefault` was set, even though `currentProviderId` /
       // `currentModel` had already fallen back to a working pair.
       // Users saw GPT-5.5 in the model button + a red "default model
-      // unavailable" banner + a disabled composer at the same time â€?      // a three-way contradiction the round 4 fix resolves.
+      // unavailable" banner + a disabled composer at the same time â€”
+      // a three-way contradiction the round 4 fix resolves.
 
       // Require a project directory before sending
       if (!workingDir.trim()) {
         setErrorBanner({ message: t('chat.empty.noDirectory') });
-        return false; // not delivered â†?preserve composer (#615)
+        return false; // not delivered â†’ preserve composer (#615)
       }
 
-      // Phase 6 P0 follow-up (2026-05-15) â€?Codex Account is a virtual
+      // Phase 6 P0 follow-up (2026-05-15) â€” Codex Account is a virtual
       // provider that doesn't flow through /api/setup, so `hasProvider`
       // (which reads `data.provider === 'completed'`) stays false even
       // when the user has signed in to Codex and the picker has
@@ -837,19 +860,19 @@ function NewChatPageInner() {
       // send time: the runtime/model/provider triple resolves to a
       // working route. `hasProvider` stays purely as the
       // legacy-provider setup signal for the empty-state UI (line
-      // 1076 below) â€?that surface is about onboarding, not about
+      // 1076 below) â€” that surface is about onboarding, not about
       // "is this exact send valid".
       if (!canSendWithCurrentProvider) {
         setErrorBanner({
           message: t('error.providerUnavailable'),
           description: t('chat.empty.noProvider'),
         });
-        return false; // not delivered â†?preserve composer (#615)
+        return false; // not delivered â†’ preserve composer (#615)
       }
 
       // #615 remount fix: do NOT flip isStreaming / push the optimistic bubble
       // yet. Either flips `isNewChat` (messages.length === 0 && !isStreaming),
-      // which swaps the whole layout ternary â€?the composer moves from the
+      // which swaps the whole layout ternary â€” the composer moves from the
       // centered hero branch to the active-layout branch (a DIFFERENT parent), so
       // MessageInput remounts and PromptInput loses the attachment, BEFORE we even
       // learn the send failed. Defer those flips to the post-accept point so a
@@ -863,7 +886,8 @@ function NewChatPageInner() {
       let sessionId = '';
       // #615: tracks whether the message reached a delivered / recoverable state
       // (session created + POST /api/chat accepted). A failure BEFORE this must
-      // return false so the composer preserves the user's text + attachments â€?      // otherwise a session-create 500 silently eats the screenshot.
+      // return false so the composer preserves the user's text + attachments â€”
+      // otherwise a session-create 500 silently eats the screenshot.
       let accepted = false;
 
       try {
@@ -871,7 +895,7 @@ function NewChatPageInner() {
         // No `title` here on purpose. The client used to name the session at
         // create time by cutting the first 50 characters with no ellipsis,
         // while the chat route named it AGAIN from the same message under
-        // different rules â€?two writers, two answers. The session is now
+        // different rules â€” two writers, two answers. The session is now
         // created as a placeholder and the route derives the one fallback
         // title after the first real message is persisted;
         // `refreshSessionTitle` below pulls it back for the UI.
@@ -904,8 +928,8 @@ function NewChatPageInner() {
         setPanelSessionId(sessionId);
         setPanelWorkingDirectory(session.working_directory || workingDir.trim());
 
-        // Phase 2 Step 4c â€?if the user explicitly picked a runtime in
-        // the composer's RuntimeSelector before sending, persist it now
+        // Phase 2 Step 4c â€” if the user explicitly picked a runtime in
+        // the composer's unified Runtime/model picker before sending, persist it now
         // (before the chat POST runs). This way the chat route's
         // lazy-seed sees `session.runtime_pin` already set and skips the
         // global-default fallback. Awaited so we don't race with /api/chat.
@@ -917,7 +941,7 @@ function NewChatPageInner() {
               body: JSON.stringify({ runtime_pin: runtimePin }),
             });
           } catch {
-            // Non-fatal â€?the lazy-seed will still pin to the global
+            // Non-fatal â€” the lazy-seed will still pin to the global
             // default; the user can re-pick from /chat/[id] after redirect.
           }
         }
@@ -926,8 +950,8 @@ function NewChatPageInner() {
         window.dispatchEvent(new CustomEvent('session-created'));
 
         // NOTE: the optimistic user bubble is pushed AFTER the message is
-        // accepted (post-accept block below), not here â€?pushing it now would
-        // make messages non-empty â†?flip isNewChat â†?remount the composer and
+        // accepted (post-accept block below), not here â€” pushing it now would
+        // make messages non-empty â†’ flip isNewChat â†’ remount the composer and
         // eat the screenshot on a /api/chat rejection. (#615)
 
         // Build thinking config from settings
@@ -948,11 +972,11 @@ function NewChatPageInner() {
             ...(files && files.length > 0 ? { files } : {}),
             ...(mentions && mentions.length > 0 ? { mentions } : {}),
             ...(systemPromptAppend ? { systemPromptAppend } : {}),
-            // 'auto' sentinel means "no explicit effort" â€?omitted so Claude
-            // Code CLI applies its per-model default (Opus 4.7 â†?xhigh).
+            // 'auto' sentinel means "no explicit effort" â€” omitted so Claude
+            // Code CLI applies its per-model default (Opus 4.7 â†’ xhigh).
             ...(toWireEffort(selectedEffort) ? { effort: toWireEffort(selectedEffort) } : {}),
             ...(thinkingConfig ? { thinking: thinkingConfig } : {}),
-            ...(context1m ? { context_1m: true } : {}),
+            ...(effectiveContext1m ? { context_1m: true } : {}),
             ...(displayOverride ? { displayOverride } : {}),
             ...(selectedSkills && selectedSkills.length > 0
               ? { selectedSkills }
@@ -968,22 +992,31 @@ function NewChatPageInner() {
               detail: { initialCard: err.initialCard ?? 'provider' },
             }));
           }
-          throw new Error(err?.error || 'Failed to send message');
+          const requestError = new Error(err?.error || 'Failed to send message') as Error & {
+            code?: string;
+            reason?: string;
+            sessionProviderId?: string;
+          };
+          requestError.code = err?.code;
+          requestError.reason = err?.reason;
+          requestError.sessionProviderId = err?.sessionProviderId;
+          throw requestError;
         }
         // Backend accepted the message + files (POST /api/chat is 2xx and the
-        // stream is opening) â€?from here the screenshot is committed
+        // stream is opening) â€” from here the screenshot is committed
         // server-side, so a later error must NOT preserve the composer (#615).
         accepted = true;
-        // #4/#5 â€?clear the persisted composer draft at accept. The imminent
+        // #4/#5 â€” clear the persisted composer draft at accept. The imminent
         // isStreaming flip REMOUNTS the composer, which re-seeds inputValue from
         // this draft (the only composer state surviving the remount); without
         // clearing it the just-sent text lingers all turn (CDP repro).
         try { sessionStorage.removeItem(composerDraftKey()); } catch { /* unavailable */ }
-        // #4/#5 (Codex P2) â€?also mark the URL prefill consumed so the remount's
+        // #4/#5 (Codex P2) â€” also mark the URL prefill consumed so the remount's
         // `initialValue` (which outranks the draft) doesn't re-seed the sent text.
         if (prefillTextRef.current) setConsumedPrefill(prefillTextRef.current);
 
-        // The route wrote the fallback title before returning this response â€?        // pull it back so the top bar / sidebar show the real title now
+        // The route wrote the fallback title before returning this response â€”
+        // pull it back so the top bar / sidebar show the real title now
         // instead of waiting on the sidebar's 5s poll. Not awaited: the title
         // is cosmetic and must never delay the stream. Deliberately placed
         // AFTER the draft clear, which `composer-first-message-clear.test.ts`
@@ -1000,7 +1033,7 @@ function NewChatPageInner() {
         setToolResults([]);
         setStatusText(undefined);
         {
-          // Optimistic user bubble â€?preserves base64 `data` so images render
+          // Optimistic user bubble â€” preserves base64 `data` so images render
           // their thumbnail immediately (backend strips `data` before persisting).
           const displayUserContent = displayOverride || content;
           const contentWithFileMeta = files && files.length > 0
@@ -1086,7 +1119,7 @@ function NewChatPageInner() {
                       break;
                     }
                   } catch {
-                    // Not JSON â€?raw stderr output
+                    // Not JSON â€” raw stderr output
                   }
                   setStreamingToolOutput((prev) => {
                     const next = prev + (prev ? '\n' : '') + event.data;
@@ -1112,12 +1145,12 @@ function NewChatPageInner() {
                       maybeShowStatusToast(statusData);
                       setStatusText(statusData.message || statusData.title || undefined);
                     } else if (statusData.apiRetry) {
-                      // #635 â€?show human copy, not raw JSON. The first-message
+                      // #635 â€” show human copy, not raw JSON. The first-message
                       // path doesn't run the idle checker, so this is display-only.
                       setStatusText(
                         typeof statusData.attempt === 'number'
                           ? `Retrying upstream (attempt ${statusData.attempt})â€¦`
-                          : 'Retrying upstreamâ€?,
+                          : 'Retrying upstreamâ€¦',
                       );
                     } else {
                       setStatusText(resolveSafeStatusFallback(event.data, statusData));
@@ -1176,7 +1209,7 @@ function NewChatPageInner() {
                   // /api/chat/route.ts separately persists thinking as a
                   // content-block JSON on the assistant message, so the
                   // redirected ChatView gets a fully-formed message from
-                  // DB â€?this branch is for the pre-redirect live view.
+                  // DB â€” this branch is for the pre-redirect live view.
                   setStreamingThinkingContent((prev) => prev + event.data);
                   break;
                 }
@@ -1192,7 +1225,7 @@ function NewChatPageInner() {
                   break;
                 }
                 case 'permission_resolved': {
-                  // A5 Step 2 â€?registry timed out the pending request and
+                  // A5 Step 2 â€” registry timed out the pending request and
                   // auto-denied it. The inline first-message flow has a single
                   // active prompt and the registry only emits this for a still-
                   // unresolved request, so marking resolved without an explicit
@@ -1200,7 +1233,7 @@ function NewChatPageInner() {
                   // id-guards because it has fresh mutable snapshot access).
                   // Also clear the sidebar "needs approval" badge: the prompt
                   // now shows the timeout one-liner, nothing's left to approve
-                  // (A5 follow-up â€?without this the badge lingers till stream end).
+                  // (A5 follow-up â€” without this the badge lingers till stream end).
                   try {
                     const data = JSON.parse(event.data) as { status: 'timeout' };
                     setPermissionResolved(data.status);
@@ -1224,7 +1257,7 @@ function NewChatPageInner() {
                         'AUTH_REJECTED', 'AUTH_FORBIDDEN', 'AUTH_STYLE_MISMATCH',
                         'NO_CREDENTIALS', 'PROVIDER_NOT_APPLIED', 'MODEL_NOT_AVAILABLE',
                         'NETWORK_UNREACHABLE', 'ENDPOINT_NOT_FOUND', 'PROCESS_CRASH',
-                        'CLI_NOT_FOUND', 'UNSUPPORTED_FEATURE',
+                        'CLI_NOT_FOUND', 'EXECUTION_PERMISSION_DENIED', 'UNSUPPORTED_FEATURE',
                       ]);
                       if (diagCategories.has(parsed.category)) {
                         errorDisplay += '\n\nðŸ’¡ [Run Provider Diagnostics](/settings/providers) to troubleshoot, or check the [Provider Setup Guide](https://www.codepilot.sh/docs/providers).';
@@ -1261,14 +1294,14 @@ function NewChatPageInner() {
           setMessages((prev) => [...prev, assistantMessage]);
         }
 
-        // Navigate to the session page after response is complete â€?but ONLY
+        // Navigate to the session page after response is complete â€” but ONLY
         // if the user is still on this new-chat page. If they switched away
         // mid-stream (navGuard deactivated on unmount), suppress the push so
-        // we don't drag them back to the just-created session (Phase 2 â‘?.
+        // we don't drag them back to the just-created session (Phase 2 â‘¢).
         navGuardRef.current?.navigate(() => router.push(`/chat/${session.id}`));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'AbortError') {
-          // Aborted â€?either the user hit stop, or the page unmounted (session
+          // Aborted â€” either the user hit stop, or the page unmounted (session
           // switch) and the cleanup aborted the controller. Only navigate to
           // the session if the guard is still active (user stopped while
           // still here); a switch-away abort must NOT push them back.
@@ -1276,13 +1309,32 @@ function NewChatPageInner() {
             navGuardRef.current?.navigate(() => router.push(`/chat/${sessionId}`));
           }
         } else {
-          const errMsg = error instanceof Error ? error.message : 'Unknown error';
-          setErrorBanner({ message: t('error.sessionCreateFailed'), description: errMsg });
+          const typedError = error as Error & { reason?: string; sessionProviderId?: string };
+          const providerRecovery =
+            typedError.reason === 'credentials-unreadable'
+            || typedError.reason === 'credentials-missing';
+          const errMsg = providerRecovery
+            ? t(
+                typedError.reason === 'credentials-unreadable'
+                  ? 'chat.providerCredentialsUnreadable.message'
+                  : 'chat.providerCredentialsUnavailable.message',
+                {
+                  providerId: typedError.sessionProviderId || currentProviderId || '',
+                },
+            )
+            : error instanceof Error ? error.message : 'Unknown error';
+          setErrorBanner({
+            message: providerRecovery
+              ? t('error.providerCredentialUnavailable')
+              : t('error.sessionCreateFailed'),
+            description: errMsg,
+            providerRecovery,
+          });
         }
         // #615: a failure BEFORE the message was accepted for delivery (session
         // creation or POST /api/chat rejected) must preserve the composer so the
         // user's screenshot isn't cleared. Post-acceptance errors (mid-stream)
-        // keep today's behavior â€?the message already went, so the composer clears.
+        // keep today's behavior â€” the message already went, so the composer clears.
         if (!accepted) return false;
       } finally {
         setIsStreaming(false);
@@ -1299,7 +1351,7 @@ function NewChatPageInner() {
         firstSendInFlightRef.current = false;
       }
     },
-    [isStreaming, router, workingDir, mode, currentModel, currentProviderId, runtimePin, permissionProfile, selectedEffort, thinkingMode, context1m, setPendingApprovalSessionId, setPanelSessionId, setPanelWorkingDirectory, t, canSendWithCurrentProvider, modelReady, noCompatibleProvider, invalidDefault]
+    [isStreaming, router, workingDir, mode, currentModel, currentProviderId, runtimePin, permissionProfile, selectedEffort, thinkingMode, effectiveContext1m, setPendingApprovalSessionId, setPanelSessionId, setPanelWorkingDirectory, t, canSendWithCurrentProvider, modelReady, noCompatibleProvider, invalidDefault]
   );
 
   const handleCommand = useCallback((command: string) => {
@@ -1338,7 +1390,7 @@ function NewChatPageInner() {
 
   // New-chat layout (2026-05-21): when there are no messages and no
   // streaming, replace the bottom-pinned composer + top scrolling
-  // message list with a centered hero block â€?welcome greeting + logo,
+  // message list with a centered hero block â€” welcome greeting + logo,
   // composer in the middle, optional onboarding cards below. Mirrors
   // the ChatGPT / Claude / Codex new-chat pattern. Once the user
   // sends the first message (messages.length > 0 OR isStreaming),
@@ -1375,15 +1427,15 @@ function NewChatPageInner() {
     />
   );
 
-  // Single composer stack â€?reused in both the new-chat hero (centered)
+  // Single composer stack â€” reused in both the new-chat hero (centered)
   // and the active-chat layout (bottom-pinned). Avoids duplicating
-  // ErrorBanner / RunCheckpoint / PermissionPrompt / MessageInput /
-  // ChatComposerActionBar across two branches.
+  // ErrorBanner / RunCheckpoint / PermissionPrompt / MessageInput across two
+  // branches. Runtime, access and Run status now live in MessageInput's footer.
   const composerStack = (
     <>
       {/* #615: stable keys so MessageInput keeps its identity (and PromptInput
           keeps its attachment state) when ErrorBanner appears/disappears as a
-          sibling. The dominant remount cause â€?the isNewChat layout swap â€?is
+          sibling. The dominant remount cause â€” the isNewChat layout swap â€” is
           fixed by deferring the layout-flip until accept (see sendFirstMessage);
           these keys cover the within-parent ErrorBanner toggle. */}
       {errorBanner && (
@@ -1394,6 +1446,12 @@ function NewChatPageInner() {
           className="mx-4 mb-2"
           onDismiss={() => setErrorBanner(null)}
           actions={[
+            ...(errorBanner.providerRecovery
+              ? [{
+                  label: t('chat.providerCredentialsUnavailable.action'),
+                  onClick: () => router.push('/settings/providers'),
+                }]
+              : []),
             { label: t('error.retry'), onClick: () => setErrorBanner(null) },
           ]}
         />
@@ -1417,16 +1475,17 @@ function NewChatPageInner() {
         onModelChange={setCurrentModel}
         providerId={currentProviderId}
         runtime={sessionRuntimeParam}
+        onRuntimeChange={setRuntimePin}
         onProviderModelChange={(pid, model, opts) => {
           setCurrentProviderId(pid);
           setCurrentModel(model);
-          // s07 (reviewer fix run i31, 2026-07-18) â€?the new-chat composer had NO
+          // s07 (reviewer fix run i31, 2026-07-18) â€” the new-chat composer had NO
           // effort fallback at all: a manual or auto-correct switch to a model
           // that doesn't offer the selected tier left it selected, so the first
           // message sent an unsupported effort (or toWireEffort silently dropped
           // it while the button still showed it). Mirror ChatView: clear the
-          // illegal transient tier on ANY effective model change â€?validated
-          // against the SAME picker feed via opts.supportedEffortLevels â€?and
+          // illegal transient tier on ANY effective model change â€” validated
+          // against the SAME picker feed via opts.supportedEffortLevels â€” and
           // surface the one-shot sourced notice only when a reset actually fired.
           // This runs BEFORE the isAuto persist-skip; isAuto still governs only
           // the localStorage "recently used" writes, never the effort effect.
@@ -1459,35 +1518,31 @@ function NewChatPageInner() {
         onPendingContextTokensChange={setPendingContextTokens}
         onPendingContextSubTotalsChange={setPendingContextSubTotals}
         blockingReasonIds={blockingReasonIds}
-      />
-      <ChatComposerActionBar
-        left={
-          <>
-            <ModeIndicator mode={mode} onModeChange={setMode} disabled={isStreaming} />
-            <RuntimeSelector
-              runtimePin={runtimePin}
-              effectiveRuntime={agentRuntimeToChatRuntime(globalRuntime.agentRuntime)}
-              onRuntimePinChange={(pin: ChatRuntime) => setRuntimePin(pin)}
-              disabled={isStreaming}
-            />
-            <ChatPermissionSelector
-              permissionProfile={permissionProfile}
-              onPermissionChange={setPermissionProfile}
-              runtime={sessionRuntimeParam}
-            />
-          </>
-        }
-        right={
+        context1m={context1m}
+        onContext1mChange={handleContext1mChange}
+        onContext1mEffectiveChange={setEffectiveContext1m}
+        permissionControl={(
+          <ChatPermissionSelector
+            mode={mode}
+            onModeChange={setMode}
+            permissionProfile={permissionProfile}
+            onPermissionChange={setPermissionProfile}
+            runtime={sessionRuntimeParam}
+            disabled={isStreaming}
+          />
+        )}
+        runStatusControl={(
           <RunCockpit
             providerId={currentProviderId}
             messages={[]}
             modelName={currentModel}
+            context1m={effectiveContext1m}
             permissionProfile={permissionProfile}
             pendingContextTokens={pendingContextTokens}
             pendingContextSubTotals={pendingContextSubTotals}
             sessionRuntimePin={runtimePin}
           />
-        }
+        )}
       />
     </>
   );
@@ -1495,7 +1550,7 @@ function NewChatPageInner() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       {isNewChat ? (
-        // Centered new-chat hero: welcome â†?composer â†?onboarding cards
+        // Centered new-chat hero: welcome â†’ composer â†’ onboarding cards
         // as one vertically-centered max-w-3xl block. Mirrors ChatGPT /
         // Claude / Codex new-chat pattern.
         <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center px-4 py-8">

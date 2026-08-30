@@ -7,9 +7,9 @@
  * close-to-hide handler, these tests fail loudly.
  *
  * Manual smoke (Electron required) covers the runtime side:
- *   1. Close main window â†?tray icon stays, app stays alive
- *   2. Tray "Open CodePilot" â†?window returns
- *   3. Tray "Quit CodePilot" â†?process exits
+ *   1. Close main window â†’ tray icon stays, app stays alive
+ *   2. Tray "Open CodePilot" â†’ window returns
+ *   3. Tray "Quit CodePilot" â†’ process exits
  *   4. With Bridge inactive, fire a 1-min reminder and confirm a native
  *      macOS notification appears while the window is hidden.
  */
@@ -37,12 +37,12 @@ function stripComments(src: string): string {
   // then lazy-match past real code into the next `*/`).
   return src
     .replace(/(^|[^:])\/\/.*$/gm, '$1') // // line comments (skip URLs)
-    .replace(/\/\*[\s\S]*?\*\//g, '');  // /* â€?*/ block comments
+    .replace(/\/\*[\s\S]*?\*\//g, '');  // /* â€¦ */ block comments
 }
 
 const MAIN = stripComments(MAIN_RAW);
 
-describe('electron/main.ts â€?menubar-resident invariants', () => {
+describe('electron/main.ts â€” menubar-resident invariants', () => {
   it('intercepts the main-window close event and hides instead of destroying', () => {
     // The close handler must preventDefault() + hide() unless isQuitting,
     // otherwise close-to-hide is broken and the app quits on close.
@@ -59,7 +59,7 @@ describe('electron/main.ts â€?menubar-resident invariants', () => {
   });
 
   it('creates the tray on app startup (both dev and prod paths)', () => {
-    // ensureTray() must be reachable from app.whenReady â€?that is the
+    // ensureTray() must be reachable from app.whenReady â€” that is the
     // promise that "menubar icon is permanent across the app lifecycle".
     const ensureCount = (MAIN.match(/ensureTray\(\)/g) || []).length;
     assert.ok(
@@ -79,7 +79,7 @@ describe('electron/main.ts â€?menubar-resident invariants', () => {
   it('tray menu and tooltip do not mention Bridge', () => {
     // Phase 3 Step 2: bridge is decoupled from local notifications and
     // tray UI. The tray must not show "Bridge Active" / "Stop Bridge"
-    // copy anymore â€?that was the old bridge-gated behavior.
+    // copy anymore â€” that was the old bridge-gated behavior.
     const trayBuild = MAIN.match(
       /function rebuildTrayMenu[\s\S]*?function ensureTray/,
     );
@@ -165,20 +165,20 @@ describe('electron/main.ts â€?menubar-resident invariants', () => {
     assert.ok(
       ensureIdx < awaitIdx,
       'ensureTray() must run BEFORE await startServerOnStablePort() in the production startup ' +
-        'branch â€?otherwise a user closing the loading window mid-boot has no menubar entry to ' +
+        'branch â€” otherwise a user closing the loading window mid-boot has no menubar entry to ' +
         're-open or quit the app.',
     );
   });
 
   it('showMainWindow + activate handler do NOT pin to serverPort || 3000', () => {
     // P2 review fix (2026-05-09): the production server binds to a
-    // stable range of 47823â€?7830, never 3000. With the tray now created
+    // stable range of 47823â€“47830, never 3000. With the tray now created
     // before the server is ready, a tray "Open" or dock-click in early
     // boot could land in `showMainWindow()` (or `app.on('activate')`)
     // with `serverPort == null`. The old `\`http://127.0.0.1:${serverPort
     // || 3000}\`` fallback would open a window pointing at the wrong
     // port. Both paths must use the `chatWindowUrlForRevival()` helper,
-    // which returns `undefined` (â†?LOADING_HTML splash) when the port
+    // which returns `undefined` (â†’ LOADING_HTML splash) when the port
     // hasn't latched yet.
     //
     // For showMainWindow and the activate handler specifically, this fallback
@@ -188,7 +188,7 @@ describe('electron/main.ts â€?menubar-resident invariants', () => {
     assert.doesNotMatch(
       showFn![0],
       /serverPort\s*\|\|\s*3000/,
-      'showMainWindow must not fall back to port 3000 â€?production binds 47823â€?7830',
+      'showMainWindow must not fall back to port 3000 â€” production binds 47823â€“47830',
     );
 
     const activateBlock = MAIN.match(
@@ -198,7 +198,7 @@ describe('electron/main.ts â€?menubar-resident invariants', () => {
     assert.doesNotMatch(
       activateBlock![0],
       /serverPort\s*\|\|\s*3000/,
-      'app.on("activate") must not fall back to port 3000 â€?production binds 47823â€?7830',
+      'app.on("activate") must not fall back to port 3000 â€” production binds 47823â€“47830',
     );
 
     // Positive: both paths must reach the helper instead.

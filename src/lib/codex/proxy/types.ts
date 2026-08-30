@@ -1,19 +1,19 @@
 /**
- * Phase 5b â?Codex Responses-API proxy types.
+ * Phase 5b — Codex Responses-API proxy types.
  *
  * Narrowed subset of OpenAI's Responses-API that Codex's HTTP client
  * sends through the `codepilot_proxy` model_provider injection
  * (see `src/lib/codex/provider-proxy.ts`). We don't try to mirror
- * the full Responses surface â?only the fields Codex actually emits +
+ * the full Responses surface — only the fields Codex actually emits +
  * the events Codex's reader actually consumes.
  *
  * Source of truth for the wire shape: Codex's
  * `app-server-protocol`'s `Responses` config + Codex CLI's own
- * Responses request/response handling. buckyball.ai's adapter sits
+ * Responses request/response handling. CodePilot's adapter sits
  * between this wire format and the ai-sdk `LanguageModelV2` it
- * already uses for the Native runtime â?provider resolution happens
+ * already uses for the Native runtime — provider resolution happens
  * via `createModel(...)`, and the adapter only translates the
- * Responses envelope â?ai-sdk `ModelMessage[] + ToolSet` /
+ * Responses envelope ↔ ai-sdk `ModelMessage[] + ToolSet` /
  * `streamText` events.
  *
  * Field-level docstrings explain how each field maps to ai-sdk;
@@ -21,9 +21,9 @@
  * Responses-spec extension flows through with a single touch point.
  */
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Request
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 /**
  * Codex passes its accumulated turn state as `input: ResponsesInputItem[]`.
@@ -75,7 +75,7 @@ export interface ResponsesFunctionCallItem {
 export interface ResponsesFunctionCallOutputItem {
   type: 'function_call_output';
   call_id: string;
-  /** Output payload â?JSON-encoded if structured, raw string otherwise.
+  /** Output payload — JSON-encoded if structured, raw string otherwise.
    *  ai-sdk's tool_result content takes a JSON value, so the adapter
    *  attempts JSON.parse first and falls back to the raw string. */
   output: string;
@@ -89,7 +89,7 @@ export interface ResponsesFunctionCallOutputItem {
  * adapter forwards function tools straight to ai-sdk; non-function
  * tools (Codex's custom shell / apply_patch / future plugin types)
  * are preserved as `ClassifiedNonFunctionTool[]` for the bridge layer
- * to inspect â?Phase 5c routes around them rather than dropping
+ * to inspect — Phase 5c routes around them rather than dropping
  * them silently (the pre-5c behaviour caused GLM/Kimi to see Skill
  * text mentioning a tool that wasn't actually in their function list).
  */
@@ -103,19 +103,19 @@ export interface ResponsesFunctionTool {
   description?: string;
   /** JSON Schema for the arguments. ai-sdk consumes this verbatim. */
   parameters?: Record<string, unknown>;
-  /** Strict-mode flag â?ai-sdk doesn't expose a direct equivalent;
+  /** Strict-mode flag — ai-sdk doesn't expose a direct equivalent;
    *  the adapter ignores this field but preserves it on tool_call
    *  echo so Codex's correlator stays consistent. */
   strict?: boolean;
 }
 
 /**
- * Phase 5c (2026-05-16) â?non-function tools encountered in the
+ * Phase 5c (2026-05-16) — non-function tools encountered in the
  * incoming Responses request.
  *
  * Codex's real `turn/start` payload mixes function tools with
  * Codex-specific entries like `{ type: 'custom', ... }` (shell /
- * apply_patch surfaces). Pre-5c we silently dropped them â?the
+ * apply_patch surfaces). Pre-5c we silently dropped them — the
  * "non-function tools NOT supported yet" branch in
  * `translate-tools.ts` was the visible part of that policy. The drop
  * was load-bearing for two failure modes:
@@ -145,7 +145,7 @@ export interface ClassifiedNonFunctionTool {
 }
 
 export interface ResponsesRequestBody {
-  /** Model id from Codex's perspective â?the codex_codepilot proxy
+  /** Model id from Codex's perspective — the codex_codepilot proxy
    *  decides what to do with it. Codex sends the model name the user
    *  picked in their flow; the adapter resolves the corresponding
    *  CodePilot provider model via `provider-resolver`. */
@@ -156,14 +156,14 @@ export interface ResponsesRequestBody {
    *  `[]` means no function tools available. Non-function tools live
    *  in `passthroughTools` so the adapter can still see them. */
   tools?: ResponsesTool[];
-  /** Phase 5c (2026-05-16) â?non-function tools Codex sent (custom /
+  /** Phase 5c (2026-05-16) — non-function tools Codex sent (custom /
    *  plugin / etc.). Kept for diagnostics + future bridge work; the
    *  unified adapter logs them so smoke runs can see which Codex
    *  surfaces a CodePilot provider was being asked to satisfy. */
   passthroughTools?: ClassifiedNonFunctionTool[];
   /** Whether to stream the response. Codex defaults to `true`. */
   stream?: boolean;
-  /** Instructions block â?Codex's developer-message hook. The
+  /** Instructions block — Codex's developer-message hook. The
    *  adapter passes through as a `system` ModelMessage prepended
    *  to the conversation. */
   instructions?: string;
@@ -187,22 +187,22 @@ export interface ResponsesRequestBody {
   store?: boolean;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Stream events (SSE)
 //
 // Contract sources (Phase 5b smoke round 6, 2026-05-16):
 //   - resources/codex/sdk/typescript/tests/responsesProxy.ts
-//     (public SDK test fixture â?success path event shapes)
+//     (public SDK test fixture — success path event shapes)
 //   - resources/codex/codex-rs/codex-api/src/sse/responses.rs
 //     `process_responses_event` (Codex app-server's actual stream
-//     parser â?defines the events Codex production consumes)
+//     parser — defines the events Codex production consumes)
 //
 // Critical asymmetry between the two sources: the SDK fixture's
 // `responseFailed()` emits `{type: 'error', error: {code, message}}`,
 // but Codex's app-server parser (`process_responses_event`) only
 // matches `response.failed`, NOT `error`. Phase 5b smoke round 5
 // initially aligned the error path with the SDK fixture; round 6
-// reverted that â?the app-server JSON-RPC path is the production
+// reverted that — the app-server JSON-RPC path is the production
 // channel today, so streaming failures MUST use `response.failed` or
 // they fall through to "stream closed before response.completed" and
 // the user sees a silent failure. The success path stays aligned to
@@ -222,7 +222,7 @@ export interface ResponsesRequestBody {
 //                              "completed but blank" because we emitted
 //                              only output_text.delta + completed without
 //                              this event.
-//   response.completed         Final marker. `response.usage` only â?NO
+//   response.completed         Final marker. `response.usage` only — NO
 //                              `status` / `finish_reason`. Usage shape is
 //                              `{ input_tokens, input_tokens_details: { cached_tokens } | null,
 //                                 output_tokens, output_tokens_details: { reasoning_tokens } | null,
@@ -235,7 +235,7 @@ export interface ResponsesRequestBody {
 //                              QuotaExceeded / ServerOverloaded etc.);
 //                              `error.message` is surfaced verbatim
 //                              to the user.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export type ResponsesEvent =
   | ResponsesCreatedEvent
@@ -257,11 +257,11 @@ export interface ResponsesInProgressEvent {
 }
 
 /**
- * `response.output_item.added` â?optional pre-amble for a new output
+ * `response.output_item.added` — optional pre-amble for a new output
  * item. The SDK fixture only emits `output_item.done`; the added
  * event is what Codex's streaming reader uses to mount an
  * incremental UI slot. Phase 5b only emits `added` for message
- * items today â?function_call lands wholesale in `done` since we
+ * items today — function_call lands wholesale in `done` since we
  * don't stream args separately.
  */
 export interface ResponsesOutputItemAddedEvent {
@@ -286,7 +286,7 @@ export interface ResponsesOutputTextDeltaEvent {
 }
 
 /**
- * `response.output_item.done` â?REQUIRED. Codex's
+ * `response.output_item.done` — REQUIRED. Codex's
  * `handle_output_item_done` (codex-rs/core/src/stream_events_utils.rs)
  * is what records the final item into the turn's items array. Missing
  * this event = "completed but blank" UI failure.
@@ -294,7 +294,7 @@ export interface ResponsesOutputTextDeltaEvent {
  * The `item` payload mirrors Codex's `ResponseItem` enum: message,
  * function_call, reasoning, web_search_call, image_generation_call.
  * Phase 5b only emits message + function_call. Shape is shared with
- * the non-stream `ResponsesOutputItem` declared below â?they're the
+ * the non-stream `ResponsesOutputItem` declared below — they're the
  * same conceptual record (the final form of an output item).
  */
 export interface ResponsesOutputItemDoneEvent {
@@ -314,28 +314,28 @@ export interface ResponsesCompletedEvent {
 /**
  * Terminal error event consumed by Codex's app-server SSE parser
  * (`codex-rs/codex-api/src/sse/responses.rs`
- * `process_responses_event` â?`"response.failed"` arm). The parser
+ * `process_responses_event` → `"response.failed"` arm). The parser
  * reads `response.error.code` to classify the failure into one of:
- *   - context_length_exceeded â?ApiError::ContextWindowExceeded
- *   - insufficient_quota / rate_limit â?ApiError::QuotaExceeded
- *   - usage_not_included â?ApiError::UsageNotIncluded
- *   - cyber_policy â?ApiError::CyberPolicy
- *   - invalid_prompt â?ApiError::InvalidRequest
- *   - server_overloaded â?ApiError::ServerOverloaded
- *   - otherwise â?ApiError::Retryable with message + retry-after
+ *   - context_length_exceeded → ApiError::ContextWindowExceeded
+ *   - insufficient_quota / rate_limit → ApiError::QuotaExceeded
+ *   - usage_not_included → ApiError::UsageNotIncluded
+ *   - cyber_policy → ApiError::CyberPolicy
+ *   - invalid_prompt → ApiError::InvalidRequest
+ *   - server_overloaded → ApiError::ServerOverloaded
+ *   - otherwise → ApiError::Retryable with message + retry-after
  *
  * `error.message` is the user-facing string surfaced in the chat.
  *
  * Phase 5b smoke round 5 mistakenly aligned this with the public
  * SDK fixture's `{type: 'error', error}` shape, but the app-server
- * parser doesn't match `error` â?falls through to the trace
+ * parser doesn't match `error` — falls through to the trace
  * "unhandled responses event" branch, then `[DONE]` never converts
  * to a completed event, and Codex throws "stream closed before
  * response.completed". Round 6 reverted to `response.failed` so the
  * failure surfaces as a proper structured error.
  *
  * The SDK runStreamed() POC (if/when we adopt @openai/codex-sdk for
- * execution) will use the `error` shape â?at that point this type
+ * execution) will use the `error` shape — at that point this type
  * gets paired with a sibling SDK-flavoured failure event, and the
  * caller picks one based on the path.
  */
@@ -344,7 +344,7 @@ export interface ResponsesFailedEvent {
   response: {
     id: string;
     /** Codex's parser also tolerates `status: 'failed'` / `usage: null`
-     *  fields â?both optional. We omit unless a future contract test
+     *  fields — both optional. We omit unless a future contract test
      *  demands them. */
     error: { code: string; message: string };
   };
@@ -365,9 +365,9 @@ export interface ResponsesUsage {
   total_tokens: number;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Non-stream response
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface ResponsesNonStreamResponse {
   id: string;
@@ -382,7 +382,7 @@ export interface ResponsesNonStreamResponse {
 }
 
 /**
- * Final shape of an output item â?used both inside
+ * Final shape of an output item — used both inside
  * `response.output_item.done` (SSE stream) and inside
  * `ResponsesNonStreamResponse.output[]` (non-stream JSON). Codex's
  * `handle_output_item_done` accepts this shape uniformly.
@@ -398,7 +398,7 @@ export type ResponsesOutputItem =
       arguments: string;
     };
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Errors
 //
 // Structured error envelope shared by stream `response.failed` and
@@ -407,7 +407,7 @@ export type ResponsesOutputItem =
 // timeout, tool translation errors) map to one of these codes so
 // Codex's reader / our own surface can branch on code rather than
 // pattern-matching the message.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export type ResponsesErrorCode =
   /** Bad / unparseable Responses request body. */
@@ -418,7 +418,7 @@ export type ResponsesErrorCode =
   /** Provider has no credentials configured (api_key / oauth missing). */
   | 'credentials_missing'
   /** Provider sat in the catalog but the proxy can't route the
-   *  request through an adapter â?almost always the `unknown` compat
+   *  request through an adapter — almost always the `unknown` compat
    *  tier (wire format unidentified). Carries `compat` and `family`
    *  in context for diagnostics. */
   | 'adapter_not_implemented'
@@ -446,24 +446,24 @@ export interface ResponsesErrorPayload {
   /** Human-readable. UI surfaces this directly; use proper sentence
    *  with the constraint named (no codes, no stack traces). */
   message: string;
-  /** Optional structured context â?provider id, compat tier, upstream
+  /** Optional structured context — provider id, compat tier, upstream
    *  status code, etc. Stays JSON-serialisable. */
   context?: Record<string, unknown>;
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Adapter contract
 //
 // Single entry point: parse + validate the incoming request, resolve
 // the target provider, route through ai-sdk, translate output. All
 // the wire-format work lives behind this interface so the route file
 // stays a thin HTTP shell.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 export interface ProxyHandlerInput {
   /** Raw `x-codepilot-target-provider` header value. */
   targetProviderId: string;
-  /** Phase 5c (2026-05-16) â?`x-codepilot-session-id` header set by
+  /** Phase 5c (2026-05-16) — `x-codepilot-session-id` header set by
    *  the runtime injection (see `provider-proxy.ts`
    *  `buildCodexProviderProxyInjection`). The unified adapter uses it
    *  to:
@@ -472,10 +472,10 @@ export interface ProxyHandlerInput {
    *    2. Address the side-channel event bus so tool execution
    *       results flow back to the user's chat UI.
    *  Empty when CodexRuntime didn't supply it (older builds or a
-   *  manual smoke run). When empty the bridge is not mounted â?the
+   *  manual smoke run). When empty the bridge is not mounted — the
    *  proxy still serves the original chat-only flow. */
   sessionId: string;
-  /** Phase 5c (2026-05-16) â?`x-codepilot-workspace-path` header.
+  /** Phase 5c (2026-05-16) — `x-codepilot-workspace-path` header.
    *  Forwarded into bridge tools that need a working directory
    *  (image gen reference-path resolution, memory workspace lookup,
    *  scheduled-task origin recording). May be empty even when
@@ -483,14 +483,14 @@ export interface ProxyHandlerInput {
   workspacePath: string;
   /** Parsed Responses request body. */
   body: ResponsesRequestBody;
-  /** Per-call abort signal â?wired to the inbound request so Codex
+  /** Per-call abort signal — wired to the inbound request so Codex
    *  closing the connection cancels the upstream call too. */
   signal: AbortSignal;
 }
 
 export interface ProxyStreamResult {
   kind: 'stream';
-  /** SSE response body â?`data: ${JSON}\n\n` framed. */
+  /** SSE response body — `data: ${JSON}\n\n` framed. */
   body: ReadableStream<Uint8Array>;
 }
 

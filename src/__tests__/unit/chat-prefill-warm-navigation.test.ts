@@ -1,16 +1,30 @@
 /**
- * v8 fix �?Tasks �?新建任务"跳到 /chat?prefill=�?时输入框必须真的回填
- * prefill 文本。Pre-fix 有两层独�?staleness�? *
- *   1. `src/app/chat/page.tsx` �?`useMemo([])` �?`window.location.search`�? *      只在 mount 那一次执行；如果 /chat 已经挂着 (warm 导航 / 浏览�? *      back-forward / router.replace) 再换 ?prefill=…，缓存值不更新�? *
- *   2. `src/components/chat/MessageInput.tsx` �?`useState(() =>
- *      initialValue || draft)` 只在 mount 时读 `initialValue` prop�? *      之后即使父组件把�?prefill 喂给 prop，textarea 也不动�? *
- * 修法�?1) chat/page.tsx 拆出内层组件、外�?export �?Suspense�? *       内层�?`useSearchParams()` �?prefill —�?React 会在 URL 变化�? *       自然 re-render�?2) MessageInput �?React 官方"prop 变化时渲染期
- *       调整 state"模式（render time，非 useEffect）：�?`seenInitialValue`
- *       state 追踪上次 reconcile �?prop，`initialValue !== seenInitialValue`
- *       时记录转变并在非空时 `setInputValueRaw(initialValue)` —�?�?mount �? *       "prefill 战胜 draft" 的优先级一致�? *
- * 2026-06-01 P0.4�?2) �?`useEffect + adoptedInitialValueRef` 迁到渲染�? *       seenInitialValue 模式，顺带清�?set-state-in-effect / refs 两条
- *       React Compiler error�?35 on-touch）。下�?pin 已同步新结构�? *
- * 这个文件�?source-grep 契约：钉死两层修复都不被未来重构默默退�? * 静态读取。无需 React Testing Library 也能跑�? */
+ * v8 fix — Tasks 页"新建任务"跳到 /chat?prefill=… 时输入框必须真的回填
+ * prefill 文本。Pre-fix 有两层独立 staleness：
+ *
+ *   1. `src/app/chat/page.tsx` 用 `useMemo([])` 读 `window.location.search`，
+ *      只在 mount 那一次执行；如果 /chat 已经挂着 (warm 导航 / 浏览器
+ *      back-forward / router.replace) 再换 ?prefill=…，缓存值不更新。
+ *
+ *   2. `src/components/chat/MessageInput.tsx` 用 `useState(() =>
+ *      initialValue || draft)` 只在 mount 时读 `initialValue` prop；
+ *      之后即使父组件把新 prefill 喂给 prop，textarea 也不动。
+ *
+ * 修法：(1) chat/page.tsx 拆出内层组件、外层 export 包 Suspense，
+ *       内层用 `useSearchParams()` 读 prefill —— React 会在 URL 变化时
+ *       自然 re-render；(2) MessageInput 用 React 官方"prop 变化时渲染期
+ *       调整 state"模式（render time，非 useEffect）：用 `seenInitialValue`
+ *       state 追踪上次 reconcile 的 prop，`initialValue !== seenInitialValue`
+ *       时记录转变并在非空时 `setInputValueRaw(initialValue)` —— 跟 mount 时
+ *       "prefill 战胜 draft" 的优先级一致。
+ *
+ * 2026-06-01 P0.4：(2) 从 `useEffect + adoptedInitialValueRef` 迁到渲染期
+ *       seenInitialValue 模式，顺带清掉 set-state-in-effect / refs 两条
+ *       React Compiler error（#35 on-touch）。下方 pin 已同步新结构。
+ *
+ * 这个文件是 source-grep 契约：钉死两层修复都不被未来重构默默退回
+ * 静态读取。无需 React Testing Library 也能跑。
+ */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,7 +50,7 @@ describe('chat/page.tsx prefill must be reactive to URL changes', () => {
     assert.match(
       CHAT_PAGE,
       /import\s*\{[^}]*\buseSearchParams\b[^}]*\}\s*from\s+['"]next\/navigation['"]/,
-      'chat/page.tsx must import useSearchParams from next/navigation �?`useMemo([])` reading `window.location.search` is the pre-fix pattern that ignored warm-navigation URL changes',
+      'chat/page.tsx must import useSearchParams from next/navigation — `useMemo([])` reading `window.location.search` is the pre-fix pattern that ignored warm-navigation URL changes',
     );
   });
 
@@ -47,7 +61,7 @@ describe('chat/page.tsx prefill must be reactive to URL changes', () => {
     assert.doesNotMatch(
       CHAT_PAGE,
       /useMemo\(\s*\(\)\s*=>\s*\{[\s\S]*?window\.location\.search[\s\S]*?prefill[\s\S]*?\}\s*,\s*\[\s*\]\s*\)/,
-      'chat/page.tsx must NOT read prefill via `useMemo([])` over window.location.search �?that pattern caches the URL forever and breaks warm navigation. Use `useSearchParams().get("prefill")` inside a Suspense-wrapped inner component.',
+      'chat/page.tsx must NOT read prefill via `useMemo([])` over window.location.search — that pattern caches the URL forever and breaks warm navigation. Use `useSearchParams().get("prefill")` inside a Suspense-wrapped inner component.',
     );
   });
 
@@ -67,7 +81,7 @@ describe('chat/page.tsx prefill must be reactive to URL changes', () => {
     assert.match(
       CHAT_PAGE,
       /searchParams\.get\(\s*['"]prefill['"]\s*\)/,
-      'chat/page.tsx must call `searchParams.get("prefill")` �?that is what makes prefill react to URL changes after mount',
+      'chat/page.tsx must call `searchParams.get("prefill")` — that is what makes prefill react to URL changes after mount',
     );
   });
 });
@@ -76,13 +90,13 @@ describe('MessageInput initialValue prop must propagate after mount (warm-naviga
   it('tracks the last reconciled initialValue in STATE (render-time prop-transition pattern)', () => {
     // React's "adjust state when a prop changes" pattern records the last
     // seen prop in STATE (not a ref) so the reconcile can run during render
-    // without a ref read �?reading a ref during render is itself a React
+    // without a ref read — reading a ref during render is itself a React
     // Compiler bailout. Without this guard the sync would re-adopt prefill
     // every time the user types and the parent re-renders with the same prop.
     assert.match(
       MESSAGE_INPUT,
       /const\s*\[\s*seenInitialValue\s*,\s*setSeenInitialValue\s*\]\s*=\s*useState\(\s*initialValue\s*\)/,
-      'MessageInput must track the last reconciled prefill in state �?`const [seenInitialValue, setSeenInitialValue] = useState(initialValue)`',
+      'MessageInput must track the last reconciled prefill in state — `const [seenInitialValue, setSeenInitialValue] = useState(initialValue)`',
     );
   });
 
@@ -97,7 +111,7 @@ describe('MessageInput initialValue prop must propagate after mount (warm-naviga
     );
     assert.ok(
       guard,
-      'MessageInput must reconcile prefill at render time: `if (initialValue !== seenInitialValue) { �?setInputValueRaw(initialValue) }` �?the warm-navigation adoption path',
+      'MessageInput must reconcile prefill at render time: `if (initialValue !== seenInitialValue) { … setInputValueRaw(initialValue) }` — the warm-navigation adoption path',
     );
     assert.match(
       guard![0],
@@ -113,13 +127,13 @@ describe('MessageInput initialValue prop must propagate after mount (warm-naviga
     assert.doesNotMatch(
       MESSAGE_INPUT,
       /adoptedInitialValueRef/,
-      'the prefill sync must not use adoptedInitialValueRef �?superseded by the render-time seenInitialValue pattern',
+      'the prefill sync must not use adoptedInitialValueRef — superseded by the render-time seenInitialValue pattern',
     );
   });
 
-  it('records EVERY transition (incl. �?empty) so re-arrival of the same prefill re-adopts', () => {
+  it('records EVERY transition (incl. → empty) so re-arrival of the same prefill re-adopts', () => {
     // setSeenInitialValue runs for ANY transition (it's the first statement,
-    // before the non-empty adoption), so prefill "hi" �?"" �?"hi" re-adopts:
+    // before the non-empty adoption), so prefill "hi" → "" → "hi" re-adopts:
     // the second "hi" !== seen("") . This is the 新建任务 re-click scenario;
     // a regression that only updated `seen` on non-empty values would pin it
     // to the old prefill and silently drop the re-click.
@@ -131,7 +145,7 @@ describe('MessageInput initialValue prop must propagate after mount (warm-naviga
     const adoptIdx = guard![0].indexOf('setInputValueRaw');
     assert.ok(
       seenIdx !== -1 && (adoptIdx === -1 || seenIdx < adoptIdx),
-      'setSeenInitialValue must run for every transition (before the non-empty adoption) so a �?empty transition is recorded too',
+      'setSeenInitialValue must run for every transition (before the non-empty adoption) so a → empty transition is recorded too',
     );
   });
 });

@@ -125,7 +125,7 @@ interface StreamingMessageProps {
 }
 
 /**
- * Smart content buffering â€?holds initial text until meaningful, but bypasses
+ * Smart content buffering â€” holds initial text until meaningful, but bypasses
  * for structured blocks (show-widget, batch-plan, image-gen-request).
  */
 const BUFFER_WORD_THRESHOLD = 40;
@@ -160,7 +160,7 @@ function useBufferedContent(rawContent: string, isStreaming: boolean): string {
     }
   }, [rawContent, isStreaming]);
 
-  // Effect: max timeout â€?starts once when content first arrives during streaming.
+  // Effect: max timeout â€” starts once when content first arrives during streaming.
   // Uses a boolean gate (hasContent) so the timer is created exactly once, not on every delta.
   const hasContent = !!rawContent;
   useEffect(() => {
@@ -171,7 +171,7 @@ function useBufferedContent(rawContent: string, isStreaming: boolean): string {
       setBypassed(true);
       timerRef.current = null;
     }, BUFFER_MAX_MS);
-    // No cleanup â€?timer must survive rawContent changes.
+    // No cleanup â€” timer must survive rawContent changes.
     // It is cleaned up by the reset effect (when content empties) or when bypassed is set.
   }, [isStreaming, bypassed, hasContent]);
 
@@ -183,13 +183,13 @@ function useBufferedContent(rawContent: string, isStreaming: boolean): string {
 
 /**
  * Wait-phase label shown while waiting for the first content token.
- * Pure UX-comfort progression â€?NOT tied to model thinking/reasoning state.
+ * Pure UX-comfort progression â€” NOT tied to model thinking/reasoning state.
  * Real reasoning content is rendered separately by ToolActionsGroup's ThinkingRow.
- *   0-5s:  "ç”Ÿæˆä¸?.." / "Generating..."
- *   5-15s: "å›žå¤ä¸?.." / "Responding..."
- *   15s+:  "ç»„ç»‡å›žå¤ä¸?.." / "Preparing response..."
+ *   0-5s:  "ç”Ÿæˆä¸­..." / "Generating..."
+ *   5-15s: "å›žå¤ä¸­..." / "Responding..."
+ *   15s+:  "ç»„ç»‡å›žå¤ä¸­..." / "Preparing response..."
  * Wording deliberately avoids "thinking" because users read it as the model
- * actually reasoning hard â€?misleading for short prompts where the model
+ * actually reasoning hard â€” misleading for short prompts where the model
  * just hasn't streamed first byte yet.
  */
 function ThinkingPhaseLabel() {
@@ -223,14 +223,14 @@ function ThinkingPhaseLabel() {
 }
 
 function ElapsedTimer({ startedAt }: { startedAt: number }) {
-  // Phase 6 P0 follow-up (2026-05-15) â€?guard against the brief
+  // Phase 6 P0 follow-up (2026-05-15) â€” guard against the brief
   // window right after `setIsStreaming(true)` where the parent
   // hasn't yet populated `startedAt` (snapshot can still be 0 /
   // undefined / NaN). Without this gate the JS arithmetic
   // produces `NaN` (undefined minus number) or a huge nonsense
   // number (0 minus Date.now()), and the rendered `${secs}s`
   // template flashes "NaNs" or "1.7e9s" for a tick. The status
-  // bar's "Thinking..." shimmer + label still surface â€?we just
+  // bar's "Thinking..." shimmer + label still surface â€” we just
   // hide the elapsed-time counter until the start timestamp is
   // a real positive monotonic value.
   const startedAtIsReady = Number.isFinite(startedAt) && startedAt > 0;
@@ -240,10 +240,10 @@ function ElapsedTimer({ startedAt }: { startedAt: number }) {
 
   // The parent keys this component by `startedAt` (see render site), so a new
   // turn / session switch remounts it and the lazy initializer above repaints
-  // the correct first value synchronously â€?no stale tick. This effect then
+  // the correct first value synchronously â€” no stale tick. This effect then
   // only ticks every second; setState runs in the interval callback (async),
   // never in the effect body, so there's no set-state-in-effect cascade.
-  // (#35 on-touch â€?previously a same-render reset effect that the React
+  // (#35 on-touch â€” previously a same-render reset effect that the React
   // Compiler flagged; key-based remount is the clean equivalent.)
   useEffect(() => {
     if (!startedAtIsReady) return;
@@ -319,7 +319,7 @@ export function StreamingMessage({
   const bufferedContent = useBufferedContent(content, isStreaming);
   // A2 (audit 2026-06): index toolResults by id once, then reuse for both the
   // running-tools filter and the per-tool lookup in the render below. Both
-  // previously did an O(n) scan inside an O(n) loop â†?O(nÂ²) every render.
+  // previously did an O(n) scan inside an O(n) loop â†’ O(nÂ²) every render.
   const toolResultsById = useMemo(
     () => new Map(toolResults.map((r) => [r.tool_use_id, r] as const)),
     [toolResults]
@@ -359,7 +359,7 @@ export function StreamingMessage({
   // Extract a human-readable summary of the running command
   const getRunningCommandSummary = (): string | undefined => {
     if (runningTools.length === 0) {
-      // All tools completed but still streaming â€?AI is generating text
+      // All tools completed but still streaming â€” AI is generating text
       if (toolUses.length > 0) return 'Generating response...';
       return undefined;
     }
@@ -377,7 +377,7 @@ export function StreamingMessage({
   return (
     <AIMessage from="assistant">
       <MessageContent>
-        {/* Tool calls + thinking â€?single collapsible group */}
+        {/* Tool calls + thinking â€” single collapsible group */}
         {(regularTools.length > 0 || thinkingContent) && (
           <ToolActionsGroup
             tools={regularTools.map((tool) => {
@@ -397,7 +397,7 @@ export function StreamingMessage({
           />
         )}
 
-        {/* Media from tool results â€?rendered outside tool group so images stay visible */}
+        {/* Media from tool results â€” rendered outside tool group so images stay visible */}
         {(() => {
           const allMedia = toolResults.flatMap(r => r.media || []);
           return allMedia.length > 0 ? <MediaPreview media={allMedia} /> : null;
@@ -436,7 +436,7 @@ export function StreamingMessage({
             }
 
             if (lastFenceClosed) {
-              // All fences complete â€?parse and render the full content
+              // All fences complete â€” parse and render the full content
               const allSegments = parseAllShowWidgets(content);
               return (
                 <>
@@ -615,14 +615,14 @@ export function StreamingMessage({
           return stripped ? <MessageResponse>{stripped}</MessageResponse> : null;
         })()}
 
-        {/* Loading indicator when no content yet and no thinking content â€?evolves over time */}
+        {/* Loading indicator when no content yet and no thinking content â€” evolves over time */}
         {isStreaming && !content && toolUses.length === 0 && !thinkingContent && (
           <div className="py-2">
             <ThinkingPhaseLabel />
           </div>
         )}
 
-        {/* Status bar during streaming â€?priority: tool status > widget > generating > thinking */}
+        {/* Status bar during streaming â€” priority: tool status > widget > generating > thinking */}
         {isStreaming && <StreamingStatusBar statusText={
           statusText
           || getRunningCommandSummary()

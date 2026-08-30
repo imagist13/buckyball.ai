@@ -1,5 +1,5 @@
 /**
- * `codepilot:file-changed` â€?unified frontend notification channel for
+ * `codepilot:file-changed` â€” unified frontend notification channel for
  * "a file on disk was just rewritten." Phase 4 Phase 1 of the Markdown /
  * Artifact closure.
  *
@@ -9,7 +9,7 @@
  *  - Any future surface that writes files via the renderer process
  *
  * Consumers:
- *  - PreviewPanel â€?refetches the active file when paths include
+ *  - PreviewPanel â€” refetches the active file when paths include
  *    filePath AND the editor buffer is clean. If the buffer is dirty,
  *    the panel surfaces a conflict banner instead of clobbering edits.
  *
@@ -44,7 +44,7 @@ export interface FileChangedDetail {
 /**
  * Dispatch a file-changed event. No-ops outside a browser (SSR / unit
  * tests that don't run with jsdom). When called with an empty `paths`
- * array we still dispatch â€?consumers can interpret that as a generic
+ * array we still dispatch â€” consumers can interpret that as a generic
  * "stale, force refetch" pulse.
  */
 export function dispatchFileChanged(detail: FileChangedDetail): void {

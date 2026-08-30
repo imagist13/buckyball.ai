@@ -1,30 +1,32 @@
 /**
- * builtin-tools/media.ts �?Media import + image generation tools (Native Runtime).
+ * builtin-tools/media.ts — Media import + image generation tools (Native Runtime).
  *
- * Phase 5d Phase 2 slice 2d (2026-05-17) �?system prompt is shared
+ * Phase 5d Phase 2 slice 2d (2026-05-17) — system prompt is shared
  * with the MCP-side implementation.
  *
- * 2026-08-14 P1 �?import the prompt from a dependency-free module,
+ * 2026-08-14 P1 — import the prompt from a dependency-free module,
  * never from `media-import-mcp.ts`. That MCP module imports the Claude
  * Agent SDK and becomes an async Turbopack chunk. A synchronous `require`
  * from the Native tool registry then failed and silently removed this
  * entire tool group from the real Next route.
  *
- * Phase 5e Phase 0.5 P1 (2026-05-17 Native MediaBlock 補齐) �?image
+ * Phase 5e Phase 0.5 P1 (2026-05-17 Native MediaBlock 補齐) — image
  * generation + media import now emit `MediaBlock[]` via the harness
  * side-channel event bus (`@/lib/harness/builtin-event-bus`). Pre-fix
  * both tools returned a plain "Image generated: <path>" / "Media
  * imported: <path>" string from `execute()`; `agent-loop.ts`'s
  * `tool-result` SSE handler only stringified the output, so the chat
  * UI's `MediaPreview` (which reads SSE `tool_result.media`) never saw
- * an image card. This was the Phase 5e Phase 0.5 audit's P1 finding �? * "工具存在但语义不完整": tool runs, returns localPath, model says
+ * an image card. This was the Phase 5e Phase 0.5 audit's P1 finding —
+ * "工具存在但语义不完整": tool runs, returns localPath, model says
  * "done", but user sees no image in the chat surface.
  *
  * Fix shape (mirrors `src/lib/codex/proxy/builtin-bridge.ts` Codex
  * bridge):
  *   1. `execute()` accepts ai-sdk's `toolCallId` from execOptions.
  *   2. Tool body builds the `MediaBlock[]` and emits a `tool_completed`
- *      RuntimeRunEvent through `emitBuiltinEvent(sessionId, ...)` �? *      this is the side-channel.
+ *      RuntimeRunEvent through `emitBuiltinEvent(sessionId, ...)` —
+ *      this is the side-channel.
  *   3. `execute()` returns plain TEXT to ai-sdk (model sees clean
  *      description, NOT a base64-bearing JSON blob).
  *   4. `agent-loop.ts` subscribes to the bus per turn, splices the
@@ -43,6 +45,7 @@ import type { MediaBlock } from '@/types';
 import { emitBuiltinEvent } from '@/lib/harness/builtin-event-bus';
 import { makeToolCompleted } from '@/lib/runtime/event-adapter';
 import { isXaiOAuthUsable } from '@/lib/xai-oauth-manager';
+import { prepareMediaFailureForRethrow } from '@/lib/telemetry/media-failure';
 
 export const MEDIA_SYSTEM_PROMPT = MEDIA_CAPABILITY_SYSTEM_PROMPT;
 
@@ -104,11 +107,12 @@ export function createMediaTools(options?: MediaToolOptions) {
         model: z.string().optional(),
         tags: z.array(z.string()).optional(),
       }),
-      // Phase 5e Phase 0.5 P1 �?second arg destructures ai-sdk's
+      // Phase 5e Phase 0.5 P1 — second arg destructures ai-sdk's
       // `toolCallId` so the side-channel emit can be paired back to
       // the exact tool-result event in agent-loop.
       execute: async ({ filePath, title, prompt, source, model, tags }, execOptions) => {
-        const toolCallId = (execOptions as { toolCallId?: string } | undefined)?.toolCallId ?? '';
+        const execution = execOptions as { toolCallId?: string; abortSignal?: AbortSignal } | undefined;
+        const toolCallId = execution?.toolCallId ?? '';
         try {
           const { importFileToLibrary } = await import('@/lib/media-saver');
           const result = importFileToLibrary(filePath, {
@@ -123,7 +127,7 @@ export function createMediaTools(options?: MediaToolOptions) {
           } as any);
           // `importFileToLibrary` can return either a typed result
           // object (newer call sites pass an options bag) or a string
-          // (legacy). Narrow defensively �?Native used to only read
+          // (legacy). Narrow defensively — Native used to only read
           // the string form; now we want the structured form for the
           // MediaBlock.
           const localPath =
@@ -151,7 +155,7 @@ export function createMediaTools(options?: MediaToolOptions) {
             emitBuiltinEvent(
               sessionId,
               makeToolCompleted(
-                { runtimeId: 'bbagent', sessionId },
+                { runtimeId: 'codepilot_runtime', sessionId },
                 {
                   toolId: toolCallId,
                   output: `Media imported: ${localPath}`,
@@ -162,7 +166,9 @@ export function createMediaTools(options?: MediaToolOptions) {
           }
           return `Media imported: ${localPath} (type=${mediaType})`;
         } catch (err) {
-          throw err instanceof Error ? err : new Error('Media import failed');
+          throw prepareMediaFailureForRethrow(err, 'Media import failed', {
+            userCancelled: execution?.abortSignal?.aborted === true,
+          });
         }
       },
     }),
@@ -197,7 +203,7 @@ export function createMediaTools(options?: MediaToolOptions) {
 
           // `generateSingleImage` returns either an `images[]` array
           // (Phase 5c onwards, the same shape the Codex bridge
-          // consumes �?see builtin-bridge.ts:300-305) or a legacy
+          // consumes — see builtin-bridge.ts:300-305) or a legacy
           // shape with a single `localPath`. Build the MediaBlock[]
           // off whichever is present.
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -230,7 +236,7 @@ export function createMediaTools(options?: MediaToolOptions) {
             emitBuiltinEvent(
               sessionId,
               makeToolCompleted(
-                { runtimeId: 'bbagent', sessionId },
+                { runtimeId: 'codepilot_runtime', sessionId },
                 {
                   toolId: toolCallId,
                   output: text,
@@ -241,7 +247,9 @@ export function createMediaTools(options?: MediaToolOptions) {
           }
           return text;
         } catch (err) {
-          throw err instanceof Error ? err : new Error('Image generation failed');
+          throw prepareMediaFailureForRethrow(err, 'Image generation failed', {
+            userCancelled: execution?.abortSignal?.aborted === true,
+          });
         }
       },
     }),
@@ -275,7 +283,7 @@ export function createMediaTools(options?: MediaToolOptions) {
             aspectRatio,
             resolution,
             sessionId,
-            runtimeId: 'bbagent',
+            runtimeId: 'codepilot_runtime',
             cwd: options?.workingDirectory,
             abortSignal: execution?.abortSignal,
           });
@@ -290,14 +298,16 @@ export function createMediaTools(options?: MediaToolOptions) {
             emitBuiltinEvent(
               sessionId,
               makeToolCompleted(
-                { runtimeId: 'bbagent', sessionId },
+                { runtimeId: 'codepilot_runtime', sessionId },
                 { toolId: toolCallId, output: text, media: [block] },
               ),
             );
           }
           return text;
         } catch (err) {
-          throw err instanceof Error ? err : new Error('Video generation failed');
+          throw prepareMediaFailureForRethrow(err, 'Video generation failed', {
+            userCancelled: execution?.abortSignal?.aborted === true,
+          });
         }
       },
     });

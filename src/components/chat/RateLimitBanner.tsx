@@ -1,17 +1,17 @@
 /**
- * RateLimitBanner �?surfaces SDK 0.2.111 subscription rate-limit events
+ * RateLimitBanner — surfaces SDK 0.2.111 subscription rate-limit events
  * (SDKRateLimitInfo) on the chat page. Phase 2 of agent-sdk-0-2-111.
  *
  * UX contract (per feedback_no_silent_auto_irreversible memory):
- *   - status: 'allowed' �?render nothing
- *   - status: 'allowed_warning' �?dismissible yellow banner with
- *     utilization info and a "切换�?Sonnet" suggestion
- *   - status: 'rejected' �?dismissible red banner with countdown + a
- *     "切换并重�? button that goes through an explicit confirm
+ *   - status: 'allowed' → render nothing
+ *   - status: 'allowed_warning' → dismissible yellow banner with
+ *     utilization info and a "切换到 Sonnet" suggestion
+ *   - status: 'rejected' → dismissible red banner with countdown + a
+ *     "切换并重试" button that goes through an explicit confirm
  *     dialog. The last user message is preserved; the user can also
  *     dismiss the banner and handle the situation themselves.
  *
- * Subscription path only �?this banner never renders for API-key or
+ * Subscription path only — this banner never renders for API-key or
  * third-party-proxy sessions because the SDK doesn't emit
  * rate_limit_event on those paths.
  */
@@ -35,7 +35,7 @@ interface Props {
   /** Called when the user clicks "switch to Sonnet". Parent handles
    *  confirmation + actual model switch. */
   onRequestSwitchToSonnet: () => void;
-  /** Dismissal is session-local �?parent tracks which sessions have a
+  /** Dismissal is session-local — parent tracks which sessions have a
    *  dismissed banner to avoid re-showing on the same info snapshot. */
   onDismiss: () => void;
 }
@@ -51,7 +51,7 @@ function formatResetCountdown(resetsAt: number | undefined): string {
   if (hours > 24) {
     const days = Math.floor(hours / 24);
     const h = hours % 24;
-    return `${days}�?${h}小时`;
+    return `${days}天 ${h}小时`;
   }
   if (hours > 0) return `${hours}小时 ${minutes}分钟`;
   return `${minutes}分钟`;
@@ -59,7 +59,7 @@ function formatResetCountdown(resetsAt: number | undefined): string {
 
 export function RateLimitBanner({ info, onRequestSwitchToSonnet, onDismiss }: Props) {
   const { t } = useTranslation();
-  // tick just forces a re-render every minute �?the countdown text itself
+  // tick just forces a re-render every minute — the countdown text itself
   // is derived from info.resetsAt, not stored state, so we avoid the
   // setState-during-effect lint ping. resetsAt changes naturally trigger
   // a re-render through the caller, so we don't need to reset tick here.

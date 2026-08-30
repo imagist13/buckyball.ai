@@ -11,7 +11,7 @@ import {
 import type { ErrorResponse } from '@/types';
 
 /*
- * POST /api/files/write â€?write a file (create or overwrite) with full
+ * POST /api/files/write â€” write a file (create or overwrite) with full
  * path-safety enforcement. See docs/exec-plans/active/markdown-artifact-overhaul.md
  * Â§4.1 for the design contract.
  *
@@ -20,8 +20,8 @@ import type { ErrorResponse } from '@/types';
  *     path: string;              // absolute, or relative under baseDir
  *     baseDir?: string;          // scope cap; defaults to ~ (user home)
  *     content: string;           // UTF-8 source
- *     overwrite?: boolean;       // default false â€?409 if target exists
- *     createParents?: boolean;   // default false â€?404 if parent missing
+ *     overwrite?: boolean;       // default false â€” 409 if target exists
+ *     createParents?: boolean;   // default false â€” 404 if parent missing
  *   }
  *
  * Error codes (mapped to HTTP status by this route):
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Target-side check: symlinks refused, real path must live in real
     // baseDir. Unified helper so this path matches preview/mkdir/rename/
-    // delete â€?no more per-route symlink drift.
+    // delete â€” no more per-route symlink drift.
     const realTarget = await assertRealPathInBase(resolvedPath, baseDir, {
       rejectIfSymlink: true,
       allowMissing: true,
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       await fs.access(parent);
     } catch {
       if (createParents) {
-        // Parent creation is also subject to path safety â€?re-check each ancestor.
+        // Parent creation is also subject to path safety â€” re-check each ancestor.
         assertWritablePath(parent, baseDir);
         await fs.mkdir(parent, { recursive: true });
       } else {

@@ -5,6 +5,8 @@ import { CaretDown, CaretRight } from "@/components/ui/icon";
 import { usePanel } from "@/hooks/usePanel";
 import { useGitStatus } from "@/hooks/useGitStatus";
 import { useTranslation } from "@/hooks/useTranslation";
+import { showToast } from "@/hooks/useToast";
+import { Button } from "@/components/ui/button";
 import { GitStatusSection } from "./GitStatusSection";
 import { GitBranchSelector } from "./GitBranchSelector";
 import { GitHistorySection } from "./GitHistorySection";
@@ -15,7 +17,8 @@ import { DeriveWorktreeDialog } from "./DeriveWorktreeDialog";
 export function GitPanel() {
   const { workingDirectory, sessionId } = usePanel();
   const { t } = useTranslation();
-  const { status, refresh } = useGitStatus(workingDirectory);
+  const { status, loading, refresh } = useGitStatus(workingDirectory);
+  const [initializing, setInitializing] = useState(false);
 
   // Collapsible sections
   const [statusOpen, setStatusOpen] = useState(true);
@@ -42,10 +45,41 @@ export function GitPanel() {
 
   const repoName = workingDirectory.split(/[\\/]/).pop() || '';
 
+  const handleInitialize = useCallback(async () => {
+    if (!workingDirectory || initializing) return;
+    setInitializing(true);
+    try {
+      const response = await fetch('/api/git/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cwd: workingDirectory }),
+      });
+      if (!response.ok) throw new Error('git init failed');
+      window.dispatchEvent(new CustomEvent('git-refresh'));
+      await refresh();
+      showToast({ type: 'success', message: t('git.initializeSuccess') });
+    } catch {
+      showToast({ type: 'error', message: t('git.initializeFailed') });
+    } finally {
+      setInitializing(false);
+    }
+  }, [initializing, refresh, t, workingDirectory]);
+
+  if (!status && loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center p-4 text-sm text-muted-foreground">
+        {t('common.loading')}
+      </div>
+    );
+  }
+
   if (!status?.isRepo) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground p-4">
-        {t('git.notARepo')}
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 p-4 text-center">
+        <p className="text-sm text-muted-foreground">{t('git.notARepo')}</p>
+        <Button type="button" size="sm" onClick={handleInitialize} disabled={!workingDirectory || initializing}>
+          {initializing ? t('git.initializing') : t('git.initialize')}
+        </Button>
       </div>
     );
   }

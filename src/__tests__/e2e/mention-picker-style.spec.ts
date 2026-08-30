@@ -7,12 +7,12 @@ import { goToChat } from '../helpers';
  * shell (CommandListGroup header, neutral icons) and must NOT revert to the old
  * primary-blue "Files" div.
  *
- * Kept deliberately light â€?the mention flow itself is covered by mention-ui.spec.ts.
+ * Kept deliberately light â€” the mention flow itself is covered by mention-ui.spec.ts.
  */
 test.describe('@ picker style smoke', () => {
   test.beforeEach(async ({ page }) => {
     // Stub /api/files/suggest so the popover reliably renders both a file and
-    // a directory â€?the two icon paths we want to lock down.
+    // a directory â€” the two icon paths we want to lock down.
     await page.route('**/api/files/suggest**', async (route) => {
       await route.fulfill({
         status: 200,
@@ -36,7 +36,7 @@ test.describe('@ picker style smoke', () => {
     }
     await expect(input).toBeVisible();
 
-    // Type a filter that the mock recognises â€?typing just `@` can leave the
+    // Type a filter that the mock recognises â€” typing just `@` can leave the
     // popover empty until the debounce resolves, which makes first-frame
     // assertions racy.
     await input.fill('@src');
@@ -57,7 +57,7 @@ test.describe('@ picker style smoke', () => {
     await expect(directoryItem).toBeVisible();
     await expect(fileItem).toBeVisible();
 
-    // Both icons must carry text-muted-foreground â€?the post-polish color.
+    // Both icons must carry text-muted-foreground â€” the post-polish color.
     await expect(directoryItem.locator('svg.text-muted-foreground').first()).toBeVisible();
     await expect(fileItem.locator('svg.text-muted-foreground').first()).toBeVisible();
 

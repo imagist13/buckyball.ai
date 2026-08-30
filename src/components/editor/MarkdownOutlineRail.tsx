@@ -1,12 +1,13 @@
 "use client";
 
 /**
- * Outline rail for Markdown previews â€?Phase 4 Markdown data layer.
+ * Outline rail for Markdown previews â€” Phase 4 Markdown data layer.
  *
  * Renders a sticky table-of-contents next to the rendered Markdown.
  * Clicking an entry finds the matching heading element by slug and
  * scrolls it into view. The slugger here (`parseOutline`'s output)
- * must match what `injectHeadingIds` writes into the rendered DOM â€? * both come from the same `slugify()` helper to keep them aligned.
+ * must match what `injectHeadingIds` writes into the rendered DOM â€”
+ * both come from the same `slugify()` helper to keep them aligned.
  */
 
 import { useCallback } from "react";
@@ -73,7 +74,7 @@ export function MarkdownOutlineRail({
  * `containerRef.querySelector('#<slug>')` succeed even though
  * streamdown doesn't produce IDs natively.
  *
- * Idempotent â€?if a heading already has the right id, we leave it.
+ * Idempotent â€” if a heading already has the right id, we leave it.
  */
 export function injectHeadingIds(
   containerRef: React.RefObject<HTMLElement | null>,
@@ -115,7 +116,7 @@ function cssEscape(value: string): string {
  * + a `data-callout` attribute, and erases the sentinel text so the
  * reader never sees it.
  *
- * Idempotent â€?re-runs find the same nodes but skip ones that
+ * Idempotent â€” re-runs find the same nodes but skip ones that
  * already have a `data-callout` attribute, so multiple render passes
  * don't double-process the tree.
  */
@@ -128,12 +129,12 @@ export function applyCalloutClasses(
   blockquotes.forEach((bq) => {
     if (bq.hasAttribute("data-callout")) return;
     const text = bq.textContent || "";
-    const m = text.match(/âŸ¦codepilot-callout:([a-z]+)âŸ?);
+    const m = text.match(/âŸ¦codepilot-callout:([a-z]+)âŸ§/);
     if (!m) return;
     const type = m[1];
     bq.setAttribute("data-callout", type);
     bq.classList.add("codepilot-callout", `codepilot-callout-${type}`);
-    // Erase the marker by walking text nodes â€?preserve the rest of
+    // Erase the marker by walking text nodes â€” preserve the rest of
     // the paragraph + any inline styling streamdown applied.
     const walker = document.createTreeWalker(bq, NodeFilter.SHOW_TEXT, null);
     const targets: Text[] = [];

@@ -1,8 +1,8 @@
 /**
- * Runtime identifier â€?the canonical machine label for any Agent
+ * Runtime identifier â€” the canonical machine label for any Agent
  * Runtime registered with CodePilot.
  *
- * Slice A of Phase 0.5 (Runtime Contract Hardening, 2026-05-13) â€?this
+ * Slice A of Phase 0.5 (Runtime Contract Hardening, 2026-05-13) â€” this
  * The ID set is derived from `runtime-catalog.ts`, which also carries the
  * packaged driver and user-facing descriptor. The database/HTTP wire values
  * remain backward compatible, but validation now goes through the explicit
@@ -11,7 +11,7 @@
  *   - `RuntimeSessionRef.runtimeId` (adapter-owned session metadata)
  *   - `RuntimeRunEvent` / `RuntimePermissionEvent` (internal event union)
  *   - `ModelRuntimeCompat.supportedRuntimes` (model compat matrix)
- *   - `ChatRuntime` (legacy alias for backward compat â€?same values)
+ *   - `ChatRuntime` (legacy alias for backward compat â€” same values)
  *
  */
 
@@ -42,7 +42,7 @@ export function serializeRuntimeId(v: RuntimeId): string {
 }
 
 /**
- * Wire form for HTTP query params â€?adds 'auto' (server resolves).
+ * Wire form for HTTP query params â€” adds 'auto' (server resolves).
  * Kept here so transport code can validate inputs against a single
  * source of truth.
  */

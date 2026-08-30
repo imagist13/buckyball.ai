@@ -1,31 +1,31 @@
 "use client";
 
 /**
- * Codex Account models â?read-only block for Settings â?Models.
+ * Codex Account models — read-only block for Settings → Models.
  *
  * Phase 5 Phase 6 IA correction (2026-05-14). Codex Account is a
  * virtual provider; its models come from upstream Codex
- * `model/list` (not from buckyball.ai's DB), so they're NOT toggleable
+ * `model/list` (not from CodePilot's DB), so they're NOT toggleable
  * here. The block surfaces them in the same canvas as DB providers so
  * users know which models are available without having to leave
- * Models page â?addresses the user's "Codex Account æ¨¡åæ¾å° Models é?
+ * Models page — addresses the user's "Codex Account 模型放到 Models 里"
  * spec without rebuilding ModelsSection's section system.
  *
  * Hidden states:
- *   - Codex app-server not ready             â?block hidden
- *   - Codex Account not logged in            â?block hidden
- *   - /api/codex/models returns empty group  â?block hidden
+ *   - Codex app-server not ready             → block hidden
+ *   - Codex Account not logged in            → block hidden
+ *   - /api/codex/models returns empty group  → block hidden
  *
- * No write actions â?switching default model, enable/disable, role
+ * No write actions — switching default model, enable/disable, role
  * mapping etc. don't apply to Codex Account models (they're served
  * directly through Codex Runtime). The block carries a clear
- * "ä»?Codex" / "Codex only" badge so users understand the constraint.
+ * "仅 Codex" / "Codex only" badge so users understand the constraint.
  */
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import type { ProviderModelGroup } from "@/types";
 
@@ -68,9 +68,9 @@ export function CodexAccountModelsBlock({ isZh }: CodexAccountModelsBlockProps) 
       <div className="rounded-lg border border-border/50 bg-card p-5 flex flex-col gap-3.5">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
-            <BuckyballIcon name="model" size="md" className="text-muted-foreground shrink-0" aria-hidden />
+            <CodePilotIcon name="model" size="md" className="text-muted-foreground shrink-0" aria-hidden />
             <h3 id="codex-account-models-heading" className="text-sm font-semibold leading-tight">
-              {isZh ? "Codex è´¦æ·" : "Codex Account"}
+              {isZh ? "Codex 账户" : "Codex Account"}
             </h3>
             <span
               className={cn(
@@ -78,25 +78,25 @@ export function CodexAccountModelsBlock({ isZh }: CodexAccountModelsBlockProps) 
                 "bg-status-warning-muted text-status-warning-foreground",
               )}
             >
-              {isZh ? "ä»?Codex" : "Codex only"}
+              {isZh ? "仅 Codex" : "Codex only"}
             </span>
             <span className="text-[11px] text-muted-foreground">
               {isZh
-                ? `${group.models.length} ä¸ªæ¨¡å`
+                ? `${group.models.length} 个模型`
                 : `${group.models.length} model${group.models.length === 1 ? "" : "s"}`}
             </span>
           </div>
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" asChild>
             <a href="/settings/providers">
               <ArrowSquareOut size={12} />
-              {isZh ? "ç®¡çè´¦æ·" : "Manage account"}
+              {isZh ? "管理账户" : "Manage account"}
             </a>
           </Button>
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           {isZh
-            ? "Codex è´¦æ·æ¨¡åç?ChatGPT å¥é¤æ¿æï¼æ é API Keyï¼åªå¨ãæ§è¡å¼æ?â?Codexãä¸å¯ç¨ãæ¨¡ååè¡¨ç± Codex èªå¨ç»´æ¤ï¼æ éå¨è¿éå¯ç?éèã?
-            : "Codex Account models are covered by your ChatGPT plan â?no API key required. They run only under Settings â?Runtime â?Codex. The list is maintained by Codex; nothing to toggle here."}
+            ? "Codex 账户模型由 ChatGPT 套餐承担，无需 API Key；只在「执行引擎 → Codex」下可用。模型列表由 Codex 自动维护，无需在这里启用/隐藏。"
+            : "Codex Account models are covered by your ChatGPT plan — no API key required. They run only under Settings → Runtime → Codex. The list is maintained by Codex; nothing to toggle here."}
         </p>
         <ul className="flex flex-col divide-y divide-border/40 rounded-md bg-muted/30 px-3.5">
           {group.models.map((m) => (

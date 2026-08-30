@@ -1,5 +1,5 @@
 /**
- * tools/write.ts â€?Write/create files.
+ * tools/write.ts â€” Write/create files.
  */
 
 import { tool } from 'ai';

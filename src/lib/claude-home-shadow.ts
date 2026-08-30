@@ -1,5 +1,5 @@
 /**
- * claude-home-shadow.ts ‚Ä?Per-request shadow ~/.claude/ for DB-provider isolation.
+ * claude-home-shadow.ts ‚Äî Per-request shadow ~/.claude/ for DB-provider isolation.
  *
  * ## Why
  *
@@ -9,7 +9,8 @@
  * Claude Code SDK's settings loader (`qZq()`) writes that env block into the
  * subprocess's `process.env` AFTER our spawn-time auth injection. That
  * silently overrides the DB provider's `ANTHROPIC_API_KEY/AUTH_TOKEN/BASE_URL`
- * with whatever cc-switch had configured for the global Claude Code group ‚Ä? * the request goes to the wrong endpoint with the wrong key.
+ * with whatever cc-switch had configured for the global Claude Code group ‚Äî
+ * the request goes to the wrong endpoint with the wrong key.
  *
  * The naive fix (drop `'user'` from `settingSources`) also disables
  * user-level MCP servers, plugins, hooks, and CLAUDE.md, all of which
@@ -22,17 +23,17 @@
  * `~/.claude.json` have their `ANTHROPIC_*` keys stripped from the `env` block:
  *
  *   <tmp>/codepilot-shadow-<uuid>/
- *       .claude.json               ‚Ü?stripped copy (preserves user MCP servers,
+ *       .claude.json               ‚Üê stripped copy (preserves user MCP servers,
  *                                     strips any auth env)
  *       .claude/
- *           settings.json          ‚Ü?stripped copy (no ANTHROPIC_* in env)
- *           .credentials.json      ‚Ü?copy (preserves user's OAuth tokens)
- *           CLAUDE.md              ‚Ü?copy
- *           skills/        ‚Ü?symlink/junction to ~/.claude/skills/
- *           agents/        ‚Ü?symlink/junction to ~/.claude/agents/
- *           plugins/       ‚Ü?symlink/junction to ~/.claude/plugins/
- *           commands/      ‚Ü?symlink/junction to ~/.claude/commands/
- *           projects/      ‚Ü?symlink/junction to ~/.claude/projects/
+ *           settings.json          ‚Üê stripped copy (no ANTHROPIC_* in env)
+ *           .credentials.json      ‚Üê copy (preserves user's OAuth tokens)
+ *           CLAUDE.md              ‚Üê copy
+ *           skills/        ‚Üí symlink/junction to ~/.claude/skills/
+ *           agents/        ‚Üí symlink/junction to ~/.claude/agents/
+ *           plugins/       ‚Üí symlink/junction to ~/.claude/plugins/
+ *           commands/      ‚Üí symlink/junction to ~/.claude/commands/
+ *           projects/      ‚Üí symlink/junction to ~/.claude/projects/
  *           ... other entries: symlink/junction (default)
  *
  * Note on `~/.claude.json`: this root-level file holds user-scoped MCP
@@ -75,7 +76,7 @@ const AUTH_KEYS_TO_STRIP = new Set([
   'ANTHROPIC_API_KEY',
   'ANTHROPIC_AUTH_TOKEN',
   'ANTHROPIC_BASE_URL',
-  'ANTHROPIC_MODEL', // model routing ‚Ä?provider's catalog must win
+  'ANTHROPIC_MODEL', // model routing ‚Äî provider's catalog must win
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
   'ANTHROPIC_DEFAULT_SONNET_MODEL',
   'ANTHROPIC_DEFAULT_OPUS_MODEL',
@@ -84,7 +85,7 @@ const AUTH_KEYS_TO_STRIP = new Set([
   'CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK',
   'CLAUDE_CODE_EFFORT_LEVEL',
   'ANTHROPIC_FOUNDRY_API_KEY',
-  // Bedrock / Vertex routing ‚Ä?they switch the provider entirely
+  // Bedrock / Vertex routing ‚Äî they switch the provider entirely
   'CLAUDE_CODE_USE_BEDROCK',
   'CLAUDE_CODE_USE_VERTEX',
   'CLAUDE_CODE_USE_FOUNDRY',
@@ -148,7 +149,7 @@ function readJsonFile(filePath: string): Record<string, unknown> | null {
 /**
  * Returns true when EITHER `~/.claude/settings.json` OR `~/.claude.json` has
  * at least one auth-related env entry that would override our DB provider's
- * auth at spawn time. If false, no shadow is needed ‚Ä?the real HOME is fine.
+ * auth at spawn time. If false, no shadow is needed ‚Äî the real HOME is fine.
  *
  * Both files are documented user-scoped config sources (mcp-loader.ts:46),
  * and either can carry an `env` block, so we have to inspect both before
@@ -193,7 +194,7 @@ function mirrorEntry(realPath: string, shadowPath: string): void {
   try {
     stat = fs.lstatSync(realPath);
   } catch {
-    return; // entry vanished between readdir and now ‚Ä?skip
+    return; // entry vanished between readdir and now ‚Äî skip
   }
 
   // For directories on Windows, use junction (no privilege required).
@@ -240,7 +241,7 @@ export function createShadowClaudeHome(opts: { stripAuth: boolean }): ShadowHome
   if (!opts.stripAuth) return passthrough();
 
   // Check both user-scoped settings files for any auth env entries. If neither
-  // has any, we don't need to build a shadow at all ‚Ä?pass through real HOME.
+  // has any, we don't need to build a shadow at all ‚Äî pass through real HOME.
   const realClaudeDir = path.join(/* turbopackIgnore: true */ REAL_HOME(), '.claude');
   const settingsContent = fs.existsSync(realClaudeDir)
     ? readSettingsJson(realClaudeDir).content
@@ -297,7 +298,7 @@ export function createShadowClaudeHome(opts: { stripAuth: boolean }): ShadowHome
     // Mirror ~/.claude.json (root-level, not inside .claude/). This is the
     // documented home for user-scoped MCP servers (mcp-loader.ts:46). When
     // HOME points at the shadow root, the SDK looks for <shadow>/.claude.json,
-    // not the user's real one ‚Ä?without this mirror, every DB-provider
+    // not the user's real one ‚Äî without this mirror, every DB-provider
     // request silently loses MCP servers defined here. Strip auth env in case
     // it contains one too.
     if (dotClaudeJsonContent) {
@@ -307,7 +308,8 @@ export function createShadowClaudeHome(opts: { stripAuth: boolean }): ShadowHome
         JSON.stringify(dotClaudeToWrite, null, 2),
       );
     }
-    // If `~/.claude.json` doesn't exist on disk at all, we don't create one ‚Ä?    // matches real-HOME semantics where SDK just doesn't see a file.
+    // If `~/.claude.json` doesn't exist on disk at all, we don't create one ‚Äî
+    // matches real-HOME semantics where SDK just doesn't see a file.
   } catch (err) {
     // If we can't even write the shadow files, the whole shadow is useless.
     // Clean up and pass through. The bleed will happen, but the alternative
@@ -320,7 +322,7 @@ export function createShadowClaudeHome(opts: { stripAuth: boolean }): ShadowHome
 
   // Build short id from path for diagnostic logs (don't leak full tmp path)
   const id = crypto.createHash('sha1').update(shadowRoot).digest('hex').slice(0, 8);
-  console.log(`[shadow-home] Built shadow HOME ${id} for DB-provider request ‚Ä?settings.json + .claude.json env stripped`);
+  console.log(`[shadow-home] Built shadow HOME ${id} for DB-provider request ‚Äî settings.json + .claude.json env stripped`);
 
   let cleanedUp = false;
   return {

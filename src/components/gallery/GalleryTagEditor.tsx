@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface GalleryTagEditorProps {
@@ -59,7 +59,7 @@ export function GalleryTagEditor({
             variant="secondary"
             className="gap-1 border-0 pr-1"
           >
-            <BuckyballIcon name="tag" size={11} aria-hidden />
+            <CodePilotIcon name="tag" size={11} aria-hidden />
             {tag}
             <Button
               type="button"
@@ -70,7 +70,7 @@ export function GalleryTagEditor({
               disabled={saving}
               onClick={() => void persist(tags.filter((entry) => entry !== tag))}
             >
-              <BuckyballIcon name="cancel" size={10} aria-hidden />
+              <CodePilotIcon name="cancel" size={10} aria-hidden />
             </Button>
           </Badge>
         ))}
@@ -99,7 +99,7 @@ export function GalleryTagEditor({
           disabled={saving || !newTag.trim()}
           onClick={() => void addTag()}
         >
-          <BuckyballIcon name="plus" size="sm" aria-hidden />
+          <CodePilotIcon name="plus" size="sm" aria-hidden />
           {t('gallery.addTag')}
         </Button>
       </div>

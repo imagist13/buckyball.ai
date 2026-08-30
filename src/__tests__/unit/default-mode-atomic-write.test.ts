@@ -1,5 +1,5 @@
 /**
- * Phase 2C contract â€?default-mode atomic write protection.
+ * Phase 2C contract â€” default-mode atomic write protection.
  *
  * The bug this test prevents: the `/api/providers/options` PUT route
  * merges incoming options with existing storage before calling
@@ -14,8 +14,8 @@
  * they switched to Auto.
  *
  * The contract this locks in: when `setProviderOptions('__global__',
- * { default_mode: 'auto' })` runs â€?even with merged-in stale
- * `default_model_*` keys â€?the function MUST clear them and return.
+ * { default_mode: 'auto' })` runs â€” even with merged-in stale
+ * `default_model_*` keys â€” the function MUST clear them and return.
  * No silent re-pin under Auto.
  *
  * Phase 1 (Step 1) of refactor-closeout: default-model contract audit.
@@ -51,7 +51,7 @@ describe("Default-mode atomic write (Phase 2C contract)", () => {
     setSetting("default_provider_id", snapLegacy);
   });
 
-  it("Pinned â†?Auto: clears stale pin even when merged in by the API route", () => {
+  it("Pinned â†’ Auto: clears stale pin even when merged in by the API route", () => {
     // Simulate prior Pinned state.
     setSetting("global_default_mode", "pinned");
     setSetting("global_default_model_provider", "stale-pid");
@@ -63,8 +63,8 @@ describe("Default-mode atomic write (Phase 2C contract)", () => {
     // body, so the merged blob still carries stale default_model* keys.
     const mergedFromRoute: ProviderOptions = {
       default_mode: "auto",
-      default_model_provider: "stale-pid",   // â†?merged in from existing
-      default_model: "stale-model",          // â†?merged in from existing
+      default_model_provider: "stale-pid",   // â† merged in from existing
+      default_model: "stale-model",          // â† merged in from existing
       legacy_default_provider_id: "",
     } as ProviderOptions;
 
@@ -92,7 +92,7 @@ describe("Default-mode atomic write (Phase 2C contract)", () => {
     );
   });
 
-  it("Auto â†?Pinned: writes mode + provider + model atomically when sent as a bundle", () => {
+  it("Auto â†’ Pinned: writes mode + provider + model atomically when sent as a bundle", () => {
     setSetting("global_default_mode", "auto");
     setSetting("global_default_model_provider", "");
     setSetting("global_default_model", "");
@@ -111,7 +111,7 @@ describe("Default-mode atomic write (Phase 2C contract)", () => {
     assert.equal(getSetting("default_provider_id"), "new-pid");
   });
 
-  it("Pinned â†?Pinned (different model): replaces all three together", () => {
+  it("Pinned â†’ Pinned (different model): replaces all three together", () => {
     setSetting("global_default_mode", "pinned");
     setSetting("global_default_model_provider", "old-pid");
     setSetting("global_default_model", "old-model");
@@ -132,7 +132,7 @@ describe("Default-mode atomic write (Phase 2C contract)", () => {
     assert.equal(getSetting("default_provider_id"), "fresh-pid");
   });
 
-  it("Auto â†?Auto with leftover stale keys: still clears (idempotent defense)", () => {
+  it("Auto â†’ Auto with leftover stale keys: still clears (idempotent defense)", () => {
     // Defensive: if for any reason both global_* keys were stale and
     // mode was already 'auto', a re-write of mode='auto' should still
     // sweep them. (This guards against partial-migration DBs and

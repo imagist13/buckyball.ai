@@ -5,6 +5,24 @@ export interface ReleaseAsset {
   browser_download_url: string;
 }
 
+export interface ReleaseAssetAvailability {
+  recommendedAsset: ReleaseAsset | null;
+  /**
+   * A newer GitHub Release exists, but it does not contain an installer for
+   * this runtime platform. This is expected while official Releases are
+   * macOS-only and must not be presented as a downloadable Windows/Linux
+   * update.
+   */
+  platformAssetMissing: boolean;
+}
+
+export function releasePlatformLabel(platform: string | undefined): string {
+  if (platform === 'darwin') return 'macOS';
+  if (platform === 'win32') return 'Windows';
+  if (platform === 'linux') return 'Linux';
+  return 'this platform';
+}
+
 function normalizeArch(value: string | undefined): string {
   if (!value) return '';
   const normalized = value.toLowerCase();
@@ -73,4 +91,22 @@ export function selectRecommendedReleaseAsset(
   }
 
   return bestScore >= 0 ? best : null;
+}
+
+export function resolveReleaseAssetAvailability(
+  assets: ReleaseAsset[],
+  runtime: Pick<RuntimeArchitectureInfo, 'platform' | 'hostArch' | 'processArch'>,
+  updateAvailable: boolean,
+): ReleaseAssetAvailability {
+  const recommendedAsset = selectRecommendedReleaseAsset(assets, runtime);
+  const platformHasManualReleaseContract = runtime.platform === 'darwin'
+    || runtime.platform === 'win32'
+    || runtime.platform === 'linux';
+
+  return {
+    recommendedAsset,
+    platformAssetMissing: updateAvailable
+      && platformHasManualReleaseContract
+      && recommendedAsset === null,
+  };
 }

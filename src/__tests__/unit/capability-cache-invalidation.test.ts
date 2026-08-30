@@ -1,5 +1,5 @@
 /**
- * 2026-06-10 â€?stale capability cache after provider edit/delete.
+ * 2026-06-10 â€” stale capability cache after provider edit/delete.
  *
  * The per-provider capability cache (models / commands / account / MCP
  * status) has a 5-minute TTL but was never dropped when the provider row

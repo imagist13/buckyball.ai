@@ -14,7 +14,7 @@ export interface ContextUsageData {
   /**
    * True only when `contextWindow` came from an SDK/upstream-reported value
    * (not the static catalog fallback). UI must gate percentage / remaining /
-   * unused displays on this ‚Ä?an untrusted denominator produced the ">100%"
+   * unused displays on this ‚Äî an untrusted denominator produced the ">100%"
    * and ÂÅáÁôæÂàÜÊØî in #632. When false, show absolute used + kind composition only.
    */
   contextWindowTrusted: boolean;
@@ -38,7 +38,7 @@ export interface ContextUsageData {
    * Data source the caller should render next to the number.
    * Phase 5 of agent-sdk-0-2-111:
    *   - 'snapshot': SDK.getContextUsage() capture <60s old (üìå)
-   *     ‚Ä?extension point, currently has no producer in the codebase;
+   *     ‚Äî extension point, currently has no producer in the codebase;
    *     see claude-client.ts b65c6ac for why.
    *   - 'result_usage': computed from SDKResultMessage.usage's real
    *     input_tokens + cache_read + cache_creation fields (authoritative
@@ -50,7 +50,7 @@ export interface ContextUsageData {
   /** When the snapshot was taken (epoch ms). Undefined for result_usage source. */
   snapshotCapturedAt?: number;
   /**
-   * Phase 6 ‚Ä?10-part token breakdown for the upcoming dot-matrix UI.
+   * Phase 6 ‚Äî 10-part token breakdown for the upcoming dot-matrix UI.
    *
    * Phase 1b wires only baseline (used / cacheRead / cacheCreation / output)
    * + contextWindow. Compiler-side fragments (system_prompt / tools / rules /
@@ -58,7 +58,7 @@ export interface ContextUsageData {
    * Phase 1c + Phase 2 when ChatView / MessageInput pipe them through.
    *
    * Until then, the breakdown surfaces non-zero only for `conversation`
-   * and `cache_or_previous`; the other 8 parts read 0 ‚Ä?by design, so
+   * and `cache_or_previous`; the other 8 parts read 0 ‚Äî by design, so
    * consumers can render the dot-matrix shell without waiting for the
    * full data wire. The contract is the same as `buildContextUsageBreakdown`.
    */
@@ -78,15 +78,15 @@ export function useContextUsage(
      *  opus = 1M, Bedrock/Vertex opus = 200K). */
     upstreamModelId?: string;
     /**
-     * #632 item 1 ‚Ä?whether the session's provider reports a TRUSTWORTHY
+     * #632 item 1 ‚Äî whether the session's provider reports a TRUSTWORTHY
      * context window. The SDK-reported `token_usage.context_window` is a real
      * denominator only for a first-party Anthropic endpoint (or a non-Anthropic
      * runtime that reports its own window, e.g. Codex's modelContextWindow). A
-     * third-party Anthropic-compatible proxy (GLM / Bailian / Kimi / ‚Ä? reports
+     * third-party Anthropic-compatible proxy (GLM / Bailian / Kimi / ‚Ä¶) reports
      * the SDK's generic ~200K default. Existing sessions already have that bogus
-     * value persisted, so the renderer must gate trust here ‚Ä?the server write
-     * gate only protects new turns. `false` ‚Ü?SDK windows are NOT trusted (show
-     * used-tokens only). undefined / true ‚Ü?trust (back-compat). Source:
+     * value persisted, so the renderer must gate trust here ‚Äî the server write
+     * gate only protects new turns. `false` ‚Üí SDK windows are NOT trusted (show
+     * used-tokens only). undefined / true ‚Üí trust (back-compat). Source:
      * ProviderModelGroup.reportedContextWindowTrusted.
      */
     reportedContextWindowTrusted?: boolean;
@@ -101,7 +101,7 @@ export function useContextUsage(
       capturedAt: number;
     };
     /**
-     * Phase 6 Phase 3 ‚Ä?composer-side pending token sub-totals. When
+     * Phase 6 Phase 3 ‚Äî composer-side pending token sub-totals. When
      * provided, flows into `buildContextUsageBreakdown` so the popover's
      * pending kinds (`files_attachments` + `pending_next_turn`) read
      * real per-source numbers instead of 0.
@@ -115,10 +115,10 @@ export function useContextUsage(
   },
 ): ContextUsageData {
   return useMemo(() => {
-    // Catalog window ‚Ä?the static fallback. Plain `getContextWindow`
+    // Catalog window ‚Äî the static fallback. Plain `getContextWindow`
     // result; may be `null` for models the catalog doesn't enumerate
     // (GLM / Bailian / Volcengine / MiniMax / Kimi / DeepSeek / etc.).
-    // We deliberately don't whitelist those ‚Ä?instead we let the SDK
+    // We deliberately don't whitelist those ‚Äî instead we let the SDK
     // tell us via `token_usage.context_window` (extracted from
     // `SDKResultMessage.modelUsage` in claude-client.ts). This local
     // fallback is what `noData` returns and what we use when the
@@ -128,15 +128,15 @@ export function useContextUsage(
       upstream: options?.upstreamModelId,
     });
 
-    // #632 item 1 ‚Ä?an SDK-reported window (token_usage.context_window) is only
+    // #632 item 1 ‚Äî an SDK-reported window (token_usage.context_window) is only
     // a trustworthy denominator when the provider vouches for it. `false` (a
     // third-party Anthropic-compat proxy like GLM) means the persisted window is
-    // the SDK's generic ~200K default ‚Ü?don't render a % against it, even for
+    // the SDK's generic ~200K default ‚Üí don't render a % against it, even for
     // EXISTING sessions whose bogus window is already in the DB. undefined/true
-    // ‚Ü?trust (back-compat; the server write gate prevents new bogus windows).
+    // ‚Üí trust (back-compat; the server write gate prevents new bogus windows).
     const reportedWindowTrusted = options?.reportedContextWindowTrusted !== false;
 
-    // Phase 5 ‚Ä?prefer a fresh SDK snapshot over the char:token estimator.
+    // Phase 5 ‚Äî prefer a fresh SDK snapshot over the char:token estimator.
     // Freshness window matches the plan (60s). Beyond that, the estimator
     // takes over and the `source` flag flips so the UI can signal the
     // change to the user.
@@ -144,7 +144,7 @@ export function useContextUsage(
     // Date.now() is technically impure inside useMemo, but the freshness
     // check is a one-shot snapshot-vs-now comparison that naturally
     // re-evaluates on the next render when `messages` / `modelName` /
-    // snapshot identity changes ‚Ä?which is exactly when staleness matters.
+    // snapshot identity changes ‚Äî which is exactly when staleness matters.
     // eslint-disable-next-line react-hooks/purity
     const snapFresh = snap && (Date.now() - snap.capturedAt) < SNAPSHOT_FRESHNESS_MS;
     if (snap && snapFresh) {
@@ -152,9 +152,9 @@ export function useContextUsage(
       const max = snap.maxTokens || catalogContextWindow || used;
       const ratio = max ? used / max : 0;
       // Trusted only when the SDK snapshot itself reported a real maxTokens
-      // (#632) ‚Ä?a fallback to catalog/used is not a trustworthy denominator.
+      // (#632) ‚Äî a fallback to catalog/used is not a trustworthy denominator.
       const snapWindowTrusted = (snap.maxTokens ?? 0) > 0 && reportedWindowTrusted;
-      // No estimated-next-turn from the snapshot ‚Ä?we assume next turn is
+      // No estimated-next-turn from the snapshot ‚Äî we assume next turn is
       // similar to current (snapshot is authoritative on "used now" but
       // can't project future output).
       return {
@@ -187,8 +187,8 @@ export function useContextUsage(
     }
 
     // Walk assistant token_usage records from the end. The pure
-    // logic ‚Ä?including the output-only skip + the
-    // latestSdkContextWindow capture ‚Ä?lives in
+    // logic ‚Äî including the output-only skip + the
+    // latestSdkContextWindow capture ‚Äî lives in
     // `lib/context-usage-walk.ts` so it can be tested without React.
     // See that module's doc-block for the two non-obvious rules
     // (output-only baseline skip + context_window preservation).
@@ -197,7 +197,8 @@ export function useContextUsage(
     if (baseline) {
       // Resolve contextWindow priority:
       //   1. This baseline record's own SDK-reported window.
-      //   2. The newest SDK window seen anywhere in the walk ‚Ä?      //      typically a more-recent output-only tail.
+      //   2. The newest SDK window seen anywhere in the walk ‚Äî
+      //      typically a more-recent output-only tail.
       //   3. The static `getContextWindow()` catalog fallback.
       // Older DB rows without `context_window` correctly fall
       // through to (2) and (3).
@@ -206,7 +207,7 @@ export function useContextUsage(
         ?? latestSdkContextWindow
         ?? catalogContextWindow;
 
-      // v0.56.x Phase 2 (#632) ‚Ä?the window is only a TRUSTED denominator
+      // v0.56.x Phase 2 (#632) ‚Äî the window is only a TRUSTED denominator
       // when the SDK / upstream actually reported it. The static
       // `catalogContextWindow` fallback is a guess; rendering a percentage /
       // remaining / unused against it is what produced the ">100%" and
@@ -216,7 +217,7 @@ export function useContextUsage(
       const contextWindowTrusted = (sdkContextWindow != null || latestSdkContextWindow != null) && reportedWindowTrusted;
 
       const outputTokens = baseline.outputTokens;
-      // Build breakdown first ‚Ä?its usedTokens may promote past baseline.used
+      // Build breakdown first ‚Äî its usedTokens may promote past baseline.used
       // when provider proxies (Native/Codex+GLM) report input_tokens=0 but
       // entries surface real per-turn tokens. Header used/ratio must match
       // breakdown sum or popover looks inconsistent ("0" header vs 3.5K rows).
@@ -227,17 +228,17 @@ export function useContextUsage(
           cacheCreationTokens: baseline.cacheCreationTokens,
           outputTokens,
         },
-        // Untrusted window ‚Ü?omit it so the breakdown / dot-matrix fall back
+        // Untrusted window ‚Üí omit it so the breakdown / dot-matrix fall back
         // to a used-relative composition view instead of a fabricated capacity.
         contextWindow: contextWindowTrusted ? (contextWindow ?? undefined) : undefined,
         pending: options?.pending,
         // Phase 1 (Context Accounting Runtime Contract, 2026-05-20):
         // feed compiler inputs from the Runtime-produced snapshot.
         // snapshotToCompilerInputs returns undefined when the snapshot
-        // is missing OR every kind is unsupported / empty ‚Ü?all
+        // is missing OR every kind is unsupported / empty ‚Üí all
         // compiler-side rows hide (conversation absorbs residual).
         // Old `context_breakdown` rows are intentionally NOT honored
-        // ‚Ä?that field held ÂÅáÊï∞Êç?(Phase 0 deleted the writer).
+        // ‚Äî that field held ÂÅáÊï∞ÊçÆ (Phase 0 deleted the writer).
         compiler: snapshotToCompilerInputs(contextAccounting),
       });
       const used = breakdown.usedTokens;
@@ -273,7 +274,7 @@ export function useContextUsage(
     }
 
     // No meaningful baseline found. Still surface the SDK-reported
-    // capacity if we saw one during the walk ‚Ä?a brand-new session
+    // capacity if we saw one during the walk ‚Äî a brand-new session
     // whose first assistant turn was output-only shouldn't lose the
     // capacity badge. `hasData` stays false because we have no real
     // `used` to draw a percent from; RunCockpit's fallback path
@@ -282,7 +283,7 @@ export function useContextUsage(
       modelName,
       contextWindow: latestSdkContextWindow ?? catalogContextWindow,
       // Trusted only if an SDK window was actually seen during the walk AND the
-      // provider vouches for it (#632) ‚Ä?catalog fallback alone, or a third-party
+      // provider vouches for it (#632) ‚Äî catalog fallback alone, or a third-party
       // proxy's SDK default, is not a trustworthy denominator.
       contextWindowTrusted: latestSdkContextWindow != null && reportedWindowTrusted,
       used: 0,

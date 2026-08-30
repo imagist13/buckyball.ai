@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CaretDown } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 
 export type SourcesProps = ComponentProps<"div">;
 
@@ -71,7 +71,7 @@ export const Source = ({ href, title, children, ...props }: SourceProps) => (
   >
     {children ?? (
       <>
-        <BuckyballIcon name="book" size="md" aria-hidden />
+        <CodePilotIcon name="book" size="md" aria-hidden />
         <span className="block font-medium">{title}</span>
       </>
     )}

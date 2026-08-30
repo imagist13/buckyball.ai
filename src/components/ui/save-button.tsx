@@ -6,20 +6,20 @@ import { SpinnerGap } from "@/components/ui/icon";
 import { useTranslation } from "@/hooks/useTranslation";
 
 /**
- * SaveButton �?three-state save affordance.
+ * SaveButton — three-state save affordance.
  *
- *   saved  (default + no edits): disabled, shows "已保�? / "Saved"
+ *   saved  (default + no edits): disabled, shows "已保存" / "Saved"
  *   dirty  (user has edits):     enabled,  shows "保存"   / "Save"
- *   saving (request in flight):  disabled, shows spinner + "保存中�? / "Saving�?
+ *   saving (request in flight):  disabled, shows spinner + "保存中…" / "Saving…"
  *
  * Why three states (not just disabled / enabled): users want a passive
  * confirmation that their last save stuck. A button that just disappears
  * after save leaves them guessing; a button that stays "Save" forever
  * looks broken.
  *
- * Consumers track `dirty` themselves �?typically by diffing current form
+ * Consumers track `dirty` themselves — typically by diffing current form
  * state against a `useRef` snapshot of the last successful save. On
- * successful save: refresh the snapshot, set saving=false �?returns to
+ * successful save: refresh the snapshot, set saving=false → returns to
  * saved state automatically.
  */
 export interface SaveButtonProps
@@ -36,7 +36,7 @@ export interface SaveButtonProps
   /**
    * Hard-disable from the consumer (e.g. form has validation errors).
    * Final disabled = `saving || !dirty || disabled`. Text still follows
-   * dirty/saving so the user sees "保存" not "已保�? �?i.e. "you have
+   * dirty/saving so the user sees "保存" not "已保存" — i.e. "you have
    * unsaved changes but can't save yet" stays a true statement.
    */
   disabled?: boolean;

@@ -8,7 +8,7 @@ const MIN_PIXELS = 655_360;
 const MAX_PIXELS = 8_294_400;
 const MAX_RATIO = 3;
 
-// Full set of UI-exposed aspect ratios â€?mirrors
+// Full set of UI-exposed aspect ratios â€” mirrors
 // src/components/chat/ImageGenConfirmation.tsx and BatchPlanRow.tsx. If either
 // of those lists gains a new entry, add it here too so the invariants run
 // against every value the UI can actually produce.
@@ -58,9 +58,9 @@ function assertSatisfiesConstraints(size: string, label: string) {
   assert.ok(ratio <= MAX_RATIO, `${label}: ratio ${ratio.toFixed(3)} > ${MAX_RATIO}`);
 }
 
-describe('mapAspectToOpenAISize â€?legacy models (gpt-image-1*)', () => {
+describe('mapAspectToOpenAISize â€” legacy models (gpt-image-1*)', () => {
   it('always clamps to the 1024x1024 / 1536x1024 / 1024x1536 trio regardless of imageSize', () => {
-    // Legacy GPT Image models only accept these 3 sizes â€?even if the UI asks
+    // Legacy GPT Image models only accept these 3 sizes â€” even if the UI asks
     // for 2K/4K we must not send a size the model will reject.
     const cases = [
       ['1:1', '1K', '1024x1024'],
@@ -83,7 +83,7 @@ describe('mapAspectToOpenAISize â€?legacy models (gpt-image-1*)', () => {
   });
 });
 
-describe('mapAspectToOpenAISize â€?gpt-image-2 per-ratio/per-size picks', () => {
+describe('mapAspectToOpenAISize â€” gpt-image-2 per-ratio/per-size picks', () => {
   it('returns the expected canonical sizes for the most common UI selections', () => {
     // These are hard-coded smoke cases for the common picks. The full-matrix
     // invariants below guarantee everything else is at least valid; this case
@@ -109,7 +109,7 @@ describe('mapAspectToOpenAISize â€?gpt-image-2 per-ratio/per-size picks', () => 
 
   it('produces a distinct size for each UI aspect ratio at each size tier', () => {
     // Guards against the previous bug where 3:2 / 4:5 / 5:4 / 21:9 all
-    // collapsed to the landscape/portrait/square buckets â€?i.e. the mapper
+    // collapsed to the landscape/portrait/square buckets â€” i.e. the mapper
     // silently dropped the user's selection. We assert that, at a given
     // tier, every UI ratio produces an output whose actual w/h ratio is
     // closer to its own requested ratio than to any other UI ratio.
@@ -153,7 +153,8 @@ describe('mapAspectToOpenAISize â€?gpt-image-2 per-ratio/per-size picks', () => 
 
   it('unknown model id (no modelId param) is treated as gpt-image-2-capable', () => {
     // Defensive default: callers that omit modelId are assumed to hit the
-    // latest model. The alternative â€?silently clamping to the legacy trio â€?    // would strip 2K/4K from correctly-configured new providers.
+    // latest model. The alternative â€” silently clamping to the legacy trio â€”
+    // would strip 2K/4K from correctly-configured new providers.
     assert.equal(mapAspectToOpenAISize('1:1', '4K'), '2880x2880');
     assert.equal(mapAspectToOpenAISize('16:9', '2K'), '2048x1152');
   });
@@ -165,7 +166,7 @@ describe('mapAspectToOpenAISize â€?gpt-image-2 per-ratio/per-size picks', () => 
   });
 
   it('extreme landscape ratios get their long edge capped at 3840, not the square default', () => {
-    // 21:9 at 4K naively wants a width > 3840 â€?the mapper must cap the long
+    // 21:9 at 4K naively wants a width > 3840 â€” the mapper must cap the long
     // edge and scale the short edge rather than falling back to 2880x2880.
     const out = mapAspectToOpenAISize('21:9', '4K', 'gpt-image-2');
     const { w, h } = parseSize(out);

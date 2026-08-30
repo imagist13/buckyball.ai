@@ -2,12 +2,12 @@
  * Feishu Card Streaming Controller
  *
  * Manages streaming card lifecycle via CardKit v2 API.
- * State machine: idle â†?creating â†?streaming â†?completed | interrupted | error
+ * State machine: idle â†’ creating â†’ streaming â†’ completed | interrupted | error
  *
  * Features:
  * - Thinking state display (ğŸ’­ Thinking...)
  * - Streaming text with throttled updates
- * - Tool call progress indicators (ğŸ”„/âœ?â?
+ * - Tool call progress indicators (ğŸ”„/âœ…/âŒ)
  * - Final card with status footer and elapsed time
  * - Markdown optimization for Feishu rendering
  */
@@ -30,7 +30,7 @@ interface LarkMessageResponse {
   data?: { message_id?: string };
 }
 
-/** CardKit v2 API shape (not in SDK types â€?accessed via runtime) */
+/** CardKit v2 API shape (not in SDK types â€” accessed via runtime) */
 interface CardKitV2 {
   card: {
     create(payload: { data: { type: string; data: string } }): Promise<{ data?: { card_id?: string } }>;
@@ -85,7 +85,7 @@ function formatElapsed(ms: number): string {
 function buildToolProgressMarkdown(tools: ToolCallInfo[]): string {
   if (tools.length === 0) return '';
   const lines = tools.map((tc) => {
-    const icon = tc.status === 'running' ? 'ğŸ”„' : tc.status === 'complete' ? 'âœ? : 'â?;
+    const icon = tc.status === 'running' ? 'ğŸ”„' : tc.status === 'complete' ? 'âœ…' : 'âŒ';
     return `${icon} \`${tc.name}\``;
   });
   return lines.join('\n');
@@ -219,7 +219,7 @@ class FeishuCardStreamController implements CardStreamController {
     }
   }
 
-  /** Update tool call progress â€?triggers a card update */
+  /** Update tool call progress â€” triggers a card update */
   updateToolCalls(messageId: string, tools: ToolCallInfo[]): void {
     const state = this.cards.get(messageId);
     if (!state) return;
@@ -237,7 +237,7 @@ class FeishuCardStreamController implements CardStreamController {
     }
   }
 
-  /** Set thinking state â€?shows ğŸ’­ Thinking... in card */
+  /** Set thinking state â€” shows ğŸ’­ Thinking... in card */
   setThinking(messageId: string): void {
     const state = this.cards.get(messageId);
     if (!state) return;
@@ -296,9 +296,9 @@ class FeishuCardStreamController implements CardStreamController {
 
       if (footerCfg?.status) {
         const statusLabels: Record<string, string> = {
-          completed: 'âœ?Completed',
+          completed: 'âœ… Completed',
           interrupted: 'âš ï¸ Interrupted',
-          error: 'â?Error',
+          error: 'âŒ Error',
         };
         footerParts.push(statusLabels[status] || status);
       }

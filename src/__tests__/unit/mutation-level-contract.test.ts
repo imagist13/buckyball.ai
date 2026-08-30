@@ -1,19 +1,20 @@
 /**
- * Phase 5e Phase 5 (2026-05-18) â€?mutationLevel completeness tests.
+ * Phase 5e Phase 5 (2026-05-18) â€” mutationLevel completeness tests.
  *
  * Pins:
  *   1. Every CodePilot tool in `HARNESS_CAPABILITIES.toolNames` MUST
  *      have a classification in `CODEPILOT_TOOL_MUTATION_LEVELS`.
- *      Missing â†?fail. This forces tool authors to decide at the
+ *      Missing â†’ fail. This forces tool authors to decide at the
  *      point of declaration, not after a smoke surprise.
  *   2. Mutating tools (cli_tools_install / dashboard_pin / notify /
  *      schedule_task / generate_image / etc.) MUST NOT be classified
  *      as `safe_read`.
  *   3. `PERMISSION_SAFE_TOOLS` (the runtime-derived allowlist) must
  *      be byte-identical to:
- *         CORE_SAFE_READ_TOOLS âˆ? *         { name | mutationLevel(name) === 'safe_read' }
+ *         CORE_SAFE_READ_TOOLS âˆª
+ *         { name | mutationLevel(name) === 'safe_read' }
  *      i.e. derivation has no bugs and no side-table.
- *   4. `shouldSkipPermission` is fail-safe â€?returns false for
+ *   4. `shouldSkipPermission` is fail-safe â€” returns false for
  *      unknown tools, true only for declared safe_read.
  */
 
@@ -29,7 +30,7 @@ import {
 } from '@/lib/harness/mutation-level';
 import { PERMISSION_SAFE_TOOLS } from '@/lib/agent-tools';
 
-describe('mutation-level â€?completeness vs capability catalog', () => {
+describe('mutation-level â€” completeness vs capability catalog', () => {
   it('every catalog toolName has a mutationLevel classification', () => {
     const classified = new Set(Object.keys(CODEPILOT_TOOL_MUTATION_LEVELS));
     for (const cap of HARNESS_CAPABILITIES) {
@@ -43,7 +44,7 @@ describe('mutation-level â€?completeness vs capability catalog', () => {
   });
 });
 
-describe('mutation-level â€?mutating tools must NOT be safe_read', () => {
+describe('mutation-level â€” mutating tools must NOT be safe_read', () => {
   const mustNotBeSafeRead: ReadonlyArray<{ name: string; expectedLevel: MutationLevel; danger: string }> = [
     { name: 'codepilot_cli_tools_install', expectedLevel: 'mutating_external', danger: 'shell-execs npm / brew / pip install' },
     { name: 'codepilot_cli_tools_remove', expectedLevel: 'mutating_external', danger: 'shell-execs uninstall' },
@@ -62,7 +63,7 @@ describe('mutation-level â€?mutating tools must NOT be safe_read', () => {
   ];
 
   for (const { name, expectedLevel, danger } of mustNotBeSafeRead) {
-    it(`${name} â†?${expectedLevel} (danger: ${danger})`, () => {
+    it(`${name} â†’ ${expectedLevel} (danger: ${danger})`, () => {
       const level = CODEPILOT_TOOL_MUTATION_LEVELS[name];
       assert.equal(
         level,
@@ -74,7 +75,7 @@ describe('mutation-level â€?mutating tools must NOT be safe_read', () => {
   }
 });
 
-describe('mutation-level â€?safe_read tools enumeration', () => {
+describe('mutation-level â€” safe_read tools enumeration', () => {
   const mustBeSafeRead: readonly string[] = [
     'codepilot_memory_recent',
     'codepilot_memory_search',
@@ -97,8 +98,8 @@ describe('mutation-level â€?safe_read tools enumeration', () => {
   }
 });
 
-describe('mutation-level â€?PERMISSION_SAFE_TOOLS derivation', () => {
-  it('PERMISSION_SAFE_TOOLS = CORE_SAFE_READ_TOOLS âˆ?safe_read codepilot tools', () => {
+describe('mutation-level â€” PERMISSION_SAFE_TOOLS derivation', () => {
+  it('PERMISSION_SAFE_TOOLS = CORE_SAFE_READ_TOOLS âˆª safe_read codepilot tools', () => {
     const derived = new Set<string>(CORE_SAFE_READ_TOOLS);
     for (const [name, level] of Object.entries(CODEPILOT_TOOL_MUTATION_LEVELS)) {
       if (level === 'safe_read') derived.add(name);
@@ -114,13 +115,13 @@ describe('mutation-level â€?PERMISSION_SAFE_TOOLS derivation', () => {
     for (const name of PERMISSION_SAFE_TOOLS) {
       assert.ok(
         derived.has(name),
-        `${name} in PERMISSION_SAFE_TOOLS but not derivable from mutation-level table â€?derivation broken`,
+        `${name} in PERMISSION_SAFE_TOOLS but not derivable from mutation-level table â€” derivation broken`,
       );
     }
   });
 });
 
-describe('mutation-level â€?shouldSkipPermission fail-safe semantics', () => {
+describe('mutation-level â€” shouldSkipPermission fail-safe semantics', () => {
   it('returns true for core read-only tools', () => {
     for (const name of ['Read', 'Glob', 'Grep', 'Skill']) {
       assert.equal(shouldSkipPermission(name), true);

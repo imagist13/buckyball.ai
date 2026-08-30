@@ -1,5 +1,5 @@
 /**
- * Feishu adapter â€?thin proxy that delegates to FeishuChannelPlugin.
+ * Feishu adapter â€” thin proxy that delegates to FeishuChannelPlugin.
  *
  * The actual implementation lives in src/lib/channels/feishu/.
  * This file exists only to maintain the existing self-registration pattern

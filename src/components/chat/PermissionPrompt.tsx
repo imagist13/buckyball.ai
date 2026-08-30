@@ -102,7 +102,7 @@ function AskUserQuestionUI({
 
   // Require ALL questions to be answered before enabling Submit.
   // `some` would allow partial submissions where unanswered questions
-  // produce empty-string answers ‚Ä?the model would continue as if the
+  // produce empty-string answers ‚Äî the model would continue as if the
   // interview completed when it actually didn't.
   const hasAnswer = questions.length > 0 && questions.every((_, i) => {
     const qIdx = String(i);
@@ -138,7 +138,7 @@ function AskUserQuestionUI({
                     title={opt.description}
                   >
                     {q.multiSelect && (
-                      <span className="mr-1.5">{isSelected ? '‚ò? : '‚ò?}</span>
+                      <span className="mr-1.5">{isSelected ? '‚òë' : '‚òê'}</span>
                     )}
                     {opt.label}
                   </Button>
@@ -221,7 +221,7 @@ function ExitPlanModeUI({
     <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4">
       <div className="flex items-center gap-2">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        <span className="text-sm font-medium">Plan complete ‚Ä?ready to execute</span>
+        <span className="text-sm font-medium">Plan complete ‚Äî ready to execute</span>
       </div>
       {allowedPrompts.length > 0 && (
         <div className="space-y-1">
@@ -358,7 +358,7 @@ function ToolInputDisplay({ input }: { input: Record<string, unknown> }) {
   const isTruncated = lineCount > MAX_INPUT_LINES || formatted.length > MAX_INPUT_CHARS;
 
   const displayText = !expanded && isTruncated
-    ? formatted.slice(0, MAX_INPUT_CHARS).split('\n').slice(0, MAX_INPUT_LINES).join('\n') + '\n‚Ä?
+    ? formatted.slice(0, MAX_INPUT_CHARS).split('\n').slice(0, MAX_INPUT_LINES).join('\n') + '\n‚Ä¶'
     : formatted;
 
   return (
@@ -375,7 +375,7 @@ function ToolInputDisplay({ input }: { input: Record<string, unknown> }) {
           onClick={() => setExpanded(!expanded)}
           className="w-full px-3 py-1 text-[10px] text-muted-foreground hover:bg-muted/80 transition-colors"
         >
-          {expanded ? '‚ñ?Collapse' : '‚ñ?Show more'}
+          {expanded ? '‚ñ≤ Collapse' : '‚ñº Show more'}
         </button>
       )}
     </div>
@@ -383,7 +383,7 @@ function ToolInputDisplay({ input }: { input: Record<string, unknown> }) {
 }
 
 // Tools that require user interaction even in full_access mode.
-// AskUserQuestion's entire purpose is to get user input ‚Ä?auto-approving
+// AskUserQuestion's entire purpose is to get user input ‚Äî auto-approving
 // would return empty answers, defeating the purpose. Module-scoped so the
 // Set identity is stable across renders (was an exhaustive-deps warning).
 /**
@@ -407,12 +407,12 @@ export function PermissionPrompt({
 }: PermissionPromptProps) {
   const { t } = useTranslation();
 
-  // Auto-approve when full_access is active ‚Ä?except for human-only tools.
+  // Auto-approve when full_access is active ‚Äî except for human-only tools.
   //
   // auto_review deliberately does NOT auto-approve here: a request that
   // reached this prompt is one the reviewer escalated or was never allowed to
   // see, so the answer is the user's. Auto-clicking allow for them would turn
-  // "review for me" into "full access" ‚Ä?the exact collapse the three-profile
+  // "review for me" into "full access" ‚Äî the exact collapse the three-profile
   // split exists to prevent.
   const autoApprovedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -428,7 +428,7 @@ export function PermissionPrompt({
     }
   }, [permissionProfile, pendingPermission, permissionResolved, onPermissionResponse]);
 
-  // Don't render permission UI when full_access ‚Ä?EXCEPT for human-only tools
+  // Don't render permission UI when full_access ‚Äî EXCEPT for human-only tools
   if (
     permissionProfile === 'full_access' &&
     (!pendingPermission || !isNeverAutoApproved(pendingPermission.toolName))
@@ -440,7 +440,7 @@ export function PermissionPrompt({
   if (!pendingPermission && !permissionResolved) return null;
 
   // Only show the resolved status text (not the full UI) when already resolved.
-  // This prevents stacking ‚Ä?once resolved, we show a minimal status line that
+  // This prevents stacking ‚Äî once resolved, we show a minimal status line that
   // auto-hides quickly (the stream-session-manager clears it after 1s).
   const isResolved = !!permissionResolved;
 
@@ -455,7 +455,7 @@ export function PermissionPrompt({
     if (permissionResolved === 'allow') {
       return { id: pendingPermission?.permissionRequestId || '', approved: true as const };
     }
-    // timeout is an auto-deny ‚Ü?render as not-approved, same as a manual deny.
+    // timeout is an auto-deny ‚Üí render as not-approved, same as a manual deny.
     if (permissionResolved === 'deny' || permissionResolved === 'timeout') {
       return { id: pendingPermission?.permissionRequestId || '', approved: false as const };
     }
@@ -485,7 +485,7 @@ export function PermissionPrompt({
         />
       )}
       {pendingPermission?.toolName === 'ExitPlanMode' && permissionResolved === 'allow' && (
-        <p className="py-1 text-xs text-status-success-foreground">Plan approved ‚Ä?executing</p>
+        <p className="py-1 text-xs text-status-success-foreground">Plan approved ‚Äî executing</p>
       )}
       {pendingPermission?.toolName === 'ExitPlanMode' && permissionResolved === 'deny' && (
         <p className="py-1 text-xs text-status-error-foreground">Plan rejected</p>
@@ -510,7 +510,7 @@ export function PermissionPrompt({
         </p>
       )}
 
-      {/* Generic confirmation for other tools ‚Ä?only show when not yet resolved */}
+      {/* Generic confirmation for other tools ‚Äî only show when not yet resolved */}
       {pendingPermission?.toolName !== 'AskUserQuestion' && pendingPermission?.toolName !== 'ExitPlanMode' && pendingPermission && !isResolved && (
         <Confirmation
           approval={getApproval()}
@@ -520,7 +520,7 @@ export function PermissionPrompt({
             <span className="font-medium">{pendingPermission.toolName}</span>
             {pendingPermission.decisionReason && (
               <span className="text-muted-foreground ml-2">
-                ‚Ä?{pendingPermission.decisionReason}
+                ‚Äî {pendingPermission.decisionReason}
               </span>
             )}
           </ConfirmationTitle>
@@ -562,7 +562,7 @@ export function PermissionPrompt({
         </Confirmation>
       )}
 
-      {/* Resolved status for generic tools ‚Ä?minimal one-liner */}
+      {/* Resolved status for generic tools ‚Äî minimal one-liner */}
       {pendingPermission?.toolName !== 'AskUserQuestion' && pendingPermission?.toolName !== 'ExitPlanMode' && isResolved && (
         <p className={cn(
           "py-1 text-xs",

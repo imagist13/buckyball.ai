@@ -1,8 +1,9 @@
 /**
  * Tests for `electron/log-sanitize.ts`.
  *
- * The persistent log file is the user's primary support entry (About â†? * "æ‰“å¼€æ—¥å¿—æ–‡ä»¶å¤?). These tests pin the redaction rules that make the
- * file safe to attach to an issue â€?every leak that shows up in
+ * The persistent log file is the user's primary support entry (About â†’
+ * "æ‰“å¼€æ—¥å¿—æ–‡ä»¶å¤¹"). These tests pin the redaction rules that make the
+ * file safe to attach to an issue â€” every leak that shows up in
  * practice should land here as a test before the regex changes.
  *
  * Run via `node --test` (the same harness the rest of the unit tests
@@ -14,7 +15,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { sanitizeLogLine } from "../../../electron/log-sanitize";
 
-describe("sanitizeLogLine â€?vendor-prefixed API keys", () => {
+describe("sanitizeLogLine â€” vendor-prefixed API keys", () => {
   it("masks sk- style Anthropic / OpenAI keys, keeps prefix + last 4", () => {
     const out = sanitizeLogLine(
       "[provider] using key sk-ant-api03-AbC1234567890DefGhIjKlMnOpQrStUvWxYzABCD",
@@ -39,7 +40,7 @@ describe("sanitizeLogLine â€?vendor-prefixed API keys", () => {
   });
 });
 
-describe("sanitizeLogLine â€?Bearer / Authorization", () => {
+describe("sanitizeLogLine â€” Bearer / Authorization", () => {
   it("masks Bearer tokens anywhere in the line", () => {
     const out = sanitizeLogLine(
       'curl failed: > Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9XXXX',
@@ -59,7 +60,7 @@ describe("sanitizeLogLine â€?Bearer / Authorization", () => {
   });
 });
 
-describe("sanitizeLogLine â€?URL query secrets", () => {
+describe("sanitizeLogLine â€” URL query secrets", () => {
   it("strips token / api_key / access_token query values, keeps host + path", () => {
     const out = sanitizeLogLine(
       "GET https://api.example.com/v1/chat?api_key=sk_live_abcdefgh&token=tok_xyz12345&model=gpt-4",
@@ -84,17 +85,17 @@ describe("sanitizeLogLine â€?URL query secrets", () => {
   });
 });
 
-describe("sanitizeLogLine â€?home path", () => {
+describe("sanitizeLogLine â€” home path", () => {
   it("replaces the user's home directory with ~", () => {
     const home = process.env.HOME || process.env.USERPROFILE || "";
-    if (!home) return; // CI without HOME â€?skip
+    if (!home) return; // CI without HOME â€” skip
     const out = sanitizeLogLine(`config loaded from ${home}/.codepilot/settings.json`);
     assert.ok(!out.includes(home));
     assert.match(out, /~\/\.codepilot\/settings\.json/);
   });
 });
 
-describe("sanitizeLogLine â€?opaque blob heuristic", () => {
+describe("sanitizeLogLine â€” opaque blob heuristic", () => {
   it("masks long base64-ish strings", () => {
     const out = sanitizeLogLine("session token: AbCdEfGhIjKlMnOpQrStUvWxYz0123456789ABCDEF_xyz");
     // Original middle should be gone.
@@ -103,7 +104,7 @@ describe("sanitizeLogLine â€?opaque blob heuristic", () => {
 
   it("does NOT mask plain hex strings under 64 chars (commit hashes / uuids)", () => {
     const out = sanitizeLogLine("commit deadbeef0123456789abcdef0123456789abcdef");
-    // 40-char hex commit hash is left alone â€?debug context is more
+    // 40-char hex commit hash is left alone â€” debug context is more
     // important than worst-case false positive here.
     assert.ok(out.includes("deadbeef0123456789abcdef0123456789abcdef"));
   });
@@ -123,9 +124,9 @@ describe("sanitizeLogLine â€?opaque blob heuristic", () => {
   });
 });
 
-describe("sanitizeLogLine â€?sensitive field names", () => {
+describe("sanitizeLogLine â€” sensitive field names", () => {
   // Field-name-based rules catch values that don't fit any value-shape
-  // heuristic â€?short AWS access keys, lowercase opaque tokens,
+  // heuristic â€” short AWS access keys, lowercase opaque tokens,
   // arbitrary self-hosted-provider strings. The field name is the only
   // strong signal, so these tests pin the rule.
 
@@ -185,7 +186,7 @@ describe("sanitizeLogLine â€?sensitive field names", () => {
     const out = sanitizeLogLine(
       '{"provider":"openai","model":"gpt-4","prompt":"hello world","duration_ms":1234}',
     );
-    // None of these field names are sensitive â€?the line should round-trip
+    // None of these field names are sensitive â€” the line should round-trip
     // unchanged (modulo no other rules firing).
     assert.equal(out, '{"provider":"openai","model":"gpt-4","prompt":"hello world","duration_ms":1234}');
   });
@@ -208,7 +209,7 @@ describe("sanitizeLogLine â€?sensitive field names", () => {
   });
 });
 
-describe("sanitizeLogLine â€?idempotence", () => {
+describe("sanitizeLogLine â€” idempotence", () => {
   it("running twice doesn't double-mask or expand masked output", () => {
     const original = "[auth] Bearer eyJhbGciOiJIUzI1NiIs.payload.sig1234";
     const once = sanitizeLogLine(original);

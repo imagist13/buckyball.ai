@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * buckyball.ai's neutral Markdown presentation contract.
+ * CodePilot's neutral Markdown presentation contract.
  *
  * Both chat messages and file previews compose from this map. Keep product-
  * specific actions (copy, export, local-file navigation) in the caller's
@@ -159,7 +159,7 @@ function MarkdownLink({
 /**
  * Models should normally return structured `tool_result.media`, but older or
  * interrupted tool flows may leave a Markdown image pointing at the absolute
- * local file in buckyball.ai's managed media directory. Browsers cannot load that
+ * local file in CodePilot's managed media directory. Browsers cannot load that
  * filesystem path directly. Route only those managed paths through the
  * existing allowlisted media endpoint; every other URL remains untouched.
  */

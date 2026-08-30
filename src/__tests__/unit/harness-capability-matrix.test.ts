@@ -1,8 +1,9 @@
 /**
- * Phase 5e Phase 2 (2026-05-18) �?Capability matrix derivation tests.
+ * Phase 5e Phase 2 (2026-05-18) — Capability matrix derivation tests.
  *
  * Pins:
- *   1. Matrix is **pure derivation** from capability-contract.ts �? *      not allowed to maintain a parallel hand-written table that
+ *   1. Matrix is **pure derivation** from capability-contract.ts —
+ *      not allowed to maintain a parallel hand-written table that
  *      could drift. Matrix is the source for Settings UI; the test
  *      pins this via a structural property: every matrix cell's
  *      capabilityId must resolve in HARNESS_CAPABILITIES.
@@ -11,7 +12,7 @@
  *      carry an empty toolNames + a non-empty statusLine.
  *   4. `perception_only` cells carry suggestedRuntime when at least
  *      one Runtime in the catalog supports the capability.
- *   5. Round 7 (2026-05-18) �?derivation is **per-runtime exposure**,
+ *   5. Round 7 (2026-05-18) — derivation is **per-runtime exposure**,
  *      NOT top-level `status`. A capability whose top-level status is
  *      `deferred` can still be executable on a runtime whose
  *      `exposure.kind !== 'unsupported'` (e.g. dashboard / cli_tools
@@ -31,9 +32,9 @@ import {
 import { HARNESS_CAPABILITIES, getCapability } from '@/lib/harness/capability-contract';
 import { getCapabilityNote } from '@/lib/harness/capability-display-text';
 
-const RUNTIMES = ['claude_code', 'bbagent', 'codex_runtime'] as const;
+const RUNTIMES = ['claude_code', 'codepilot_runtime', 'codex_runtime'] as const;
 
-describe('Capability matrix �?derivation contract', () => {
+describe('Capability matrix — derivation contract', () => {
   it('emits exactly one cell per Runtime × Capability', () => {
     const matrix = buildCapabilityMatrix();
     for (const runtime of RUNTIMES) {
@@ -64,7 +65,7 @@ describe('Capability matrix �?derivation contract', () => {
   });
 });
 
-describe('Capability matrix �?status semantics', () => {
+describe('Capability matrix — status semantics', () => {
   it('executable cells carry non-empty toolNames', () => {
     for (const cell of flattenMatrix()) {
       if (cell.status === 'executable') {
@@ -82,7 +83,7 @@ describe('Capability matrix �?status semantics', () => {
         assert.deepEqual(
           cell.toolNames,
           [],
-          `${cell.runtimeId}/${cell.capabilityId} has status=${cell.status} but exposes toolNames �?leaks "visible but uncallable" tools`,
+          `${cell.runtimeId}/${cell.capabilityId} has status=${cell.status} but exposes toolNames — leaks "visible but uncallable" tools`,
         );
       }
     }
@@ -96,13 +97,13 @@ describe('Capability matrix �?status semantics', () => {
       // 'unavailable' instead.
       assert.ok(
         cell.suggestedRuntime,
-        `${cell.runtimeId}/${cell.capabilityId} is perception_only without suggestedRuntime �?Settings UI cant tell user where to switch`,
+        `${cell.runtimeId}/${cell.capabilityId} is perception_only without suggestedRuntime — Settings UI cant tell user where to switch`,
       );
     }
   });
 });
 
-describe('Capability matrix �?per-runtime exposure derivation (round 7)', () => {
+describe('Capability matrix — per-runtime exposure derivation (round 7)', () => {
   // Documented exceptions: matrix-layer promotions where the codex_proxy
   // contract.kind is `unsupported` (because the LEGACY provider-proxy
   // bridge is genuinely unsupported for these capabilities) but the new
@@ -120,10 +121,10 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
     // in deriveCell. A capability marked deferred at the top level can
     // still be executable on a runtime whose exposure.kind is real (e.g.
     // dashboard.exposure.claudecode_sdk.kind === 'mcp_server' is real
-    // wiring �?only codex_proxy is unsupported). The contract is:
-    // exposure.kind === 'unsupported' �?perception_only / unavailable,
+    // wiring — only codex_proxy is unsupported). The contract is:
+    // exposure.kind === 'unsupported' → perception_only / unavailable,
     // UNLESS the matrix layer promotes (see MATRIX_LAYER_PROMOTIONS above).
-    // exposure.kind !== 'unsupported' �?executable. Nothing else may
+    // exposure.kind !== 'unsupported' → executable. Nothing else may
     // gate this transition.
     for (const cell of flattenMatrix()) {
       const cap = getCapability(cell.capabilityId);
@@ -131,19 +132,19 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
       const exposureKey =
         cell.runtimeId === 'claude_code'
           ? 'claudecode_sdk'
-          : cell.runtimeId === 'bbagent'
+          : cell.runtimeId === 'codepilot_runtime'
             ? 'native'
             : 'codex_proxy';
       const exposureKind = cap!.exposure[exposureKey].kind;
       const key = `${cell.runtimeId}/${cell.capabilityId}`;
       if (exposureKind === 'unsupported') {
         if (MATRIX_LAYER_PROMOTIONS.has(key)) {
-          // Promoted via the codex_runtime MCP split �?must be executable
+          // Promoted via the codex_runtime MCP split — must be executable
           // with the mixed trust badge + a non-empty noteKey.
           assert.equal(
             cell.status,
             'executable',
-            `${key} is in MATRIX_LAYER_PROMOTIONS but matrix marked it ${cell.status} �?promotion regressed`,
+            `${key} is in MATRIX_LAYER_PROMOTIONS but matrix marked it ${cell.status} — promotion regressed`,
           );
           assert.equal(cell.trustBoundary, 'mixed', `${key} promoted cells must carry mixed trust`);
           assert.ok(cell.noteKey, `${key} promoted cells must carry a noteKey`);
@@ -151,32 +152,32 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
           assert.notEqual(
             cell.status,
             'executable',
-            `${key} has exposure.kind=unsupported but matrix marked it executable �?add to MATRIX_LAYER_PROMOTIONS if intentional, else the matrix is lying`,
+            `${key} has exposure.kind=unsupported but matrix marked it executable — add to MATRIX_LAYER_PROMOTIONS if intentional, else the matrix is lying`,
           );
         }
       } else {
         assert.equal(
           cell.status,
           'executable',
-          `${key} has real exposure.kind=${exposureKind} but matrix marked it ${cell.status} �?top-level status must NOT gate per-runtime executability`,
+          `${key} has real exposure.kind=${exposureKind} but matrix marked it ${cell.status} — top-level status must NOT gate per-runtime executability`,
         );
       }
     }
   });
 
   it('dashboard is executable on every Runtime (codex_runtime via the mutation-level split, 2026-05-28)', () => {
-    // Round 7 specific pin �?dashboard is the canonical case where the
-    // OLD short-circuit (cap.status === 'deferred' �?all runtimes
+    // Round 7 specific pin — dashboard is the canonical case where the
+    // OLD short-circuit (cap.status === 'deferred' → all runtimes
     // unavailable) was wrong. dashboard exposure: claudecode_sdk=mcp_server
     // (real wiring to src/lib/dashboard-mcp.ts), native=ai_sdk_tool (real
     // wiring to src/lib/builtin-tools/dashboard.ts), codex_proxy=unsupported
-    // �?but for codex_runtime the matrix now promotes via the read+write
+    // — but for codex_runtime the matrix now promotes via the read+write
     // MCP split (see capability-matrix.ts promoteCodexNativeSplitIfApplicable).
     const claudeCells = capabilityMatrixForRuntime('claude_code');
     const claudeDashboard = claudeCells.find((c) => c.capabilityId === 'dashboard');
     assert.equal(claudeDashboard!.status, 'executable');
 
-    const nativeCells = capabilityMatrixForRuntime('bbagent');
+    const nativeCells = capabilityMatrixForRuntime('codepilot_runtime');
     const nativeDashboard = nativeCells.find((c) => c.capabilityId === 'dashboard');
     assert.equal(nativeDashboard!.status, 'executable');
 
@@ -197,7 +198,7 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
     const claudeCli = claudeCells.find((c) => c.capabilityId === 'cli_tools');
     assert.equal(claudeCli!.status, 'executable');
 
-    const nativeCells = capabilityMatrixForRuntime('bbagent');
+    const nativeCells = capabilityMatrixForRuntime('codepilot_runtime');
     const nativeCli = nativeCells.find((c) => c.capabilityId === 'cli_tools');
     assert.equal(nativeCli!.status, 'executable');
 
@@ -211,7 +212,7 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
   });
 
   it('assistant_buddy is executable on claude_code + codepilot_runtime; perception_only on codex_runtime', () => {
-    // Phase 5e round 8 follow-up (2026-05-18) �?Native parity shipped.
+    // Phase 5e round 8 follow-up (2026-05-18) — Native parity shipped.
     // `src/lib/builtin-tools/notification.ts` now mounts
     // `codepilot_hatch_buddy` mirroring the MCP authority. Codex
     // Runtime proxy still doesn't bridge the hatch flow (no entry in
@@ -220,21 +221,21 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
     const claudeBuddy = claudeCells.find((c) => c.capabilityId === 'assistant_buddy');
     assert.equal(claudeBuddy!.status, 'executable');
 
-    const nativeCells = capabilityMatrixForRuntime('bbagent');
+    const nativeCells = capabilityMatrixForRuntime('codepilot_runtime');
     const nativeBuddy = nativeCells.find((c) => c.capabilityId === 'assistant_buddy');
     assert.equal(nativeBuddy!.status, 'executable',
-      'round 8 Native parity �?codepilot_hatch_buddy now mounted via createNotificationTools');
+      'round 8 Native parity — codepilot_hatch_buddy now mounted via createNotificationTools');
 
     const codexCells = capabilityMatrixForRuntime('codex_runtime');
     const codexBuddy = codexCells.find((c) => c.capabilityId === 'assistant_buddy');
     assert.equal(codexBuddy!.status, 'perception_only');
     assert.ok(
-      codexBuddy!.suggestedRuntime === 'claude_code' || codexBuddy!.suggestedRuntime === 'bbagent',
+      codexBuddy!.suggestedRuntime === 'claude_code' || codexBuddy!.suggestedRuntime === 'codepilot_runtime',
       'suggested runtime should be one of the two executable paths',
     );
   });
 
-  it('executable count differs across runtimes (claude_code �?codepilot_runtime > codex_runtime)', () => {
+  it('executable count differs across runtimes (claude_code ≥ codepilot_runtime > codex_runtime)', () => {
     // Direct anti-regression for round 7 user complaint "三个引擎数量
     // 不能都写 5/8". The fix makes the matrix count reflect per-runtime
     // exposure, so ClaudeCode (mcp_server everywhere) > Native (most
@@ -244,7 +245,7 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
     const claudeExec = capabilityMatrixForRuntime('claude_code').filter(
       (c) => c.status === 'executable',
     ).length;
-    const nativeExec = capabilityMatrixForRuntime('bbagent').filter(
+    const nativeExec = capabilityMatrixForRuntime('codepilot_runtime').filter(
       (c) => c.status === 'executable',
     ).length;
     const codexExec = capabilityMatrixForRuntime('codex_runtime').filter(
@@ -261,7 +262,7 @@ describe('Capability matrix �?per-runtime exposure derivation (round 7)', () =>
   });
 });
 
-describe('Capability matrix �?live capability invariants', () => {
+describe('Capability matrix — live capability invariants', () => {
   it('widget is executable on all three runtimes (all live + exposed)', () => {
     for (const runtime of RUNTIMES) {
       const cells = capabilityMatrixForRuntime(runtime);
@@ -298,43 +299,43 @@ describe('Capability matrix �?live capability invariants', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e review fix P2 #5 �?trustBoundary derivation from mutation-level
+// Phase 5e review fix P2 #5 — trustBoundary derivation from mutation-level
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Capability matrix �?trustBoundary derivation', () => {
-  it('widget (single safe_read tool) �?auto_safe', () => {
+describe('Capability matrix — trustBoundary derivation', () => {
+  it('widget (single safe_read tool) → auto_safe', () => {
     const cells = capabilityMatrixForRuntime('claude_code');
     const widget = cells.find((c) => c.capabilityId === 'widget');
     assert.ok(widget);
     assert.equal(widget!.trustBoundary, 'auto_safe');
   });
 
-  it('memory (all 3 tools safe_read) �?auto_safe', () => {
+  it('memory (all 3 tools safe_read) → auto_safe', () => {
     const cells = capabilityMatrixForRuntime('claude_code');
     const memory = cells.find((c) => c.capabilityId === 'memory');
     assert.ok(memory);
     assert.equal(memory!.trustBoundary, 'auto_safe');
   });
 
-  it('tasks_and_notify (list:safe_read + schedule/cancel:mutating_local + notify:side_effect) �?mixed', () => {
+  it('tasks_and_notify (list:safe_read + schedule/cancel:mutating_local + notify:side_effect) → mixed', () => {
     const cells = capabilityMatrixForRuntime('claude_code');
     const tasks = cells.find((c) => c.capabilityId === 'tasks_and_notify');
     assert.ok(tasks);
     assert.equal(
       tasks!.trustBoundary,
       'mixed',
-      'tasks_and_notify mixes safe + mutating + side_effect tools �?boundary must reflect that',
+      'tasks_and_notify mixes safe + mutating + side_effect tools — boundary must reflect that',
     );
   });
 
-  it('image_generation (mutating_external) �?requires_approval', () => {
+  it('image_generation (mutating_external) → requires_approval', () => {
     const cells = capabilityMatrixForRuntime('claude_code');
     const imageGen = cells.find((c) => c.capabilityId === 'image_generation');
     assert.ok(imageGen);
     assert.equal(imageGen!.trustBoundary, 'requires_approval');
   });
 
-  it('media_import (mutating_local) �?requires_approval', () => {
+  it('media_import (mutating_local) → requires_approval', () => {
     const cells = capabilityMatrixForRuntime('claude_code');
     const mediaImport = cells.find((c) => c.capabilityId === 'media_import');
     assert.ok(mediaImport);
@@ -347,7 +348,7 @@ describe('Capability matrix �?trustBoundary derivation', () => {
         assert.equal(
           cell.trustBoundary,
           undefined,
-          `${cell.runtimeId}/${cell.capabilityId} is ${cell.status} but exposes trustBoundary=${cell.trustBoundary} �?non-executable cells should not advertise approval rules`,
+          `${cell.runtimeId}/${cell.capabilityId} is ${cell.status} but exposes trustBoundary=${cell.trustBoundary} — non-executable cells should not advertise approval rules`,
         );
       }
     }
@@ -358,7 +359,7 @@ describe('Capability matrix �?trustBoundary derivation', () => {
       if (cell.status === 'executable' && cell.toolNames.length > 0) {
         assert.ok(
           cell.trustBoundary,
-          `executable cell ${cell.runtimeId}/${cell.capabilityId} missing trustBoundary �?derivation broken`,
+          `executable cell ${cell.runtimeId}/${cell.capabilityId} missing trustBoundary — derivation broken`,
         );
       }
     }
@@ -366,13 +367,13 @@ describe('Capability matrix �?trustBoundary derivation', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Phase 5e Phase 3 �?Codex Account provider downgrade
+// Phase 5e Phase 3 — Codex Account provider downgrade
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Capability matrix �?Codex Account provider downgrade', () => {
+describe('Capability matrix — Codex Account provider downgrade', () => {
   it('codex_runtime + codex_account demotes image_generation / media_import to perception_only (bridge-only, no native injection yet)', () => {
     const cells = capabilityMatrixForRuntimeProvider('codex_runtime', 'codex_account');
-    // Phase 8 �?memory (P4), widget + tasks_and_notify (#31) are NO LONGER
+    // Phase 8 — memory (P4), widget + tasks_and_notify (#31) are NO LONGER
     // demoted; they reach Codex Account via native injection (asserted below).
     for (const capId of ['image_generation', 'media_import']) {
       const cell = cells.find((c) => c.capabilityId === capId);
@@ -394,7 +395,7 @@ describe('Capability matrix �?Codex Account provider downgrade', () => {
       );
       assert.equal(
         cell!.suggestedRuntime,
-        'bbagent',
+        'codepilot_runtime',
         `${capId} must suggest CodePilot Native as alternative`,
       );
     }
@@ -405,7 +406,7 @@ describe('Capability matrix �?Codex Account provider downgrade', () => {
     const memory = cells.find((c) => c.capabilityId === 'memory');
     assert.ok(memory, 'memory should be in matrix');
     // Phase 8: Memory is injected via native config.mcp_servers (validated
-    // end-to-end), so it stays executable under Codex Account �?NOT demoted
+    // end-to-end), so it stays executable under Codex Account — NOT demoted
     // like the bridge-only built-ins above.
     assert.equal(memory!.status, 'executable');
     assert.ok(memory!.toolNames.length > 0, 'executable memory must expose its tool names');
@@ -413,7 +414,7 @@ describe('Capability matrix �?Codex Account provider downgrade', () => {
     // use is pending the real-account smoke (Phase 5).
     assert.equal(memory!.noteKey, 'memory_codex_native');
     // The noteKey MUST resolve to real bilingual copy (else the UI renders
-    // nothing). Copy stays outcome-oriented �?no internal vocabulary.
+    // nothing). Copy stays outcome-oriented — no internal vocabulary.
     for (const lang of ['zh', 'en'] as const) {
       const note = getCapabilityNote(memory!.noteKey!, lang);
       assert.ok(note && note.length > 0, `note must resolve for ${lang}`);
@@ -426,7 +427,7 @@ describe('Capability matrix �?Codex Account provider downgrade', () => {
     const widget = cells.find((c) => c.capabilityId === 'widget');
     assert.ok(widget, 'widget should be in matrix');
     // #31: widget reaches Codex Account via native (keyword-gated) injection,
-    // so it stays executable �?not demoted like the remaining bridge-only caps.
+    // so it stays executable — not demoted like the remaining bridge-only caps.
     assert.equal(widget!.status, 'executable');
     assert.equal(widget!.noteKey, 'widget_codex_native');
     for (const lang of ['zh', 'en'] as const) {
@@ -496,7 +497,7 @@ describe('Capability matrix �?Codex Account provider downgrade', () => {
   it('codex_runtime + non-codex_account provider STILL promotes dashboard/cli (P1 fix, 2026-05-28)', () => {
     // Codex review P1.2: the runtime injects dashboard/cli split MCPs for
     // ANY codex_runtime provider (see runtime.ts injection blocks; no
-    // provider gate). The matrix must mirror that �?otherwise non-account
+    // provider gate). The matrix must mirror that — otherwise non-account
     // paths get the drift "Settings says not callable, model can call it".
     const cells = capabilityMatrixForRuntimeProvider('codex_runtime', 'some_glm_provider');
     for (const capId of ['dashboard', 'cli_tools']) {

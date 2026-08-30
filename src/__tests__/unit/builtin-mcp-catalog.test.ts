@@ -3,7 +3,7 @@
  *
  * The MCP Tab renders the catalog as a read-only listing of every built-in
  * capability. If a new `tool('codepilot_*')` lands in one of the MCP source
- * files but the catalog isn't updated, the UI will under-report â€?and we'd
+ * files but the catalog isn't updated, the UI will under-report â€” and we'd
  * rather fail CI than silently lie to users (Phase 2D.2, 2026-04-30).
  *
  * Strategy: parse each MCP source file with a regex tuned for the exact
@@ -42,7 +42,7 @@ function extractToolNames(filePath: string): Set<string> {
   const absolute = path.join(REPO_ROOT, filePath);
   const source = fs.readFileSync(absolute, 'utf8');
   // tool('codepilot_xxx', ...). We only care about the leading literal
-  // string identifier â€?schemas / handlers can wrap to many lines.
+  // string identifier â€” schemas / handlers can wrap to many lines.
   const re = /tool\(\s*['"](codepilot_[a-z0-9_]+)['"]/g;
   const out = new Set<string>();
   let m: RegExpExecArray | null;
@@ -50,7 +50,7 @@ function extractToolNames(filePath: string): Set<string> {
   return out;
 }
 
-describe('BUILTIN_MCP_CATALOG â€?drift', () => {
+describe('BUILTIN_MCP_CATALOG â€” drift', () => {
   it('every catalog entry has a known source file mapping', () => {
     for (const entry of BUILTIN_MCP_CATALOG) {
       assert.ok(

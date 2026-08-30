@@ -1,5 +1,5 @@
 /**
- * status-notice-i18n.test.ts â€?theå‘ŠçŸ¥é“?for runtime status notices renders from
+ * status-notice-i18n.test.ts â€” theå‘ŠçŸ¥é“¾ for runtime status notices renders from
  * the i18n dictionary, in the user's locale (model plan Phase 2 / s09, Codex
  * review P2 2026-07-18).
  *
@@ -7,7 +7,7 @@
  * RUNTIME_EFFORT_IGNORED were built as English sentences on the SERVER, so a zh
  * user got English toasts and `src/i18n/*.ts` had no keys for either. These
  * tests assert the real chain end to end:
- *   producer â†?{ code, reason, params } â†?resolveStatusNoticeKeys â†?translate
+ *   producer â†’ { code, reason, params } â†’ resolveStatusNoticeKeys â†’ translate
  * plus that BOTH chat entry points route through the one shared resolver (a
  * second mapping table is exactly the drift this design prevents).
  */
@@ -43,7 +43,7 @@ const NEW_KEYS = [
   'chat.notice.subagentModelUnavailable.message',
 ] as const;
 
-describe('s09 â€?new user-visible notices exist in BOTH locales', () => {
+describe('s09 â€” new user-visible notices exist in BOTH locales', () => {
   for (const key of NEW_KEYS) {
     it(`${key} is defined in en and zh`, () => {
       assert.ok((en as Record<string, string>)[key], `en.ts is missing ${key}`);
@@ -59,7 +59,7 @@ describe('s09 â€?new user-visible notices exist in BOTH locales', () => {
   });
 });
 
-describe('s09 â€?sampling notice resolves to a localized string, not wire prose', () => {
+describe('s09 â€” sampling notice resolves to a localized string, not wire prose', () => {
   const notice = buildSamplingIgnoredNotice({
     runtime: 'native',
     model: 'claude-sonnet-5',
@@ -77,7 +77,7 @@ describe('s09 â€?sampling notice resolves to a localized string, not wire prose'
     const text = translate('en', keys.messageKey, notice.params);
     assert.match(text, /claude-sonnet-5/);
     assert.match(text, /temperature/);
-    assert.match(text, /was not sent/, 'single param â†?singular copy');
+    assert.match(text, /was not sent/, 'single param â†’ singular copy');
   });
 
   it('the SAME payload renders in Chinese for a zh user', () => {
@@ -113,7 +113,7 @@ describe('s09 â€?sampling notice resolves to a localized string, not wire prose'
   });
 });
 
-describe('s09 â€?unsupported-model effort notice is localized too', () => {
+describe('s09 â€” unsupported-model effort notice is localized too', () => {
   const payload = {
     code: 'RUNTIME_EFFORT_IGNORED',
     reason: 'unsupported-model',
@@ -139,12 +139,12 @@ describe('s09 â€?unsupported-model effort notice is localized too', () => {
     for (const locale of ['en', 'zh'] as const) {
       const text = translate(locale, 'chat.notice.effortIgnored.unsupportedModel.message', payload.params);
       assert.match(text, /Sonnet 4\.6/,
-        'Sonnet 4.6 is effort-capable â€?the "pick a supported model" list must say so');
+        'Sonnet 4.6 is effort-capable â€” the "pick a supported model" list must say so');
     }
   });
 });
 
-describe('s09 â€?effort tier/proxy omissions preserve the user\'s real choice', () => {
+describe('s09 â€” effort tier/proxy omissions preserve the user\'s real choice', () => {
   it('renders the unsupported Sonnet 4.6 tier and its real allowlist', () => {
     const payload = {
       code: 'RUNTIME_EFFORT_IGNORED',
@@ -174,11 +174,11 @@ describe('s09 â€?effort tier/proxy omissions preserve the user\'s real choice', 
     const keys = resolveStatusNoticeKeys(payload)!;
     assert.equal(keys.messageKey, 'chat.notice.effortIgnored.thirdPartyProxy.message');
     assert.match(translate('en', keys.messageKey, payload.params), /"xhigh"/);
-    assert.match(translate('zh', keys.messageKey, payload.params), /ã€Œxhighã€?);
+    assert.match(translate('zh', keys.messageKey, payload.params), /ã€Œxhighã€/);
   });
 });
 
-describe('Opus 5 â€?disabled-thinking effort adjustment is localized', () => {
+describe('Opus 5 â€” disabled-thinking effort adjustment is localized', () => {
   const payload = {
     code: 'RUNTIME_EFFORT_ADJUSTED',
     reason: 'thinking-disabled-cap',
@@ -208,11 +208,11 @@ describe('sub-agent model capability failures are localized and actionable', () 
     const keys = resolveStatusNoticeKeys(payload)!;
     assert.equal(keys.messageKey, 'chat.notice.subagentModelUnavailable.message');
     assert.match(translate('en', keys.messageKey, payload.params), /switch the session Runtime/i);
-    assert.match(translate('zh', keys.messageKey, payload.params), /åˆ‡æ¢å½“å‰ä¼šè¯çš?Runtime/);
+    assert.match(translate('zh', keys.messageKey, payload.params), /åˆ‡æ¢å½“å‰ä¼šè¯çš„ Runtime/);
   });
 });
 
-describe('s09 â€?unmapped notices degrade, they do not break', () => {
+describe('s09 â€” unmapped notices degrade, they do not break', () => {
   it('a notice with no reason returns null (caller falls back to message)', () => {
     assert.equal(resolveStatusNoticeKeys({ code: 'THINKING_ALWAYS_ON' }), null);
   });
@@ -229,7 +229,7 @@ describe('s09 â€?unmapped notices degrade, they do not break', () => {
   });
 });
 
-describe('s09 â€?both chat entry points render via the shared resolver', () => {
+describe('s09 â€” both chat entry points render via the shared resolver', () => {
   it('useSSEStream localizes inside maybeShowStatusToast', () => {
     const src = readSrc('hooks/useSSEStream.ts');
     assert.match(src, /resolveStatusNoticeKeys/,
@@ -243,7 +243,7 @@ describe('s09 â€?both chat entry points render via the shared resolver', () => {
   it('the inline parser in app/chat/page.tsx reuses maybeShowStatusToast', () => {
     const src = readSrc('app/chat/page.tsx');
     assert.match(src, /maybeShowStatusToast\(statusData\)/,
-      'a second toast path would need a second mapping table â€?that is the drift');
+      'a second toast path would need a second mapping table â€” that is the drift');
     assert.doesNotMatch(src, /resolveStatusNoticeKeys/,
       'the page must NOT map keys itself; one resolver, one set of keys');
   });
@@ -261,7 +261,7 @@ describe('s09 â€?both chat entry points render via the shared resolver', () => {
     }
   });
 
-  it('the server keeps a diagnostic breadcrumb (log â‰?user surface)', () => {
+  it('the server keeps a diagnostic breadcrumb (log â‰  user surface)', () => {
     const src = readSrc('lib/agent-loop.ts');
     assert.match(src, /console\.warn\([\s\S]{0,200}not on Anthropic's effort-capable model list/,
       'dropping the toast prose must not drop operator diagnosability');

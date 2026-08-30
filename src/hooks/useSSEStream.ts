@@ -46,11 +46,11 @@ export interface SSECallbacks {
   onContextUsage?: (snapshot: ContextUsageSnapshot) => void;
   onPermissionRequest: (data: PermissionRequestEvent) => void;
   /** Server-side auto-resolve of a pending permission (currently only
-   *  'timeout'). Lets the chat UI show "auto-denied â€?timed out" instead of
+   *  'timeout'). Lets the chat UI show "auto-denied â€” timed out" instead of
    *  the prompt silently vanishing (codebase-health A5 Step 2). */
   onPermissionResolved?: (permissionRequestId: string, status: 'timeout') => void;
   /**
-   * A review decision made without prompting â€?the auto_review classifier
+   * A review decision made without prompting â€” the auto_review classifier
    * denying a tool. Separate from onPermissionResolved, which closes a prompt
    * the user was actually shown.
    */
@@ -60,14 +60,14 @@ export interface SSECallbacks {
   onTaskUpdate: (sessionId: string) => void;
   onRewindPoint: (sdkUserMessageId: string) => void;
   /**
-   * Phase 5 Phase 4 (2026-05-13) â€?explicit file-change channel.
+   * Phase 5 Phase 4 (2026-05-13) â€” explicit file-change channel.
    * Codex Runtime emits this for fs/changed + fileChange item events;
    * stream-session-manager hands the paths to `dispatchFileChanged`
    * so PreviewPanel auto-refreshes via the existing
    * `codepilot:file-changed` window event channel (same channel the
    * ClaudeCode SDK tool_result path already uses).
    *
-   * SDK path doesn't emit this event â€?file changes from ClaudeCode
+   * SDK path doesn't emit this event â€” file changes from ClaudeCode
    * write/edit tools still flow through `isWriteTool` inspection
    * inside the onToolResult handler. The channels converge at
    * `dispatchFileChanged` in stream-session-manager.
@@ -118,13 +118,13 @@ export interface RateLimitInfo {
 
 /**
  * Notification codes that must persist past the next setStatusText() call.
- * Scoped narrowly â€?only codes that represent one-shot decisions the user
+ * Scoped narrowly â€” only codes that represent one-shot decisions the user
  * needs to see regardless of subsequent streaming progress belong here.
  */
 export const TOAST_STATUS_CODES = new Set<string>([
-  'RUNTIME_EFFORT_IGNORED', // Opus 4.7+ family on native runtime â€?explicit effort dropped
+  'RUNTIME_EFFORT_IGNORED', // Opus 4.7+ family on native runtime â€” explicit effort dropped
   'RUNTIME_EFFORT_ADJUSTED', // Opus 5: disabled thinking caps xhigh/max to high
-  'THINKING_ALWAYS_ON', // Fable 5 â€?thinking:'disabled' cannot be honored, adaptive runs anyway
+  'THINKING_ALWAYS_ON', // Fable 5 â€” thinking:'disabled' cannot be honored, adaptive runs anyway
   'SAMPLING_PARAMS_IGNORED', // temperature/top_p/top_k stripped or unsendable on this model/runtime
   'SUBAGENT_MODEL_UNAVAILABLE', // Current Claude Code provider cannot route the requested child model
 ]);
@@ -132,7 +132,7 @@ export const TOAST_STATUS_CODES = new Set<string>([
 /**
  * Resolve a status notification's user-facing text.
  *
- * Notices that carry a `reason` are localized here from i18n keys â€?the server
+ * Notices that carry a `reason` are localized here from i18n keys â€” the server
  * sends the decision (code + reason + params), never rendered prose, so a zh
  * user doesn't get an English toast (Codex review P2, 2026-07-18). Notices
  * without a mapped reason fall back to the server's `message`/`title`, which
@@ -153,7 +153,7 @@ export function resolveStatusNoticeText(
 /**
  * Inspect a parsed status event payload and fire a toast when it carries a
  * whitelisted code. Exposed so both useSSEStream's helper and inline SSE
- * parsers in page-level components can share toast routing â€?and, since the
+ * parsers in page-level components can share toast routing â€” and, since the
  * localization runs inside here, so both entry points provably render the SAME
  * i18n key. No-op when the code isn't on the whitelist or when the browser
  * toast registry hasn't initialized (tests / SSR).
@@ -175,7 +175,7 @@ export function maybeShowStatusToast(
       message: text || 'Status notification',
       duration: 8000,
     });
-  }).catch(() => { /* toast system unavailable â€?caller falls back to status text */ });
+  }).catch(() => { /* toast system unavailable â€” caller falls back to status text */ });
 }
 
 export interface InternalRuntimeStatusResolution {
@@ -280,7 +280,7 @@ export function handleSSEEvent(
         });
       } catch (err) {
         // A dropped tool_use leaves no UI trace and orphans the later
-        // tool_result â€?log enough to diagnose it from the console.
+        // tool_result â€” log enough to diagnose it from the console.
         console.error('[SSE] malformed tool_use event, dropped:', event.data.slice(0, 200), err);
       }
       return accumulated;
@@ -302,7 +302,7 @@ export function handleSSEEvent(
         });
       } catch (err) {
         // A dropped tool_result leaves its tool stuck in "running" in
-        // the UI â€?log enough to diagnose it from the console.
+        // the UI â€” log enough to diagnose it from the console.
         console.error('[SSE] malformed tool_result event, dropped:', event.data.slice(0, 200), err);
       }
       return accumulated;
@@ -334,7 +334,7 @@ export function handleSSEEvent(
         if (statusData._internal) {
           return accumulated;
         }
-        // Skill nudge â€?dedicated handler for persistent UI banner
+        // Skill nudge â€” dedicated handler for persistent UI banner
         if (statusData.subtype === 'skill_nudge' && statusData.payload) {
           callbacks.onSkillNudge?.({
             message: statusData.message || statusData.payload.message || '',
@@ -344,7 +344,7 @@ export function handleSSEEvent(
           });
           return accumulated;
         }
-        // Context compressed â€?dedicated handler so stream-session-manager
+        // Context compressed â€” dedicated handler so stream-session-manager
         // dispatches the 'context-compressed' window event (drives hasSummary
         // state in ChatView). Before the human-readable message change,
         // onStatus received the literal string 'context_compressed' and the
@@ -375,19 +375,19 @@ export function handleSSEEvent(
           // the inline parser in app/chat/page.tsx can reuse the same
           // whitelist without duplicating the toast import logic.
           maybeShowStatusToast(statusData);
-          // Same resolution as the toast â€?the status bar must not fall back to
+          // Same resolution as the toast â€” the status bar must not fall back to
           // the (now absent) server prose for localized notices.
           callbacks.onStatus(resolveStatusNoticeText(statusData));
         } else if (statusData.apiRetry) {
-          // #635 â€?api_retry status has no display text of its own; show human
+          // #635 â€” api_retry status has no display text of its own; show human
           // copy (NOT the raw JSON) and still call onStatus so the idle timer is
           // refreshed (markActive). `attempt` is the SDK's raw value. (Full i18n
-          // of the status bar â€?incl. the existing English "Connected" â€?is a
+          // of the status bar â€” incl. the existing English "Connected" â€” is a
           // separate follow-up.)
           callbacks.onStatus(
             typeof statusData.attempt === 'number'
               ? `Retrying upstream (attempt ${statusData.attempt})â€¦`
-              : 'Retrying upstreamâ€?,
+              : 'Retrying upstreamâ€¦',
           );
         } else {
           callbacks.onStatus(resolveSafeStatusFallback(event.data, statusData));
@@ -417,14 +417,14 @@ export function handleSSEEvent(
         const info = JSON.parse(event.data) as RateLimitInfo;
         callbacks.onRateLimit?.(info);
       } catch {
-        // skip malformed payload â€?better to miss a rate-limit update
+        // skip malformed payload â€” better to miss a rate-limit update
         // than to crash the stream
       }
       return accumulated;
     }
 
     case 'context_usage': {
-      // Phase 5 â€?post-turn context-usage snapshot. Swallow parse errors
+      // Phase 5 â€” post-turn context-usage snapshot. Swallow parse errors
       // silently; estimator fallback already covers the no-snapshot case.
       try {
         const snap = JSON.parse(event.data) as ContextUsageSnapshot;
@@ -444,7 +444,7 @@ export function handleSSEEvent(
     }
 
     case 'permission_resolved': {
-      // A5 Step 2 â€?registry timed out a pending request and auto-denied it.
+      // A5 Step 2 â€” registry timed out a pending request and auto-denied it.
       try {
         const data = JSON.parse(event.data) as { permissionRequestId: string; status: 'timeout' };
         callbacks.onPermissionResolved?.(data.permissionRequestId, data.status);
@@ -456,7 +456,7 @@ export function handleSSEEvent(
 
     case 'permission_review': {
       // A decision made FOR the user (auto_review classifier denial). The
-      // reviewerSource is taken from the event, never inferred â€?mislabelling
+      // reviewerSource is taken from the event, never inferred â€” mislabelling
       // a model's denial as the user's own would misreport who is in control.
       // Unrecognised state/source is dropped rather than rendered as a guess.
       try {
@@ -508,7 +508,7 @@ export function handleSSEEvent(
           if (paths.length > 0) callbacks.onFileChanged?.(paths);
         }
       } catch {
-        // Malformed payload â€?drop silently (the event channel is
+        // Malformed payload â€” drop silently (the event channel is
         // best-effort; missing a refresh is worse than crashing the
         // stream, so we tolerate parse errors here).
       }

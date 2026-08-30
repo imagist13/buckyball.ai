@@ -1,5 +1,5 @@
 /**
- * composer-first-message-clear.test.ts â€?#4/#5 (v0.56.x Phase 2).
+ * composer-first-message-clear.test.ts â€” #4/#5 (v0.56.x Phase 2).
  *
  * Bug (reproduced via CDP): in the FIRST-message flow, the composer text lingers
  * in the box through the entire streaming turn ("content sent but text still
@@ -8,12 +8,12 @@
  *
  * Root cause (CDP-instrumented): at send-accept page.tsx flips `isStreaming`,
  * which switches the heroâ†’active layout branch and REMOUNTS the composer (the
- * keyed MessageInput identity doesn't survive the branch switch â€?instrumentation
+ * keyed MessageInput identity doesn't survive the branch switch â€” instrumentation
  * showed ComposerResetSignal mounts++ with the new nonce already set, so any
  * in-component "clear on signal change" guard early-returns). The remount already
  * resets attachments / badges / directory refs; the ONE piece of composer state
  * that survives it is the persisted `sessionStorage` draft, which the remounted
- * MessageInput re-seeds `inputValue` from â€?so the just-sent text reappears.
+ * MessageInput re-seeds `inputValue` from â€” so the just-sent text reappears.
  *
  * Fix: page.tsx clears the draft (`composerDraftKey()`) at accept, so the
  * remounted composer comes up empty. Source-pins (React-coupled).
@@ -44,7 +44,7 @@ describe('first-message composer clears at accept (#4/#5)', () => {
     const src = read('app/chat/page.tsx');
     assert.match(src, /import \{ MessageInput, composerDraftKey \} from '@\/components\/chat\/MessageInput'/);
     // the clear must sit right at/after `accepted = true` (the committed point),
-    // BEFORE the stream loop / redirect â€?clearing late is the original bug.
+    // BEFORE the stream loop / redirect â€” clearing late is the original bug.
     assert.match(
       src,
       /accepted = true;[\s\S]{0,600}sessionStorage\.removeItem\(composerDraftKey\(\)\)/,
@@ -53,7 +53,7 @@ describe('first-message composer clears at accept (#4/#5)', () => {
   });
 
   it('the defeated ComposerResetSignal nonce mechanism is gone', () => {
-    // It could never fire â€?the accept-time remount re-initialised its
+    // It could never fire â€” the accept-time remount re-initialised its
     // last-seen-nonce ref to the new value (CDP: fires=0). Guard against it
     // being reintroduced as a "fix" that silently does nothing.
     const partsSrc = read('components/chat/MessageInputParts.tsx');
@@ -62,7 +62,7 @@ describe('first-message composer clears at accept (#4/#5)', () => {
     assert.doesNotMatch(pageSrc, /composerResetNonce|resetSignal=/);
   });
 
-  it('page.tsx also clears the URL prefill at accept (Codex P2 â€?initialValue outranks the draft)', () => {
+  it('page.tsx also clears the URL prefill at accept (Codex P2 â€” initialValue outranks the draft)', () => {
     // The first-message composer remount re-reads initialValue (= URL prefill)
     // BEFORE the draft, so the draft-clear alone leaves a prefill-sourced text
     // re-seeding. Track + zero the consumed prefill so the remount comes up empty.
@@ -80,9 +80,9 @@ describe('first-message composer clears at accept (#4/#5)', () => {
 
   it('BOTH send paths clear the composer OPTIMISTICALLY, with a guarded restore (P2/P3)', () => {
     // THE actual lingering-text fix. The single stable-keyed composer no longer
-    // remounts at the isStreaming flip (#615 â€?see the "Single composer stack"
+    // remounts at the isStreaming flip (#615 â€” see the "Single composer stack"
     // note in page.tsx), and sendFirstMessage doesn't resolve until the whole
-    // stream ends â€?so the old post-await `setInputValue('')` left the sent text
+    // stream ends â€” so the old post-await `setInputValue('')` left the sent text
     // in the box for the entire turn. handleSend now clears before `await onSend`
     // (matching ChatView's accept-time clear) and restores only when the send is
     // gated. Codex P2: the badge (skill/slash) path needed the same treatment.
@@ -123,7 +123,7 @@ describe('first-message composer clears at accept (#4/#5)', () => {
   });
 
   it('the prefill consume reads a live ref, not a stale send-closure (Codex P2 warm-nav)', () => {
-    // Warm navigation (/chat already mounted â†?router.push /chat?prefill=abc)
+    // Warm navigation (/chat already mounted â†’ router.push /chat?prefill=abc)
     // changes prefillText WITHOUT recreating the stable sendFirstMessage
     // useCallback (prefillText is deliberately not in its deps; adding it would
     // churn identity and cascade through handleCommand). If accept read

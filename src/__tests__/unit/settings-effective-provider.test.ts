@@ -1,21 +1,23 @@
 /**
- * Phase 5e Phase 3 review round 4 fix P2 #2 (2026-05-18) â€? * `resolveEffectiveProviderId()` must match chat send path behaviour
+ * Phase 5e Phase 3 review round 4 fix P2 #2 (2026-05-18) â€”
+ * `resolveEffectiveProviderId()` must match chat send path behaviour
  * across all four PROVIDER-level fallback shapes:
  *
- *   1. Auto mode (no pin) â†?chooses the active DB provider id (or
+ *   1. Auto mode (no pin) â†’ chooses the active DB provider id (or
  *      undefined when no provider at all).
- *   2. Pinned valid â†?returns the pinned provider id verbatim.
+ *   2. Pinned valid â†’ returns the pinned provider id verbatim.
  *   3. Pinned invalid (pin points at a missing / inactive provider)
- *      â†?falls back through `default_provider_id` setting â†?active
+ *      â†’ falls back through `default_provider_id` setting â†’ active
  *      provider, mirroring `resolveProvider({ providerId: pinned })`
  *      in `provider-resolver.ts:181-189`.
- *   4. Virtual provider (codex_account / openai-oauth / xai-oauth / env) â†? *      preserved verbatim; resolver does NOT try to look these up
+ *   4. Virtual provider (codex_account / openai-oauth / xai-oauth / env) â†’
+ *      preserved verbatim; resolver does NOT try to look these up
  *      as DB rows (they don't exist there).
  *
  * Scope note (review round 5 P2): this file pins PROVIDER-level
  * fallback parity only. Model-level fallback (model not in
  * `provider_models` under the active Runtime, role-model overrides)
- * is OUT OF SCOPE â€?`resolveEffectiveProviderId` only consults
+ * is OUT OF SCOPE â€” `resolveEffectiveProviderId` only consults
  * `global_default_model_provider`, not `global_default_model`. The
  * helper's downstream consumer is the codex_runtime matrix downgrade
  * which is keyed on the virtual provider id `codex_account`, so
@@ -112,40 +114,40 @@ function createTestProvider(name: string) {
   return provider;
 }
 
-describe('resolveEffectiveProviderId â€?provider-level: virtual providers', () => {
-  it('codex_account pinned â†?returned verbatim (no DB lookup)', async () => {
+describe('resolveEffectiveProviderId â€” provider-level: virtual providers', () => {
+  it('codex_account pinned â†’ returned verbatim (no DB lookup)', async () => {
     await withSettings({ globalDefault: 'codex_account' }, () => {
       assert.equal(resolveEffectiveProviderId(), 'codex_account');
     });
   });
 
-  it('openai-oauth pinned â†?returned verbatim', async () => {
+  it('openai-oauth pinned â†’ returned verbatim', async () => {
     await withSettings({ globalDefault: 'openai-oauth' }, () => {
       assert.equal(resolveEffectiveProviderId(), 'openai-oauth');
     });
   });
 
-  it('xai-oauth pinned â†?returned verbatim', async () => {
+  it('xai-oauth pinned â†’ returned verbatim', async () => {
     await withSettings({ globalDefault: 'xai-oauth' }, () => {
       assert.equal(resolveEffectiveProviderId(), 'xai-oauth');
     });
   });
 
-  it('env pinned â†?returned verbatim', async () => {
+  it('env pinned â†’ returned verbatim', async () => {
     await withSettings({ globalDefault: 'env' }, () => {
       assert.equal(resolveEffectiveProviderId(), 'env');
     });
   });
 });
 
-describe('resolveEffectiveProviderId â€?provider-level: auto mode (no pin)', () => {
+describe('resolveEffectiveProviderId â€” provider-level: auto mode (no pin)', () => {
   it('returns the active provider id when no pin is set', async () => {
     const provider = createTestProvider(`auto-mode-${Date.now()}`);
     activateProvider(provider.id);
     await withSettings({ globalDefault: null }, () => {
       const id = resolveEffectiveProviderId();
       // Active provider id should win in auto mode (provider-resolver
-      // walks default_provider_id setting â†?getActiveProvider chain).
+      // walks default_provider_id setting â†’ getActiveProvider chain).
       assert.equal(typeof id, 'string');
       // Same id chat send path would resolve to:
       const chatPathId = resolveProvider({}).provider?.id;
@@ -154,7 +156,7 @@ describe('resolveEffectiveProviderId â€?provider-level: auto mode (no pin)', () 
   });
 });
 
-describe('resolveEffectiveProviderId â€?provider-level: pinned valid', () => {
+describe('resolveEffectiveProviderId â€” provider-level: pinned valid', () => {
   it('returns the pinned id when the provider row exists', async () => {
     const provider = createTestProvider(`pinned-valid-${Date.now()}`);
     await withSettings({ globalDefault: provider.id }, () => {
@@ -166,12 +168,12 @@ describe('resolveEffectiveProviderId â€?provider-level: pinned valid', () => {
   });
 });
 
-describe('resolveEffectiveProviderId â€?provider-level: pinned-invalid auto-fallback parity', () => {
+describe('resolveEffectiveProviderId â€” provider-level: pinned-invalid auto-fallback parity', () => {
   // The reviewer-requested case: user pinned a provider that no
   // longer exists. Chat send path walks fallback chain; Settings
   // must walk the same chain so the capability clipboard doesn't
   // claim a different provider than the next chat will actually use.
-  it('pinned id points at a non-existent provider â†?falls back to chat send path equivalent', async () => {
+  it('pinned id points at a non-existent provider â†’ falls back to chat send path equivalent', async () => {
     const activeProvider = createTestProvider(`fallback-target-${Date.now()}`);
     activateProvider(activeProvider.id);
 
@@ -190,13 +192,13 @@ describe('resolveEffectiveProviderId â€?provider-level: pinned-invalid auto-fall
       // not the broken pin.
       assert.notEqual(settingsId, fakePinnedId);
       // Active provider should be the fallback (provider-resolver
-      // walks default â†?getActiveProvider; with no legacy default
+      // walks default â†’ getActiveProvider; with no legacy default
       // it lands on active).
       assert.equal(settingsId, activeProvider.id);
     });
   });
 
-  it('pinned id points at a non-existent provider + legacy default exists â†?walks default chain too', async () => {
+  it('pinned id points at a non-existent provider + legacy default exists â†’ walks default chain too', async () => {
     const legacyProvider = createTestProvider(`legacy-default-${Date.now()}`);
     const activeProvider = createTestProvider(`active-different-${Date.now()}`);
     activateProvider(activeProvider.id);
@@ -205,12 +207,13 @@ describe('resolveEffectiveProviderId â€?provider-level: pinned-invalid auto-fall
     await withSettings(
       { globalDefault: fakePinnedId, legacyDefault: legacyProvider.id },
       () => {
-        // resolveProvider walks defaultId before getActiveProvider â€?        // so the legacy default should win when the pin is broken.
+        // resolveProvider walks defaultId before getActiveProvider â€”
+        // so the legacy default should win when the pin is broken.
         const settingsId = resolveEffectiveProviderId();
         const chatPathId = resolveProvider({ providerId: fakePinnedId }).provider?.id;
         assert.equal(settingsId, chatPathId);
         // Either the resolver lands on legacy provider (default chain
-        // hit first) OR active (legacy ineligible) â€?what matters
+        // hit first) OR active (legacy ineligible) â€” what matters
         // is parity. Just assert non-broken.
         assert.notEqual(settingsId, fakePinnedId);
         // And it must be one of the providers we created.
@@ -223,8 +226,8 @@ describe('resolveEffectiveProviderId â€?provider-level: pinned-invalid auto-fall
   });
 });
 
-describe('resolveEffectiveProviderId â€?provider-level: graceful degradation', () => {
-  it('no providers at all â†?returns undefined (matrix still renders without provider override)', async () => {
+describe('resolveEffectiveProviderId â€” provider-level: graceful degradation', () => {
+  it('no providers at all â†’ returns undefined (matrix still renders without provider override)', async () => {
     // Force "no providers" via stripping all rows isn't trivially
     // safe across the shared test DB. Instead exercise the scenario
     // via the resolver's defensive try/catch: if resolveProvider

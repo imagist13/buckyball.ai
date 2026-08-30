@@ -1,21 +1,21 @@
 "use client";
 
 /**
- * /settings root â€?pure client redirect, no section imports.
+ * /settings root â€” pure client redirect, no section imports.
  *
  * Memory contract: this page must NOT import any settings section. The
  * Overview dashboard moved to /settings/overview specifically so old hash
- * deep links (`/settings#providers`, `/settings#models`, â€? can land here
+ * deep links (`/settings#providers`, `/settings#models`, â€¦) can land here
  * and bounce to the right route WITHOUT first paying the OverviewSection
  * compile cost (which transitively pulls
- * `useOverviewData â†?@/lib/runtime/effective`'s provider catalog + model
+ * `useOverviewData â†’ @/lib/runtime/effective`'s provider catalog + model
  * discovery + runtime resolver into the dev graph). See
  * `src/__tests__/unit/settings-routes-shape.test.ts` and
  * `settings-link-migration.test.ts`.
  *
  * Behavior:
- * - URL has hash matching a known section â†?router.replace to /settings/<hash>
- * - URL has no hash (or unknown hash) â†?router.replace to /settings/overview
+ * - URL has hash matching a known section â†’ router.replace to /settings/<hash>
+ * - URL has no hash (or unknown hash) â†’ router.replace to /settings/overview
  */
 
 import { useEffect } from "react";

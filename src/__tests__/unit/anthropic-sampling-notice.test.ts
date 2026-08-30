@@ -1,10 +1,10 @@
 /**
- * anthropic-sampling-notice.test.ts â€?executable behavior test for the sampling
- *å‘ŠçŸ¥é“?(model plan Phase 2 / s04, Codex review P2 2026-07-18).
+ * anthropic-sampling-notice.test.ts â€” executable behavior test for the sampling
+ *å‘ŠçŸ¥é“¾ (model plan Phase 2 / s04, Codex review P2 2026-07-18).
  *
  * The finding: `sanitizeClaudeModelOptions` stripped Sonnet 5's non-default
  * temperature/topP/topK and reported it in `strippedSamplingParams`, but that
- * field had ZERO production consumers â€?grep hit only the sanitizer itself and
+ * field had ZERO production consumers â€” grep hit only the sanitizer itself and
  * its unit tests. So the strip was SILENT: only tests could see the signal, and
  * neither Runtime passed real sampling fields into the sanitizer at all.
  *
@@ -38,10 +38,10 @@ function noticeFor(opts: {
   return buildSamplingIgnoredNotice({ runtime: opts.runtime, model: opts.model, sanitized });
 }
 
-describe('s04 â€?stripped sampling params raise a real notification (native)', () => {
-  it('sonnet-5 + temperature 0.7 â†?SAMPLING_PARAMS_IGNORED naming temperature', () => {
+describe('s04 â€” stripped sampling params raise a real notification (native)', () => {
+  it('sonnet-5 + temperature 0.7 â†’ SAMPLING_PARAMS_IGNORED naming temperature', () => {
     const notice = noticeFor({ runtime: 'native', model: 'claude-sonnet-5', temperature: 0.7 });
-    assert.ok(notice, 'a stripped param MUST produce a notice â€?silence is the bug');
+    assert.ok(notice, 'a stripped param MUST produce a notice â€” silence is the bug');
     assert.equal(notice.code, 'SAMPLING_PARAMS_IGNORED');
     assert.equal(notice.reason, 'model-rejects');
     assert.deepEqual(notice.unsent, ['temperature']);
@@ -60,7 +60,7 @@ describe('s04 â€?stripped sampling params raise a real notification (native)', (
     assert.equal('title' in notice, false);
   });
 
-  it('all three params stripped â†?all three named, plural copy', () => {
+  it('all three params stripped â†’ all three named, plural copy', () => {
     const notice = noticeFor({
       runtime: 'native', model: 'claude-sonnet-5', temperature: 0.2, topP: 0.9, topK: 40,
     });
@@ -73,36 +73,36 @@ describe('s04 â€?stripped sampling params raise a real notification (native)', (
   it('the whole adaptive family notifies, not just sonnet-5', () => {
     for (const model of ['claude-fable-5', 'claude-opus-4-8', 'claude-opus-4-7']) {
       const notice = noticeFor({ runtime: 'native', model, temperature: 0.5 });
-      assert.ok(notice, `${model} strips sampling â€?it must notify`);
+      assert.ok(notice, `${model} strips sampling â€” it must notify`);
     }
   });
 
   it('default temperature (1) is sent, so NO notice fires', () => {
     assert.equal(noticeFor({ runtime: 'native', model: 'claude-sonnet-5', temperature: 1 }), null,
-      'temperature=1 is Anthropic default â€?nothing dropped, no misleading toast');
+      'temperature=1 is Anthropic default â€” nothing dropped, no misleading toast');
   });
 
-  it('no sampling params at all â†?no notice (today\'s default path is unchanged)', () => {
+  it('no sampling params at all â†’ no notice (today\'s default path is unchanged)', () => {
     assert.equal(noticeFor({ runtime: 'native', model: 'claude-sonnet-5' }), null);
   });
 
   it('non-adaptive sonnet-4-6 keeps its sampling AND stays silent on native', () => {
     // Survivors are forwarded to streamText on this runtime, so there is
-    // genuinely nothing to announce â€?the guard must not misfire.
+    // genuinely nothing to announce â€” the guard must not misfire.
     assert.equal(noticeFor({ runtime: 'native', model: 'claude-sonnet-4-6', temperature: 0.3 }), null);
   });
 });
 
-describe('s04 â€?SDK runtime announces every unsent param (it can send none)', () => {
-  it('sonnet-4-6 + temperature â†?notice, because query() has no sampling knobs', () => {
+describe('s04 â€” SDK runtime announces every unsent param (it can send none)', () => {
+  it('sonnet-4-6 + temperature â†’ notice, because query() has no sampling knobs', () => {
     const notice = noticeFor({ runtime: 'sdk', model: 'claude-sonnet-4-6', temperature: 0.3 });
     assert.ok(notice, 'a param that survives sanitization is still unsent on the SDK runtime');
     assert.deepEqual(notice.unsent, ['temperature']);
     assert.equal(notice.reason, 'runtime-cannot-send',
-      'the SDK failure mode is distinct from "the model rejects it" â€?different copy');
+      'the SDK failure mode is distinct from "the model rejects it" â€” different copy');
   });
 
-  it('sonnet-5 + stripped params â†?same code as native, runtime-accurate copy', () => {
+  it('sonnet-5 + stripped params â†’ same code as native, runtime-accurate copy', () => {
     const notice = noticeFor({ runtime: 'sdk', model: 'claude-sonnet-5', topP: 0.5 });
     assert.ok(notice);
     assert.equal(notice.code, 'SAMPLING_PARAMS_IGNORED',
@@ -110,12 +110,12 @@ describe('s04 â€?SDK runtime announces every unsent param (it can send none)', (
     assert.deepEqual(notice.unsent, ['topP']);
   });
 
-  it('no sampling params â†?no notice on the SDK runtime either', () => {
+  it('no sampling params â†’ no notice on the SDK runtime either', () => {
     assert.equal(noticeFor({ runtime: 'sdk', model: 'claude-sonnet-5' }), null);
   });
 });
 
-describe('s04 â€?production wiring (the finding was zero consumers)', () => {
+describe('s04 â€” production wiring (the finding was zero consumers)', () => {
   it('agent-loop threads REAL request sampling fields into the sanitizer', () => {
     const src = read('agent-loop.ts');
     assert.match(src, /sanitizeClaudeModelOptions\(\{[\s\S]{0,220}temperature,[\s\S]{0,60}topP,[\s\S]{0,60}topK,/,

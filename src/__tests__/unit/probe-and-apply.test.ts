@@ -1,5 +1,5 @@
 /**
- * Tests for probeAndApplyProvider â€?the pure (toast-free) variant that
+ * Tests for probeAndApplyProvider â€” the pure (toast-free) variant that
  * the batch refresh-all driver uses to aggregate outcomes.
  *
  * Specifically locks in the up-to-date split: when probe succeeds and
@@ -55,7 +55,7 @@ describe('probeAndApplyProvider outcome split', () => {
     let applyBody: unknown = null;
 
     stubFetchSequence([
-      // 1st call: /discover-models â€?probe ok, only `unchanged` entries
+      // 1st call: /discover-models â€” probe ok, only `unchanged` entries
       {
         ok: true,
         body: {
@@ -67,7 +67,7 @@ describe('probeAndApplyProvider outcome split', () => {
           ],
         },
       },
-      // 2nd call: /apply â€?should be invoked with the unchanged rows so
+      // 2nd call: /apply â€” should be invoked with the unchanged rows so
       // last_refreshed_at advances. Records that fetch happened.
       {
         ok: true,
@@ -134,7 +134,7 @@ describe('probeAndApplyProvider outcome split', () => {
     const result = await probeAndApplyProvider({ providerId: 'p1', providerName: 'Test' });
 
     assert.equal(result.outcome, 'success',
-      'mixed diff with at least one writeable row â†?success, not up-to-date');
+      'mixed diff with at least one writeable row â†’ success, not up-to-date');
     assert.equal(result.recommendedEnabled, 1);
   });
 
@@ -148,7 +148,7 @@ describe('probeAndApplyProvider outcome split', () => {
           diff: [], // truly nothing on upstream side
         },
       },
-      // 2nd call would NOT happen â€?we don't even attempt apply when there's
+      // 2nd call would NOT happen â€” we don't even attempt apply when there's
       // nothing in the apply set. If the function makes a 2nd fetch, it'll
       // throw because the queue is empty.
     ]);
@@ -159,7 +159,7 @@ describe('probeAndApplyProvider outcome split', () => {
     assert.equal(result.total, 0);
   });
 
-  it('orphan-only diff (DB rows not seen upstream) also returns no-models â€?no apply call', async () => {
+  it('orphan-only diff (DB rows not seen upstream) also returns no-models â€” no apply call', async () => {
     // discover-models route emits orphans for DB rows missing from upstream.
     // Our applicable filter excludes orphans; if there's nothing on the
     // upstream side at all, we should treat this as no-models, not
@@ -180,6 +180,6 @@ describe('probeAndApplyProvider outcome split', () => {
     const result = await probeAndApplyProvider({ providerId: 'p1', providerName: 'Test' });
 
     assert.equal(result.outcome, 'no-models',
-      'orphan-only means no upstream-sided rows â†?no-models, no apply call');
+      'orphan-only means no upstream-sided rows â†’ no-models, no apply call');
   });
 });

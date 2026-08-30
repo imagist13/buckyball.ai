@@ -1,22 +1,23 @@
 /**
- * Phase 3 Step 3 â€?task execution history table contract.
+ * Phase 3 Step 3 â€” task execution history table contract.
  *
  * v3 plan locks: `task_run_logs` is the ONLY execution-history table.
  * `scheduled_task_runs` was a name floated in early drafts; the v3
  * decision (and v4 retro) pinned `task_run_logs` instead and added
  * `notification_event_id` as the FK to the umbrella event.
  *
- * v4 fix #4 â€?this contract scans only `src/`. The plan and decision
+ * v4 fix #4 â€” this contract scans only `src/`. The plan and decision
  * log in `docs/exec-plans/active/refactor-closeout.md` reference
  * `scheduled_task_runs` repeatedly when explaining "we explicitly
  * decided NOT to add this table"; that prose must not trip the test.
  *
  * Asserts:
  *   1. No source under `src/` mentions `scheduled_task_runs` (test
- *      files included â€?they reference `task_run_logs` instead).
- *   2. `src/lib/db.ts` defines `updateTaskRunLog` (running â†?terminal
+ *      files included â€” they reference `task_run_logs` instead).
+ *   2. `src/lib/db.ts` defines `updateTaskRunLog` (running â†’ terminal
  *      single-row UPDATE; v3 fix #2).
- *   3. `src/lib/task-scheduler.ts` calls `updateTaskRunLog(...)` â€? *      proves the row-lifecycle path is wired, not just declared.
+ *   3. `src/lib/task-scheduler.ts` calls `updateTaskRunLog(...)` â€”
+ *      proves the row-lifecycle path is wired, not just declared.
  */
 
 import { describe, it } from 'node:test';
@@ -42,7 +43,7 @@ describe('task execution history table contract (Phase 3 Step 3)', () => {
   it('no source file under src/ mentions `scheduled_task_runs`', () => {
     const offenders: { rel: string; line: number; text: string }[] = [];
     for (const file of walk(SRC)) {
-      // Skip THIS test file itself â€?it has to mention the forbidden
+      // Skip THIS test file itself â€” it has to mention the forbidden
       // name in its own description / assertion text.
       if (file === __filename) continue;
       const lines = readFileSync(file, 'utf-8').split('\n');
@@ -57,7 +58,7 @@ describe('task execution history table contract (Phase 3 Step 3)', () => {
       }
     }
     if (offenders.length > 0) {
-      const detail = offenders.map((o) => `  ${o.rel}:${o.line} â†?${o.text}`).join('\n');
+      const detail = offenders.map((o) => `  ${o.rel}:${o.line} â†’ ${o.text}`).join('\n');
       assert.fail(
         `Found ${offenders.length} reference(s) to \`scheduled_task_runs\` in src/.\n` +
           `Phase 3 Step 3 reuses the existing \`task_run_logs\` table; do not add a parallel\n` +
@@ -72,7 +73,7 @@ describe('task execution history table contract (Phase 3 Step 3)', () => {
     assert.match(
       src,
       /export\s+function\s+updateTaskRunLog\s*\(/,
-      'updateTaskRunLog must exist â€?that is how `running` rows flip to `success`/`error` without a duplicate insert (v3 fix #2)',
+      'updateTaskRunLog must exist â€” that is how `running` rows flip to `success`/`error` without a duplicate insert (v3 fix #2)',
     );
   });
 
@@ -81,7 +82,7 @@ describe('task execution history table contract (Phase 3 Step 3)', () => {
     assert.match(
       src,
       /updateTaskRunLog\(/,
-      'task-scheduler must use updateTaskRunLog to flip the running row in place â€?without it the `running` row stays running forever and a separate terminal row gets inserted',
+      'task-scheduler must use updateTaskRunLog to flip the running row in place â€” without it the `running` row stays running forever and a separate terminal row gets inserted',
     );
   });
 

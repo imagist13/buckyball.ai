@@ -1,0 +1,34 @@
+#!/bin/sh
+
+# CodePilot activates this shim only after a read-only probe proves that the
+# user's default macOS keychain is unavailable. Claude Code eagerly probes its
+# own credential services on every process start; those probes otherwise show
+# a blocking system modal. Keep the interception narrow and forward every
+# unrelated security(1) operation with argv boundaries intact.
+
+command_name="$1"
+service_name=""
+previous_argument=""
+
+for argument in "$@"; do
+  if [ "$previous_argument" = "-s" ]; then
+    service_name="$argument"
+    break
+  fi
+  previous_argument="$argument"
+done
+
+case "$command_name" in
+  find-generic-password|add-generic-password|delete-generic-password)
+    case "$service_name" in
+      "Claude Code"*) exit 44 ;;
+    esac
+    ;;
+  show-keychain-info)
+    # Claude Code calls this with no keychain argument before choosing its
+    # credential backend. With no default keychain it cannot succeed.
+    if [ "$#" -eq 1 ]; then exit 44; fi
+    ;;
+esac
+
+exec /usr/bin/security "$@"

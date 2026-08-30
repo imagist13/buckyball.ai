@@ -1,20 +1,20 @@
 /**
- * Phase 5b smoke round 8 (2026-05-16) �?Codex tool_result.media path.
+ * Phase 5b smoke round 8 (2026-05-16) — Codex tool_result.media path.
  *
  * Pins the end-to-end path that makes GPT-Image-2.0 results actually
  * render as inline image cards in the chat:
  *
  *   Codex item/completed (imageGeneration / imageView)
- *   �?translateCodexNotification
- *   �?makeToolCompleted({ output, media: [MediaBlock] })
- *   �?canonicalToSseLine emits `data: {"type":"tool_result", data:"{
+ *   → translateCodexNotification
+ *   → makeToolCompleted({ output, media: [MediaBlock] })
+ *   → canonicalToSseLine emits `data: {"type":"tool_result", data:"{
  *       \"tool_use_id\":\"...\", \"content\":..., \"media\":[...]}"}`
- *   �?useSSEStream handleSSEEvent's tool_result case forwards
+ *   → useSSEStream handleSSEEvent's tool_result case forwards
  *     `resultData.media` array onto SSECallbacks.onToolResult
- *   �?MediaPreview reads tool_result.media to render image inline.
+ *   → MediaPreview reads tool_result.media to render image inline.
  *
  * Earlier rounds (round 7) surfaced the imageGeneration completion
- * as a tool_completed event but didn't populate `media` �?so the
+ * as a tool_completed event but didn't populate `media` — so the
  * SSE line carried the image data inside `content` as JSON and the
  * renderer had nothing to pick up. This file pins both halves:
  *
@@ -44,11 +44,11 @@ const useSseSrc = fs.readFileSync(
 );
 
 // ─────────────────────────────────────────────────────────────────────
-// Step 1 �?canonical event carries `media`
+// Step 1 — canonical event carries `media`
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Codex tool_result media �?canonical event populated for image items', () => {
-  it('imageGeneration with savedPath �?MediaBlock with localPath + inferred mimeType', () => {
+describe('Codex tool_result media — canonical event populated for image items', () => {
+  it('imageGeneration with savedPath → MediaBlock with localPath + inferred mimeType', () => {
     const event = translateCodexNotification(
       'item/completed',
       {
@@ -142,7 +142,7 @@ describe('Codex tool_result media �?canonical event populated for image items',
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Step 2 �?canonicalToSseLine source carries `media` through
+// Step 2 — canonicalToSseLine source carries `media` through
 // ─────────────────────────────────────────────────────────────────────
 
 describe('canonicalToSseLine emits tool_result.media (source-level pin)', () => {
@@ -151,7 +151,7 @@ describe('canonicalToSseLine emits tool_result.media (source-level pin)', () => 
     // confirm `media: event.media` (or the conditional shape we use)
     // is in the SSE data payload. Source-grep rather than runtime so
     // the test doesn't have to mock the full event stream.
-    // Window widened in round 10 �?explanatory comment in the arm
+    // Window widened in round 10 — explanatory comment in the arm
     // grew past the old 1500-char ceiling after the is_error fix.
     const toolCompletedArm = runtimeSrc.match(/case 'tool_completed':[\s\S]{0,3000}?\n {4}case /);
     assert.ok(toolCompletedArm, 'tool_completed arm must exist in canonicalToSseLine');
@@ -164,7 +164,7 @@ describe('canonicalToSseLine emits tool_result.media (source-level pin)', () => 
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Step 3 �?useSSEStream forwards resultData.media to onToolResult
+// Step 3 — useSSEStream forwards resultData.media to onToolResult
 // ─────────────────────────────────────────────────────────────────────
 
 describe('useSSEStream forwards tool_result.media to MediaPreview', () => {
@@ -181,7 +181,7 @@ describe('useSSEStream forwards tool_result.media to MediaPreview', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Step 4 �?end-to-end shape on the SSE wire
+// Step 4 — end-to-end shape on the SSE wire
 // ─────────────────────────────────────────────────────────────────────
 
 describe('Codex tool_result.media end-to-end SSE shape', () => {
@@ -235,7 +235,7 @@ describe('Codex tool_result.media end-to-end SSE shape', () => {
   it('non-image tools omit media so the chat-side renderer skips them', () => {
     // commandExecution doesn't carry an image; the SSE line must NOT
     // include a media field (downstream would render nothing visible
-    // but `Array.isArray(undefined)` would also short-circuit �?pin
+    // but `Array.isArray(undefined)` would also short-circuit — pin
     // the omission directly to avoid wire bloat).
     const event = translateCodexNotification(
       'item/completed',

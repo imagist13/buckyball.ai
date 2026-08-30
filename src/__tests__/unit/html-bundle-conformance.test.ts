@@ -65,7 +65,7 @@ describe('HTML bundle materialization conformance', () => {
         },
         sessionId: 'session-html-workspace',
         projectId: 'project-html-workspace',
-        runtimeId: 'bbagent',
+        runtimeId: 'codepilot_runtime',
         providerId: 'provider-test',
         modelId: 'model-test',
         prompt: 'A durable web page',
@@ -76,7 +76,7 @@ describe('HTML bundle materialization conformance', () => {
       assert.equal(retry.id, first.id);
       assert.equal(first.kind, 'html_bundle');
       assert.equal(first.integrity_state, 'valid');
-      assert.equal(first.runtime_id, 'bbagent');
+      assert.equal(first.runtime_id, 'codepilot_runtime');
       assert.equal(first.method_ref, 'method:web-v1');
       assert.match(first.content_hash, /^sha256:[a-f0-9]{64}$/);
       assert.deepEqual(toTypedAssetRef(first), {

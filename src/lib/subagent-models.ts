@@ -26,9 +26,9 @@ export type SubagentModelResolution =
  * enabled catalog rows are filtered by the canonical runtime compatibility
  * matrix, and an unavailable route is absent rather than silently replaced.
  */
-export function listSubagentRoutes(runtime: Extract<ChatRuntime, 'bbagent' | 'codex_runtime'>): SubagentRoute[] {
+export function listSubagentRoutes(runtime: Extract<ChatRuntime, 'codepilot_runtime' | 'codex_runtime'>): SubagentRoute[] {
   const candidates = [
-    ...(runtime === 'bbagent'
+    ...(runtime === 'codepilot_runtime'
       ? [{
           id: 'env',
           name: 'Environment',
@@ -123,10 +123,10 @@ export function reportedModelMatchesSubagentRoute(
 }
 
 export function getSubagentRoutingGuidance(
-  runtime: Extract<ChatRuntime, 'bbagent' | 'codex_runtime'>,
+  runtime: Extract<ChatRuntime, 'codepilot_runtime' | 'codex_runtime'>,
   routes: readonly SubagentRoute[],
 ): string {
-  const label = runtime === 'codex_runtime' ? 'Codex Runtime' : 'bb-agent Runtime';
+  const label = runtime === 'codex_runtime' ? 'Codex Runtime' : 'CodePilot Runtime';
   const routeLines = routes.map(route =>
     `  - provider_id=${JSON.stringify(route.providerId)}, model=${JSON.stringify(subagentRouteSelector(route))}: ${route.displayName} (${route.providerName})`,
   );
@@ -160,7 +160,7 @@ export function getSameProviderSubagentModels(input: {
       sessionProviderId: input.sessionProviderId,
       model: input.parentModel,
       sessionModel: input.parentModel,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
     });
     const models = resolved.availableModels.map(toOption);
     if (input.parentModel && !models.some(model => matchesModel(model, input.parentModel!))) {

@@ -9,7 +9,7 @@ export type SubagentExecutionStatus =
 /**
  * Internal persistence phase. `settling` deliberately remains separate from
  * the user-visible execution status: the child model has stopped producing
- * output, but buckyball.ai has not yet durably committed the result/provenance.
+ * output, but CodePilot has not yet durably committed the result/provenance.
  */
 export type SubagentRunPhase = 'running' | 'settling' | 'terminal';
 
@@ -131,7 +131,7 @@ export interface SubagentStatusMetadata {
   effectiveModel?: string;
   /** Legacy display-model field. Prefer effectiveModel/requestedModel. */
   model?: string;
-  runtime?: 'bbagent' | 'claude_code' | 'codex_runtime';
+  runtime?: 'codepilot_runtime' | 'claude_code' | 'codex_runtime';
   currentActivity?: string;
   error?: SubagentStatusError;
 }
@@ -229,7 +229,7 @@ function isExecutionStatus(value: unknown): value is SubagentExecutionStatus {
 }
 
 function isRuntime(value: unknown): value is NonNullable<SubagentStatusMetadata['runtime']> {
-  return value === 'bbagent' || value === 'claude_code' || value === 'codex_runtime';
+  return value === 'codepilot_runtime' || value === 'claude_code' || value === 'codex_runtime';
 }
 
 function isRunPhase(value: unknown): value is SubagentRunPhase {

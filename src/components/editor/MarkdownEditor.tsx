@@ -54,22 +54,23 @@ export const markdownEditingExtensions: Extension = [
 ];
 
 /*
- * MarkdownEditor â€?Phase 4 replacement for the raw <textarea> in
+ * MarkdownEditor â€” Phase 4 replacement for the raw <textarea> in
  * SkillEditor (and the future standalone .md editor surface).
  *
  * Design points (POC 0.4 Â§[è®¾è®¡]):
  * - Compartment-based theme swap so lightâ†”dark does not rebuild the
  *   EditorView (no flash, no cursor loss).
- * - Value prop is controlled â€?external writes flow in via a diff
+ * - Value prop is controlled â€” external writes flow in via a diff
  *   dispatch, internal edits flow out via updateListener.
  * - Mod-s is intercepted for onSave; Tab inserts two spaces via
  *   indentWithTab to match the legacy textarea's behavior.
  * - CodeMirror owns its own virtualization (O(viewport) render), so 10-
- *   ä¸?character files stay responsive without any app-side work.
+ *   ä¸‡-character files stay responsive without any app-side work.
  *
  * Style isolation from Tailwind v4 preflight is handled in globals.css
  * via `@layer base { .cm-editor, .cm-editor * { all: revert-layer; } }`
- * (POC 0.4 path C). Do not wrap this component in Shadow DOM â€? * token inheritance would break and focus behavior gets weird.
+ * (POC 0.4 path C). Do not wrap this component in Shadow DOM â€”
+ * token inheritance would break and focus behavior gets weird.
  */
 export interface MarkdownEditorProps {
   value: string;
@@ -95,7 +96,7 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
-  // Compartment is stable across renders â€?store on ref init so we don't
+  // Compartment is stable across renders â€” store on ref init so we don't
   // create a new one on every render (which would cause reconfigure loops).
   const themeCompartment = useRef(new Compartment()).current;
   const livePreviewCompartment = useRef(new Compartment()).current;
@@ -208,12 +209,12 @@ export function MarkdownEditor({
       view.destroy();
       viewRef.current = null;
     };
-    // Intentional single-run â€?subsequent prop changes propagate via
+    // Intentional single-run â€” subsequent prop changes propagate via
     // dedicated effects (value / theme / Live Preview options).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // External value changes â€?replace doc contents via dispatch.
+  // External value changes â€” replace doc contents via dispatch.
   // Skips when the incoming value already matches what CodeMirror has,
   // so typing doesn't cause a self-echo loop.
   useEffect(() => {
@@ -223,7 +224,7 @@ export function MarkdownEditor({
     if (spec) view.dispatch(spec);
   }, [value]);
 
-  // Theme compartment swap â€?no EditorView rebuild, no cursor loss.
+  // Theme compartment swap â€” no EditorView rebuild, no cursor loss.
   useEffect(() => {
     const view = viewRef.current;
     if (!view) return;

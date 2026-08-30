@@ -1,5 +1,5 @@
 /**
- * Locks the semantics of `shouldReportToSentry` â€?the pure predicate behind
+ * Locks the semantics of `shouldReportToSentry` â€” the pure predicate behind
  * `reportToSentry` / `reportNativeError`.
  *
  * Regression it guards (audit 2026-07 "Sentry blind spot 1"): the native
@@ -9,7 +9,7 @@
  * a fired timeout budget as an AbortError, which the `/abort|cancel/` message
  * filter also swallowed.
  *
- * This test imports only the pure predicate â€?never `@sentry/node` â€?so it
+ * This test imports only the pure predicate â€” never `@sentry/node` â€” so it
  * doesn't pull the @opentelemetry chain into the test compile graph (that
  * separation is the whole reason `shouldReportToSentry` is factored out).
  */
@@ -21,7 +21,7 @@ import path from 'node:path';
 import { shouldReportToSentry } from '../../lib/error-classifier';
 import { shouldUseDefaultStackGrouping } from '../../lib/telemetry/contract';
 
-describe('shouldReportToSentry â€?Sentry blind spot 1 (audit 2026-07)', () => {
+describe('shouldReportToSentry â€” Sentry blind spot 1 (audit 2026-07)', () => {
   it('EMPTY_RESPONSE is reportable', () => {
     assert.equal(
       shouldReportToSentry('EMPTY_RESPONSE', new Error('Empty response: finishReason=stop')),
@@ -48,7 +48,7 @@ describe('shouldReportToSentry â€?Sentry blind spot 1 (audit 2026-07)', () => {
   it('TIMEOUT_* is still reported even when the error is an AbortError', () => {
     // A fired timeout budget aborts the combined signal, so it surfaces as an
     // AbortError (agent-loop.ts:728). The abort/cancel filter must NOT swallow
-    // it â€?this was the blind spot.
+    // it â€” this was the blind spot.
     const abortErr = new Error('The operation was aborted');
     abortErr.name = 'AbortError';
     assert.equal(
@@ -78,6 +78,10 @@ describe('shouldReportToSentry â€?Sentry blind spot 1 (audit 2026-07)', () => {
     assert.equal(shouldReportToSentry('RATE_LIMITED', new Error('429')), false);
     assert.equal(shouldReportToSentry('NO_CREDENTIALS', new Error('no key')), false);
     assert.equal(shouldReportToSentry('CLI_NOT_FOUND', new Error('missing binary')), false);
+    assert.equal(
+      shouldReportToSentry('EXECUTION_PERMISSION_DENIED', new Error('spawn claude EPERM')),
+      false,
+    );
   });
 
   it('all structured 4xx values create zero Error/info/message Issues', () => {

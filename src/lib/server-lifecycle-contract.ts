@@ -12,7 +12,7 @@ export interface ServerDescendantLifecycleMessage {
   pid: number;
   /** Owner-generated process-start nonce; paired with PID to reject reuse. */
   startIdentity: string;
-  /** Basename only â€?full executable path and argv never cross the channel. */
+  /** Basename only â€” full executable path and argv never cross the channel. */
   executableBasename: string;
   descendantsVerifiable: boolean;
 }

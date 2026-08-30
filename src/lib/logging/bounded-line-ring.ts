@@ -1,10 +1,10 @@
 /**
- * BoundedLineRing â€?a fixed-budget ring buffer of recent log lines.
+ * BoundedLineRing â€” a fixed-budget ring buffer of recent log lines.
  *
  * B-025: `serverErrors` in electron/main.ts used to be an unbounded `string[]`
  * that appended EVERY server stdout/stderr chunk for the whole app lifetime. It
  * exists only to give the server-startup timeout / crash dialog a bit of recent
- * context â€?but under a Codex app-server tracing flood (tens of thousands of
+ * context â€” but under a Codex app-server tracing flood (tens of thousands of
  * lines in seconds) it grew without limit in main-process memory, contributing
  * to the disk + memory pressure behind the reported crashes.
  *
@@ -44,7 +44,7 @@ export class BoundedLineRing {
     }
   }
 
-  /** All retained lines, oldest â†?newest. */
+  /** All retained lines, oldest â†’ newest. */
   toArray(): string[] {
     return [...this.lines];
   }

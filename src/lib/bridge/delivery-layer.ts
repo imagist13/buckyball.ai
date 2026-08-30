@@ -1,5 +1,5 @@
 /**
- * Delivery Layer â€?reliable outbound message delivery with chunking,
+ * Delivery Layer â€” reliable outbound message delivery with chunking,
  * dedup, retry, error classification, and reference tracking.
  */
 
@@ -100,7 +100,7 @@ function classifyError(result: SendResult): ErrorCategory {
     return 'client_error';
   }
 
-  // No HTTP status â€?fall back to string matching
+  // No HTTP status â€” fall back to string matching
   if (/can't parse entities|parse entities|find end of the entity/i.test(error)) {
     return 'parse_error';
   }
@@ -263,7 +263,7 @@ async function sendWithRetry(
       return result;
     }
 
-    // Wait before next retry â€?honor retry_after for 429
+    // Wait before next retry â€” honor retry_after for 429
     if (attempt < MAX_RETRIES - 1) {
       await new Promise(r => setTimeout(r, retryDelay(result, attempt)));
     }
@@ -337,7 +337,7 @@ export async function deliverRendered(
 
   // Notify user about incomplete delivery
   if (failedCount > 0 && lastMessageId) {
-    const notice = `[${failedCount}/${chunks.length} part(s) failed to send â€?response may be incomplete]`;
+    const notice = `[${failedCount}/${chunks.length} part(s) failed to send â€” response may be incomplete]`;
     await adapter.send({ address, text: notice, parseMode: 'plain' }).catch(() => {});
   }
 

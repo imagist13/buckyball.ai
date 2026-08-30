@@ -61,14 +61,14 @@ export function ContextUsageIndicator({
 
   // Render only after at least one assistant turn has produced real
   // token data. Pre-first-response, hasData=false but contextWindow may
-  // still be inferred from the model �?rendering then shows "0%" with
+  // still be inferred from the model — rendering then shows "0%" with
   // an empty breakdown, which reads as "unlimited" to the user instead
   // of "no data yet". Skip until we have authoritative numbers.
   if (!usage.hasData) return null;
 
   // Capacity unknown branch: when the model's context window can't be
   // resolved we drop the percentage / progress entirely (otherwise the
-  // ai-elements `Context` shows �? or NaN%, which Codex flagged as
+  // ai-elements `Context` shows ∞% or NaN%, which Codex flagged as
   // breaking trust). Surface "已用 N · 容量未知" with an explanatory
   // popover instead.
   const capacityUnknown = !usage.contextWindow || usage.contextWindow <= 0;

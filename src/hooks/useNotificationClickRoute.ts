@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 /**
- * Phase 3 Step 3 â€?route Electron notification clicks to the right page.
+ * Phase 3 Step 3 â€” route Electron notification clicks to the right page.
  *
  * The OS notification carries `{ taskId?, sessionId?, event_id? }` (the
  * payload sendNotification stamped onto the events row, threaded through the
@@ -12,12 +12,12 @@ import { useRouter } from 'next/navigation';
  * On click the main process re-opens the window and forwards the
  * payload via IPC; we listen here and `router.push` to:
  *
- *   - taskId present  â†?`/settings/tasks?focus=<taskId>`
- *   - sessionId only  â†?`/chat/<sessionId>` (a task tied to a chat
+ *   - taskId present  â†’ `/settings/tasks?focus=<taskId>`
+ *   - sessionId only  â†’ `/chat/<sessionId>` (a task tied to a chat
  *                       session might have a useful chat to land in;
  *                       the tasks page still has the focus row, but
  *                       the chat is the "what just happened" view)
- *   - neither         â†?no-op (legacy onClick payloads handled
+ *   - neither         â†’ no-op (legacy onClick payloads handled
  *                       elsewhere)
  */
 export function useNotificationClickRoute(): void {
@@ -48,7 +48,7 @@ export function useNotificationClickRoute(): void {
         router.push(action.route);
         return;
       }
-      // Task / session payload â€?route to /settings/tasks or /chat
+      // Task / session payload â€” route to /settings/tasks or /chat
       if ('taskId' in action && action.taskId) {
         router.push(`/settings/tasks?focus=${encodeURIComponent(action.taskId)}`);
         return;
@@ -57,7 +57,7 @@ export function useNotificationClickRoute(): void {
         router.push(`/chat/${encodeURIComponent(action.sessionId)}`);
         return;
       }
-      // Legacy onClick payload (`{ type, payload }`) â€?leave to other
+      // Legacy onClick payload (`{ type, payload }`) â€” leave to other
       // listeners (e.g. AppShell's hash bridge for #providers).
     });
 

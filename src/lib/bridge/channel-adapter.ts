@@ -19,13 +19,13 @@ export abstract class BaseChannelAdapter {
 
   /**
    * Start the adapter (connect, begin polling/websocket, etc.).
-   * Must be idempotent â€?calling start() on an already-running adapter is a no-op.
+   * Must be idempotent â€” calling start() on an already-running adapter is a no-op.
    */
   abstract start(): Promise<void>;
 
   /**
    * Stop the adapter gracefully.
-   * Must be idempotent â€?calling stop() on an already-stopped adapter is a no-op.
+   * Must be idempotent â€” calling stop() on an already-stopped adapter is a no-op.
    */
   abstract stop(): Promise<void>;
 
@@ -47,7 +47,7 @@ export abstract class BaseChannelAdapter {
 
   /**
    * Answer a callback query (e.g. Telegram inline button press).
-   * Not all platforms support this â€?default implementation is a no-op.
+   * Not all platforms support this â€” default implementation is a no-op.
    */
   async answerCallback(_callbackQueryId: string, _text?: string): Promise<void> {
     // No-op by default; override in adapters that support callback queries

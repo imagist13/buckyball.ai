@@ -1,12 +1,12 @@
 /**
- * Phase 5B â€?Shiki tokenization Web Worker (dedicated, module type).
+ * Phase 5B â€” Shiki tokenization Web Worker (dedicated, module type).
  *
  * Runs the shared `createHighlightEngine` off the main thread so highlighting
  * a chat full of code fences during streaming no longer blocks paint/input on
  * the renderer's main thread. The main thread keeps an identical engine for
  * fallback (see `code-block.tsx` / `shiki-worker-client.ts`), so if this worker
  * fails to load or a tokenize throws, highlighting silently continues on the
- * main thread â€?code blocks are never left blank.
+ * main thread â€” code blocks are never left blank.
  *
  * Instantiated from `shiki-worker-client.ts` via
  *   new Worker(new URL('./shiki.worker.ts', import.meta.url), { type: 'module' })

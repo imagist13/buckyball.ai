@@ -7,9 +7,9 @@ import { callTelegramApi } from '@/lib/bridge/adapters/telegram-utils';
  * POST /api/settings/telegram/verify
  *
  * Actions:
- *   - { action: "verify", bot_token, chat_id? }  â€?Verify bot token, optionally send test message
- *   - { action: "detect_chat_id", bot_token }     â€?Auto-detect chat ID from recent messages
- *   - { bot_token, chat_id? }                     â€?(Legacy) same as action: "verify"
+ *   - { action: "verify", bot_token, chat_id? }  â€” Verify bot token, optionally send test message
+ *   - { action: "detect_chat_id", bot_token }     â€” Auto-detect chat ID from recent messages
+ *   - { bot_token, chat_id? }                     â€” (Legacy) same as action: "verify"
  *
  * If bot_token starts with "***" (masked), falls back to the stored token in DB.
  * If bot_token is omitted, also falls back to the stored token.

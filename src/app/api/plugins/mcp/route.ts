@@ -14,7 +14,7 @@ function getSettingsPath(): string {
   return path.join(os.homedir(), '.claude', 'settings.json');
 }
 
-// ~/.claude.json â€?Claude CLI stores user-scoped MCP servers here
+// ~/.claude.json â€” Claude CLI stores user-scoped MCP servers here
 function getUserConfigPath(): string {
   return path.join(os.homedir(), '.claude.json');
 }
@@ -91,8 +91,8 @@ export async function PUT(
     const incoming = body.mcpServers as Record<string, MCPServerConfig & { _source?: string }>;
 
     // Split incoming servers by source and write to the correct file.
-    // Servers without _source or with _source='settings.json' â†?settings.json
-    // Servers with _source='claude.json' â†?~/.claude.json
+    // Servers without _source or with _source='settings.json' â†’ settings.json
+    // Servers with _source='claude.json' â†’ ~/.claude.json
     const forSettings: Record<string, MCPServerConfig> = {};
     const forUserConfig: Record<string, MCPServerConfig> = {};
     let forProjectOverrides: Record<string, { enabled?: boolean }> | undefined;
@@ -100,7 +100,7 @@ export async function PUT(
     for (const [name, server] of Object.entries(incoming)) {
       const { _source, ...cleanServer } = server;
       if (_source === 'project') {
-        // Project servers are read-only â€?only persist enabled override to settings.json
+        // Project servers are read-only â€” only persist enabled override to settings.json
         if (cleanServer.enabled !== undefined) {
           if (!forProjectOverrides) forProjectOverrides = {};
           forProjectOverrides[name] = { enabled: cleanServer.enabled };

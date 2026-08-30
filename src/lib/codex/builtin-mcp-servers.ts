@@ -4,19 +4,19 @@
  *
  * Each entry knows how to (a) build a fresh in-process MCP server instance
  * per request (stateless) by reusing the SAME `createSdkMcpServer` the
- * ClaudeCode path uses �?no duplicated tool logic, (b) authorize the HTTP
+ * ClaudeCode path uses — no duplicated tool logic, (b) authorize the HTTP
  * request, and (c) declare the elicitation policy for the model's
  * autonomous tool-call approval.
  *
  * Two independent per-server policies:
- *   - `authorize` (HTTP serving): memory reads workspace files �?MUST be
+ *   - `authorize` (HTTP serving): memory reads workspace files → MUST be
  *     scoped to the configured assistant workspace; widget/tasks read no
- *     files �?localhost trust.
+ *     files → localhost trust.
  *   - `elicitationPolicy` (tool-call approval, Phase 8 #31): Codex sends an
  *     `mcpServer/elicitation/request` to approve each model-initiated tool
  *     call. Safe-read servers (memory, widget) `auto_accept`; servers with
  *     mutating / side-effecting tools (tasks: schedule/cancel/notify) need
- *     `user_approval` �?route to the user, never auto-run.
+ *     `user_approval` — route to the user, never auto-run.
  */
 
 import { createMemorySearchMcpServer } from '@/lib/memory-search-mcp';
@@ -78,7 +78,7 @@ export const CODEX_BUILTIN_MCP_SERVERS: Readonly<Record<string, BuiltinMcpServer
   },
   codepilot_tasks: {
     serverName: 'codepilot_tasks',
-    // schedule_task / cancel_task (mutating) + notify (side-effect) �?the
+    // schedule_task / cancel_task (mutating) + notify (side-effect) → the
     // model's call must be approved by the user, never auto-run.
     elicitationPolicy: 'user_approval',
     // `excludeTools: ['codepilot_hatch_buddy']` keeps the buddy tool off
@@ -100,14 +100,14 @@ export const CODEX_BUILTIN_MCP_SERVERS: Readonly<Record<string, BuiltinMcpServer
   // The dashboard MCP exposes 5 tools mixing safe-read (list / refresh) and
   // mutating (pin / update / remove). Codex elicitation params identify the
   // server, not the individual tool, so per-tool policy via a single server
-  // entry isn't possible �?we instead expose the same factory under TWO
+  // entry isn't possible — we instead expose the same factory under TWO
   // server names with disjoint `includeTools` allowlists, one auto_accept
   // and one user_approval. Both require workspace scope (dashboard reads
   // local source files via glob and writes widget state under the workspace
   // dashboard).
   codepilot_dashboard_read: {
     serverName: 'codepilot_dashboard_read',
-    elicitationPolicy: 'auto_accept', // list / refresh �?safe-read
+    elicitationPolicy: 'auto_accept', // list / refresh — safe-read
     create: ({ workspacePath, sessionId }) =>
       createDashboardMcpServer(sessionId, workspacePath, {
         includeTools: ['codepilot_dashboard_list', 'codepilot_dashboard_refresh'],
@@ -116,7 +116,7 @@ export const CODEX_BUILTIN_MCP_SERVERS: Readonly<Record<string, BuiltinMcpServer
   },
   codepilot_dashboard_write: {
     serverName: 'codepilot_dashboard_write',
-    elicitationPolicy: 'user_approval', // pin / update / remove �?mutating
+    elicitationPolicy: 'user_approval', // pin / update / remove — mutating
     create: ({ workspacePath, sessionId }) =>
       createDashboardMcpServer(sessionId, workspacePath, {
         includeTools: [
@@ -129,12 +129,12 @@ export const CODEX_BUILTIN_MCP_SERVERS: Readonly<Record<string, BuiltinMcpServer
   },
   // ── CLI tools split ────────────────────────────────────────────────────
   // CLI tool management is system-wide (not workspace-scoped) so no
-  // workspace authorize gate �?but every mutating action (install / add /
+  // workspace authorize gate — but every mutating action (install / add /
   // remove / update) goes through user approval so the model can't silently
   // run package installs.
   codepilot_cli_tools_read: {
     serverName: 'codepilot_cli_tools_read',
-    elicitationPolicy: 'auto_accept', // list / check_updates �?safe-read
+    elicitationPolicy: 'auto_accept', // list / check_updates — safe-read
     create: () =>
       createCliToolsMcpServer({
         includeTools: ['codepilot_cli_tools_list', 'codepilot_cli_tools_check_updates'],
@@ -143,7 +143,7 @@ export const CODEX_BUILTIN_MCP_SERVERS: Readonly<Record<string, BuiltinMcpServer
   },
   codepilot_cli_tools_write: {
     serverName: 'codepilot_cli_tools_write',
-    elicitationPolicy: 'user_approval', // install / add / remove / update �?mutating
+    elicitationPolicy: 'user_approval', // install / add / remove / update — mutating
     create: () =>
       createCliToolsMcpServer({
         includeTools: [

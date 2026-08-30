@@ -1,5 +1,5 @@
 /**
- * Unit tests for the SkillKind system �?type values, COMMAND_PROMPTS mapping,
+ * Unit tests for the SkillKind system — type values, COMMAND_PROMPTS mapping,
  * and badge dispatch logic.
  *
  * Run with: npx tsx --test src/__tests__/unit/skill-kind.test.ts
@@ -13,7 +13,7 @@ import { dispatchBadge as realDispatchBadge } from '../../lib/message-input-logi
 // ─── SkillKind Type Values ──────────────────────────────────────
 
 describe('SkillKind type values', () => {
-  // SkillKind is a string literal union �?we can't iterate it at runtime,
+  // SkillKind is a string literal union — we can't iterate it at runtime,
   // but we can verify the known values satisfy the type constraint.
   const validKinds: SkillKind[] = [
     'agent_skill',

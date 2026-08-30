@@ -1,10 +1,10 @@
 /**
- * openai-chat-image-normalizer.ts �?data URL normalization for the OpenAI
+ * openai-chat-image-normalizer.ts — data URL normalization for the OpenAI
  * Chat Completions gateway path (ai-provider.ts non-OAuth 'openai' branch).
  *
  * Why this exists (Phase 2 finding 3): `@ai-sdk/openai@4.0.5`
  * `.chat()` converts `{type:'file', data:<base64>, mediaType:'image/png'}`
- * parts into `{type:'image_url', image_url:{url:<bare base64>}}` �?the
+ * parts into `{type:'image_url', image_url:{url:<bare base64>}}` — the
  * `data:<mime>;base64,` prefix is dropped (dist/index.js ~L307 calls
  * `convertToBase64(...)` without building a data URL). Standard
  * OpenAI-compatible gateways expect a data URL or a remote URL, so bare
@@ -15,17 +15,18 @@
  * Contract (upstream-fix safe):
  * - Only `messages[].content[]` parts with `type:'image_url'` are touched.
  * - URLs that already have a scheme (`data:`, `http:`, `https:`, or any
- *   other non-base64 string) pass through verbatim �?once upstream fixes
+ *   other non-base64 string) pass through verbatim — once upstream fixes
  *   the bug, this wrapper degrades to a no-op instead of double-prefixing.
  * - The MIME type is recovered by deterministic magic-byte sniffing
- *   (png/jpeg/webp/gif/svg only). Unrecognized bytes are left untouched �? *   an unfixed bare-base64 URL is no worse than today, while a wrong MIME
+ *   (png/jpeg/webp/gif/svg only). Unrecognized bytes are left untouched —
+ *   an unfixed bare-base64 URL is no worse than today, while a wrong MIME
  *   label would be a new bug.
  */
 
 // ── MIME sniffing ───────────────────────────────────────────────
 
 // Decode only the head of the base64 payload for magic-byte checks.
-// 1024 base64 chars �?768 bytes �?enough for every signature below,
+// 1024 base64 chars ≈ 768 bytes — enough for every signature below,
 // including SVG preambles with an XML declaration / doctype.
 const SNIFF_BASE64_CHARS = 1024;
 
@@ -64,7 +65,7 @@ export function sniffImageMimeFromBase64(base64: string): string | undefined {
     return 'image/webp';
   }
   // SVG: text starting with "<svg" or an XML declaration followed by <svg
-  const text = head.toString('utf8').replace(/^�?, '').trimStart();
+  const text = head.toString('utf8').replace(/^﻿/, '').trimStart();
   if (text.startsWith('<svg') || (text.startsWith('<?xml') && text.includes('<svg'))) {
     return 'image/svg+xml';
   }
@@ -141,7 +142,7 @@ function isChatCompletionsUrl(url: string): boolean {
 }
 
 /**
- * Wrap a fetch so JSON bodies POSTed to a `�?chat/completions` path get
+ * Wrap a fetch so JSON bodies POSTed to a `…/chat/completions` path get
  * their bare-base64 image_url values upgraded to data URLs. Everything else
  * (other endpoints, non-string bodies, unparseable JSON) passes through
  * untouched.
@@ -157,7 +158,7 @@ export function withChatImageDataUrlFetch(fetchImpl: typeof fetch = fetch): type
           init = { ...init, body: JSON.stringify(normalized) };
         }
       } catch {
-        // Not JSON �?send as-is.
+        // Not JSON — send as-is.
       }
     }
     return fetchImpl(input, init);

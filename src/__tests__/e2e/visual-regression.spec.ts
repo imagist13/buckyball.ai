@@ -9,7 +9,7 @@ import { test, expect } from '@playwright/test';
  */
 
 // Visual baselines were deleted alongside the snapshot-PNG gitignore
-// change â€?they're machine-specific (darwin/linux/arm/x86) and shouldn't
+// change â€” they're machine-specific (darwin/linux/arm/x86) and shouldn't
 // live in git. Run `npx playwright test --grep @visual --update-snapshots`
 // locally before shipping design-system changes, but skip during the
 // standard E2E gate so missing baselines don't block the release.

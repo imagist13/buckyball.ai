@@ -11,13 +11,13 @@ import type { ErrorResponse } from '@/types';
  * Sends a minimal SDK query and returns structured success/error.
  *
  * Body fields:
- * - providerId (optional) â€?if present, DB-stored api_key will be used when
+ * - providerId (optional) â€” if present, DB-stored api_key will be used when
  *   the caller sends no apiKey or a masked value ("***xxxx"). This fixes the
  *   edit-then-test flow where the UI shows masked keys (#449).
- * - apiKey (optional when providerId is given) â€?real or empty; masked
+ * - apiKey (optional when providerId is given) â€” real or empty; masked
  *   ("***xxxx") is treated as "not modified, fall back to DB".
  * - other fields: presetKey, baseUrl, protocol, authStyle, envOverrides,
- *   providerName, modelName â€?all pass through to testProviderConnection.
+ *   providerName, modelName â€” all pass through to testProviderConnection.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
           effectiveApiKey = stored.api_key;
         }
       } catch {
-        // DB lookup failure â†?fall through; the NO_CREDENTIALS check below
+        // DB lookup failure â†’ fall through; the NO_CREDENTIALS check below
         // will surface a clean error.
       }
     }

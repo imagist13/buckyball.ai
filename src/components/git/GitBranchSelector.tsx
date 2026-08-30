@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Check } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { GitBranch as GitBranchType } from "@/types";
@@ -58,7 +58,7 @@ export function GitBranchSelector({ cwd, currentBranch, dirty, onCheckout, error
         className="w-full justify-start text-xs"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <BuckyballIcon name="git" size="sm" className="mr-1.5" aria-hidden />
+        <CodePilotIcon name="git" size="sm" className="mr-1.5" aria-hidden />
         {t('git.branchSelector')}
       </Button>
 
@@ -84,7 +84,7 @@ export function GitBranchSelector({ cwd, currentBranch, dirty, onCheckout, error
                   onClick={() => handleCheckout(branch.name)}
                 >
                   {isCurrent && <Check size={12} className="text-green-500 shrink-0" />}
-                  {isOccupied && <BuckyballIcon name="permission" size={12} className="text-muted-foreground shrink-0" aria-hidden />}
+                  {isOccupied && <CodePilotIcon name="permission" size={12} className="text-muted-foreground shrink-0" aria-hidden />}
                   {!isCurrent && !isOccupied && <span className="w-3 shrink-0" />}
                   <span className="truncate">{branch.name}</span>
                   {isOccupied && (

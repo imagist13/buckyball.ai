@@ -1,11 +1,11 @@
 /**
- * Phase 5c slice 5 (2026-05-16, post-smoke) �?`namespace` tool contract.
+ * Phase 5c slice 5 (2026-05-16, post-smoke) — `namespace` tool contract.
  *
  * Smoke evidence: real GLM-5 Turbo + Codex Runtime request 400'd with
  *
  *   tools[17] has unsupported type "namespace"
  *
- * �?i.e. before slice 1 my `KNOWN_NON_FUNCTION_TYPES` set was
+ * — i.e. before slice 1 my `KNOWN_NON_FUNCTION_TYPES` set was
  * speculation, not real-fixture. Codex's wire shape for `namespace`
  * is gold-truth in `资料/codex/codex-rs/tools/src/tool_spec_tests.rs`
  * (the `namespace_tool_spec_serializes_expected_wire_shape` test).
@@ -78,13 +78,13 @@ const baseBody = {
 // (1) parseResponsesRequest accepts namespace tools
 // ─────────────────────────────────────────────────────────────────────
 
-describe('parseResponsesRequest �?Codex `namespace` tool no longer trips unsupported_tool_kind', () => {
+describe('parseResponsesRequest — Codex `namespace` tool no longer trips unsupported_tool_kind', () => {
   it('namespace-only tools[] succeeds (pre-fix this returned 400 with the exact smoke error)', () => {
     const result = parseResponsesRequest({
       ...baseBody,
       tools: [REAL_CODEX_NAMESPACE_TOOL],
     });
-    assert.equal(result.ok, true, 'namespace MUST pass parsing �?was failing in GLM/Kimi smoke');
+    assert.equal(result.ok, true, 'namespace MUST pass parsing — was failing in GLM/Kimi smoke');
     if (!result.ok) return;
     assert.equal(result.body.tools, undefined, 'namespace is not a function tool, so body.tools stays undefined');
     assert.equal(result.body.passthroughTools?.length, 1);
@@ -151,7 +151,7 @@ describe('parseResponsesRequest �?Codex `namespace` tool no longer trips unsupp
   });
 });
 
-describe('namespace compatibility bridge �?third-party provider round trip', () => {
+describe('namespace compatibility bridge — third-party provider round trip', () => {
   it('expands nested namespace members into definition-only function tools', () => {
     const parsed = parseResponsesRequest({
       ...baseBody,
@@ -301,7 +301,7 @@ describe('namespace compatibility bridge �?third-party provider round trip', ()
 // (2) parser allowed-list matches the Codex ToolSpec enum source-of-truth
 // ─────────────────────────────────────────────────────────────────────
 
-describe('parse-request �?allowed list matches Codex ToolSpec enum source-of-truth', () => {
+describe('parse-request — allowed list matches Codex ToolSpec enum source-of-truth', () => {
   const parseRequestSrc = fs.readFileSync(
     path.resolve(__dirname, '../../lib/codex/proxy/parse-request.ts'),
     'utf-8',
@@ -312,13 +312,13 @@ describe('parse-request �?allowed list matches Codex ToolSpec enum source-of-tr
     // enum (the `#[serde(tag = "type")]` rename strings, minus
     // `function` which has its own handler). If a future Codex
     // release adds a new variant, this test must be updated WITH the
-    // KNOWN_NON_FUNCTION_TYPES set �?keep them in lockstep.
+    // KNOWN_NON_FUNCTION_TYPES set — keep them in lockstep.
     const codexEnumVariants = ['namespace', 'tool_search', 'local_shell', 'image_generation', 'web_search', 'custom'];
     for (const variant of codexEnumVariants) {
       assert.match(
         parseRequestSrc,
         new RegExp(`'${variant}'`),
-        `KNOWN_NON_FUNCTION_TYPES must include '${variant}' �?it's in Codex's ToolSpec enum`,
+        `KNOWN_NON_FUNCTION_TYPES must include '${variant}' — it's in Codex's ToolSpec enum`,
       );
     }
   });
@@ -326,7 +326,7 @@ describe('parse-request �?allowed list matches Codex ToolSpec enum source-of-tr
   it('does NOT include the four speculative entries that pre-smoke slice 1 contained', () => {
     // Pre-smoke I'd added these speculatively. Codex source has none
     // of them. Listing them just papers over a real future schema
-    // gap by accepting whatever string the upstream sends �?better
+    // gap by accepting whatever string the upstream sends — better
     // to surface unknowns explicitly.
     const speculative = ['plugin', 'file_search', 'code_interpreter', 'web_search_preview'];
     for (const sp of speculative) {
@@ -343,10 +343,10 @@ describe('parse-request �?allowed list matches Codex ToolSpec enum source-of-tr
 // (3) Bridge still merges when a namespace tool is in the request
 // ─────────────────────────────────────────────────────────────────────
 
-describe('createCodePilotBuiltinTools �?bridge mounts independent of incoming namespace tools', () => {
+describe('createCodePilotBuiltinTools — bridge mounts independent of incoming namespace tools', () => {
   it('a request with a namespace tool does NOT prevent bridge tools from registering', () => {
     // The bridge mount decision is independent of the Codex tools[]
-    // content �?`createCodePilotBuiltinTools` only reads
+    // content — `createCodePilotBuiltinTools` only reads
     // sessionId + workspacePath + targetProviderId. This test pins
     // that decoupling so a future "rewrite parse-request" change
     // that accidentally couples the two surfaces fires here.
@@ -366,7 +366,7 @@ describe('createCodePilotBuiltinTools �?bridge mounts independent of incoming n
     });
     assert.equal(parseResult.ok, true);
     if (!parseResult.ok) return;
-    // Bridge wins on name collision with whatever Codex sent �?pinned
+    // Bridge wins on name collision with whatever Codex sent — pinned
     // by unified-adapter mergeToolSets behaviour; just confirm the
     // bridge still owns its slot.
     assert.equal(bridge.toolNames.has('codepilot_generate_image'), true);

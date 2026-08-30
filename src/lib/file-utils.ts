@@ -9,7 +9,7 @@ export async function dataUrlToFileAttachment(
   filename: string,
   mediaType: string,
 ): Promise<FileAttachment> {
-  // data:image/png;base64,<data>  â€?extract the base64 part
+  // data:image/png;base64,<data>  â€” extract the base64 part
   const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
 
   // Estimate raw size from base64 length

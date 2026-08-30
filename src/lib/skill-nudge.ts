@@ -1,5 +1,5 @@
 /**
- * skill-nudge.ts â€?Heuristic for suggesting when a multi-step flow
+ * skill-nudge.ts â€” Heuristic for suggesting when a multi-step flow
  * should be saved as a reusable Skill.
  *
  * At the end of an agent loop run, if the conversation involved enough
@@ -22,7 +22,7 @@ export interface AgentRunStats {
 }
 
 /**
- * Threshold constants â€?chosen to avoid nudging on trivial interactions
+ * Threshold constants â€” chosen to avoid nudging on trivial interactions
  * while still catching moderately complex multi-step workflows.
  */
 export const SKILL_NUDGE_STEP_THRESHOLD = 8;
@@ -31,7 +31,7 @@ export const SKILL_NUDGE_DISTINCT_TOOL_THRESHOLD = 3;
 /**
  * Decide whether to suggest saving the current run as a Skill.
  *
- * Pure function â€?takes stats, returns boolean. Easy to test in
+ * Pure function â€” takes stats, returns boolean. Easy to test in
  * isolation from the agent loop.
  */
 export function shouldSuggestSkill(stats: AgentRunStats): boolean {
@@ -42,7 +42,7 @@ export function shouldSuggestSkill(stats: AgentRunStats): boolean {
 
 /**
  * Build the nudge payload to emit as an SSE event. Keep it short and
- * action-oriented â€?the model (and optionally the frontend) should be
+ * action-oriented â€” the model (and optionally the frontend) should be
  * able to use this to surface a "save as Skill" affordance.
  *
  * The returned object is serialized as JSON in the SSE data field.
@@ -51,7 +51,7 @@ export interface SkillNudgePayload {
   type: 'skill_nudge';
   /** Human-readable suggestion shown to the user. */
   message: string;
-  /** Why the nudge triggered â€?useful for UI and telemetry. */
+  /** Why the nudge triggered â€” useful for UI and telemetry. */
   reason: {
     step: number;
     distinctToolCount: number;

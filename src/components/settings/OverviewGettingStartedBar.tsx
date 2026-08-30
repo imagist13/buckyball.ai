@@ -7,7 +7,7 @@
  * user can pick whichever step they want, not a forced order. Pending
  * items get a dark CTA + warning-muted row tint; done items get a
  * green check + muted text + no CTA. The bar is mounted only when at
- * least one item is pending �?see `OverviewSection` for the gate.
+ * least one item is pending — see `OverviewSection` for the gate.
  */
 
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,7 @@ export function OverviewGettingStartedBar({
 
   return (
     <div className="rounded-lg border border-border/50 bg-card overflow-hidden">
-      {/* Header �?title + N/M completed counter */}
+      {/* Header — title + N/M completed counter */}
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40">
         <h3 className="text-sm font-semibold">
           {t("overview.gettingStarted" as TranslationKey)}
@@ -48,7 +48,7 @@ export function OverviewGettingStartedBar({
         </span>
       </div>
 
-      {/* Items �?pending first (so the user sees what's left), then done */}
+      {/* Items — pending first (so the user sees what's left), then done */}
       <ul className="divide-y divide-border/40">
         {[...items].sort((a, b) => Number(a.done) - Number(b.done)).map((item) => (
           <li
@@ -97,10 +97,10 @@ export function OverviewGettingStartedBar({
         ))}
       </ul>
 
-      {/* Optional footer when all done �?but the bar is hidden in that case */}
+      {/* Optional footer when all done — but the bar is hidden in that case */}
       {done === total && (
         <div className="px-4 py-2.5 text-[11px] text-status-success-foreground bg-status-success-muted/30">
-          {isZh ? "�?全部就绪" : "�?All set"}
+          {isZh ? "✓ 全部就绪" : "✓ All set"}
         </div>
       )}
     </div>

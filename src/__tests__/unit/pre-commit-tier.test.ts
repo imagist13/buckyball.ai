@@ -4,8 +4,8 @@
  *
  * The hook skips the ~300s tsc + unit gate ONLY when this classifier returns
  * 'docs'. So the whole safety story rests on: (a) an all-docs set is 'docs',
- * (b) anything else â€?mixed, code, deps, build scripts, config, empty, or an
- * unknown extension â€?is 'code' (fail-closed). This test pins both directions
+ * (b) anything else â€” mixed, code, deps, build scripts, config, empty, or an
+ * unknown extension â€” is 'code' (fail-closed). This test pins both directions
  * so a future edit can't quietly widen the docs fast-path into a silent skip
  * (the pre-2026-05-29 "prerequisite fails, commit passes" class of bug).
  */
@@ -39,8 +39,8 @@ function scrubbedGitEnv(
   return clean;
 }
 
-describe('classifyCommitTier â€?docs fast-path', () => {
-  it('all-docs set (docs/**, nested *.md, README) â†?docs', () => {
+describe('classifyCommitTier â€” docs fast-path', () => {
+  it('all-docs set (docs/**, nested *.md, README) â†’ docs', () => {
     assert.equal(
       classifyCommitTier([
         'docs/exec-plans/active/some-plan.md',
@@ -52,7 +52,7 @@ describe('classifyCommitTier â€?docs fast-path', () => {
     );
   });
 
-  it('markdown anywhere in the tree â†?docs', () => {
+  it('markdown anywhere in the tree â†’ docs', () => {
     assert.equal(classifyCommitTier(['CLAUDE.md', 'AGENTS.md']), 'docs');
   });
 
@@ -60,51 +60,51 @@ describe('classifyCommitTier â€?docs fast-path', () => {
     assert.equal(classifyCommitTier(['docs/exec-plans/screenshots/a.png']), 'docs');
   });
 
-  it('LICENSE / NOTICE basenames â†?docs', () => {
+  it('LICENSE / NOTICE basenames â†’ docs', () => {
     assert.equal(classifyCommitTier(['LICENSE']), 'docs');
   });
 });
 
-describe('classifyCommitTier â€?full-gate (fail-closed)', () => {
-  it('mixed docs + product code â†?code', () => {
+describe('classifyCommitTier â€” full-gate (fail-closed)', () => {
+  it('mixed docs + product code â†’ code', () => {
     assert.equal(classifyCommitTier(['docs/x.md', 'src/lib/db.ts']), 'code');
   });
 
-  it('product code only â†?code', () => {
+  it('product code only â†’ code', () => {
     assert.equal(classifyCommitTier(['src/components/chat/MessageList.tsx']), 'code');
   });
 
-  it('dependency changes (package.json / lockfile) â†?code', () => {
+  it('dependency changes (package.json / lockfile) â†’ code', () => {
     assert.equal(classifyCommitTier(['package.json']), 'code');
     assert.equal(classifyCommitTier(['package-lock.json']), 'code');
   });
 
-  it('build scripts / hooks â†?code', () => {
+  it('build scripts / hooks â†’ code', () => {
     assert.equal(classifyCommitTier(['scripts/lint-hooks.mjs']), 'code');
     assert.equal(classifyCommitTier(['.husky/pre-commit']), 'code');
   });
 
-  it('a nested build script (.mjs) â†?code, not docs', () => {
+  it('a nested build script (.mjs) â†’ code, not docs', () => {
     assert.equal(
       classifyCommitTier(['tools/gen/build-something.mjs']),
       'code',
     );
   });
 
-  it('config files â†?code', () => {
+  it('config files â†’ code', () => {
     assert.equal(classifyCommitTier(['tsconfig.json']), 'code');
   });
 
-  it('empty staged set â†?code (nothing/edge is not a docs fast-path)', () => {
+  it('empty staged set â†’ code (nothing/edge is not a docs fast-path)', () => {
     assert.equal(classifyCommitTier([]), 'code');
   });
 
-  it('unknown extension â†?code (fail-closed on anything not clearly docs)', () => {
+  it('unknown extension â†’ code (fail-closed on anything not clearly docs)', () => {
     assert.equal(classifyCommitTier(['data/blob.bin']), 'code');
   });
 });
 
-describe('isDocPath â€?unit', () => {
+describe('isDocPath â€” unit', () => {
   it('classifies doc extensions and docs/ prefix; rejects code/config', () => {
     for (const p of ['a.md', 'b.mdx', 'notes.txt', 'docs/anything.png', 'LICENSE', './c.md']) {
       assert.equal(isDocPath(p), true, `${p} should be doc`);
@@ -119,7 +119,7 @@ describe('isDocPath â€?unit', () => {
 // FEEDS it must include staged deletions, else `docs edit + git rm code` looks
 // docs-only and skips the gate (Codex P1). This exercises the real script in a
 // throwaway git repo so the --diff-filter regression can't come back silently.
-describe('pre-commit-tier CLI â€?staged deletions must count (Codex P1)', () => {
+describe('pre-commit-tier CLI â€” staged deletions must count (Codex P1)', () => {
   const SCRIPT = path.resolve(__dirname, '../../../scripts/pre-commit-tier.mjs');
   const childEnv = scrubbedGitEnv();
   const git = (cwd: string, args: string[]) =>
@@ -133,7 +133,7 @@ describe('pre-commit-tier CLI â€?staged deletions must count (Codex P1)', () => 
       env: childEnv,
     }).trim();
 
-  it('docs edit + DELETED code file â†?code (deletion is not invisible)', () => {
+  it('docs edit + DELETED code file â†’ code (deletion is not invisible)', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tier-del-'));
     try {
       git(tmp, ['init', '-q']);
@@ -152,7 +152,7 @@ describe('pre-commit-tier CLI â€?staged deletions must count (Codex P1)', () => 
     }
   });
 
-  it('deleted docs only â†?docs (deleting a doc stays on the fast path)', () => {
+  it('deleted docs only â†’ docs (deleting a doc stays on the fast path)', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tier-del2-'));
     try {
       git(tmp, ['init', '-q']);
@@ -169,7 +169,7 @@ describe('pre-commit-tier CLI â€?staged deletions must count (Codex P1)', () => 
   });
 });
 
-describe('pre-commit-tier CLI â€?nested repositories must not inherit hook Git state', () => {
+describe('pre-commit-tier CLI â€” nested repositories must not inherit hook Git state', () => {
   it('scrubs every repository-local variable reported by Git', () => {
     const poisoned: NodeJS.ProcessEnv = { ...process.env };
     for (const name of [...gitLocalEnvVars, 'GIT_NAMESPACE']) {

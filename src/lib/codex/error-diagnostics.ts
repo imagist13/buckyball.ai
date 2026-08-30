@@ -47,7 +47,7 @@ export function diagnoseCodexNetworkError(message: string): CodexNetworkErrorDia
     code: CODEX_LOOPBACK_PROXY_ERROR_CODE,
     message: [
       `${CODEX_LOOPBACK_PROXY_ERROR_CODE}:`,
-      'buckyball.ai could not reach its local Codex proxy directly (HTTP 502).',
+      'CodePilot could not reach its local Codex proxy directly (HTTP 502).',
       'A system proxy may be intercepting 127.0.0.1/localhost traffic.',
       'Ensure loopback addresses bypass the proxy, restart CodePilot, and retry.',
       `Original Codex error: ${message}`,

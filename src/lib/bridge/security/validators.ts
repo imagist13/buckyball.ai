@@ -109,7 +109,7 @@ export function isDangerousInput(input: string): { dangerous: boolean; reason?: 
 /**
  * Sanitize general text input: strip control characters (except newline/tab)
  * and enforce max length.
- * Returns { text, truncated } â€?truncated is true if the input was shortened.
+ * Returns { text, truncated } â€” truncated is true if the input was shortened.
  */
 export function sanitizeInput(
   text: string,

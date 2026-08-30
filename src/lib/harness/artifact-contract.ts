@@ -1,5 +1,5 @@
 /**
- * Harness Artifact Contract â€?Phase 5d Phase 4 (2026-05-17).
+ * Harness Artifact Contract â€” Phase 5d Phase 4 (2026-05-17).
  *
  * Phase 1 gave us a capability catalog
  * (`src/lib/harness/capability-contract.ts`): WHAT the model can do.
@@ -16,10 +16,10 @@
  *   - `file_diff_summary` originates from the `file_changed` SSE
  *     event but renders into the chat message as a summary card; the
  *     standalone unified-diff viewer surface is `inline_diff`. Both
- *     are capability-independent â€?the runtime emits them as a side
+ *     are capability-independent â€” the runtime emits them as a side
  *     effect of tool execution, not as a declared capability.
  *   - `markdown` / `html` / `inline_diff` / `inline_jsx` / `json` /
- *     `table` / `error` are NOT capability-driven at all â€?they are
+ *     `table` / `error` are NOT capability-driven at all â€” they are
  *     side-channel entry points (a code-block "Preview" button, a
  *     setPreviewSource call from the agent SDK, an ErrorBanner from
  *     a failure path). Capabilities don't own them; the rendering
@@ -32,7 +32,8 @@
  *
  *   - `source`: where it ENTERS the UI (fence / SSE event / a
  *     PreviewSource handed to PreviewPanel).
- *   - `sourceDescriptor`: the literal label used at that entry â€? *     e.g. `fenceLanguage: 'show-widget'`, `previewKind: 'inline-json'`,
+ *   - `sourceDescriptor`: the literal label used at that entry â€”
+ *     e.g. `fenceLanguage: 'show-widget'`, `previewKind: 'inline-json'`,
  *     `eventType: 'tool_result.media'`. Drift tests source-grep these
  *     so a future rename in the parser surface fails contract before
  *     it fails smoke.
@@ -79,7 +80,7 @@ export type ArtifactSourceKind =
   /** The model emits a code fence in a chat message; the chat
    *  message renderer parses it inline. */
   | 'fence'
-  /** Backend â†?frontend SSE event carries a structured payload. */
+  /** Backend â†’ frontend SSE event carries a structured payload. */
   | 'sse_event'
   /** Caller code in the UI (chat tools, file tree click, etc.)
    *  invokes `setPreviewSource(...)`; PreviewPanel discriminates
@@ -120,7 +121,7 @@ export interface ArtifactContract {
   readonly renderer: ArtifactSymbol;
   /** Copy/paste-safe example the contract test can feed back through
    *  the parser. Omitted when the artifact carries opaque binary
-   *  data (e.g. `media` MediaBlock with a base64 payload) â€?the
+   *  data (e.g. `media` MediaBlock with a base64 payload) â€” the
    *  contract test then only pins source-level shape. */
   readonly canonicalExample?: string;
   /** Optional one-line note explaining edge cases the contract test
@@ -130,7 +131,7 @@ export interface ArtifactContract {
    *  is capability-driven. Empty array for capability-independent
    *  artifacts (markdown / html / inline_diff / json / table / error).
    *  Multiple entries are allowed when one artifact is produced by
-   *  several capabilities â€?e.g. `media` is emitted by both
+   *  several capabilities â€” e.g. `media` is emitted by both
    *  `image_generation` and `media_import`. `artifactsForCapability`
    *  uses `includes(capabilityId)` so each capability still resolves
    *  to the same shared artifact. */
@@ -184,7 +185,7 @@ const malformedWidget: ArtifactContract = {
   // string and asserts the parser returns `type === 'malformed_widget'`.
   canonicalExample: '```show-widget\n<div>this is not JSON</div>\n```',
   notes:
-    'Tied to the `widget` capability â€?the same parser owns both segments. Renderer is a notice block inside MessageItem.tsx.',
+    'Tied to the `widget` capability â€” the same parser owns both segments. Renderer is a notice block inside MessageItem.tsx.',
   relatedCapabilities: ['widget'],
 };
 
@@ -200,7 +201,7 @@ const media: ArtifactContract = {
     module: 'src/hooks/useSSEStream.ts',
     // The tool_result handler inside useSSEStream extracts the
     // `media` field and surfaces it on the stream snapshot. There
-    // is no exported function for this â€?it's an inline switch arm.
+    // is no exported function for this â€” it's an inline switch arm.
     // The drift test treats `'<inline>'` as "module must exist".
     export: '<inline>',
   },
@@ -209,18 +210,18 @@ const media: ArtifactContract = {
     export: 'MediaPreview',
   },
   notes:
-    'No canonicalExample â€?MediaBlock carries opaque `localPath` or `data` (base64) the contract test cannot synthesise. Source-grep pins the field path `tool_result.media`. Both `image_generation` (image gen MCP / bridge) and `media_import` (file import MCP / bridge) feed this artifact; relatedCapabilities lists both so `artifactsForCapability("media_import")` also resolves it.',
+    'No canonicalExample â€” MediaBlock carries opaque `localPath` or `data` (base64) the contract test cannot synthesise. Source-grep pins the field path `tool_result.media`. Both `image_generation` (image gen MCP / bridge) and `media_import` (file import MCP / bridge) feed this artifact; relatedCapabilities lists both so `artifactsForCapability("media_import")` also resolves it.',
   relatedCapabilities: ['image_generation', 'media_import'],
 };
 
 const fileDiffSummary: ArtifactContract = {
   id: 'file_diff_summary',
-  displayName: 'File change diff summary card (file_changed event â†?DiffSummary)',
+  displayName: 'File change diff summary card (file_changed event â†’ DiffSummary)',
   source: 'sse_event',
   sourceDescriptor: { kind: 'sse_event', eventType: 'file_changed' },
   parser: {
     // SSE side: `case 'file_changed':` arm in useSSEStream.ts. No
-    // exported function â€?the dispatch is inline.
+    // exported function â€” the dispatch is inline.
     module: 'src/hooks/useSSEStream.ts',
     export: '<inline>',
   },
@@ -252,7 +253,7 @@ const inlineDiff: ArtifactContract = {
   canonicalExample:
     '--- a/file.ts\n+++ b/file.ts\n@@ -1,3 +1,3 @@\n-const x = 1;\n+const x = 2;\n const y = 3;',
   notes:
-    'Triggered by ```diff / ```patch fence Preview button (code-block.tsx) â€?distinct from `file_diff_summary` which surfaces SSE-driven cards inside chat messages.',
+    'Triggered by ```diff / ```patch fence Preview button (code-block.tsx) â€” distinct from `file_diff_summary` which surfaces SSE-driven cards inside chat messages.',
   relatedCapabilities: [],
 };
 
@@ -275,7 +276,7 @@ const inlineJsx: ArtifactContract = {
   canonicalExample:
     'export default function Hello() { return <div>hello</div>; }',
   notes:
-    'Triggered by ```jsx / ```tsx fence Preview button (code-block.tsx â†?PreviewPanel inline-jsx arm). Sandpack bundles the snippet client-side; no server-side renderer.',
+    'Triggered by ```jsx / ```tsx fence Preview button (code-block.tsx â†’ PreviewPanel inline-jsx arm). Sandpack bundles the snippet client-side; no server-side renderer.',
   relatedCapabilities: [],
 };
 
@@ -286,7 +287,7 @@ const markdown: ArtifactContract = {
   sourceDescriptor: { kind: 'preview_source', previewKind: 'inline-markdown' },
   parser: {
     module: 'src/hooks/usePanel.ts',
-    // PreviewSource discriminator â€?defined in the union type. The
+    // PreviewSource discriminator â€” defined in the union type. The
     // contract test confirms the kind appears in usePanel.ts.
     export: 'PreviewSource',
   },
@@ -351,7 +352,7 @@ const table: ArtifactContract = {
     export: 'PreviewPanel',
   },
   notes:
-    'Renderer is the inline-datatable arm of PreviewPanel. No standalone canonicalExample â€?rows + header are structured input the parser test constructs literally.',
+    'Renderer is the inline-datatable arm of PreviewPanel. No standalone canonicalExample â€” rows + header are structured input the parser test constructs literally.',
   relatedCapabilities: [],
 };
 
@@ -359,7 +360,7 @@ const errorBlock: ArtifactContract = {
   id: 'error',
   displayName: 'Error banner (recoverable / user-visible)',
   source: 'preview_source',
-  // No PreviewSource for errors today â€?they surface via the
+  // No PreviewSource for errors today â€” they surface via the
   // ErrorBanner component invoked by the consumer that detected the
   // failure (rate limit, auth, validation, etc.). Mark `source` as
   // preview_source for catalog ordering but pin renderer; the

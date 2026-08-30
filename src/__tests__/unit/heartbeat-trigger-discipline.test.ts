@@ -1,5 +1,5 @@
 /**
- * Codex P1 â€?heartbeat triggering discipline.
+ * Codex P1 â€” heartbeat triggering discipline.
  *
  * Closes the bug where opening any chat / settings page caused a
  * full-Agent heartbeat run to fire from the foreground, with no tool
@@ -23,7 +23,7 @@
  *      interval, advancing next_run instead. The pre-fix scheduler
  *      ran every overdue heartbeat on app start.
  *   5. consumeHeadlessStream has hard total + idle timeout fuses
- *      (Codex's "ä¿é™©ä¸? line â€?not the experience layer; if these
+ *      (Codex's "ä¿é™©ä¸" line â€” not the experience layer; if these
  *      trip routinely the prompt is wrong, not the fuse).
  */
 
@@ -60,18 +60,18 @@ describe('useAssistantTrigger no longer fires heartbeat from the foreground (Cod
     assert.doesNotMatch(
       stripped,
       /\bconst\s+needsHeartbeat\s*=/,
-      'useAssistantTrigger must NOT compute a `needsHeartbeat` flag â€?heartbeat is scheduler-only now. Buddy-welcome is the only legitimate auto-trigger.',
+      'useAssistantTrigger must NOT compute a `needsHeartbeat` flag â€” heartbeat is scheduler-only now. Buddy-welcome is the only legitimate auto-trigger.',
     );
     assert.doesNotMatch(
       stripped,
       /data\.needsHeartbeat/,
-      'useAssistantTrigger must NOT read `data.needsHeartbeat` â€?the workspace route no longer exposes that field, and reading it would be a hint someone is trying to re-introduce mount-time heartbeat firing.',
+      'useAssistantTrigger must NOT read `data.needsHeartbeat` â€” the workspace route no longer exposes that field, and reading it would be a hint someone is trying to re-introduce mount-time heartbeat firing.',
     );
   });
 
   it('only sends a buddy-welcome trigger message; never a heartbeat-check string', () => {
     const src = read('hooks/useAssistantTrigger.ts');
-    // The legacy code had `triggerMsg = needsBuddyWelcome ? 'è¯·åšè‡ªæˆ‘ä»‹ç»...' : 'å¿ƒè·³æ£€æŸ?`.
+    // The legacy code had `triggerMsg = needsBuddyWelcome ? 'è¯·åšè‡ªæˆ‘ä»‹ç»...' : 'å¿ƒè·³æ£€æŸ¥'`.
     // The new code hard-codes the buddy-welcome message and removes
     // the heartbeat branch.
     const stripped = src
@@ -81,8 +81,8 @@ describe('useAssistantTrigger no longer fires heartbeat from the foreground (Cod
       .replace(/\/\*[\s\S]*?\*\//g, '');
     assert.doesNotMatch(
       stripped,
-      /'å¿ƒè·³æ£€æŸ?/,
-      'foreground must not auto-trigger a "å¿ƒè·³æ£€æŸ? message â€?that string was the symptom of mount-time heartbeat firing. Heartbeat is scheduler-driven now.',
+      /'å¿ƒè·³æ£€æŸ¥'/,
+      'foreground must not auto-trigger a "å¿ƒè·³æ£€æŸ¥" message â€” that string was the symptom of mount-time heartbeat firing. Heartbeat is scheduler-driven now.',
     );
   });
 });
@@ -91,7 +91,8 @@ describe('/api/settings/workspace no longer returns needsHeartbeat', () => {
   it('GET response does not include needsHeartbeat field', () => {
     const src = read('app/api/settings/workspace/route.ts');
     // The route used to return `needsHeartbeat: !!state.buddy && shouldRunHeartbeat(state)`.
-    // Removing the line â€?and the import of shouldRunHeartbeat â€?    // means UI surfaces literally cannot read it anymore.
+    // Removing the line â€” and the import of shouldRunHeartbeat â€”
+    // means UI surfaces literally cannot read it anymore.
     const stripped = src
       .split('\n')
       .map((l) => l.replace(/\/\/.*$/, ''))
@@ -100,12 +101,12 @@ describe('/api/settings/workspace no longer returns needsHeartbeat', () => {
     assert.doesNotMatch(
       stripped,
       /needsHeartbeat:/,
-      '/api/settings/workspace must not return needsHeartbeat â€?that flag was the foreground heartbeat signal that caused mount-time auto-fire.',
+      '/api/settings/workspace must not return needsHeartbeat â€” that flag was the foreground heartbeat signal that caused mount-time auto-fire.',
     );
     assert.doesNotMatch(
       stripped,
       /shouldRunHeartbeat\s*\(/,
-      'route must not call shouldRunHeartbeat â€?that helper is now scheduler-internal only.',
+      'route must not call shouldRunHeartbeat â€” that helper is now scheduler-internal only.',
     );
   });
 });
@@ -146,14 +147,14 @@ describe('heartbeat prompt explicitly forbids scheduler-introspecting + side-eff
       assert.match(
         prompt,
         new RegExp(banned),
-        `HEARTBEAT_TASK_PROMPT must explicitly name "${banned}" as forbidden â€?heartbeat introspecting the scheduler that runs it is the recursion path that left runs hung.`,
+        `HEARTBEAT_TASK_PROMPT must explicitly name "${banned}" as forbidden â€” heartbeat introspecting the scheduler that runs it is the recursion path that left runs hung.`,
       );
     }
     // Must cap tool calls at 1.
     assert.match(
       prompt,
       /AT MOST ONE tool call/i,
-      'prompt must say "AT MOST ONE tool call" â€?multi-step fanout (date â†?list_tasks â†?memory_recent â†?Read â†?...) is the symptom user reported.',
+      'prompt must say "AT MOST ONE tool call" â€” multi-step fanout (date â†’ list_tasks â†’ memory_recent â†’ Read â†’ ...) is the symptom user reported.',
     );
   });
 
@@ -205,14 +206,14 @@ describe('scheduler heartbeat stale-check guard (Codex P1)', () => {
       } as Parameters<typeof mod.heartbeatIntervalMsForTask>[0]),
       6 * HOUR_MS,
     );
-    // 24-hour daily cadence â€?ensureHeartbeatTask normalizes to "0 9 * * *"
+    // 24-hour daily cadence â€” ensureHeartbeatTask normalizes to "0 9 * * *"
     assert.equal(
       mod.heartbeatIntervalMsForTask({
         schedule_value: '0 9 * * *',
       } as Parameters<typeof mod.heartbeatIntervalMsForTask>[0]),
       24 * HOUR_MS,
     );
-    // Garbage cron â†?conservative 24h fallback
+    // Garbage cron â†’ conservative 24h fallback
     assert.equal(
       mod.heartbeatIntervalMsForTask({
         schedule_value: 'not-a-cron',
@@ -235,11 +236,11 @@ describe('scheduler heartbeat stale-check guard (Codex P1)', () => {
       'executeDueTask must include a heartbeat stale-check guard that returns early when (now - last_run) < interval, after pushing next_run forward to last_run + interval.',
     );
     // The guard must use heartbeatIntervalMsForTask, not a hardcoded
-    // number â€?that way changing cron scheme doesn't desync.
+    // number â€” that way changing cron scheme doesn't desync.
     assert.match(
       guard![0],
       /heartbeatIntervalMsForTask\(task\)/,
-      'stale-check must call heartbeatIntervalMsForTask(task) â€?hardcoding 24h would break the user\'s configured cadence.',
+      'stale-check must call heartbeatIntervalMsForTask(task) â€” hardcoding 24h would break the user\'s configured cadence.',
     );
   });
 });
@@ -277,7 +278,7 @@ describe('consumeHeadlessStream timeout fuses (Codex P1)', () => {
     );
   });
 
-  it('idle timeout: stream that emits nothing for longer than maxIdleMs â†?status="failed"', { timeout: 5000 }, async () => {
+  it('idle timeout: stream that emits nothing for longer than maxIdleMs â†’ status="failed"', { timeout: 5000 }, async () => {
     const { consumeHeadlessStream } = await import('../../lib/headless-claude');
     // Build a stream that opens but never enqueues anything until
     // we close it. With a 200ms idle fuse, consumer should bail
@@ -297,7 +298,7 @@ describe('consumeHeadlessStream timeout fuses (Codex P1)', () => {
       result.error && /idle/i.test(result.error),
       'idle-fuse failure must mention "idle" in the error so users can tell it apart from total timeout.',
     );
-    // Should bail well before the total fuse â€?otherwise the idle
+    // Should bail well before the total fuse â€” otherwise the idle
     // fuse isn't actually firing.
     assert.ok(
       elapsed < 2000,
@@ -309,12 +310,12 @@ describe('consumeHeadlessStream timeout fuses (Codex P1)', () => {
   it('runner passes per-call headless timeout opts (heartbeat tighter than ai_task)', () => {
     const src = read('lib/agent-task-runner.ts');
     // The runner calls runClaudeHeadless with a SECOND argument now
-    // â€?the headless-options bag carrying maxTotalMs / maxIdleMs.
-    // Pin: heartbeat path is tighter (â‰?0s total / â‰?0s idle).
+    // â€” the headless-options bag carrying maxTotalMs / maxIdleMs.
+    // Pin: heartbeat path is tighter (â‰¤90s total / â‰¤30s idle).
     assert.match(
       src,
       /maxTotalMs:\s*isHeartbeat\s*\?\s*\d+/,
-      'runner must thread a maxTotalMs that depends on isHeartbeat â€?heartbeat should be tighter than a normal ai_task because the prompt is narrower.',
+      'runner must thread a maxTotalMs that depends on isHeartbeat â€” heartbeat should be tighter than a normal ai_task because the prompt is narrower.',
     );
     assert.match(
       src,
@@ -322,7 +323,7 @@ describe('consumeHeadlessStream timeout fuses (Codex P1)', () => {
       'runner must thread a maxIdleMs that depends on isHeartbeat.',
     );
     // toolTimeoutSeconds must be set explicitly (claude-client default
-    // 0 means "no timeout" â€?disabled).
+    // 0 means "no timeout" â€” disabled).
     assert.match(
       src,
       /toolTimeoutSeconds:\s*isHeartbeat/,
@@ -390,12 +391,12 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.equal(
       after!.next_run,
       future,
-      'when next_run is already in the future, ensureHeartbeatTask must NOT reset it to the next cron boundary â€?that would re-fire on every redeploy.',
+      'when next_run is already in the future, ensureHeartbeatTask must NOT reset it to the next cron boundary â€” that would re-fire on every redeploy.',
     );
   });
 
   it('runner heartbeat path passes agentMode="heartbeat" + clears external mcpServers', () => {
-    // Codex P1 follow-up â€?system prompt + HEARTBEAT_DISALLOWED_TOOLS
+    // Codex P1 follow-up â€” system prompt + HEARTBEAT_DISALLOWED_TOOLS
     // are not enough on their own. claude-client must see agentMode
     // === 'heartbeat' to actually skip MCP registration and add
     // disallowedTools. Mirror that wiring on the runner side.
@@ -421,7 +422,7 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     // SDK doc: settingSources controls auto-loading of
     // ~/.claude/settings.json (user), <cwd>/.claude/settings.json
     // (project), and .claude/settings.local.json (local). User-level
-    // settings.json can declare mcpServers â€?without this collapse,
+    // settings.json can declare mcpServers â€” without this collapse,
     // the SDK auto-loads them, the model sees the user's external
     // MCPs as available tools, and the model can invoke them
     // (allowedTools is auto-approve-only, not a hard whitelist).
@@ -434,7 +435,7 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.match(
       src,
       /settingSources:\s*isHeartbeatMode[\s\S]{0,200}?\[\]/,
-      'claude-client must override settingSources to [] when isHeartbeatMode â€?otherwise the SDK auto-loads user-level / project / local settings (including their mcpServers), and the heartbeat tool restriction has a hole.',
+      'claude-client must override settingSources to [] when isHeartbeatMode â€” otherwise the SDK auto-loads user-level / project / local settings (including their mcpServers), and the heartbeat tool restriction has a hole.',
     );
   });
 
@@ -466,9 +467,10 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.match(
       src,
       /if\s*\(\s*!isHeartbeatMode\s*\)\s*\{[\s\S]{0,1000}?codepilot-notify/,
-      'codepilot-notify MCP registration must be wrapped in `if (!isHeartbeatMode)` â€?that MCP exposes schedule_task / list_tasks / cancel_task which are exactly the tools the heartbeat-loop bug was abusing.',
+      'codepilot-notify MCP registration must be wrapped in `if (!isHeartbeatMode)` â€” that MCP exposes schedule_task / list_tasks / cancel_task which are exactly the tools the heartbeat-loop bug was abusing.',
     );
-    // claude-client must still hand isHeartbeatMode to the shared assembly â€?    // the narrowing below is only reached if this wiring survives.
+    // claude-client must still hand isHeartbeatMode to the shared assembly â€”
+    // the narrowing below is only reached if this wiring survives.
     assert.match(
       src,
       /buildClaudePermissionQueryOptions\(\{[\s\S]{0,300}?isHeartbeatMode,/,
@@ -492,13 +494,13 @@ describe('ensureHeartbeatTask refresh discipline', () => {
 
     assert.deepEqual(
       [...heartbeat.allowedTools], ['mcp__codepilot-memory'],
-      'allowedTools on heartbeat must be ["mcp__codepilot-memory"] only â€?every other MCP that was previously auto-approved must require explicit permission (and there should be no UI to grant it because it isn\'t registered anyway).',
+      'allowedTools on heartbeat must be ["mcp__codepilot-memory"] only â€” every other MCP that was previously auto-approved must require explicit permission (and there should be no UI to grant it because it isn\'t registered anyway).',
     );
 
     for (const banned of ['Bash', 'Edit', 'Write', 'WebSearch', 'WebFetch']) {
       assert.ok(
         heartbeat.disallowedTools?.includes(banned),
-        `heartbeat must list "${banned}" in disallowedTools â€?auto-approve is not a whitelist; we need explicit blocking for SDK builtins.`,
+        `heartbeat must list "${banned}" in disallowedTools â€” auto-approve is not a whitelist; we need explicit blocking for SDK builtins.`,
       );
     }
 
@@ -519,7 +521,7 @@ describe('ensureHeartbeatTask refresh discipline', () => {
   it('ai_task failure fallback does NOT write into latest-by-workspace user session (Codex P2)', () => {
     // The catch-block error path in executeDueTask used to fall back
     // to getLatestSessionByWorkingDirectory + addMessage when
-    // task.session_id was empty â€?same cross-project bleed pattern
+    // task.session_id was empty â€” same cross-project bleed pattern
     // as handleMissedTasks. Pin the structural fix: the catch block
     // must NEVER call getLatestSessionByWorkingDirectory, and any
     // addMessage write must be gated on the session being source='task'.
@@ -527,7 +529,7 @@ describe('ensureHeartbeatTask refresh discipline', () => {
       path.resolve(__dirname, '../../lib/task-scheduler.ts'),
       'utf-8',
     );
-    // Find the fallback block â€?it lives inside the catch (err) of
+    // Find the fallback block â€” it lives inside the catch (err) of
     // executeDueTask and is keyed off `task.kind === 'ai_task'`.
     // The function is huge; window the search to the ai_task error
     // branch by anchoring on the error context.
@@ -541,13 +543,13 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.doesNotMatch(
       aiTaskCatch![0],
       /getLatestSessionByWorkingDirectory/,
-      'ai_task error-fallback must NOT resolve a target session via getLatestSessionByWorkingDirectory â€?that\'s the cross-project bleed Codex flagged. Write into the task-bound session only.',
+      'ai_task error-fallback must NOT resolve a target session via getLatestSessionByWorkingDirectory â€” that\'s the cross-project bleed Codex flagged. Write into the task-bound session only.',
     );
     // The addMessage call must be gated on source==='task'.
     assert.match(
       aiTaskCatch![0],
       /targetSession\.source\s*===\s*['"]task['"]/,
-      'ai_task error-fallback must gate the addMessage write on the resolved session being source="task" â€?otherwise a legacy dirty session_id pointing at a user chat would still receive the error message.',
+      'ai_task error-fallback must gate the addMessage write on the resolved session being source="task" â€” otherwise a legacy dirty session_id pointing at a user chat would still receive the error message.',
     );
   });
 
@@ -565,12 +567,12 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.doesNotMatch(
       fnBody![0],
       /addMessage\s*\(/,
-      'handleMissedTasks must NOT addMessage anywhere â€?the legacy "è¿‡æœŸæé†’" assistant message wrote into whichever workspace session was latest, which is the same cross-project bleed the origin_session_id fix closed for the runner. Send a notification instead.',
+      'handleMissedTasks must NOT addMessage anywhere â€” the legacy "è¿‡æœŸæé†’" assistant message wrote into whichever workspace session was latest, which is the same cross-project bleed the origin_session_id fix closed for the runner. Send a notification instead.',
     );
     assert.doesNotMatch(
       fnBody![0],
       /getLatestSessionByWorkingDirectory\s*\(/,
-      'handleMissedTasks must NOT resolve a fallback session from workspace path â€?that was the bleed source.',
+      'handleMissedTasks must NOT resolve a fallback session from workspace path â€” that was the bleed source.',
     );
   });
 
@@ -601,12 +603,12 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.match(
       callback![0],
       /setInvalidDefault\(null\)/,
-      'onProviderModelChange (manual path) must call setInvalidDefault(null) â€?without this, picking a working model from the dropdown does not unlock the disabled MessageInput.',
+      'onProviderModelChange (manual path) must call setInvalidDefault(null) â€” without this, picking a working model from the dropdown does not unlock the disabled MessageInput.',
     );
     assert.match(
       callback![0],
       /setNoCompatibleProvider\(false\)/,
-      'onProviderModelChange (manual path) must also clear noCompatibleProvider for the same reason â€?the user just picked a compatible one.',
+      'onProviderModelChange (manual path) must also clear noCompatibleProvider for the same reason â€” the user just picked a compatible one.',
     );
   });
 
@@ -640,10 +642,10 @@ describe('ensureHeartbeatTask refresh discipline', () => {
     assert.match(
       routeSrc,
       /body\.source\s*!==\s*undefined[\s\S]{0,500}status:\s*400/,
-      '/api/tasks/schedule must return 400 when the POST body carries a source field â€?that is the public-tool path, and only ensureHeartbeatTask (internal) is allowed to mint assistant_heartbeat rows.',
+      '/api/tasks/schedule must return 400 when the POST body carries a source field â€” that is the public-tool path, and only ensureHeartbeatTask (internal) is allowed to mint assistant_heartbeat rows.',
     );
     // And the persisted row's source is whatever createScheduledTask
-    // got (defensive coerce keeps unknown â†?'user'; explicit
+    // got (defensive coerce keeps unknown â†’ 'user'; explicit
     // 'assistant_heartbeat' is the heartbeat caller's privilege).
     assert.ok(task);
   });

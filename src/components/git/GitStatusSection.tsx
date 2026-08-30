@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { ArrowUp, ArrowLeft, Circle } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { usePanel } from "@/hooks/usePanel";
@@ -59,11 +59,11 @@ export function GitStatusSection({ status }: GitStatusSectionProps) {
     <div className="space-y-3">
       {/* Branch + upstream */}
       <div className="flex items-center gap-2 px-3">
-        <BuckyballIcon name="git" size="sm" className="text-muted-foreground shrink-0" aria-hidden />
+        <CodePilotIcon name="git" size="sm" className="text-muted-foreground shrink-0" aria-hidden />
         <span className="text-sm font-medium truncate">{status.branch || t('git.noBranch')}</span>
         {status.upstream && (
           <span className="text-[11px] text-muted-foreground truncate">
-            â?{status.upstream}
+            → {status.upstream}
           </span>
         )}
       </div>
@@ -86,7 +86,7 @@ export function GitStatusSection({ status }: GitStatusSectionProps) {
         </div>
       )}
 
-      {/* Changed files â?show tracked changes first, untracked separately */}
+      {/* Changed files — show tracked changes first, untracked separately */}
       {(() => {
         const tracked = status.changedFiles.filter(f => f.status !== 'untracked');
         const untracked = status.changedFiles.filter(f => f.status === 'untracked');
@@ -138,7 +138,7 @@ export function GitStatusSection({ status }: GitStatusSectionProps) {
           onClick={() => setCommitDialogOpen(true)}
           disabled={!status.dirty}
         >
-          <BuckyballIcon name="git_commit" size="sm" aria-hidden />
+          <CodePilotIcon name="git_commit" size="sm" aria-hidden />
           {t('topBar.commit')}
         </Button>
         <Button
@@ -148,7 +148,7 @@ export function GitStatusSection({ status }: GitStatusSectionProps) {
           onClick={handlePush}
           disabled={pushing}
         >
-          <BuckyballIcon name="upload_cloud" size="sm" aria-hidden />
+          <CodePilotIcon name="upload_cloud" size="sm" aria-hidden />
           {pushing ? t('git.loading') : t('topBar.push')}
         </Button>
       </div>

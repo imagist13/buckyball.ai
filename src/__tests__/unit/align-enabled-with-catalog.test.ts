@@ -1,13 +1,13 @@
 /**
- * Tests for alignEnabledWithCatalog â€?the "reset every system-managed
+ * Tests for alignEnabledWithCatalog â€” the "reset every system-managed
  * row to the recommended catalog" operation behind the Models page's
- * "æŒ‰æŽ¨èæ•´ç? button. Critical invariants:
+ * "æŒ‰æŽ¨èæ•´ç†" button. Critical invariants:
  *
  *   - manual_enabled / manual_hidden rows are NEVER touched (no enabled
  *     flip, no enable_source rewrite, no DELETE)
  *   - legacy user_edited=1 rows are also untouched (same protection)
  *   - For system-managed rows, `enabled` and `enable_source` always
- *     update together â€?a row should never end up enabled=0 with
+ *     update together â€” a row should never end up enabled=0 with
  *     enable_source='recommended' or enabled=1 with 'discovered'
  *   - Catalog seed cleanup only removes truly-unused rows (source='catalog'
  *     AND not user-touched)
@@ -49,7 +49,7 @@ const CATALOG = [
   { modelId: 'opus', displayName: 'Opus 4.7', upstreamModelId: 'claude-opus-4-7' },
 ];
 
-describe('alignEnabledWithCatalog â€?user-managed rows are untouchable', () => {
+describe('alignEnabledWithCatalog â€” user-managed rows are untouchable', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -139,7 +139,8 @@ describe('alignEnabledWithCatalog â€?user-managed rows are untouchable', () => {
       variants_json: '{}',
       sort_order: 0,
       enabled: 1,
-      source: 'catalog',          // would normally pruneâ€?      last_refreshed_at: null,
+      source: 'catalog',          // would normally pruneâ€¦
+      last_refreshed_at: null,
       user_edited: 1,             // â€¦but user touched it
       enable_source: 'manual_enabled',
     });
@@ -152,7 +153,7 @@ describe('alignEnabledWithCatalog â€?user-managed rows are untouchable', () => {
   });
 });
 
-describe('alignEnabledWithCatalog â€?system-managed rows update enabled+enable_source together', () => {
+describe('alignEnabledWithCatalog â€” system-managed rows update enabled+enable_source together', () => {
   beforeEach(cleanup);
   afterEach(cleanup);
 
@@ -235,7 +236,7 @@ describe('alignEnabledWithCatalog â€?system-managed rows update enabled+enable_s
 
   it('inserts catalog rows with enable_source=recommended (verified via DB read)', () => {
     const providerId = createScratchProvider();
-    // Empty DB â†?align should INSERT both catalog entries
+    // Empty DB â†’ align should INSERT both catalog entries
     const stats = alignEnabledWithCatalog(providerId, CATALOG);
     assert.equal(stats.inserted, 2);
 

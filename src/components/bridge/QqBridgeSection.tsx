@@ -42,9 +42,9 @@ export function QqBridgeSection() {
   } | null>(null);
   const { t } = useTranslation();
 
-  // Three save groups â†?three snapshots. appSecret is server-masked as
-  // "***â€? â€?see handleSaveCredentials, only sent when the user types a
-  // real value â€?so the credentials snapshot mirrors that mask.
+  // Three save groups â†’ three snapshots. appSecret is server-masked as
+  // "***â€¦" â€” see handleSaveCredentials, only sent when the user types a
+  // real value â€” so the credentials snapshot mirrors that mask.
   const [savedCredentials, setSavedCredentials] = useState({
     appId: "",
     appSecret: "",

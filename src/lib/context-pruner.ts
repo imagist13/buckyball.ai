@@ -1,5 +1,5 @@
 /**
- * context-pruner.ts â?Microcompact: prune old tool results before each API call.
+ * context-pruner.ts — Microcompact: prune old tool results before each API call.
  *
  * Reduces token usage by replacing detailed tool_result content from older
  * turns with a short fixed marker (not an LLM summary). Recent turns are
@@ -7,8 +7,8 @@
  *
  * This runs before every streamText() call in the agent loop.
  *
- * **Note on two-tier compression**: buckyball.ai has two distinct compression
- * paths. This module is the *micro* path â?a cheap per-step truncation that
+ * **Note on two-tier compression**: CodePilot has two distinct compression
+ * paths. This module is the *micro* path — a cheap per-step truncation that
  * runs inside the agent loop. The *macro* path is LLM-driven summarization
  * in `context-compressor.ts`, triggered once per chat turn by the chat API
  * route when estimated tokens exceed 80% of the context window. The two
@@ -18,13 +18,13 @@
 
 import type { ModelMessage } from 'ai';
 
-// Keep last N messages fully intact. Raised from 6 â?16 in 2026-04-15 after
+// Keep last N messages fully intact. Raised from 6 → 16 in 2026-04-15 after
 // short generic result markers made long tool-heavy tasks lose semantic
 // context and describe tools without actually calling them. This pruner never
 // removes a tool-result block, so structural call/result integrity is owned by
 // tool-history-integrity.ts rather than by this window size.
 const RECENT_TURNS_TO_KEEP = 16;
-const TRUNCATED_RESULT_MARKER = '[Tool result truncated â?see earlier in conversation]';
+const TRUNCATED_RESULT_MARKER = '[Tool result truncated — see earlier in conversation]';
 
 /**
  * Prune old tool results from message history to reduce token usage.
@@ -45,13 +45,13 @@ export function pruneOldToolResults(messages: ModelMessage[]): ModelMessage[] {
   const cutoff = messages.length - RECENT_TURNS_TO_KEEP;
 
   return messages.map((msg, index) => {
-    if (index >= cutoff) return msg; // recent â?keep as-is
+    if (index >= cutoff) return msg; // recent — keep as-is
 
     if (msg.role === 'tool' && Array.isArray(msg.content)) {
       // Truncate tool result content but keep tool name + a short excerpt so
       // the model can still understand the result's originating call.
       // Generic markers ("[truncated]") were causing the model to lose track
-      // and emit fake tool calls â?see PR #468 for the original report.
+      // and emit fake tool calls — see PR #468 for the original report.
       return {
         ...msg,
         content: (msg.content as Array<{ type: string; [k: string]: unknown }>).map((part) => {
@@ -79,7 +79,7 @@ export function pruneOldToolResults(messages: ModelMessage[]): ModelMessage[] {
   });
 }
 
-// ââ Token-budget pruning (enhanced mode) âââââââââââââââââââââââââââ
+// ── Token-budget pruning (enhanced mode) ───────────────────────────
 
 /**
  * Options for the enhanced `pruneOldToolResultsByBudget` function.
@@ -94,7 +94,7 @@ export interface PruneByBudgetOptions {
 
   /**
    * Number of initial messages to protect unconditionally (system prompt
-   * + first exchange). Defaults to 3 â?matching Hermes' `protect_first_n`.
+   * + first exchange). Defaults to 3 — matching Hermes' `protect_first_n`.
    */
   protectFirstN?: number;
 
@@ -123,7 +123,7 @@ const DEFAULT_PROTECT_FIRST_N = 3;
  *
  * Ported from Hermes Agent's context_compressor.py (protect_first_n +
  * protect_last_n + tail_token_budget), but without the LLM summarization
- * step â?that lives in `context-compressor.ts` and runs at a different
+ * step — that lives in `context-compressor.ts` and runs at a different
  * layer (chat route entry, not per-step).
  *
  * **Intentionally module-only**: agent-loop.ts continues to call the
@@ -135,7 +135,7 @@ const DEFAULT_PROTECT_FIRST_N = 3;
  * future option if the runtime ever needs more aggressive per-step
  * pruning (e.g. when LLM compression is disabled).
  *
- * Reference: docs/research/hermes-agent-analysis.md Â§1.6, Â§3.5
+ * Reference: docs/research/hermes-agent-analysis.md §1.6, §3.5
  */
 export function pruneOldToolResultsByBudget(
   messages: ModelMessage[],
@@ -198,7 +198,7 @@ function buildToolResultMarker(part: { type: string; [k: string]: unknown }): st
   return TRUNCATED_RESULT_MARKER;
 }
 
-// ââ Token estimation âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Token estimation ───────────────────────────────────────────────
 
 /**
  * Estimate token count for a message array.
@@ -230,7 +230,7 @@ export function estimateTokens(messages: ModelMessage[]): number {
 /**
  * Check if the message history exceeds a token threshold.
  *
- * @deprecated This function is dead code â?it was a placeholder for
+ * @deprecated This function is dead code — it was a placeholder for
  * wiring auto-compact into the agent loop, but never had a caller.
  * The actual auto-compact check lives in `context-compressor.ts` as
  * `needsCompression(estimatedTokens, contextWindow, sessionId)`, which

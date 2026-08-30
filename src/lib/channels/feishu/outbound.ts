@@ -35,7 +35,7 @@ const SEND_RETRY_DELAY_MS = 1000;
 function isTransientError(err: unknown): boolean {
   const code = (err as { code?: number })?.code;
   if (typeof code === 'number') {
-    // Non-retryable 4xx ‚Ä?fail fast
+    // Non-retryable 4xx ‚Äî fail fast
     if (NON_RETRYABLE_ERROR_CODES.has(code)) return false;
     // Feishu rate limit 99991400 + 1429 etc. are retryable
     return true;
@@ -59,11 +59,11 @@ const LOG_TAG = '[feishu/outbound]';
  * Optimize markdown for Feishu rendering compatibility.
  *
  * Based on OpenClaw's markdown-style.ts:
- * - Demote headings: H1 ‚Ü?H4, H2-H6 ‚Ü?H5 (Feishu renders H1-H3 too large)
+ * - Demote headings: H1 ‚Üí H4, H2-H6 ‚Üí H5 (Feishu renders H1-H3 too large)
  * - Add spacing around tables with <br> tags
  * - Pad code blocks with <br> for visual separation
  * - Strip invalid image keys (prevent CardKit error 200570)
- * - Compress excessive newlines (3+ ‚Ü?2)
+ * - Compress excessive newlines (3+ ‚Üí 2)
  */
 export function optimizeMarkdown(text: string): string {
   try {
@@ -74,7 +74,7 @@ export function optimizeMarkdown(text: string): string {
 }
 
 function _optimizeMarkdown(text: string): string {
-  // 1. Extract code blocks ‚Ä?protect from transformation
+  // 1. Extract code blocks ‚Äî protect from transformation
   const MARK = '___CB_';
   const codeBlocks: string[] = [];
   let r = text.replace(/```[\s\S]*?```/g, (m) => {
@@ -85,19 +85,19 @@ function _optimizeMarkdown(text: string): string {
   // Feishu renders H1-H3 too large in post md tag
   const hasLargeHeadings = /^#{1,3} /m.test(r);
   if (hasLargeHeadings) {
-    r = r.replace(/^#{2,6} (.+)$/gm, '##### $1'); // H2-H6 ‚Ü?H5
-    r = r.replace(/^# (.+)$/gm, '#### $1');        // H1 ‚Ü?H4
+    r = r.replace(/^#{2,6} (.+)$/gm, '##### $1'); // H2-H6 ‚Üí H5
+    r = r.replace(/^# (.+)$/gm, '#### $1');        // H1 ‚Üí H4
   }
 
   // 3. Spacing between consecutive headings
   r = r.replace(/^(#{4,5} .+)\n{1,2}(#{4,5} )/gm, '$1\n\n$2');
 
-  // 4. Table spacing ‚Ä?ensure blank line before/after table blocks
+  // 4. Table spacing ‚Äî ensure blank line before/after table blocks
   r = r.replace(/^([^|\n].*)\n(\|.+\|)/gm, '$1\n\n$2');
   r = r.replace(/((?:^\|.+\|[^\S\n]*\n?)+)/gm, '\n\n$1\n\n');
 
   // 5. Restore code blocks with blank line padding
-  // Note: Feishu post md tag does NOT support <br> ‚Ä?use blank lines instead
+  // Note: Feishu post md tag does NOT support <br> ‚Äî use blank lines instead
   codeBlocks.forEach((block, i) => {
     r = r.replace(`${MARK}${i}___`, `\n\n${block}\n\n`);
   });
@@ -112,7 +112,7 @@ function _optimizeMarkdown(text: string): string {
     });
   }
 
-  // 7. Compress excessive newlines (3+ ‚Ü?2)
+  // 7. Compress excessive newlines (3+ ‚Üí 2)
   r = r.replace(/\n{3,}/g, '\n\n');
 
   return r;
@@ -134,8 +134,8 @@ function htmlToFeishuMarkdown(text: string): string {
 /**
  * Send a message to Feishu with automatic retry on transient errors (#266).
  *
- * - With inlineButtons ‚Ü?interactive card (Schema V2)
- * - Without ‚Ü?post format with md tag (supports markdown rendering)
+ * - With inlineButtons ‚Üí interactive card (Schema V2)
+ * - Without ‚Üí post format with md tag (supports markdown rendering)
  */
 export async function sendMessage(
   client: lark.Client,
@@ -160,7 +160,7 @@ export async function sendMessage(
 
       if (result.ok) return result;
 
-      // Sender returned a structured failure ‚Ä?decide whether to retry based on error text
+      // Sender returned a structured failure ‚Äî decide whether to retry based on error text
       lastErr = new Error(result.error || 'Send failed');
       if (!isTransientError(lastErr)) return result;
     } catch (err: unknown) {
@@ -288,7 +288,7 @@ async function sendAsInteractiveCard(
     if (isPermission) {
       bodyElements.push({
         tag: 'markdown' as const,
-        content: '‚è?This request will expire in 5 minutes',
+        content: '‚è± This request will expire in 5 minutes',
         text_size: 'notation' as const,
       });
     }
@@ -367,7 +367,7 @@ export async function addReaction(
     });
     return resp?.data?.reaction_id || null;
   } catch (err: unknown) {
-    // Non-critical ‚Ä?log and swallow
+    // Non-critical ‚Äî log and swallow
     console.warn(LOG_TAG, 'Failed to add reaction:', errMsg(err));
     return null;
   }

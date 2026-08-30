@@ -46,7 +46,7 @@ export function BatchPlanRow({ item, index, onUpdate, onRemove, disabled }: Batc
 
           {/* Controls Row */}
           <div className="flex items-center gap-2 mt-1.5">
-            {/* Aspect Ratio + Resolution â€?shadcn Select (uniform with
+            {/* Aspect Ratio + Resolution â€” shadcn Select (uniform with
                 the rest of the app and styles correctly under dark
                 mode; native <select> picks up OS chrome). */}
             <Select

@@ -1,17 +1,17 @@
 /**
- * Provider Catalog â?vendor presets, protocol definitions, and default model catalogs.
+ * Provider Catalog — vendor presets, protocol definitions, and default model catalogs.
  *
  * This is the single source of truth for:
  * - Which protocol a vendor uses (anthropic, openai-compatible, bedrock, vertex, etc.)
  * - Default env overrides each vendor needs for Claude Code SDK
- * - Default model catalogs (role â?upstream model id mapping)
+ * - Default model catalogs (role → upstream model id mapping)
  * - Auth key injection style (ANTHROPIC_API_KEY vs ANTHROPIC_AUTH_TOKEN)
  * - Provider meta info (API key URLs, docs, billing model, notes)
  */
 
 import { z } from 'zod';
 
-// ââ Protocol types ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Protocol types ──────────────────────────────────────────────
 
 /**
  * Protocol describes how to talk to a provider's API.
@@ -38,7 +38,7 @@ export type AuthStyle =
   | 'custom_header';      // API key in custom header (future)
 
 /**
- * Model role â?semantic purpose, maps to ANTHROPIC_DEFAULT_*, ANTHROPIC_MODEL, etc.
+ * Model role — semantic purpose, maps to ANTHROPIC_DEFAULT_*, ANTHROPIC_MODEL, etc.
  */
 export type ModelRole = 'default' | 'reasoning' | 'small' | 'haiku' | 'sonnet' | 'opus';
 
@@ -51,10 +51,12 @@ export type ProviderEffortLevel = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export interface CatalogModel {
   /** Internal/UI model ID (what the user sees and what we pass to Claude Code) */
   modelId: string;
-  /** Actual upstream model ID (what gets sent to the API) â?if different from modelId */
+  /** Actual upstream model ID (what gets sent to the API) — if different from modelId */
   upstreamModelId?: string;
   /** Human-readable display name */
   displayName: string;
+  /** Exact identities shipped by older catalogs that may be safely upgraded. */
+  legacyFingerprints?: import('./catalog-model-identity').CatalogModelLegacyFingerprint[];
   /** Role mapping for Claude Code env vars */
   role?: ModelRole;
   /** Capabilities */
@@ -72,7 +74,7 @@ export interface CatalogModel {
      * i18n key for a one-line note under the effort menu, used when the tier
      * list alone would misread. Phase 1 (2026-07-17): GLM collapses Claude
      * Code's six `/effort` tokens onto two real tiers, and Kimi's only vendor
-     * tier is `max` â?in both cases the user needs to know what the shown
+     * tier is `max` — in both cases the user needs to know what the shown
      * tiers mean before picking one. Must resolve to an existing key in
      * `src/i18n/en.ts` + `zh.ts`.
      */
@@ -91,7 +93,7 @@ export interface CatalogModel {
 }
 
 /**
- * Role models map â?maps semantic roles to model IDs.
+ * Role models map — maps semantic roles to model IDs.
  * Used to generate ANTHROPIC_MODEL, ANTHROPIC_REASONING_MODEL, ANTHROPIC_DEFAULT_* env vars.
  */
 export interface RoleModels {
@@ -103,7 +105,7 @@ export interface RoleModels {
   opus?: string;
 }
 
-// ââ Vendor preset definition ââââââââââââââââââââââââââââââââââââ
+// ── Vendor preset definition ────────────────────────────────────
 
 export interface VendorPreset {
   /** Unique preset key (used as lookup key) */
@@ -191,20 +193,20 @@ export interface VendorPreset {
      * Whether this anthropic-compat preset has been verified end-to-end:
      * tool calling, thinking, model aliases, and `/v1/messages` quirks all
      * confirmed to work. Drives the `claude_code_verified` runtime compat
-     * tier (info tone, "Claude Code å¼å®¹") instead of the default
-     * `claude_code_experimental` (warning tone, "Claude Code å®éª").
+     * tier (info tone, "Claude Code 兼容") instead of the default
+     * `claude_code_experimental` (warning tone, "Claude Code 实验").
      * Only meaningful for `protocol: 'anthropic'` presets.
      */
     claudeCodeVerified?: boolean;
     /**
      * Whether `defaultModels` is the authoritative lineup for this preset
-     * â?i.e. anything outside it counts as drift / off-list, not as a
-     * legitimate user customization. Drives the "å·²ä¸å¨å½åæ¨èç®å½?
+     * — i.e. anything outside it counts as drift / off-list, not as a
+     * legitimate user customization. Drives the "已不在当前推荐目录"
      * badge in the Models page.
      *
-     * Plan providers (`sdkProxyOnly && billingModel â?{coding_plan,
-     * token_plan}`) are inherently authoritative â?the plan whitelist IS
-     * the truth â?so they don't need this flag set explicitly; the badge
+     * Plan providers (`sdkProxyOnly && billingModel ∈ {coding_plan,
+     * token_plan}`) are inherently authoritative — the plan whitelist IS
+     * the truth — so they don't need this flag set explicitly; the badge
      * gate ORs with `isCatalogOnlyPlanProviderRecord`.
      *
      * Set this only on pay-as-you-go presets where we deliberately curate
@@ -248,7 +250,7 @@ export type ProviderPresetIdentityResolution =
   | { status: 'invalid'; candidateKeys: string[] }
   | { status: 'unmatched'; candidateKeys: [] };
 
-// ââ Zod Schema for preset validation ââââââââââââââââââââââââââââââ
+// ── Zod Schema for preset validation ──────────────────────────────
 
 const PresetMetaSchema = z.object({
   apiKeyUrl: z.string().optional(),
@@ -328,7 +330,7 @@ export const PresetSchema = z.object({
     return false;
   }
   // Note: auth_token presets MAY have ANTHROPIC_AUTH_TOKEN with a fixed pseudo-value (e.g. Ollama uses 'ollama').
-  // This is allowed because it's a preset default, not user input â?though the AUTH_ENV_KEYS skip in
+  // This is allowed because it's a preset default, not user input — though the AUTH_ENV_KEYS skip in
   // toClaudeCodeEnv() means it will only take effect if the user doesn't provide their own key.
   return true;
 }, { message: 'authStyle conflicts with auth-related keys in defaultEnvOverrides' }).refine(data => {
@@ -337,7 +339,7 @@ export const PresetSchema = z.object({
     || Object.keys(responses.modelIdOverrides).every(modelId => responses.modelIds.includes(modelId));
 }, { message: 'codexResponses.modelIdOverrides keys must be declared in modelIds' });
 
-// ââ Default Anthropic models ââââââââââââââââââââââââââââââââââââ
+// ── Default Anthropic models ────────────────────────────────────
 
 // Shared Anthropic catalog used by non-first-party providers
 // (anthropic-thirdparty, openrouter, ollama, litellm) and the generic
@@ -378,14 +380,14 @@ const ANTHROPIC_DEFAULT_MODELS: CatalogModel[] = [
   },
 ];
 
-// Phase 5b round-8 fix (2026-05-18) â?OpenRouter's Anthropic skin
+// Phase 5b round-8 fix (2026-05-18) — OpenRouter's Anthropic skin
 // (https://openrouter.ai/api) rejects the bare aliases `sonnet` /
 // `opus` / `haiku` with "is not a valid model ID". Real-credential
 // smoke confirmed that switching `haiku` to the upstream slug
 // `anthropic/claude-haiku-4.5` returns the prompted string. The
 // version-tagged slugs follow OpenRouter's documented naming
 // convention (verified for haiku in smoke; sonnet/opus follow the
-// same `<vendor>/claude-<role>-<major.minor>` shape â?if a version
+// same `<vendor>/claude-<role>-<major.minor>` shape — if a version
 // is unavailable on OpenRouter, the API returns the same
 // "not a valid model ID" error pointing at the canonical name, so
 // users can fix locally via the model picker).
@@ -420,11 +422,11 @@ const OPENROUTER_ANTHROPIC_MODELS: CatalogModel[] = [
   },
   {
     modelId: 'opus-4-8',
-    // OpenRouter slug confirmed by Codex (2026-05-29) â?explicit fixture,
+    // OpenRouter slug confirmed by Codex (2026-05-29) — explicit fixture,
     // not inferred from the 4.7 naming pattern.
     upstreamModelId: 'anthropic/claude-opus-4.8',
     displayName: 'Opus 4.8',
-    // No `role` â?explicit pick; `opus` alias stays 4.7 (Phase A safe default).
+    // No `role` — explicit pick; `opus` alias stays 4.7 (Phase A safe default).
     capabilities: {
       supportsEffort: true,
       supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
@@ -443,7 +445,7 @@ const OPENROUTER_ANTHROPIC_MODELS: CatalogModel[] = [
   },
 ];
 
-// First-party Anthropic API (anthropic-official preset) â?pins opus to
+// First-party Anthropic API (anthropic-official preset) — pins opus to
 // the explicit upstream ID so resolved.upstreamModel carries a concrete
 // model name downstream. This unblocks the Opus 4.7 sanitizer regex
 // in claude-model-options.ts (which matches upstream IDs, not aliases)
@@ -467,16 +469,17 @@ const ANTHROPIC_FIRST_PARTY_MODELS: CatalogModel[] = [
     displayName: 'Sonnet 5',
     // No `role`: Sonnet 5 is an explicit pick, NOT the default `sonnet` role
     // target (which stays claude-sonnet-4-6). Existing sessions pinned to
-    // Sonnet 4.6 must NOT auto-migrate â?same pinned-default discipline as
+    // Sonnet 4.6 must NOT auto-migrate — same pinned-default discipline as
     // opus-4-8 / fable-5.
     //
     // Official contract (whats-new-sonnet-5 migration guide, verified
-    // 2026-07-17): adaptive thinking is the DEFAULT but â?unlike Fable 5 â?    // can be explicitly turned off with thinking:{type:'disabled'} (Fable 5
+    // 2026-07-17): adaptive thinking is the DEFAULT but — unlike Fable 5 —
+    // can be explicitly turned off with thinking:{type:'disabled'} (Fable 5
     // 400s on that). Manual extended thinking ({enabled,budgetTokens}) is
     // removed and 400s. Non-default temperature/top_p/top_k 400. effort
-    // low/medium/high(default)/xhigh/max. New tokenizer â?same text â?+30%
+    // low/medium/high(default)/xhigh/max. New tokenizer ⇒ same text ≈ +30%
     // tokens vs 4.6. Wire handling lives in claude-model-options.ts +
-    // agent-loop.ts (effort now sent on native â?@ai-sdk/anthropic 4.0.5
+    // agent-loop.ts (effort now sent on native — @ai-sdk/anthropic 4.0.5
     // ships GA output_config.effort, no deprecated beta header).
     capabilities: {
       supportsEffort: true,
@@ -533,10 +536,10 @@ const ANTHROPIC_FIRST_PARTY_MODELS: CatalogModel[] = [
     upstreamModelId: 'claude-fable-5',
     displayName: 'Fable 5',
     // No `role`: Fable 5 (2026-06 launch, the tier above Opus) is an
-    // explicit pick, same policy as Opus 4.8 â?no silent default switch.
+    // explicit pick, same policy as Opus 4.8 — no silent default switch.
     // Request contract = Opus 4.7/4.8 family (adaptive thinking only,
     // 1M context) with one extra guard handled in claude-model-options.ts
-    // (explicit thinking:disabled returns 400 â?omitted instead).
+    // (explicit thinking:disabled returns 400 — omitted instead).
     capabilities: {
       supportsEffort: true,
       supportedEffortLevels: ['low', 'medium', 'high', 'xhigh', 'max'],
@@ -556,14 +559,14 @@ const ANTHROPIC_FIRST_PARTY_MODELS: CatalogModel[] = [
 ];
 
 // Single source of truth for the built-in "Claude Code" (env) provider's
-// model list â?same aliases + concrete upstream IDs as the first-party
+// model list — same aliases + concrete upstream IDs as the first-party
 // catalog, minus `role` (env mode has no role-mapping semantics).
 //
 // Consumers must DERIVE from this export, never re-hardcode (Codex review
-// P1, 2026-06-10: three hand-maintained copies had drifted â?the model
+// P1, 2026-06-10: three hand-maintained copies had drifted — the model
 // picker's env group and the client fallback were missing opus-4-8 AND
 // fable-5 while the resolver had both):
-//   - provider-resolver.ts            envModels (alias â?upstream resolution)
+//   - provider-resolver.ts            envModels (alias → upstream resolution)
 //   - app/api/providers/models/route.ts  DEFAULT_MODELS + ENV_ALIAS_TO_UPSTREAM
 //   - hooks/useProviderModels.ts      DEFAULT_MODEL_OPTIONS (client fallback)
 export const ENV_CLAUDE_CODE_MODELS: CatalogModel[] = ANTHROPIC_FIRST_PARTY_MODELS.map(
@@ -608,67 +611,89 @@ const BEDROCK_VERTEX_DEFAULT_MODELS: CatalogModel[] = [
 ];
 
 /**
- * GLM Coding Plan catalog â?shared by the CN and Global presets (same lineup,
- * different regional endpoints). Verified against the vendor's GLM-5.3 model,
- * latest-model, overview, Claude Code and Codex pages on 2026-08-14; the
- * evidence matrix lives in
- * docs/research/glm-5-3-codeplan-adaptation-2026-08-14.md.
+ * GLM Coding Plan catalog — shared by the CN and Global presets (same lineup,
+ * different regional endpoints). Refreshed against the vendor's GLM-5.3-Flash
+ * model, latest-model, overview, Claude Code and Codex pages on 2026-08-26;
+ * the evidence matrix lives in
+ * docs/research/glm-5-3-flash-codeplan-adaptation-2026-08-26.md.
  *
- * The stable `sonnet` / `haiku` modelIds preserve saved buckyball.ai sessions.
+ * The stable `sonnet` / `haiku` modelIds preserve saved CodePilot sessions.
  * Their upstream IDs are the current official products. Claude's Anthropic
- * route uses `glm-5.3[1m]`, while the native Responses route requires the bare
- * `glm-5.3`; that transport-specific rewrite is declared in wireCapabilities
- * rather than represented as a duplicate picker row.
+ * route uses a `[1m]` suffix, while the native Responses route requires a bare
+ * model ID; those transport-specific rewrites are declared in
+ * wireCapabilities rather than represented as duplicate picker rows.
  */
 const GLM_CODING_PLAN_MODELS: CatalogModel[] = [
   {
     modelId: 'sonnet',
     upstreamModelId: 'glm-5.3[1m]',
     displayName: 'GLM-5.3',
+    legacyFingerprints: [
+      { upstreamModelId: 'sonnet', displayName: 'GLM-4.7', capabilities: {} },
+      { upstreamModelId: 'sonnet', displayName: 'GLM-5-Turbo', capabilities: {} },
+      { upstreamModelId: 'sonnet', displayName: 'GLM-5.2', capabilities: {} },
+      {
+        upstreamModelId: 'sonnet',
+        displayName: 'GLM-5.2',
+        capabilities: {
+          supportsEffort: true,
+          supportedEffortLevels: ['high', 'max'],
+          effortNoteKey: 'messageInput.effort.note.glmTwoTier',
+        },
+      },
+    ],
     role: 'sonnet',
     capabilities: {
       reasoning: true,
       toolUse: true,
-      contextWindow: 1_048_576,
+      contextWindow: 1_000_000,
       supportsEffort: true,
       supportedEffortLevels: ['low', 'high', 'max'],
       defaultEffortLevel: 'max',
       effortNoteKey: 'messageInput.effort.note.glmCodePlan',
-    },
-  },
-  {
-    modelId: 'glm-5-turbo',
-    upstreamModelId: 'glm-5-turbo',
-    displayName: 'GLM-5-Turbo',
-    capabilities: {
-      reasoning: true,
-      toolUse: true,
-      contextWindow: 204_800,
-      defaultEffortLevel: 'max',
+      thinkingMode: 'always',
     },
   },
   {
     modelId: 'haiku',
-    upstreamModelId: 'glm-4.7',
-    displayName: 'GLM-4.7',
+    upstreamModelId: 'glm-5.3-flash[1m]',
+    displayName: 'GLM-5.3-Flash',
+    legacyFingerprints: [
+      { upstreamModelId: 'haiku', displayName: 'GLM-4.5-Air', capabilities: {} },
+      {
+        upstreamModelId: 'glm-4.7',
+        displayName: 'GLM-4.7',
+        capabilities: {
+          reasoning: true,
+          toolUse: true,
+          contextWindow: 204_800,
+        },
+      },
+    ],
     role: 'haiku',
     capabilities: {
       reasoning: true,
       toolUse: true,
-      contextWindow: 204_800,
+      vision: true,
+      contextWindow: 1_000_000,
+      supportsEffort: true,
+      supportedEffortLevels: ['low', 'high', 'max'],
+      defaultEffortLevel: 'max',
+      effortNoteKey: 'messageInput.effort.note.glmCodePlan',
+      thinkingMode: 'always',
     },
   },
 ];
 
-// ââ Vendor presets ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Vendor presets ──────────────────────────────────────────────
 
 export const VENDOR_PRESETS: VendorPreset[] = [
-  // ââ Official Anthropic ââ
+  // ── Official Anthropic ──
   {
     key: 'anthropic-official',
     name: 'Anthropic',
     description: 'Official Anthropic API',
-    descriptionZh: 'Anthropic å®æ¹ API',
+    descriptionZh: 'Anthropic 官方 API',
     protocol: 'anthropic',
     authStyle: 'api_key',
     baseUrl: 'https://api.anthropic.com',
@@ -683,12 +708,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Anthropic Third-party (generic) ââ
+  // ── Anthropic Third-party (generic) ──
   {
     key: 'anthropic-thirdparty',
     name: 'Anthropic Third-party API',
-    description: 'Anthropic-compatible API â?provide URL and Key',
-    descriptionZh: 'Anthropic å¼å®¹ç¬¬ä¸æ?API â?å¡«åå°ååå¯é?,
+    description: 'Anthropic-compatible API — provide URL and Key',
+    descriptionZh: 'Anthropic 兼容第三方 API — 填写地址和密钥',
     protocol: 'anthropic',
     authStyle: 'api_key',
     baseUrl: '',
@@ -698,22 +723,22 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     iconKey: 'anthropic',
   },
 
-  // ââ OpenAI-Compatible Third-party (generic) ââ
+  // ── OpenAI-Compatible Third-party (generic) ──
   // Generic OpenAI-compatible chat gateway: user supplies base_url + key +
   // model. Routes through @ai-sdk/openai's chat-completions wire, so it's
-  // reachable from bb-agent Runtime and Codex Runtime but NOT Claude Code
+  // reachable from CodePilot Runtime and Codex Runtime but NOT Claude Code
   // (Anthropic wire). runtime-compat maps protocol 'openai-compatible' to the
-  // `bbagent_only` tier; getProviderCompat reaches that tier only when this
+  // `codepilot_only` tier; getProviderCompat reaches that tier only when this
   // preset is matched (see findMatchingPresetForRecord / findMatchingPreset).
-  // NOT sdkProxyOnly (that flag means "Claude Code subprocess only" â?the
+  // NOT sdkProxyOnly (that flag means "Claude Code subprocess only" — the
   // opposite of this). NOT claudeCodeVerified (only meaningful for anthropic).
-  // No default model catalog â?the user names their own model; never fabricate
+  // No default model catalog — the user names their own model; never fabricate
   // an official-OpenAI lineup for an arbitrary third-party gateway.
   {
     key: 'openai-compatible',
     name: 'OpenAI-Compatible API',
-    description: 'OpenAI-compatible chat API â?provide URL, key and model (CodePilot / Codex runtimes)',
-    descriptionZh: 'OpenAI å¼å®¹ç¬¬ä¸æ?API â?å¡«åå°åãå¯é¥åæ¨¡åï¼ç¨äº?CodePilot / Codex è¿è¡æ¶ï¼',
+    description: 'OpenAI-compatible chat API — provide URL, key and model (CodePilot / Codex runtimes)',
+    descriptionZh: 'OpenAI 兼容第三方 API — 填写地址、密钥和模型（用于 CodePilot / Codex 运行时）',
     protocol: 'openai-compatible',
     authStyle: 'api_key',
     baseUrl: '',
@@ -726,14 +751,14 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ xAI official Responses API ââ
+  // ── xAI official Responses API ──
   // Keep this branded and separate from the generic OpenAI-compatible preset:
   // Grok 4.6's supported product path is /v1/responses via @ai-sdk/xai.
   {
     key: 'xai',
     name: 'xAI API Key',
     description: 'Official xAI API using the Responses API (CodePilot / Codex runtimes)',
-    descriptionZh: 'xAI å®æ¹ API Keyï¼ä½¿ç?Responses APIï¼ç¨äº?CodePilot / Codex è¿è¡æ¶ï¼',
+    descriptionZh: 'xAI 官方 API Key，使用 Responses API（用于 CodePilot / Codex 运行时）',
     protocol: 'xai',
     authStyle: 'api_key',
     baseUrl: 'https://api.x.ai/v1',
@@ -766,26 +791,26 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       modelDiscoveryMode: 'catalog_only',
       notes: [
         'Uses xAI API billing. This is separate from a SuperGrok subscription login.',
-        'API keys are stored using CodePilotâs current local SQLite credential boundary; encrypted-at-rest migration remains tracked separately.',
+        'API keys are stored using CodePilot’s current local SQLite credential boundary; encrypted-at-rest migration remains tracked separately.',
       ],
       notesZh: [
-        'ä½¿ç¨ xAI API è´¦æ·è®¡è´¹ï¼ä¸ SuperGrok è®¢éç»å½ç¸äºç¬ç«ã?,
-        'API Key æ²¿ç¨ CodePilot å½åæ¬å° SQLite å­æ®è¾¹çï¼å å¯è½çè¿ç§»ä»ç±ç¬ç«ææ¯åºè·è¸ªã?,
+        '使用 xAI API 账户计费，与 SuperGrok 订阅登录相互独立。',
+        'API Key 沿用 CodePilot 当前本地 SQLite 凭据边界；加密落盘迁移仍由独立技术债跟踪。',
       ],
     },
   },
 
-  // ââ OpenRouter ââ
+  // ── OpenRouter ──
   {
     key: 'openrouter',
     name: 'OpenRouter',
     description: 'Use OpenRouter to access multiple models',
-    descriptionZh: 'éè¿ OpenRouter è®¿é®å¤ç§æ¨¡å',
+    descriptionZh: '通过 OpenRouter 访问多种模型',
     protocol: 'openrouter',
     authStyle: 'auth_token',
     baseUrl: 'https://openrouter.ai/api',
     defaultEnvOverrides: {},
-    // Round 8 (2026-05-18) â?was ANTHROPIC_DEFAULT_MODELS (bare
+    // Round 8 (2026-05-18) — was ANTHROPIC_DEFAULT_MODELS (bare
     // sonnet/opus/haiku aliases). OpenRouter rejected the aliases
     // with "is not a valid model ID"; we now ship the fully-
     // qualified `anthropic/claude-<role>-<version>` slugs via
@@ -802,19 +827,19 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Zhipu GLM (China) ââ
+  // ── Zhipu GLM (China) ──
   {
     key: 'glm-cn',
     name: 'GLM (CN)',
-    description: 'Zhipu GLM Code Plan â?China region',
-    descriptionZh: 'æºè°± GLM ç¼ç¨å¥é¤ â?ä¸­å½å?,
+    description: 'Zhipu GLM Code Plan — China region',
+    descriptionZh: '智谱 GLM 编程套餐 — 中国区',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://open.bigmodel.cn/api/anthropic',
     defaultEnvOverrides: {
       API_TIMEOUT_MS: '3000000',
       CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000',
-      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-4.7',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-5.3-flash[1m]',
       ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5.3[1m]',
       ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-5.3[1m]',
     },
@@ -823,14 +848,17 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       default: 'glm-5.3[1m]',
       sonnet: 'glm-5.3[1m]',
       opus: 'glm-5.3[1m]',
-      haiku: 'glm-4.7',
+      haiku: 'glm-5.3-flash[1m]',
     },
     wireCapabilities: {
-      anthropicEffort: { modelIds: ['glm-5.3[1m]'] },
+      anthropicEffort: { modelIds: ['glm-5.3[1m]', 'glm-5.3-flash[1m]'] },
       codexResponses: {
         baseUrl: 'https://open.bigmodel.cn/api/v1',
-        modelIds: ['glm-5.3[1m]', 'glm-5-turbo'],
-        modelIdOverrides: { 'glm-5.3[1m]': 'glm-5.3' },
+        modelIds: ['glm-5.3[1m]', 'glm-5.3-flash[1m]'],
+        modelIdOverrides: {
+          'glm-5.3[1m]': 'glm-5.3',
+          'glm-5.3-flash[1m]': 'glm-5.3-flash',
+        },
         effortAliases: { minimal: 'low', medium: 'high', xhigh: 'max' },
         supportsReasoningSummary: true,
       },
@@ -845,29 +873,31 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       billingModel: 'coding_plan',
       notes: [
         'GLM-5.3 points: input 6.9, cached input 1.7, output 24.',
-        'Off-peak requests use 50% of the listed points; peak hours are weekdays 14:00â?8:00 (UTC+8).',
+        'GLM-5.3-Flash points: input 2.3, cached input 0.56, output 8; native image input is supported.',
+        'Off-peak requests use 50% of the listed points; peak hours are weekdays 14:00–18:00 (UTC+8).',
       ],
       notesZh: [
-        'GLM-5.3 ç§¯ååçï¼è¾å?6.9ãç¼å­è¾å?1.7ãè¾å?24ã?,
-        'éé«å³°æ¶æ®µæè¡¨åç§¯åç?50% æ¶èï¼é«å³°æ¶æ®µä¸ºå·¥ä½æ¥ 14:00â?8:00ï¼UTC+8ï¼ã?,
+        'GLM-5.3 积分倍率：输入 6.9、缓存输入 1.7、输出 24。',
+        'GLM-5.3-Flash 积分倍率：输入 2.3、缓存输入 0.56、输出 8；支持原生图片输入。',
+        '非高峰时段按表列积分的 50% 消耗；高峰时段为工作日 14:00–18:00（UTC+8）。',
       ],
       claudeCodeVerified: true,
     },
   },
 
-  // ââ Zhipu GLM (Global) ââ
+  // ── Zhipu GLM (Global) ──
   {
     key: 'glm-global',
     name: 'GLM (Global)',
-    description: 'Zhipu GLM Code Plan â?Global region',
-    descriptionZh: 'æºè°± GLM ç¼ç¨å¥é¤ â?å½éå?,
+    description: 'Zhipu GLM Code Plan — Global region',
+    descriptionZh: '智谱 GLM 编程套餐 — 国际区',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.z.ai/api/anthropic',
     defaultEnvOverrides: {
       API_TIMEOUT_MS: '3000000',
       CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000',
-      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-4.7',
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: 'glm-5.3-flash[1m]',
       ANTHROPIC_DEFAULT_SONNET_MODEL: 'glm-5.3[1m]',
       ANTHROPIC_DEFAULT_OPUS_MODEL: 'glm-5.3[1m]',
     },
@@ -876,14 +906,17 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       default: 'glm-5.3[1m]',
       sonnet: 'glm-5.3[1m]',
       opus: 'glm-5.3[1m]',
-      haiku: 'glm-4.7',
+      haiku: 'glm-5.3-flash[1m]',
     },
     wireCapabilities: {
-      anthropicEffort: { modelIds: ['glm-5.3[1m]'] },
+      anthropicEffort: { modelIds: ['glm-5.3[1m]', 'glm-5.3-flash[1m]'] },
       codexResponses: {
         baseUrl: 'https://api.z.ai/api/v1',
-        modelIds: ['glm-5.3[1m]', 'glm-5-turbo'],
-        modelIdOverrides: { 'glm-5.3[1m]': 'glm-5.3' },
+        modelIds: ['glm-5.3[1m]', 'glm-5.3-flash[1m]'],
+        modelIdOverrides: {
+          'glm-5.3[1m]': 'glm-5.3',
+          'glm-5.3-flash[1m]': 'glm-5.3-flash',
+        },
         effortAliases: { minimal: 'low', medium: 'high', xhigh: 'max' },
         supportsReasoningSummary: true,
       },
@@ -898,30 +931,32 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       billingModel: 'coding_plan',
       notes: [
         'GLM-5.3 points: input 6.9, cached input 1.7, output 24.',
-        'Off-peak requests use 50% of the listed points; peak hours are weekdays 14:00â?8:00 (UTC+8).',
+        'GLM-5.3-Flash points: input 2.3, cached input 0.56, output 8; native image input is supported.',
+        'Off-peak requests use 50% of the listed points; peak hours are weekdays 14:00–18:00 (UTC+8).',
       ],
       notesZh: [
-        'GLM-5.3 ç§¯ååçï¼è¾å?6.9ãç¼å­è¾å?1.7ãè¾å?24ã?,
-        'éé«å³°æ¶æ®µæè¡¨åç§¯åç?50% æ¶èï¼é«å³°æ¶æ®µä¸ºå·¥ä½æ¥ 14:00â?8:00ï¼UTC+8ï¼ã?,
+        'GLM-5.3 积分倍率：输入 6.9、缓存输入 1.7、输出 24。',
+        'GLM-5.3-Flash 积分倍率：输入 2.3、缓存输入 0.56、输出 8；支持原生图片输入。',
+        '非高峰时段按表列积分的 50% 消耗；高峰时段为工作日 14:00–18:00（UTC+8）。',
       ],
       claudeCodeVerified: true,
     },
   },
 
-  // ââ Kimi ââ
+  // ── Kimi ──
   {
     key: 'kimi',
     name: 'Kimi Coding Plan',
     description: 'Kimi Coding Plan API',
-    descriptionZh: 'Kimi ç¼ç¨è®¡å API',
+    descriptionZh: 'Kimi 编程计划 API',
     protocol: 'anthropic',
     authStyle: 'api_key',
     baseUrl: 'https://api.kimi.com/coding/',
     defaultEnvOverrides: { ENABLE_TOOL_SEARCH: 'false' },
-    // Phase 1 (2026-07-17, reaffirmed 2026-07-19) â?`Kimi for Coding` is the
+    // Phase 1 (2026-07-17, reaffirmed 2026-07-19) — `Kimi for Coding` is the
     // product/channel the user picks. The vendor also publishes versioned IDs
     // such as `k3`; they are NOT aliases we can infer from this display name.
-    // Per the product decision, buckyball.ai sends the channel's own documented
+    // Per the product decision, CodePilot sends the channel's own documented
     // `kimi-for-coding` wire ID and deliberately keeps the backing/version name
     // out of the UI. No explicit `k3` row is added and no K3 compatibility
     // branch is needed when the channel's backing implementation changes.
@@ -933,7 +968,7 @@ export const VENDOR_PRESETS: VendorPreset[] = [
         // truth is upstreamModelId.
         modelId: 'sonnet',
         // Explicit upstream so the request carries the product channel's own
-        // wire id â?never a version id inferred from the display name.
+        // wire id — never a version id inferred from the display name.
         // Previously absent, which left resolveProvider falling through to
         // its single-model alias fallback (provider-resolver.ts:~590) and
         // shipping the bare string `sonnet` to Kimi.
@@ -945,7 +980,7 @@ export const VENDOR_PRESETS: VendorPreset[] = [
           // Kimi's 2026-07-16 K3 release notes document low/high/max for the
           // model currently served by Kimi Code. Keep the product/channel name
           // stable in the UI while exposing the channel's current effort
-          // contract. `auto` remains buckyball.ai's own
+          // contract. `auto` remains CodePilot's own
           // "send no effort at all" option (src/lib/effort-levels.ts), not a
           // Kimi tier; the note key makes that distinction explicit.
           supportedEffortLevels: ['low', 'high', 'max'],
@@ -965,12 +1000,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Moonshot ââ
+  // ── Moonshot ──
   {
     key: 'moonshot',
     name: 'Moonshot',
     description: 'Moonshot AI API',
-    descriptionZh: 'æä¹æé¢ API',
+    descriptionZh: '月之暗面 API',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.moonshot.cn/anthropic',
@@ -985,17 +1020,17 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       apiKeyUrl: 'https://platform.moonshot.cn/console/api-keys',
       docsUrl: 'https://platform.moonshot.cn/docs/guide/agent-support',
       billingModel: 'pay_as_you_go',
-      notes: ['å»ºè®®è®¾ç½®æ¯æ¥æ¶è´¹ä¸éï¼é²æ­?agentic å¾ªç¯å¿«éæ¶è?token'],
+      notes: ['建议设置每日消费上限，防止 agentic 循环快速消耗 token'],
       claudeCodeVerified: true,
     },
   },
 
-  // ââ MiniMax (China) ââ
+  // ── MiniMax (China) ──
   {
     key: 'minimax-cn',
     name: 'MiniMax (CN)',
-    description: 'MiniMax Code Plan â?China region',
-    descriptionZh: 'MiniMax ç¼ç¨å¥é¤ â?ä¸­å½å?,
+    description: 'MiniMax Code Plan — China region',
+    descriptionZh: 'MiniMax 编程套餐 — 中国区',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.minimaxi.com/anthropic',
@@ -1023,12 +1058,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ MiniMax (Global) ââ
+  // ── MiniMax (Global) ──
   {
     key: 'minimax-global',
     name: 'MiniMax (Global)',
-    description: 'MiniMax Code Plan â?Global region',
-    descriptionZh: 'MiniMax ç¼ç¨å¥é¤ â?å½éå?,
+    description: 'MiniMax Code Plan — Global region',
+    descriptionZh: 'MiniMax 编程套餐 — 国际区',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.minimax.io/anthropic',
@@ -1056,12 +1091,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Volcengine Ark ââ
+  // ── Volcengine Ark ──
   {
     key: 'volcengine',
     name: 'Volcengine Ark',
-    description: 'Volcengine Ark Coding Plan â?Doubao, GLM, DeepSeek, Kimi',
-    descriptionZh: 'å­èç«å±±æ¹è Coding Plan â?è±åãGLMãDeepSeekãKimi',
+    description: 'Volcengine Ark Coding Plan — Doubao, GLM, DeepSeek, Kimi',
+    descriptionZh: '字节火山方舟 Coding Plan — 豆包、GLM、DeepSeek、Kimi',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://ark.cn-beijing.volces.com/api/coding',
@@ -1069,12 +1104,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     // Volcengine Ark Coding Plan whitelist. Volcengine's docs explicitly
     // separate "Coding Plan Model Name" (what users put in ANTHROPIC_MODEL)
     // from the much larger online-inference Model ID space served by
-    // Ark â?never auto-probe that endpoint for a Coding Plan provider
+    // Ark — never auto-probe that endpoint for a Coding Plan provider
     // (handled by the Coding/Token Plan gate in model-discovery.ts).
     // The eight standard SKUs cover the Doubao + cross-vendor lineup;
     // `ark-code-latest` is a special console-managed entry where the
     // actual model is selected by Volcengine's Ark console (Auto mode)
-    // â?flagged in the displayName so users know it's not a stable
+    // — flagged in the displayName so users know it's not a stable
     // pinned model.
     defaultModels: [
       { modelId: 'doubao-seed-2.0-code', displayName: 'Doubao Seed 2.0 Code', role: 'default' },
@@ -1094,27 +1129,28 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       apiKeyUrl: 'https://console.volcengine.com/ark/region:ark+cn-beijing/openManagement',
       docsUrl: 'https://www.volcengine.com/docs/82379/1928262',
       billingModel: 'coding_plan',
-      notes: ['éåå¨æ§å¶å°æ¿æ´?Endpoint', 'API Key ä¸ºä¸´æ¶å­è¯?],
+      notes: ['需先在控制台激活 Endpoint', 'API Key 为临时凭证'],
       claudeCodeVerified: true,
     },
   },
 
-  // ââ Xiaomi MiMo (æéä»è´¹) ââ
+  // ── Xiaomi MiMo (按量付费) ──
   {
     key: 'xiaomi-mimo',
     name: 'Xiaomi MiMo',
-    description: 'Xiaomi MiMo Pay-as-you-go API â?MiMo-V2.5-Pro',
-    descriptionZh: 'å°ç±³ MiMo æéä»è´¹ â?MiMo-V2.5-Pro',
+    description: 'Xiaomi MiMo Pay-as-you-go API — MiMo-V2.5-Pro',
+    descriptionZh: '小米 MiMo 按量付费 — MiMo-V2.5-Pro',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.xiaomimimo.com/anthropic',
     defaultEnvOverrides: {},
     defaultModels: [
       { modelId: 'sonnet', upstreamModelId: 'mimo-v2.5-pro', displayName: 'MiMo-V2.5-Pro', role: 'default' },
-      // UltraSpeed â?high-throughput experience mode of MiMo-V2.5-Pro.
+      // UltraSpeed — high-throughput experience mode of MiMo-V2.5-Pro.
       // Optional + approval-gated by Xiaomi, so NOT the default. The official
       // model page lists Anthropic-protocol access on this same .../anthropic
-      // channel with model="mimo-v2.5-pro-ultraspeed" (streaming + thinking) â?      // verified against the page's Anthropic-protocol sample 2026-06-09.
+      // channel with model="mimo-v2.5-pro-ultraspeed" (streaming + thinking) —
+      // verified against the page's Anthropic-protocol sample 2026-06-09.
       // Capabilities limited to what the doc states; no unsourced contextWindow.
       { modelId: 'mimo-v2.5-pro-ultraspeed', upstreamModelId: 'mimo-v2.5-pro-ultraspeed', displayName: 'MiMo-V2.5-Pro-UltraSpeed', capabilities: { toolUse: true, reasoning: true } },
     ],
@@ -1141,12 +1177,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Xiaomi MiMo Token Plan (è®¢éå¥é¤) ââ
+  // ── Xiaomi MiMo Token Plan (订阅套餐) ──
   {
     key: 'xiaomi-mimo-token-plan',
     name: 'Xiaomi MiMo Token Plan',
-    description: 'Xiaomi MiMo Token Plan subscription â?MiMo-V2.5-Pro',
-    descriptionZh: 'å°ç±³ MiMo Token Plan è®¢éå¥é¤ â?MiMo-V2.5-Pro',
+    description: 'Xiaomi MiMo Token Plan subscription — MiMo-V2.5-Pro',
+    descriptionZh: '小米 MiMo Token Plan 订阅套餐 — MiMo-V2.5-Pro',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://token-plan-cn.xiaomimimo.com/anthropic',
@@ -1160,7 +1196,7 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       opus: 'mimo-v2.5-pro',
       haiku: 'mimo-v2.5-pro',
     },
-    // model_names: same as the pay-as-you-go preset above â?lets Token Plan
+    // model_names: same as the pay-as-you-go preset above — lets Token Plan
     // users set their actual MiMo model instead of being pinned to the stale
     // `mimo-v2-pro` default (#577).
     fields: ['api_key', 'model_names'],
@@ -1175,12 +1211,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Aliyun Bailian ââ
+  // ── Aliyun Bailian ──
   {
     key: 'bailian',
     name: 'Aliyun Bailian',
-    description: 'Aliyun Bailian Coding Plan â?Qwen, GLM, Kimi, MiniMax',
-    descriptionZh: 'é¿éäºç¾ç?Coding Plan â?éä¹åé®ãGLMãKimiãMiniMax',
+    description: 'Aliyun Bailian Coding Plan — Qwen, GLM, Kimi, MiniMax',
+    descriptionZh: '阿里云百炼 Coding Plan — 通义千问、GLM、Kimi、MiniMax',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://coding.dashscope.aliyuncs.com/apps/anthropic',
@@ -1215,22 +1251,22 @@ export const VENDOR_PRESETS: VendorPreset[] = [
         'Coding Plan is metered by model calls and is limited to interactive coding tools, not automation scripts or application backends.',
       ],
       notesZh: [
-        'å¿é¡»ä½¿ç¨ Coding Plan ä¸ç¨ Keyï¼ä»¥ sk-sp- å¼å¤´ï¼ï¼æ®é?DashScope Key ä¸éç¨ã?,
-        'Lite ä»ä¾å­éç¨æ·ä½¿ç¨ï¼å·²åæ­¢æ°è´­åç»­è´¹ï¼Pro ééå¯è´­ã?,
-        'Coding Plan ææ¨¡åè°ç¨æ¬¡æ°è®¡éï¼ä»éäº¤äºå¼ç¼ç¨å·¥å·ï¼ä¸å¾ç¨äºèªå¨åèæ¬æåºç¨åç«¯ã?,
+        '必须使用 Coding Plan 专用 Key（以 sk-sp- 开头），普通 DashScope Key 不通用。',
+        'Lite 仅供存量用户使用，已停止新购和续费；Pro 限量可购。',
+        'Coding Plan 按模型调用次数计量，仅限交互式编程工具，不得用于自动化脚本或应用后端。',
       ],
       claudeCodeVerified: true,
     },
   },
 
-  // ââ Qwen Token Plan ä¸ªäººç?ââ
+  // ── Qwen Token Plan 个人版 ──
   // Personal and team share the same endpoint. `preset_key` is therefore the
   // only product identity; URL matching deliberately returns ambiguous.
   {
     key: 'qwen-token-plan-personal-cn',
     name: 'Qwen Token Plan Personal',
-    description: 'Qwen Token Plan Personal â?rolling credits for individual interactive coding and agent tools',
-    descriptionZh: 'åé® Token Plan ä¸ªäººç?â?é¢åä¸ªäººäº¤äºå¼ç¼ç¨ä¸æºè½ä½å·¥å·çæ»å¨é¢åº¦å¥é¤',
+    description: 'Qwen Token Plan Personal — rolling credits for individual interactive coding and agent tools',
+    descriptionZh: '千问 Token Plan 个人版 — 面向个人交互式编程与智能体工具的滚动额度套餐',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic',
@@ -1277,25 +1313,25 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       billingModel: 'token_plan',
       notes: [
         'Personal credits use rolling 5-hour and 7-day windows; one plan may be purchased per verified identity.',
-        'Personal usage includes the planâs data-optimization authorization. Review the official terms before connecting.',
+        'Personal usage includes the plan’s data-optimization authorization. Review the official terms before connecting.',
         'The plan key is shown in full only when created or reset. Store it before leaving the Qwen platform.',
         'For interactive coding and agent tools only; automation scripts, application backends, and batch jobs are not allowed.',
       ],
       notesZh: [
-        'ä¸ªäººçé¢åº¦æ 5 å°æ¶ä¸?7 å¤©æ»å¨çªå£è®¡ç®ï¼åä¸å®åè®¤è¯ä¸»ä½éè´­ä¸ä»½ã?,
-        'ä¸ªäººçåå«å¥é¤çæ°æ®ä¼åææï¼è¯·å¨è¿æ¥åéè¯»å®æ¹æ¡æ¬¾ã?,
-        'å¥é¤ Key ä»å¨åå»ºæéç½®æ¶å®æ´æ¾ç¤ºä¸æ¬¡ï¼è¯·åå¦¥åä¿å­ã?,
-        'ä»éäº¤äºå¼ç¼ç¨ä¸æºè½ä½å·¥å·ï¼ä¸å¾ç¨äºèªå¨åèæ¬ãåºç¨åç«¯ææ¹éä»»å¡ã?,
+        '个人版额度按 5 小时与 7 天滚动窗口计算；同一实名认证主体限购一份。',
+        '个人版包含套餐的数据优化授权，请在连接前阅读官方条款。',
+        '套餐 Key 仅在创建或重置时完整显示一次，请先妥善保存。',
+        '仅限交互式编程与智能体工具，不得用于自动化脚本、应用后端或批量任务。',
       ],
     },
   },
 
-  // ââ Qwen Token Plan å¢éç?ââ
+  // ── Qwen Token Plan 团队版 ──
   {
     key: 'bailian-token-plan-cn',
     name: 'Qwen Token Plan Team',
-    description: 'Qwen Token Plan Team â?seat-based credits for interactive coding and agent tools',
-    descriptionZh: 'åé® Token Plan å¢éç?â?é¢åå¢éäº¤äºå¼ç¼ç¨ä¸æºè½ä½å·¥å·çå¸­ä½å¶é¢åº¦å¥é¤?,
+    description: 'Qwen Token Plan Team — seat-based credits for interactive coding and agent tools',
+    descriptionZh: '千问 Token Plan 团队版 — 面向团队交互式编程与智能体工具的席位制额度套餐',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic',
@@ -1355,32 +1391,32 @@ export const VENDOR_PRESETS: VendorPreset[] = [
         'For interactive coding and agent tools only; automation scripts, application backends, and batch jobs are not allowed.',
       ],
       notesZh: [
-        'å¢éçæå¸­ä½è®¡è´¹ï¼å®æ¹æ¡æ¬¾æ¿è¯ºä¸ä½¿ç¨å¯¹è¯æ°æ®è¿è¡æ¨¡åè®­ç»ã?,
-        'å¥é¤ Key ä»å¨åå»ºæéç½®æ¶å®æ´æ¾ç¤ºä¸æ¬¡ï¼ä¸ä¸ Coding Plan / æ®é?DashScope Key ä¸éç¨ã?,
-        'ä»éäº¤äºå¼ç¼ç¨ä¸æºè½ä½å·¥å·ï¼ä¸å¾ç¨äºèªå¨åèæ¬ãåºç¨åç«¯ææ¹éä»»å¡ã?,
+        '团队版按席位计费；官方条款承诺不使用对话数据进行模型训练。',
+        '套餐 Key 仅在创建或重置时完整显示一次，且与 Coding Plan / 普通 DashScope Key 不通用。',
+        '仅限交互式编程与智能体工具，不得用于自动化脚本、应用后端或批量任务。',
       ],
     },
   },
 
-  // ââ ClinePass ââ
+  // ── ClinePass ──
   // ClinePass subscription accessed through the Cline API (OpenAI-compatible
-  // Chat Completions). Models use the `cline-pass/<id>` slug â?that IS the
+  // Chat Completions). Models use the `cline-pass/<id>` slug — that IS the
   // value sent to the API, so modelId == upstream (no alias). The Cline API
   // is a multi-provider aggregator; its `/v1/models` returns far more than the
   // ClinePass whitelist AND needs a key, so discovery is `catalog_only`:
   // ship the 11-model whitelist as truth, no refresh / no search-and-add.
-  // NOT sdkProxyOnly â?OpenAI-compatible reaches CodePilot + Codex runtimes
+  // NOT sdkProxyOnly — OpenAI-compatible reaches CodePilot + Codex runtimes
   // via the AI SDK chat path, never the Claude Code subprocess.
   {
     key: 'cline-pass',
     name: 'ClinePass',
-    description: 'ClinePass subscription â?open coding models via the Cline API (CodePilot / Codex runtimes)',
-    descriptionZh: 'ClinePass è®¢é â?éè¿ Cline API è®¿é®å¼æºç¼ç¨æ¨¡åï¼ç¨äº CodePilot / Codex è¿è¡æ¶ï¼',
+    description: 'ClinePass subscription — open coding models via the Cline API (CodePilot / Codex runtimes)',
+    descriptionZh: 'ClinePass 订阅 — 通过 Cline API 访问开源编程模型（用于 CodePilot / Codex 运行时）',
     protocol: 'openai-compatible',
     authStyle: 'api_key',
     baseUrl: 'https://api.cline.bot/api/v1',
     defaultEnvOverrides: {},
-    // ClinePass whitelist â?https://cline.bot/models plus the Cline API model
+    // ClinePass whitelist — https://cline.bot/models plus the Cline API model
     // id contract at https://docs.cline.bot/api/models. Kimi K3 was added
     // 2026-07-20 from the current product lineup; the public static model
     // directory still lagged that rollout, so its exact cline-pass/kimi-k3 id
@@ -1407,28 +1443,29 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       docsUrl: 'https://docs.cline.bot/getting-started/clinepass',
       billingModel: 'coding_plan',
       modelDiscoveryMode: 'catalog_only',
-      notes: ['æ¨¡åä½¿ç¨ cline-pass/<model-id> å½¢å¼ï¼ç±è®¢éç½ååå®ä¹ï¼ä¸åå¨çº¿å·æ°ã?],
+      notes: ['模型使用 cline-pass/<model-id> 形式；由订阅白名单定义，不做在线刷新。'],
     },
   },
 
-  // ââ OpenCode Go (OpenAI-compatible) ââ
+  // ── OpenCode Go (OpenAI-compatible) ──
   // OpenCode Zen "Go" subscription, OpenAI-compatible half. Same host + key as
   // the Anthropic half below; split into two presets because protocol lives at
   // the provider layer (no per-model wire dispatch). `/zen/go/v1/models` is a
   // single MIXED catalog (both wire protocols) and a superset of this plan's
-  // lineup, so discovery is `catalog_only` â?auto-import would put `/messages`-
+  // lineup, so discovery is `catalog_only` — auto-import would put `/messages`-
   // only models on the `/chat/completions` path. Models use bare ids (the
   // `opencode-go/` prefix is OpenCode-config-only, not the API model field).
   {
     key: 'opencode-go-openai',
     name: 'OpenCode Go (OpenAI)',
-    description: 'OpenCode Zen Go subscription â?OpenAI-compatible models (CodePilot / Codex runtimes)',
-    descriptionZh: 'OpenCode Zen Go è®¢é â?OpenAI å¼å®¹æ¨¡åï¼ç¨äº?CodePilot / Codex è¿è¡æ¶ï¼',
+    description: 'OpenCode Zen Go subscription — OpenAI-compatible models (CodePilot / Codex runtimes)',
+    descriptionZh: 'OpenCode Zen Go 订阅 — OpenAI 兼容模型（用于 CodePilot / Codex 运行时）',
     protocol: 'openai-compatible',
     authStyle: 'api_key',
     baseUrl: 'https://opencode.ai/zen/go/v1',
     defaultEnvOverrides: {},
-    // OpenAI-compatible half of the official endpoint table â?    // https://dev.opencode.ai/docs/go/ (verified 2026-07-20).
+    // OpenAI-compatible half of the official endpoint table —
+    // https://dev.opencode.ai/docs/go/ (verified 2026-07-20).
     defaultModels: [
       { modelId: 'glm-5.2', displayName: 'GLM-5.2', capabilities: { toolUse: true } },
       { modelId: 'glm-5.1', displayName: 'GLM-5.1', capabilities: { toolUse: true } },
@@ -1447,39 +1484,40 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       docsUrl: 'https://opencode.ai/docs/zh-cn/go/',
       billingModel: 'coding_plan',
       modelDiscoveryMode: 'catalog_only',
-      notes: ['ä¸ãOpenCode Go (Anthropic)ãå±ç¨åä¸è®¢é Keyï¼æ¨¡åç±å¥é¤ç½ååå®ä¹ã?],
+      notes: ['与「OpenCode Go (Anthropic)」共用同一订阅 Key；模型由套餐白名单定义。'],
     },
   },
 
-  // ââ OpenCode Go (Anthropic Messages) ââ
+  // ── OpenCode Go (Anthropic Messages) ──
   // Anthropic-Messages half of the same OpenCode Go subscription. The real
   // endpoint is https://opencode.ai/zen/go/v1/messages, but the base is stored
   // WITHOUT the trailing /v1 on purpose. The Claude Code SDK ALWAYS appends
   // `/v1/messages` to ANTHROPIC_BASE_URL, so a `.../zen/go/v1` base makes the
-  // SDK POST to `.../zen/go/v1/v1/messages` â?404 HTML â?surfaced as "model
+  // SDK POST to `.../zen/go/v1/v1/messages` → 404 HTML → surfaced as "model
   // (minimax-m3) doesn't exist" (verified 2026-06-30). (The native
   // ClaudeCodeCompatModel.buildMessagesUrl() actually handles a /v1-ending base
-  // fine â?it appends only `/messages` in that case â?so the CodePilot path was
+  // fine — it appends only `/messages` in that case — so the CodePilot path was
   // already correct; the SDK path was the broken one.) Storing `.../zen/go`
   // makes all three transports converge on the right URL: the SDK appends
   // `/v1/messages`, the adapter's deep-path branch also yields
   // `.../zen/go/v1/messages`, and the Codex provider proxy reuses the adapter.
   // (Every other anthropic preset's base ends in /api/anthropic etc. for the
   // same SDK reason.) Bonus: this base differs from the OpenAI half
-  // (`.../zen/go/v1`), so no preset collision. authStyle: api_key â?x-api-key
+  // (`.../zen/go/v1`), so no preset collision. authStyle: api_key → x-api-key
   // (probe confirmed x-api-key, not Bearer; the endpoint does not require
   // anthropic-version). NOT claudeCodeVerified: ships experimental until a
   // real-key smoke.
   {
     key: 'opencode-go-anthropic',
     name: 'OpenCode Go (Anthropic)',
-    description: 'OpenCode Zen Go subscription â?Anthropic Messages models (experimental on Claude Code)',
-    descriptionZh: 'OpenCode Zen Go è®¢é â?Anthropic Messages æ¨¡åï¼Claude Code å¼å®¹æ§å®éªä¸­ï¼?,
+    description: 'OpenCode Zen Go subscription — Anthropic Messages models (experimental on Claude Code)',
+    descriptionZh: 'OpenCode Zen Go 订阅 — Anthropic Messages 模型（Claude Code 兼容性实验中）',
     protocol: 'anthropic',
     authStyle: 'api_key',
     baseUrl: 'https://opencode.ai/zen/go',
     defaultEnvOverrides: {},
-    // Anthropic-Messages half of the official endpoint table â?    // https://opencode.ai/docs/zh-cn/go/ (verified 2026-06-30).
+    // Anthropic-Messages half of the official endpoint table —
+    // https://opencode.ai/docs/zh-cn/go/ (verified 2026-06-30).
     defaultModels: [
       { modelId: 'minimax-m3', displayName: 'MiniMax M3', capabilities: { toolUse: true } },
       { modelId: 'minimax-m2.7', displayName: 'MiniMax M2.7', capabilities: { toolUse: true } },
@@ -1496,18 +1534,18 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       billingModel: 'coding_plan',
       modelDiscoveryMode: 'catalog_only',
       notes: [
-        'ä¸ãOpenCode Go (OpenAI)ãå±ç¨åä¸è®¢é Keyï¼æ¨¡åç±å¥é¤ç½ååå®ä¹ã?,
-        'Anthropic Messages åè®®ï¼Claude Code Runtime å¼å®¹æ§æªç»çå®å­æ®éªè¯ï¼åä»¥å®éªææä¾ã?,
+        '与「OpenCode Go (OpenAI)」共用同一订阅 Key；模型由套餐白名单定义。',
+        'Anthropic Messages 协议；Claude Code Runtime 兼容性未经真实凭据验证，先以实验态提供。',
       ],
     },
   },
 
-  // ââ DeepSeek ââ
+  // ── DeepSeek ──
   {
     key: 'deepseek',
     name: 'DeepSeek',
-    description: 'DeepSeek Anthropic-compatible API â?fixed model lineup',
-    descriptionZh: 'DeepSeek Anthropic å¼å®¹ API â?æ¨¡åæ¸ååºå®',
+    description: 'DeepSeek Anthropic-compatible API — fixed model lineup',
+    descriptionZh: 'DeepSeek Anthropic 兼容 API — 模型清单固定',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'https://api.deepseek.com/anthropic',
@@ -1516,13 +1554,13 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK: '1',
       CLAUDE_CODE_SUBAGENT_MODEL: 'deepseek-v4-flash',
     },
-    // DeepSeek catalog â?verified against
+    // DeepSeek catalog — verified against
     // https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code,
     // /codex, /guides/thinking_mode, and /quick_start/pricing (verified 2026-08-13).
     // The legacy aliases deepseek-chat
     // and deepseek-reasoner will be deprecated 2026-07-24 and currently
     // map to non-thinking / thinking modes of deepseek-v4-flash, so they
-    // are not surfaced as defaults â?users still get them by manual add.
+    // are not surfaced as defaults — users still get them by manual add.
     // The `[1m]` suffix is a Claude Code convention DeepSeek's docs use
     // verbatim to select the 1M-context variant; both v4-pro and v4-flash
     // also have a non-suffixed default-context variant.
@@ -1595,10 +1633,10 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       docsUrl: 'https://api-docs.deepseek.com',
       billingModel: 'pay_as_you_go',
       claudeCodeVerified: true,
-      // Catalog is the official lineup, not a starter seed â?when users
+      // Catalog is the official lineup, not a starter seed — when users
       // see e.g. deepseek-v3.2-exp from a previous catalog version still
       // sitting in their list, that's drift, not legitimate custom add.
-      // Surfacing the "å·²ä¸å¨å½åæ¨èç®å½? badge for those rows is the
+      // Surfacing the "已不在当前推荐目录" badge for those rows is the
       // intended behavior. (Plan providers are caught by
       // `isCatalogOnlyPlanProviderRecord`; DeepSeek isn't a plan
       // provider but has the same authoritative-catalog property.)
@@ -1606,12 +1644,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ AWS Bedrock ââ
+  // ── AWS Bedrock ──
   {
     key: 'bedrock',
     name: 'AWS Bedrock',
-    description: 'Amazon Bedrock â?requires AWS credentials',
-    descriptionZh: 'Amazon Bedrock â?éè¦?AWS å­è¯',
+    description: 'Amazon Bedrock — requires AWS credentials',
+    descriptionZh: 'Amazon Bedrock — 需要 AWS 凭证',
     protocol: 'bedrock',
     authStyle: 'env_only',
     baseUrl: '',
@@ -1627,16 +1665,16 @@ export const VENDOR_PRESETS: VendorPreset[] = [
       apiKeyUrl: 'https://console.aws.amazon.com',
       docsUrl: 'https://aws.amazon.com/cn/bedrock/anthropic/',
       billingModel: 'pay_as_you_go',
-      notes: ['éå?AWS Console è®¢é Claude æ¨¡å'],
+      notes: ['需在 AWS Console 订阅 Claude 模型'],
     },
   },
 
-  // ââ Google Vertex AI ââ
+  // ── Google Vertex AI ──
   {
     key: 'vertex',
     name: 'Google Vertex',
-    description: 'Google Vertex AI â?requires GCP credentials',
-    descriptionZh: 'Google Vertex AI â?éè¦?GCP å­è¯',
+    description: 'Google Vertex AI — requires GCP credentials',
+    descriptionZh: 'Google Vertex AI — 需要 GCP 凭证',
     protocol: 'vertex',
     authStyle: 'env_only',
     baseUrl: '',
@@ -1651,39 +1689,39 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     meta: {
       docsUrl: 'https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/use-claude',
       billingModel: 'pay_as_you_go',
-      notes: ['éå¯ç¨ Vertex AI å¹¶å¨ Model Garden è®¢é Claude æ¨¡å'],
+      notes: ['需启用 Vertex AI 并在 Model Garden 订阅 Claude 模型'],
     },
   },
 
-  // ââ Ollama ââ
+  // ── Ollama ──
   {
     key: 'ollama',
     name: 'Ollama',
-    description: 'Ollama â?run local models with Anthropic-compatible API',
-    descriptionZh: 'Ollama â?æ¬å°è¿è¡æ¨¡åï¼Anthropic å¼å®¹ API',
+    description: 'Ollama — run local models with Anthropic-compatible API',
+    descriptionZh: 'Ollama — 本地运行模型，Anthropic 兼容 API',
     protocol: 'anthropic',
     authStyle: 'auth_token',
     baseUrl: 'http://localhost:11434',
     defaultEnvOverrides: {
       ANTHROPIC_AUTH_TOKEN: 'ollama',  // Fixed pseudo-token for Ollama (no real auth needed)
     },
-    defaultModels: [],  // User must specify â?depends on pulled models
+    defaultModels: [],  // User must specify — depends on pulled models
     fields: ['base_url', 'model_names'],
     iconKey: 'ollama',
     sdkProxyOnly: true,
     meta: {
       docsUrl: 'https://docs.ollama.com/integrations/claude-code',
       billingModel: 'free',
-      notes: ['éè¦æ¬å°å®è£?Ollama å¹¶æåæ¨¡å?],
+      notes: ['需要本地安装 Ollama 并拉取模型'],
     },
   },
 
-  // ââ LiteLLM ââ
+  // ── LiteLLM ──
   {
     key: 'litellm',
     name: 'LiteLLM',
-    description: 'LiteLLM proxy â?local or remote',
-    descriptionZh: 'LiteLLM ä»£ç â?æ¬å°æè¿ç¨?,
+    description: 'LiteLLM proxy — local or remote',
+    descriptionZh: 'LiteLLM 代理 — 本地或远程',
     protocol: 'anthropic',
     authStyle: 'api_key',
     baseUrl: 'http://localhost:4000',
@@ -1697,12 +1735,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Google Gemini (Image) ââ
+  // ── Google Gemini (Image) ──
   {
     key: 'gemini-image',
     name: 'Google Gemini (Image)',
-    description: 'Nano Banana Pro â?AI image generation by Google Gemini',
-    descriptionZh: 'Nano Banana Pro â?Google Gemini AI å¾ççæ',
+    description: 'Nano Banana Pro — AI image generation by Google Gemini',
+    descriptionZh: 'Nano Banana Pro — Google Gemini AI 图片生成',
     protocol: 'gemini-image',
     authStyle: 'api_key',
     baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
@@ -1722,14 +1760,14 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ Google Gemini (Image) Third-party ââ
+  // ── Google Gemini (Image) Third-party ──
   // Same protocol & SDK as the official preset; only the base URL differs so
   // users can route through a compatible proxy (e.g. custom relay, CN mirror).
   {
     key: 'gemini-image-thirdparty',
     name: 'Gemini Image Third-party',
-    description: 'Nano Banana via compatible proxy â?provide URL and Key',
-    descriptionZh: 'Nano Banana å¼å®¹ç¬¬ä¸æ?API â?å¡«åå°ååå¯é?,
+    description: 'Nano Banana via compatible proxy — provide URL and Key',
+    descriptionZh: 'Nano Banana 兼容第三方 API — 填写地址和密钥',
     protocol: 'gemini-image',
     authStyle: 'api_key',
     baseUrl: '',
@@ -1744,12 +1782,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     iconKey: 'google',
   },
 
-  // ââ OpenAI (Image) ââ
+  // ── OpenAI (Image) ──
   {
     key: 'openai-image',
     name: 'OpenAI (Image)',
-    description: 'GPT Image 2 â?AI image generation by OpenAI',
-    descriptionZh: 'GPT Image 2 â?OpenAI AI å¾ççæ',
+    description: 'GPT Image 2 — AI image generation by OpenAI',
+    descriptionZh: 'GPT Image 2 — OpenAI AI 图片生成',
     protocol: 'openai-image',
     authStyle: 'api_key',
     baseUrl: 'https://api.openai.com/v1',
@@ -1770,12 +1808,12 @@ export const VENDOR_PRESETS: VendorPreset[] = [
     },
   },
 
-  // ââ OpenAI (Image) Third-party ââ
+  // ── OpenAI (Image) Third-party ──
   {
     key: 'openai-image-thirdparty',
     name: 'OpenAI Image Third-party',
-    description: 'GPT Image via compatible proxy â?provide URL and Key',
-    descriptionZh: 'GPT Image å¼å®¹ç¬¬ä¸æ?API â?å¡«åå°ååå¯é?,
+    description: 'GPT Image via compatible proxy — provide URL and Key',
+    descriptionZh: 'GPT Image 兼容第三方 API — 填写地址和密钥',
     protocol: 'openai-image',
     authStyle: 'api_key',
     baseUrl: '',
@@ -1793,13 +1831,13 @@ export const VENDOR_PRESETS: VendorPreset[] = [
 
 ];
 
-// ââ Runtime preset validation (fails fast on invalid presets) âââ
+// ── Runtime preset validation (fails fast on invalid presets) ───
 
 for (const p of VENDOR_PRESETS) {
   PresetSchema.parse(p);
 }
 
-// ââ Lookup helpers ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Lookup helpers ──────────────────────────────────────────────
 
 /** Get a preset by key. */
 export function getPreset(key: string): VendorPreset | undefined {
@@ -1816,13 +1854,14 @@ export function getPreset(key: string): VendorPreset | undefined {
  *   - probing-and-writing it surfaces non-plan SKUs that 4xx on use and
  *     can incur out-of-plan billing.
  *
- * Trigger: `sdkProxyOnly && billingModel â?{coding_plan, token_plan}`.
+ * Trigger: `sdkProxyOnly && billingModel ∈ {coding_plan, token_plan}`.
  * Pay-as-you-go anthropic-compat (kimi, moonshot, xiaomi-mimo, deepseek)
- * is NOT caught â?their full inference catalogue is the genuine offering.
+ * is NOT caught — their full inference catalogue is the genuine offering.
  *
  * **Caller contract**: this function takes a *verified preset key*. Most
  * stored providers carry `provider_type='anthropic'` even when they came
- * from a brand-specific preset (Volcengine, Bailian, GLM, MiniMax, â? â? * the actual preset is recovered via `findMatchingPresetForRecord` using
+ * from a brand-specific preset (Volcengine, Bailian, GLM, MiniMax, …) —
+ * the actual preset is recovered via `findMatchingPresetForRecord` using
  * `base_url`. UI sites that only have a provider record must use
  * `isCatalogOnlyPlanProviderRecord()` instead, otherwise the check
  * silently misses every plan provider. Only call this directly when
@@ -1840,14 +1879,14 @@ export function isCatalogOnlyPlanProvider(presetKey: string | undefined | null):
 }
 
 /**
- * Record-aware version of `isCatalogOnlyPlanProvider` â?the safe choice
+ * Record-aware version of `isCatalogOnlyPlanProvider` — the safe choice
  * for any UI site that holds a provider record (or an Add-Service draft
  * record) but not yet a verified preset key.
  *
  * Why this exists: brand-specific anthropic-compat presets (Volcengine /
  * Bailian / GLM CN+Global / MiniMax CN+Global / Xiaomi MiMo Token Plan)
  * are all stored with `provider_type='anthropic'`. Looking up the preset
- * by `provider_type` alone always misses them â?the matcher needs
+ * by `provider_type` alone always misses them — the matcher needs
  * `base_url` to recover the real preset. Routing through
  * `findMatchingPresetForRecord` here keeps every UI caller honest and
  * keeps both UI sites and the discovery gate on the same answer.
@@ -1858,7 +1897,7 @@ export function isCatalogOnlyPlanProviderRecord(record: ProviderPresetIdentityRe
 }
 
 /**
- * True for presets that ship `meta.modelDiscoveryMode: 'catalog_only'` â?the
+ * True for presets that ship `meta.modelDiscoveryMode: 'catalog_only'` — the
  * strictest discovery posture: no `/v1/models` refresh, no search-and-add, and
  * `classifyProvider` returns `unsupported`. The shipped `defaultModels` lineup
  * is the only truth.
@@ -1882,7 +1921,7 @@ export function isCatalogOnlyDiscoveryRecord(record: ProviderPresetIdentityRecor
 }
 
 /**
- * True for OpenRouter provider records â?the aggregator that ships 300+
+ * True for OpenRouter provider records — the aggregator that ships 300+
  * model entries through `/v1/models`. OpenRouter is *not* a Coding/Token
  * Plan vendor (every model is genuinely usable on pay-as-you-go), but
  * full materialization of its catalogue into `provider_models` is the
@@ -1891,18 +1930,18 @@ export function isCatalogOnlyDiscoveryRecord(record: ProviderPresetIdentityRecor
  * Goes through `findMatchingPresetForRecord` so legacy DB rows with empty
  * `protocol` field still classify correctly via `provider_type='openrouter'`
  * or `base_url` exact match. UI sites and routes must NOT read
- * `provider.protocol` directly for this gate â?the helper is the contract.
+ * `provider.protocol` directly for this gate — the helper is the contract.
  *
  * Used by:
- *   - `POST /api/providers` route â?eager seed via `seedCatalogModelsIfEmpty`
+ *   - `POST /api/providers` route — eager seed via `seedCatalogModelsIfEmpty`
  *     instead of relying on lazy GET-time seed
- *   - `POST /api/providers/[id]/search-models` route â?auth gate
- *   - `POST /api/providers/[id]/validate-models` route â?auth gate
- *   - `model-discovery.ts:classifyProvider` â?return `unsupported` for
+ *   - `POST /api/providers/[id]/search-models` route — auth gate
+ *   - `POST /api/providers/[id]/validate-models` route — auth gate
+ *   - `model-discovery.ts:classifyProvider` — return `unsupported` for
  *     OpenRouter so the discover/apply path never auto-materializes
- *   - `POST /api/providers/[id]/discover-models/apply` â?400 reject
- *   - `ProviderManager` Add-Service success path â?show search-add toast
- *   - `ModelsSection` per-card refresh â?route to validate-models
+ *   - `POST /api/providers/[id]/discover-models/apply` — 400 reject
+ *   - `ProviderManager` Add-Service success path — show search-add toast
+ *   - `ModelsSection` per-card refresh — route to validate-models
  */
 export function isOpenRouterProviderRecord(record: ProviderPresetIdentityRecord): boolean {
   return findMatchingPresetForRecord(record)?.key === 'openrouter';
@@ -1916,7 +1955,7 @@ export function getPresetsByCategory(category: 'chat' | 'media' = 'chat'): Vendo
 /**
  * Catalog defaults for a provider. Used by the Models page as a fallback
  * when discovery isn't possible (404 on /v1/models, OAuth/SDK-only families,
- * etc.) â?the curated list is shipped in VENDOR_PRESETS.
+ * etc.) — the curated list is shipped in VENDOR_PRESETS.
  *
  * Returns [] if no preset matches; the caller should treat that as
  * "manual entry only" (user must add models themselves).
@@ -1927,17 +1966,24 @@ export function getCatalogDefaultModelsForRecord(record: ProviderPresetIdentityR
 }
 
 /**
- * Step 4 ææ¡æ¶å£ï¼?026-05-06ï¼ââ?ç¨æ·è¯­è¨çãæ¥å¥æ¹å¼ãåç±»ã? *
- * Provider Card ä¹åç´æ¥å±ç¤º `authStyle` å·¥ç¨æä¸¾å¼ï¼"Auth Token" /
- * "API Key"ï¼ï¼ç¼ºä¹å¯¹ç¨æ·çè§£éåï¼å¥é¤ vs æéãç»å½?vs è¾?Keyãæ¬å? * vs è¿ç«¯è¿å æ¡ç¨æ·çæ­£å³å¿çè½´é½è¢«åè¿äºä¸ä¸ªåºå±å¸å°ã? *
- * è¿ä¸ª helper æ?preset + provider record æ å°æä¸é?6 ç±»ç¨æ·é¢ææ¡ï¼? *   - subscription_token  å¥é¤ Tokenï¼Coding/Token Planï¼billingModel å½ä¸­
- *   - api_key             API Keyï¼æéä»è´¹ãanthropic å®æ¹
- *   - oauth               ææç»å½ï¼openai-oauthãanthropic-oauth ç­? *   - local               æ¬å°æå¡ï¼ollama / litellm / å¶å® self_hosted
- *   - cloud_credentials   äºè´¦å·å­è¯ï¼bedrock / vertexï¼authStyle env_onlyï¼? *   - gateway             ä¸­è½¬ç½å³ï¼anthropic-thirdparty / æ²¡å¹éä»»ä½?preset
- *                         çèªå®ä¹ URL
+ * Step 4 文案收口（2026-05-06）—— 用户语言的「接入方式」分类。
  *
- * UI èªå·±æ¿å° `AccessType` ååèµ?i18nï¼`provider.accessType.*`ï¼ââ?è¿ä¸ª
- * æä»¶ä¸åå«ä»»ä½ç¨æ·ææ¡ï¼åªè´è´£åç±»ã? */
+ * Provider Card 之前直接展示 `authStyle` 工程枚举值（"Auth Token" /
+ * "API Key"），缺乏对用户的解释力：套餐 vs 按量、登录 vs 输 Key、本地
+ * vs 远端这几条用户真正关心的轴都被压进了一个底层布尔。
+ *
+ * 这个 helper 把 preset + provider record 映射成下面 6 类用户面文案：
+ *   - subscription_token  套餐 Token：Coding/Token Plan，billingModel 命中
+ *   - api_key             API Key：按量付费、anthropic 官方
+ *   - oauth               授权登录：openai-oauth、anthropic-oauth 等
+ *   - local               本地服务：ollama / litellm / 其它 self_hosted
+ *   - cloud_credentials   云账号凭证：bedrock / vertex（authStyle env_only）
+ *   - gateway             中转网关：anthropic-thirdparty / 没匹配任何 preset
+ *                         的自定义 URL
+ *
+ * UI 自己拿到 `AccessType` 后再走 i18n（`provider.accessType.*`）—— 这个
+ * 文件不包含任何用户文案，只负责分类。
+ */
 export type AccessType =
   | 'subscription_token'
   | 'api_key'
@@ -1947,7 +1993,7 @@ export type AccessType =
   | 'gateway';
 
 export function getProviderAccessType(record: ProviderPresetIdentityRecord): AccessType {
-  // OAuth-shaped provider_type values â?these are virtual providers that
+  // OAuth-shaped provider_type values — these are virtual providers that
   // don't carry an api_key field (auth is in a side channel) so the
   // billingModel check below would miss them.
   if (record.provider_type === 'openai-oauth' || record.provider_type === 'xai-oauth' || record.provider_type === 'anthropic-oauth') {
@@ -1956,7 +2002,7 @@ export function getProviderAccessType(record: ProviderPresetIdentityRecord): Acc
   const preset = findMatchingPresetForRecord(record);
   if (!preset) {
     // Unmatched preset = user-configured custom URL, conventionally a
-    // ä¸­è½¬ç½å³. Same wording as `anthropic-thirdparty` below.
+    // 中转网关. Same wording as `anthropic-thirdparty` below.
     return 'gateway';
   }
   // Cloud-managed presets use SDK-side env credentials, not an
@@ -1965,34 +2011,34 @@ export function getProviderAccessType(record: ProviderPresetIdentityRecord): Acc
   if (preset.authStyle === 'env_only') return 'cloud_credentials';
   // Local services. Ollama uses `billingModel: 'free'` (no charging
   // concept), LiteLLM uses `'self_hosted'` (user-deployed proxy);
-  // both are the same user-facing bucket â?æ¬å°æå¡.
+  // both are the same user-facing bucket — 本地服务.
   if (preset.meta?.billingModel === 'self_hosted' || preset.meta?.billingModel === 'free') {
     return 'local';
   }
-  // Subscription-style billing â?the canonical "å¥é¤ Token" bucket.
+  // Subscription-style billing — the canonical "套餐 Token" bucket.
   if (preset.meta?.billingModel === 'coding_plan' || preset.meta?.billingModel === 'token_plan') {
     return 'subscription_token';
   }
   // Generic anthropic-compatible relay / custom gateway preset.
   if (preset.key === 'anthropic-thirdparty') return 'gateway';
   // Fall through: pay-as-you-go API key / free-tier (treated the same
-  // here â?user puts a key in the form field).
+  // here — user puts a key in the form field).
   return 'api_key';
 }
 
 /**
- * Phase 1 Step 2 â?"å·²ä¸å¨å½åæ¨èç®å½? badge support.
+ * Phase 1 Step 2 — "已不在当前推荐目录" badge support.
  *
  * Returns `false` when the provider has a non-empty curated catalog AND
  * `modelId` isn't one of its `defaultModels[].modelId`. The Models page
  * uses this to surface a row-level hint:
- *   - DeepSeek catalog upgraded from v3.x to v4 family â?user's row of
+ *   - DeepSeek catalog upgraded from v3.x to v4 family → user's row of
  *     `deepseek-v3.2-exp` survives (manual_* protection at apply time)
  *     but the row no longer maps to a current recommendation. Without
  *     this badge, the user sees "manual_enabled" and assumes they had
  *     enabled it themselves; the badge clarifies "the catalog moved
  *     under you, not the other way around".
- *   - Volcengine catalog change â?same shape.
+ *   - Volcengine catalog change → same shape.
  *
  * Returns `true` (= "in catalog" or "no concept of catalog") when:
  *   - The model_id IS in the current catalog. No badge needed.
@@ -2018,20 +2064,20 @@ export function isModelInCurrentCatalog(
 }
 
 /**
- * Phase 1 Step 2 â?gate for the "å·²ä¸å¨å½åæ¨èç®å½? row badge.
+ * Phase 1 Step 2 — gate for the "已不在当前推荐目录" row badge.
  *
  * The badge fires only when **all three** hold:
- *   1. The provider's catalog is authoritative â?i.e. plan whitelist or
+ *   1. The provider's catalog is authoritative — i.e. plan whitelist or
  *      curator-fixed lineup. Outside this set, `defaultModels` is just a
  *      starter seed (Kimi 1-alias, Moonshot 1-alias, Xiaomi MiMo PAYG
  *      1-alias, anthropic-thirdparty 3-alias, OpenRouter 3-alias) where
  *      user-added rows are normal usage, not drift.
- *   2. The provider is not OpenRouter â?its 3-alias catalog is a search-
+ *   2. The provider is not OpenRouter — its 3-alias catalog is a search-
  *      and-add bootstrap and every search-added row is *expected* to be
  *      outside it. (Already excluded by rule 1, but the explicit guard
  *      documents the intent for future readers.)
  *   3. The model_id is not in the current `defaultModels` for this
- *      provider â?i.e. the row genuinely sits outside our authoritative
+ *      provider — i.e. the row genuinely sits outside our authoritative
  *      list.
  *
  * Authoritative catalog = `isCatalogOnlyPlanProviderRecord` (any plan
@@ -2039,7 +2085,7 @@ export function isModelInCurrentCatalog(
  * curator-fixed pay-as-you-go presets, currently only DeepSeek).
  *
  * Lifted to a single helper so the call site (Models page row renderer)
- * gets one boolean and the test surface stays narrow â?see
+ * gets one boolean and the test surface stays narrow — see
  * `legacy-catalog-hint.test.ts` for the case matrix.
  */
 export function shouldShowLegacyCatalogBadge(
@@ -2058,43 +2104,52 @@ export function shouldShowLegacyCatalogBadge(
 }
 
 /**
- * Phase 1 Step 2 æ¶æ â?åä¸çç¸æºï¼è¿ä¸ª provider æ¯å¦åºè¯¥å±ç¤ºãå·æ°æ¨¡åãæé®ï¼
+ * Phase 1 Step 2 收敛 — 单一真相源：这个 provider 是否应该展示「刷新模型」按钮？
  *
- * æ¥èª CodexãModels / Providers ä½éªæ¶æãååï¼
- *   "å¦ææå¡åæ¬èº«ä¸æ¯æå¯é æåæ¨¡åï¼å°±ä¸è¦æ¾ç¤ºãå·æ°æ¨¡åãæé®ã?
+ * 来自 Codex「Models / Providers 体验收敛」原则：
+ *   "如果服务商本身不支持可靠拉取模型，就不要显示「刷新模型」按钮。"
  *
- * å?preset å³ç­è¡¨è§ `docs/research/provider-model-discovery.md` ç? * "å?preset æåå¯é æ§å®¡è®? æ®µãæè¦ï¼
- *   - **å¯é **ï¼ollamaï¼å¬å¼ /api/tagsï¼ãlitellmï¼æ å?/v1/modelsï¼ã? *     anthropic-thirdpartyï¼å¤æ°èªå®ä¹ç½å³æ¯æ /v1/models ââ?ä»ä½ä¸? *     "é¦æ¬¡éç½®åè¯ä¸æ¬? å¥å£ï¼ã? *   - **ä¸å¯é?/ ä¸åºè¯¥æ**ï¼å¥é¤åï¼ç½åå â?ä¸æ¸¸å¨éï¼ãOpenRouter
- *     ï¼èµ°ç¬ç« search/validateï¼ãimage providersï¼æ·· text/audio/embeddingï¼ã? *     bedrock/vertexï¼SDK onlyï¼ãanthropic-officialï¼?v1/models åé¡µç»?org
- *     billingï¼catalog æ?truthï¼ãPAYG anthropic-compatï¼kimi/moonshot/
- *     xiaomi-mimo/deepseekï¼catalog é½æ¯ 1-3 ä¸ªåºå®?aliasï¼æåè¡ä¸ºæªå®æµï¼? *     æ?Codex 4-category æ¡æ¶å½å¥é¤åï¼ã? *
- * UI è°ç¨ç¹ï¼ModelsSection è¡çº§ / ProviderCard / Refresh Allï¼å¿é¡»ç¨è¿ä¸ª
- * helper å³å®æé®å¯è§æ§ï¼ä¸è¦åèªå¤æ­ã? */
+ * 全 preset 决策表见 `docs/research/provider-model-discovery.md` 的
+ * "全 preset 拉取可靠性审计" 段。摘要：
+ *   - **可靠**：ollama（公开 /api/tags）、litellm（标准 /v1/models）、
+ *     anthropic-thirdparty（多数自定义网关支持 /v1/models —— 仅作为
+ *     "首次配置后试一次" 入口）。
+ *   - **不可靠 / 不应该拉**：套餐型（白名单 ≠ 上游全量）、OpenRouter
+ *     （走独立 search/validate）、image providers（混 text/audio/embedding）、
+ *     bedrock/vertex（SDK only）、anthropic-official（/v1/models 分页绑 org
+ *     billing，catalog 是 truth）、PAYG anthropic-compat（kimi/moonshot/
+ *     xiaomi-mimo/deepseek，catalog 都是 1-3 个固定 alias，拉取行为未实测，
+ *     按 Codex 4-category 框架归套餐型）。
+ *
+ * UI 调用点（ModelsSection 行级 / ProviderCard / Refresh All）必须用这个
+ * helper 决定按钮可见性，不要各自判断。
+ */
 export function canReliablyFetchModels(
   record: ProviderPresetIdentityRecord,
 ): { reliable: boolean; reasonZh: string; reasonEn: string } {
   // Plan providers stay blocked from the *write* refresh path:
   // probe-and-apply would replace plan-curated catalog rows with raw
-  // upstream ids (e.g. GLM auto-refresh would overwrite our `sonnet â?  // GLM-5-Turbo` alias mapping with a plain `glm-5-turbo` row). Even
+  // upstream ids (e.g. GLM auto-refresh would overwrite our `sonnet →
+  // GLM-5-Turbo` alias mapping with a plain `glm-5-turbo` row). Even
   // though some plan providers (GLM, MiniMax) have a clean readable
   // /v1/models, the search-and-add path has its own helper
-  // `canSearchUpstreamModels` for that â?it's read-only and doesn't
+  // `canSearchUpstreamModels` for that — it's read-only and doesn't
   // need the same protection.
   if (isCatalogOnlyPlanProviderRecord(record)) {
     return {
       reliable: false,
-      reasonZh: 'å¥é¤åæå¡ï¼æ¨¡åç±å¥é¤ç½ååå®ä¹ï¼å¦éè¡?SKU è¯·ç¨ãæ·»å æ¨¡åã?,
-      reasonEn: 'Plan-based provider â?model list is defined by your subscription whitelist. Use "Add model" to add SKUs.',
+      reasonZh: '套餐型服务，模型由套餐白名单定义；如需补 SKU 请用「添加模型」',
+      reasonEn: 'Plan-based provider — model list is defined by your subscription whitelist. Use "Add model" to add SKUs.',
     };
   }
   // Catalog-only discovery gateways (ClinePass, OpenCode Go): the shipped
-  // whitelist is the only truth â?their model endpoint is key-gated /
+  // whitelist is the only truth — their model endpoint is key-gated /
   // mixed-protocol / a superset, so neither refresh nor search-and-add is safe.
   if (isCatalogOnlyDiscoveryRecord(record)) {
     return {
       reliable: false,
-      reasonZh: 'å¥é¤åæå¡ï¼æ¨¡åç±åç½®ç½ååå®ä¹ï¼æä¸æ¯æå¨çº¿å·æ?,
-      reasonEn: 'Subscription provider â?models are defined by a built-in whitelist; online refresh is disabled.',
+      reasonZh: '套餐型服务，模型由内置白名单定义，暂不支持在线刷新',
+      reasonEn: 'Subscription provider — models are defined by a built-in whitelist; online refresh is disabled.',
     };
   }
   // OpenRouter: search-and-add is the canonical add path; validate is the
@@ -2102,23 +2157,23 @@ export function canReliablyFetchModels(
   if (isOpenRouterProviderRecord(record)) {
     return {
       reliable: false,
-      reasonZh: 'OpenRouter éè¿æç´¢æ·»å æ¨¡åï¼ä¸éè¦å¨éå·æ?,
-      reasonEn: 'OpenRouter uses search-and-add for new models â?no bulk refresh needed.',
+      reasonZh: 'OpenRouter 通过搜索添加模型，不需要全量刷新',
+      reasonEn: 'OpenRouter uses search-and-add for new models — no bulk refresh needed.',
     };
   }
   const preset = findMatchingPresetForRecord(record);
-  // No preset match â?assume custom; allow refresh attempt (the route will
+  // No preset match — assume custom; allow refresh attempt (the route will
   // either succeed or fall through to "no models"). This matches the
   // anthropic-thirdparty experimental classification at the route layer.
   if (!preset) {
     return { reliable: true, reasonZh: '', reasonEn: '' };
   }
-  // Phase 1 Step 2 æ¶æ round 6 (2026-05-06): empirical probe results
+  // Phase 1 Step 2 收敛 round 6 (2026-05-06): empirical probe results
   // against the dev DB drove this list:
   //
   //   - kimi (`https://api.kimi.com/coding/v1/models`): returns 1 model
   //     (`kimi-for-coding`). Search-add UX is meaningful even with 1
-  //     candidate â?saves the user typing.
+  //     candidate — saves the user typing.
   //   - moonshot / xiaomi-mimo: similar PAYG anthropic-compat shape, not
   //     individually probed but presumed-reliable on the same logic.
   //     If their /v1/models 404s, the search dialog surfaces the error
@@ -2126,20 +2181,20 @@ export function canReliablyFetchModels(
   //   - deepseek (`https://api.deepseek.com/anthropic/v1/models`): 404.
   //     Block from search-add so the user lands on manual immediately
   //     instead of seeing a broken search dialog. DeepSeek's catalog is
-  //     the v4 family `meta.fixedCatalog: true` â?manual-add is the
+  //     the v4 family `meta.fixedCatalog: true` — manual-add is the
   //     intended path for any additional SKUs.
   if (preset.key === 'deepseek') {
     return {
       reliable: false,
-      reasonZh: 'DeepSeek ä¸æ¯æéè¿ /v1/models æååè¡¨ï¼è¯·å¨ãæ·»å æ¨¡åãéæå¨è¾å¥ model id',
-      reasonEn: "DeepSeek does not expose /v1/models â?use manual entry in Add model.",
+      reasonZh: 'DeepSeek 不支持通过 /v1/models 拉取列表，请在「添加模型」里手动输入 model id',
+      reasonEn: "DeepSeek does not expose /v1/models — use manual entry in Add model.",
     };
   }
   // Image providers: catalog-only.
   if (preset.protocol === 'gemini-image' || preset.protocol === 'openai-image') {
     return {
       reliable: false,
-      reasonZh: 'å¾åæå¡åä½¿ç¨åç½®æ¨¡ååè¡?,
+      reasonZh: '图像服务商使用内置模型列表',
       reasonEn: 'Image providers use the built-in catalog.',
     };
   }
@@ -2147,7 +2202,7 @@ export function canReliablyFetchModels(
   if (preset.key === 'bedrock' || preset.key === 'vertex') {
     return {
       reliable: false,
-      reasonZh: 'è¯¥æå¡åéè¦äº SDK æè½æåæ¨¡ååè¡¨',
+      reasonZh: '该服务商需要云 SDK 才能拉取模型列表',
       reasonEn: 'This provider needs the cloud SDK to fetch models.',
     };
   }
@@ -2156,7 +2211,7 @@ export function canReliablyFetchModels(
   if (preset.key === 'anthropic-official') {
     return {
       reliable: false,
-      reasonZh: 'å®æ¹ API ä½¿ç¨åç½®æ¨¡ååè¡¨',
+      reasonZh: '官方 API 使用内置模型列表',
       reasonEn: 'Official API uses the built-in catalog.',
     };
   }
@@ -2164,17 +2219,17 @@ export function canReliablyFetchModels(
   if (preset.key === 'openai-oauth') {
     return {
       reliable: false,
-      reasonZh: 'OAuth ç»å½æ¹å¼æ²¡ææ¨¡ååè¡¨æ¥å£',
+      reasonZh: 'OAuth 登录方式没有模型列表接口',
       reasonEn: 'OAuth login does not expose a model list endpoint.',
     };
   }
-  // ollama / litellm / anthropic-thirdparty / openai-compatible â?reliable
+  // ollama / litellm / anthropic-thirdparty / openai-compatible — reliable
   // (or at least: a refresh attempt is meaningful).
   return { reliable: true, reasonZh: '', reasonEn: '' };
 }
 
 /**
- * Phase 1 Step 2 æ¶æ round 7 (2026-05-06) â?gate for the search-and-add
+ * Phase 1 Step 2 收敛 round 7 (2026-05-06) — gate for the search-and-add
  * dialog. **Read-only**: opens upstream `/v1/models`, lets the user pick,
  * writes only the chosen rows via the existing manual-add route. Never
  * triggers a bulk apply, so the same protections as
@@ -2188,7 +2243,8 @@ export function canReliablyFetchModels(
  *     ~5 MiniMax-M2.x SKUs cleanly. Search-add is meaningful.
  *   - Kimi (`https://api.kimi.com/coding/v1/models`): returns 1 SKU
  *     (`kimi-for-coding`). Marginal but better than typing.
- *   - Volcengine (Ark): returns 100+ mixed text/audio/embedding/image â? *     user explicitly excluded. Stays manual.
+ *   - Volcengine (Ark): returns 100+ mixed text/audio/embedding/image —
+ *     user explicitly excluded. Stays manual.
  *   - Bailian (DashScope): same shape as Volcengine.
  *   - Xiaomi MiMo Token Plan: empirically 404.
  *   - DeepSeek: empirically 404.
@@ -2209,26 +2265,26 @@ export function canSearchUpstreamModels(
   if (isCatalogOnlyDiscoveryRecord(record)) {
     return {
       reliable: false,
-      reasonZh: 'å¥é¤åæå¡ï¼æ¨¡åç±åç½®ç½ååå®ä¹ï¼æä¸æ¯æå¨çº¿æç´¢æ·»å?,
-      reasonEn: 'Subscription provider â?models come from a built-in whitelist; online search-and-add is disabled.',
+      reasonZh: '套餐型服务，模型由内置白名单定义，暂不支持在线搜索添加',
+      reasonEn: 'Subscription provider — models come from a built-in whitelist; online search-and-add is disabled.',
     };
   }
   if (isOpenRouterProviderRecord(record)) {
     return { reliable: true, reasonZh: '', reasonEn: '' };
   }
   const preset = findMatchingPresetForRecord(record);
-  // Explicit deny-list â?empirically known to fail or return garbage.
+  // Explicit deny-list — empirically known to fail or return garbage.
   // Other plan presets (glm-cn / glm-global / minimax-cn / minimax-global)
   // fall through to reliable=true.
   // Empirical (2026-05-06):
   //   - volcengine: Ark mixed 100+ catalog (text/audio/image/embedding/
-  //     deprecated) â?clean SKU set untestable per Codex's call
+  //     deprecated) — clean SKU set untestable per Codex's call
   //   - bailian: `/v1/models` 404s on the Coding Plan host
   //     (`coding.dashscope.aliyuncs.com/apps/anthropic`); only
   //     `/v1/messages` exists. 401-vs-404 confirms not auth-gated.
   //   - bailian-token-plan-cn: same vendor / different host
   //     (`token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic`).
-  //     Treated as manual-only by user policy: Token Plan å¢éç?key
+  //     Treated as manual-only by user policy: Token Plan 团队版 key
   //     is team-tier and not safe to probe with /v1/models from a
   //     shared client. Add SKUs via the manual dialog only.
   //   - xiaomi-mimo-token-plan: 404 on /v1/models
@@ -2244,8 +2300,8 @@ export function canSearchUpstreamModels(
   if (preset && manualOnlyKeys.has(preset.key)) {
     return {
       reliable: false,
-      reasonZh: 'è¯¥æå¡åçæ¨¡ååè¡¨æ¥å£è¿åç»æä¸éåä½æç´¢æ¥æºï¼è¯·ç¨ãæ·»å æ¨¡åãæå¨è¾å?,
-      reasonEn: "This provider's /v1/models output isn't suitable as a search source â?use Add model to type the id manually.",
+      reasonZh: '该服务商的模型列表接口返回结果不适合作搜索来源，请用「添加模型」手动输入',
+      reasonEn: "This provider's /v1/models output isn't suitable as a search source — use Add model to type the id manually.",
     };
   }
   // Plan providers not in the deny-list above (GLM, MiniMax, Xiaomi MiMo
@@ -2438,7 +2494,7 @@ export function getVerifiedProviderWireCapabilities(
   };
 }
 
-/** All valid Protocol union values â?used for raw-field validation. */
+/** All valid Protocol union values — used for raw-field validation. */
 export const VALID_PROTOCOLS = new Set<Protocol>([
   'anthropic',
   'openai-compatible',
@@ -2457,7 +2513,7 @@ export function isValidProtocol(value: unknown): value is Protocol {
 }
 
 /**
- * Compute the effective protocol for a provider â?prefer the raw protocol
+ * Compute the effective protocol for a provider — prefer the raw protocol
  * field if it's a known Protocol value, otherwise fall back to
  * inferProtocolFromLegacy(provider_type, base_url). Use this everywhere
  * a write path, resolver, or diagnostic needs the "real" protocol: raw
@@ -2543,7 +2599,7 @@ export function findPresetForLegacy(
  * If the provider has a matching preset, returns the preset's defaultModels.
  * Otherwise returns a protocol-appropriate fallback catalog.
  *
- * @param providerType â?legacy provider_type string from DB (e.g. 'anthropic',
+ * @param providerType — legacy provider_type string from DB (e.g. 'anthropic',
  *   'bedrock'). Used to disambiguate baseUrl='' cases: a legacy
  *   anthropic-typed provider with an empty baseUrl migrated from older
  *   settings is treated as the official Anthropic endpoint (first-party
@@ -2554,7 +2610,7 @@ export function getDefaultModelsForProvider(
   baseUrl: string,
   providerType?: string,
 ): CatalogModel[] {
-  // Try to find a preset by exact base_url. Protocol must agree â?otherwise
+  // Try to find a preset by exact base_url. Protocol must agree — otherwise
   // an openai-compatible chat provider configured with
   // https://api.openai.com/v1 would match the openai-image preset and
   // inherit the GPT Image catalog for chat model selection.
@@ -2562,7 +2618,7 @@ export function getDefaultModelsForProvider(
     p => p.baseUrl && p.baseUrl === baseUrl && p.protocol === protocol,
   );
   if (preset) {
-    // Preset matched â?return its models even if empty (e.g. Volcengine
+    // Preset matched — return its models even if empty (e.g. Volcengine
     // requires users to specify their own model names, so defaultModels is []).
     return preset.defaultModels;
   }

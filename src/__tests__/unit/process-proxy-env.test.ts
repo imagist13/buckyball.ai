@@ -12,7 +12,7 @@ import {
   buildCodexAppServerEnv,
 } from '@/lib/codex/app-server-manager';
 
-describe('process proxy environment â€?loopback boundary', () => {
+describe('process proxy environment â€” loopback boundary', () => {
   it('preserves user NO_PROXY rules, appends all loopback forms, and is idempotent on POSIX', () => {
     const first = withLoopbackProxyBypass({
       HTTP_PROXY: 'http://proxy.example.test:8080',

@@ -11,7 +11,7 @@ import {
  *
  * Source-pin unit tests in `card-primitives.test.ts` prove the
  * ResizeGutter's class/structure contract but NOT that its 2px line
- * lands on the geometric mid-line of the gap between two cards â€?jsdom
+ * lands on the geometric mid-line of the gap between two cards â€” jsdom
  * does no layout. This e2e measures real bounding boxes in a Chromium
  * render and asserts, for every gutter on screen: 8px width, a centered
  * 2px line, that it is a row-level sibling (never inside a CardFrame),
@@ -20,10 +20,9 @@ import {
  *
  * Two cases:
  *   - default `/chat`: only the sidebarâ†”main gutter is present.
- *   - multi-panel `/chat/[id]` with file tree + workspace opened: the
- *     row holds sidebar | main | workspace | fileTree â†?all 3 gutters,
- *     which is the state this Phase 7c closeout actually changed
- *     (assistant / fileTree / workspace are now row-level cards).
+ *   - multi-panel `/chat/[id]` with the unified workspace sidebar open:
+ *     the row holds sidebar | main | workspace. Files now renders inside
+ *     workspace Primary instead of creating another card.
  *
  * Platform note: a browser stamps data-shell="web", so the darwin
  * clip-path / radius profile does NOT activate here. Gutter geometry is
@@ -110,10 +109,10 @@ test.describe('Card ResizeGutter geometry @smoke', () => {
   }) => {
     // A chat-detail route renders the multi-card row. The workspace
     // sidebar surfaces here (via a post-mount effect), so the row holds
-    // at least sidebar | main | workspace â†?â‰? gutters across two
+    // at least sidebar | main | workspace â†’ â‰¥2 gutters across two
     // different card pairs (sidebarâ†”main and mainâ†”workspace). The
     // session id need not resolve to real data; the cards are layout-
-    // level. Poll for â‰? to absorb the async open, then geometry-check
+    // level. Poll for â‰¥2 to absorb the async open, then geometry-check
     // EVERY gutter. (File tree + assistant use the identical
     // CardFrame/CardSurface/ResizeGutter pattern, pinned by
     // card-primitives.test.ts; they are not separately driven open
@@ -126,6 +125,6 @@ test.describe('Card ResizeGutter geometry @smoke', () => {
       .toBeGreaterThanOrEqual(2);
 
     const count = await assertAllGutterGeometry(page);
-    expect(count, 'chat detail shows â‰? gutters across different card pairs').toBeGreaterThanOrEqual(2);
+    expect(count, 'chat detail shows â‰¥2 gutters across different card pairs').toBeGreaterThanOrEqual(2);
   });
 });

@@ -57,7 +57,8 @@ export const MessageContent = ({
   <div
     className={cn(
       "flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden break-words text-sm",
-      // User bubble: Luma-light styling per April 2026 user feedback â€?      // soft muted bg + default foreground, 24px radius matching the
+      // User bubble: Luma-light styling per April 2026 user feedback â€”
+      // soft muted bg + default foreground, 24px radius matching the
       // composer input box. Drops the prior `is-user:dark` inversion
       // (dark bubble in light mode) which fought the rest of the chat
       // surface. `break-words` keeps very long URLs / unbreakable
@@ -328,7 +329,7 @@ export const MessageBranchPage = ({
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
-// Phase 5.5 â€?use the shared-LRU plugin from code-block.tsx so chat
+// Phase 5.5 â€” use the shared-LRU plugin from code-block.tsx so chat
 // messages and file-preview rendering hit the same Shiki highlighter /
 // token caches instead of each running its own unbounded pool. See
 // POC 0.2. supportsLanguage is intentionally permissive (true) because
@@ -345,7 +346,7 @@ export const MessageResponse = memo(
         className
       )}
       plugins={streamdownPlugins}
-      // Round 12 chat UI refresh â€?every markdown element rendered
+      // Round 12 chat UI refresh â€” every markdown element rendered
       // here goes through CHAT_MARKDOWN_COMPONENTS so tables, code
       // blocks, headings, lists, etc. all match the Widget-card
       // design language. Callers can still override individual

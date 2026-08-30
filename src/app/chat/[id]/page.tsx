@@ -28,16 +28,19 @@ export default function ChatSessionPage({ params }: ChatSessionPageProps) {
   const [sessionModel, setSessionModel] = useState<string>('');
   const [sessionProviderId, setSessionProviderId] = useState<string>('');
   // Phase 2 Step 3b: session's runtime pin (chat-runtime label form).
-  // '' = follow global; 'claude_code' / 'bbagent' = pinned.
+  // '' = follow global; 'claude_code' / 'codepilot_runtime' = pinned.
   // Threaded into ChatView so the picker filters per-session, not per
   // global agent_runtime.
   const [sessionRuntimePin, setSessionRuntimePin] = useState<string>('');
   const [sessionInfoLoaded, setSessionInfoLoaded] = useState(false);
   const [sessionPermissionProfile, setSessionPermissionProfile] = useState<SessionPermissionProfile>('default');
-  const [sessionMode, setSessionMode] = useState<'code' | 'plan'>('code');
+  const [sessionMode, setSessionMode] = useState<'code' | 'plan' | 'ask'>('code');
   const [sessionHasSummary, setSessionHasSummary] = useState(false);
-  const { setWorkingDirectory, setSessionId, setSessionTitle: setPanelSessionTitle, setFileTreeOpen } = usePanel();
+  const { setWorkingDirectory, setSessionId, setSessionTitle: setPanelSessionTitle } = usePanel();
   const ws = useWorkspaceSidebarOptional();
+  const activatePrimary = ws?.activatePrimary;
+  const setWorkspaceOpen = ws?.setOpen;
+  const workspaceId = ws?.workspaceId;
   const targetFilePath = searchParams.get('file') || undefined;
   const { t } = useTranslation();
   const defaultPanelAppliedRef = useRef(false);
@@ -77,7 +80,7 @@ export default function ChatSessionPage({ params }: ChatSessionPageProps) {
           setSessionProviderId(resolved.providerId);
           setSessionRuntimePin(data.session.runtime_pin || '');
           setSessionPermissionProfile(normalizePermissionProfile(data.session.permission_profile));
-          setSessionMode((data.session.mode as 'code' | 'plan') || 'code');
+          setSessionMode((data.session.mode as 'code' | 'plan' | 'ask') || 'code');
           setSessionHasSummary(!!data.session.context_summary);
 
           // Interrupt/phase reconcile — reconcile the client stream phase against the
@@ -156,12 +159,13 @@ export default function ChatSessionPage({ params }: ChatSessionPageProps) {
     return () => { cancelled = true; };
   }, [id]);
 
-  // Auto-open file tree when jumping from a file search result
+  // File-search deep links open Files Primary in the unified sidebar. Replay
+  // the navigation intent after canonical workspace hydration: the provider's
+  // async preference restore may otherwise close/retarget the sidebar after
+  // this page's first effect fires (the old standalone rail had no such race).
   useEffect(() => {
-    if (targetFilePath) {
-      setFileTreeOpen(true);
-    }
-  }, [targetFilePath, setFileTreeOpen]);
+    if (targetFilePath) activatePrimary?.('files');
+  }, [activatePrimary, targetFilePath, workspaceId]);
 
   // Auto-open default panel the first time a session is ever opened.
   // Uses sessionStorage to track which sessions have already been initialized,
@@ -180,49 +184,32 @@ export default function ChatSessionPage({ params }: ChatSessionPageProps) {
     (async () => {
       try {
         if (targetFilePath) {
-          // Preserve explicit deep-link intent from global search —
-          // file tree opens lightweight; sidebar stays as the user
-          // last left it (they're independent inputs per Phase 2).
-          setFileTreeOpen(true);
+          activatePrimary?.('files');
           return;
         }
         const res = await fetch('/api/settings/app');
         if (!res.ok) return;
         const data = await res.json();
         const panel = data.settings?.default_panel || 'file_tree';
-        // Phase 2 (2026-04-30) migration: 'git' and 'dashboard'
-        // defaults used to flip dedicated PanelZone panels — those
-        // panels were folded into the Workspace Sidebar as fixed Tabs.
-        // Translate the legacy setting into "open the sidebar with
-        // that Tab active". 'file_tree' still opens the lightweight
-        // panel; 'none' opens nothing. Mutual exclusion (sidebar vs
-        // file tree) is enforced as side-effect: opening one path
-        // means we don't open the other.
+        // Translate legacy default-panel values into unified Primary surfaces.
         if (panel === 'none') {
-          setFileTreeOpen(false);
-          if (ws) ws.setOpen(false);
+          setWorkspaceOpen?.(false);
         } else if (panel === 'file_tree') {
-          setFileTreeOpen(true);
-          if (ws) ws.setOpen(false);
-        } else if (panel === 'git' && ws) {
-          setFileTreeOpen(false);
-          ws.setActiveTab('git');  // setActiveTab also flips open=true
-        } else if (panel === 'dashboard' && ws) {
-          setFileTreeOpen(false);
-          ws.setActiveTab('widget');
+          activatePrimary?.('files');
+        } else if (panel === 'git') {
+          activatePrimary?.('git');
+        } else if (panel === 'dashboard') {
+          activatePrimary?.('widget');
         } else {
-          // Unknown setting or sidebar provider missing → safe default.
-          setFileTreeOpen(true);
+          activatePrimary?.('files');
         }
       } catch {
-        setFileTreeOpen(true);
+        activatePrimary?.('files');
       }
     })();
-    // ws.setActiveTab / ws.setOpen are stable callbacks from the
-    // provider; intentionally tracked via the `ws` reference identity
-    // rather than the inner functions to avoid noisy re-runs on every
-    // sidebar state change. (deps are complete — no suppression needed.)
-  }, [id, targetFilePath, setFileTreeOpen, ws]);
+    // Depend on stable callbacks rather than the stateful context object so
+    // resizing or switching tabs cannot re-run this one-time initialization.
+  }, [activatePrimary, id, setWorkspaceOpen, targetFilePath]);
 
   if (loading || !sessionInfoLoaded) {
     return (

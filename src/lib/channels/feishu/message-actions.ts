@@ -1,5 +1,5 @@
 /**
- * Feishu message-actions â€?readMessages, readThreadMessages, and searchMessagesLocal.
+ * Feishu message-actions â€” readMessages, readThreadMessages, and searchMessagesLocal.
  *
  * These functions are dynamically imported by bridge-manager for /history and /search commands.
  *
@@ -145,7 +145,7 @@ export async function readThreadMessages(
 }
 
 /**
- * Simplified local search â€?lists recent messages and filters client-side.
+ * Simplified local search â€” lists recent messages and filters client-side.
  *
  * Unlike OpenClaw's feishu_im_user_search_messages which uses the search.message.create
  * API with user_access_token for true cross-chat server-side search, this function

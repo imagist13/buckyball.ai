@@ -1,5 +1,5 @@
 /**
- * Phase 3 Step 4b ‚Ä?`runClaudeHeadless` contract.
+ * Phase 3 Step 4b ‚Äî `runClaudeHeadless` contract.
  *
  * Pins the v2 plan invariants the headless wrapper must enforce:
  *
@@ -10,7 +10,7 @@
  *   2. `permission_request` event triggers `status:
  *      'waiting_for_permission'` with the partial assistantText
  *      preserved + the requesting tool captured. **No durable
- *      resume** ‚Ä?the wrapper aborts the underlying stream so the
+ *      resume** ‚Äî the wrapper aborts the underlying stream so the
  *      agent's `await registerPendingPermission(...)` rejects.
  *
  *   3. `error` event triggers `status: 'failed'` with the message.
@@ -98,7 +98,7 @@ describe('normalizeEventData (Codex P2 fix)', () => {
   // into `data: <JSON>\n\n`. After parseSSEBuffer.JSON.parse the
   // outer block, our `evt.data` is the raw string, not the parsed
   // object. Earlier rev only checked `typeof evt.data === 'object'`
-  // ‚Ü?permanently false ‚Ü?toolName / toolInput / sdk_session_id were
+  // ‚Üí permanently false ‚Üí toolName / toolInput / sdk_session_id were
   // dropped on the floor. The end-to-end tests below cover the bug
   // scenario; this block pins the unit-level invariants.
   it('parses a JSON-stringified payload back into the expected object', async () => {
@@ -107,7 +107,7 @@ describe('normalizeEventData (Codex P2 fix)', () => {
     const wire = `data: ${JSON.stringify({ type: 'permission_request', data: inner })}\n\n`;
     const r = parseSSEBuffer(wire);
     assert.equal(r.events.length, 1);
-    // evt.data is the still-stringified inner payload ‚Ä?the consumer
+    // evt.data is the still-stringified inner payload ‚Äî the consumer
     // is responsible for the second JSON.parse via normalizeEventData.
     assert.equal(typeof r.events[0].data, 'string');
     const inner2 = JSON.parse(r.events[0].data as string);
@@ -154,12 +154,12 @@ describe('normalizeEventData (Codex P2 fix)', () => {
     assert.doesNotMatch(
       m![0],
       /normalizeEventData/,
-      'text branch must read evt.data directly ‚Ä?JSON.parse on a literal text fragment "true"/"42"/null would silently turn the delta into a non-string and drop it.',
+      'text branch must read evt.data directly ‚Äî JSON.parse on a literal text fragment "true"/"42"/null would silently turn the delta into a non-string and drop it.',
     );
   });
 
   it('captures sdkSessionId from status / result events for runner persistence', () => {
-    // Codex P1 ‚Ä?agent-task-runner needs to call updateSdkSessionId
+    // Codex P1 ‚Äî agent-task-runner needs to call updateSdkSessionId
     // after a successful run so the next scheduled fire can SDK-resume
     // instead of starting from a blank brain. The id only appears in
     // `status` (init) and `result` (final) event payloads. Pin both
@@ -234,7 +234,7 @@ describe('runClaudeHeadless: end-to-end semantics (mock streamClaude)', () => {
   });
 
   it('text events accumulate into assistantText; tool_use/thinking are NOT appended', () => {
-    // Check the dispatch logic structurally ‚Ä?only the 'text' branch
+    // Check the dispatch logic structurally ‚Äî only the 'text' branch
     // touches assistantText; the others handle their own concerns or
     // are observed-and-ignored. Wider window because there's an
     // explanatory comment between the branch entry and the actual
@@ -269,7 +269,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     assert.match(
       runnerSrc,
       /runClaudeHeadless/,
-      'agent-task-runner must call runClaudeHeadless ‚Ä?Step 4b replaces 4a\'s generateTextFromProvider one-shot.',
+      'agent-task-runner must call runClaudeHeadless ‚Äî Step 4b replaces 4a\'s generateTextFromProvider one-shot.',
     );
     // Strip line + block comments first so the rationale comments
     // mentioning the old API don't trip the negative assertion.
@@ -311,7 +311,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
 
   it('runner forwards full session context to runClaudeHeadless (Codex P1)', () => {
     // Earlier rev only forwarded prompt/sessionId/system/working-
-    // directory ‚Ä?every fire was a "new brain". The fix is to mirror
+    // directory ‚Äî every fire was a "new brain". The fix is to mirror
     // what chat/route.ts builds for streamClaude. Pin every field
     // separately so missing-one regressions get caught.
     const runnerSrc = readFileSync(
@@ -327,7 +327,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       'expected a runClaudeHeadless({...}) call in the runner.',
     );
     const callBody = callMatch![0];
-    // SDK resume ‚Ä?without this, every scheduled fire starts a fresh
+    // SDK resume ‚Äî without this, every scheduled fire starts a fresh
     // SDK conversation and the model has no memory of prior turns
     // even within the same task-bound session.
     assert.match(
@@ -335,10 +335,10 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       /sdkSessionId\s*:/,
       'runner must pass sdkSessionId to runClaudeHeadless (else SDK resume never engages and tasks lose all prior context).',
     );
-    // Fallback context ‚Ä?when SDK resume fails or has been cleared,
+    // Fallback context ‚Äî when SDK resume fails or has been cleared,
     // streamClaude reconstitutes context from history + summary. The
     // runner must plumb both. Allow object-shorthand (`conversationHistory,`)
-    // or explicit (`conversationHistory: x,`) ‚Ä?both are valid forms
+    // or explicit (`conversationHistory: x,`) ‚Äî both are valid forms
     // and the test should accept either as long as the prop is passed.
     assert.match(
       callBody,
@@ -355,7 +355,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       /sessionSummaryBoundaryRowid\s*:/,
       'runner must pass sessionSummaryBoundaryRowid so reactive compact preserves the existing boundary instead of resetting to 0.',
     );
-    // Per-session execution-engine pin ‚Ä?the headline immunity Phase
+    // Per-session execution-engine pin ‚Äî the headline immunity Phase
     // 2 promised. ScheduledTask itself doesn't carry runtime_pin;
     // pinning lives on the task-bound or buddy session row.
     assert.match(
@@ -363,7 +363,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       /sessionRuntimePin\s*:[^,}]*session\?/,
       'runner must derive sessionRuntimePin from the task-bound session (chat_sessions.runtime_pin), not pass undefined unconditionally.',
     );
-    // Provider / model ‚Ä?without these, the resolver picks fresh
+    // Provider / model ‚Äî without these, the resolver picks fresh
     // defaults instead of the model the session actually committed
     // to.
     assert.match(
@@ -400,7 +400,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       'utf-8',
     );
     // The gate must use `resolveProviderForSession`, NOT raw
-    // `resolveProvider` ‚Ä?only the session-scoped wrapper sets
+    // `resolveProvider` ‚Äî only the session-scoped wrapper sets
     // `invalidReason` for "session points at a deleted provider".
     // Raw resolveProvider silently env-falls-back, which is the bug
     // Phase 2 closed and the runner was re-introducing.
@@ -419,7 +419,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     );
     assert.ok(
       gateBlock,
-      'when resolved.invalidReason is set, runner must return { status: "failed" } early ‚Ä?never reach runClaudeHeadless. Otherwise streamClaude env-fallback re-introduces the silent re-route.',
+      'when resolved.invalidReason is set, runner must return { status: "failed" } early ‚Äî never reach runClaudeHeadless. Otherwise streamClaude env-fallback re-introduces the silent re-route.',
     );
     assert.match(
       gateBlock![0],
@@ -438,13 +438,14 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     const body = callMatch![0];
     // The resolved provider object must be forwarded so streamClaude
     // doesn't re-resolve from raw session fields. Pin the literal
-    // `resolved.provider` reference, not just any `provider:` prop ‚Ä?    // earlier rev was passing nothing here.
+    // `resolved.provider` reference, not just any `provider:` prop ‚Äî
+    // earlier rev was passing nothing here.
     assert.match(
       body,
       /provider\s*:\s*resolved\.provider\b/,
       'runner must forward `provider: resolved.provider` so the headless run hits the SAME provider chat/route would have picked.',
     );
-    // ProviderId ‚Ä?derived from the resolved provider, not blindly
+    // ProviderId ‚Äî derived from the resolved provider, not blindly
     // taken from `session.provider_id` (which could be the deleted
     // ghost id the gate above just refused to use).
     assert.match(
@@ -452,13 +453,13 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
       /providerId\s*:\s*effectiveProviderId/,
       'runner must forward providerId derived from the resolved provider (effectiveProviderId), not the raw session field.',
     );
-    // Model ‚Ä?prefer upstream over alias (chat route does the same
+    // Model ‚Äî prefer upstream over alias (chat route does the same
     // at line 647). Third-party Anthropic-compat proxies sometimes
     // only accept the upstream id.
     assert.match(
       body,
       /\bmodel\s*:[\s\S]{0,200}?resolved\.upstreamModel/,
-      'runner must prefer resolved.upstreamModel over resolved.model when calling streamClaude ‚Ä?third-party proxies may only accept the upstream id.',
+      'runner must prefer resolved.upstreamModel over resolved.model when calling streamClaude ‚Äî third-party proxies may only accept the upstream id.',
     );
   });
 
@@ -466,7 +467,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     // Pin the import ordering so the gate stays fast even under DB
     // contention. Earlier rev imported runClaudeHeadless +
     // mcp-loader before the gate, which pushed a "deleted provider"
-    // sync-failing run from <50ms to several hundred ms ‚Ä?long
+    // sync-failing run from <50ms to several hundred ms ‚Äî long
     // enough that run-event-link.test.ts started racing on a 400ms
     // wait. Heavy imports MUST live below the invalidReason early
     // return.
@@ -501,7 +502,7 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     );
     assert.ok(
       mcpLoaderImportIdx > invalidReasonIdx,
-      'mcp-loader must be imported AFTER the invalidReason gate ‚Ä?same reason as headless-claude.',
+      'mcp-loader must be imported AFTER the invalidReason gate ‚Äî same reason as headless-claude.',
     );
   });
 
@@ -512,16 +513,16 @@ describe('agent-task-runner now uses headless streamClaude (Step 4b swap)', () =
     );
     // Without this branch, headless tasks would only see the
     // keyword-injected CodePilot built-ins; user-configured MCP
-    // servers wouldn't load ‚Ü?foreground vs scheduled diverge.
+    // servers wouldn't load ‚Üí foreground vs scheduled diverge.
     assert.match(
       runnerSrc,
       /predictNativeRuntime\(\s*effectiveProviderId/,
-      'runner must select MCP server scope via predictNativeRuntime(effectiveProviderId) ‚Ä?same rule chat/route.ts uses.',
+      'runner must select MCP server scope via predictNativeRuntime(effectiveProviderId) ‚Äî same rule chat/route.ts uses.',
     );
     assert.match(
       runnerSrc,
       /loadAllMcpServers\(\)[\s\S]{0,200}?loadCodePilotMcpServers\(\)/,
-      'runner must load BOTH variants ‚Ä?native runtime gets loadAllMcpServers (full map); SDK runtime gets loadCodePilotMcpServers (env-placeholder subset).',
+      'runner must load BOTH variants ‚Äî native runtime gets loadAllMcpServers (full map); SDK runtime gets loadCodePilotMcpServers (env-placeholder subset).',
     );
     // And actually pass it.
     const callMatch = runnerSrc.match(/runClaudeHeadless\(\s*\{[\s\S]*?\}\s*\)/);
@@ -551,7 +552,7 @@ describe('TaskWaitingForPermissionPanel UI plumb (Codex P2)', () => {
     assert.match(
       messageListSrc,
       /<TaskWaitingForPermissionPanel\s+run=\{run\}\s+onAction=\{onTaskRunAction\}/,
-      'MessageList must pass onAction={onTaskRunAction} to TaskWaitingForPermissionPanel ‚Ä?without it the panel never refreshes after abandon/rerun (Codex P2 regression).',
+      'MessageList must pass onAction={onTaskRunAction} to TaskWaitingForPermissionPanel ‚Äî without it the panel never refreshes after abandon/rerun (Codex P2 regression).',
     );
     // And the prop must be declared on the component's interface.
     assert.match(
@@ -568,7 +569,8 @@ describe('TaskWaitingForPermissionPanel UI plumb (Codex P2)', () => {
     );
     // Anchor on the actual JSX render block, not on stray references
     // (e.g. an explanatory `<MessageList />` mention in a comment
-    // higher up). The render block opens with `<MessageList\n` ‚Ä?    // newline immediately after the tag name ‚Ä?and runs to its
+    // higher up). The render block opens with `<MessageList\n` ‚Äî
+    // newline immediately after the tag name ‚Äî and runs to its
     // self-close. Up the window to 4 KiB to span every prop.
     const ml = chatViewSrc.match(
       /<MessageList\n[\s\S]{0,4000}?\/>/,
@@ -588,7 +590,7 @@ describe('TaskWaitingForPermissionPanel: only Re-run / Abandon, no resume', () =
       path.resolve(__dirname, '../../components/chat/TaskWaitingForPermissionPanel.tsx'),
       'utf-8',
     );
-    // Re-run: POST /api/tasks/{taskId}/run. fetch(URL, opts) ‚Ä?URL
+    // Re-run: POST /api/tasks/{taskId}/run. fetch(URL, opts) ‚Äî URL
     // precedes options block. Pin both halves regardless of order.
     assert.match(
       panelSrc,
@@ -685,7 +687,7 @@ describe('detectPseudoToolCallXml (Codex P2 follow-up)', () => {
 
   it('does NOT match prose mentioning the phrase tool_call as English text', async () => {
     const { detectPseudoToolCallXml } = await import('../../lib/headless-claude');
-    // Without the leading `<`, it's just user prose ‚Ä?must not
+    // Without the leading `<`, it's just user prose ‚Äî must not
     // false-match. The pseudo-XML produced by GLM-style proxies
     // always starts with the angle bracket.
     assert.equal(
@@ -699,8 +701,8 @@ describe('detectPseudoToolCallXml (Codex P2 follow-up)', () => {
   });
 });
 
-describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
-  it('text ‚Ü?tool_use ‚Ü?tool_result ‚Ü?final text ‚Ü?done: succeeded with FULL transcript', async () => {
+describe('consumeHeadlessStream ‚Äî tool event semantics', () => {
+  it('text ‚Üí tool_use ‚Üí tool_result ‚Üí final text ‚Üí done: succeeded with FULL transcript', async () => {
     const { consumeHeadlessStream } = await import('../../lib/headless-claude');
     // Simulate a real SDK round: model says some prose, calls a
     // tool, gets a result, replies with the final answer.
@@ -716,15 +718,15 @@ describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
     assert.equal(result.toolUseCount, 1);
     assert.equal(result.toolResultCount, 1);
     // The final assistantText should contain BOTH the prose before
-    // and after the tool round ‚Ä?that's how the model narrates a
+    // and after the tool round ‚Äî that's how the model narrates a
     // tool-using turn.
     assert.match(result.assistantText, /Let me check the directory\./);
     assert.match(result.assistantText, /Files: file1\.txt, file2\.txt/);
   });
 
-  it('tool_use without matching tool_result ‚Ü?status flips to failed (integrity check, Codex P2)', async () => {
+  it('tool_use without matching tool_result ‚Üí status flips to failed (integrity check, Codex P2)', async () => {
     // Edge case the pseudo-XML check alone misses: SDK DID emit
-    // tool_use, so the protocol is fine ‚Ä?but tool_result never
+    // tool_use, so the protocol is fine ‚Äî but tool_result never
     // came back (tool runtime crash, aborted handler, network drop).
     // Model's final text says "done" anyway. Without this integrity
     // check, the run goes 'succeeded' and a recurring task quietly
@@ -734,14 +736,14 @@ describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
       buildSSE([{ type: 'text', data: 'Checking the directory.\n' }]),
       buildSSE([{ type: 'tool_use', data: { id: 't1', name: 'LS', input: { path: '/tmp' } } }]),
       // Note: no tool_result. Tool runtime "crashed".
-      buildSSE([{ type: 'text', data: 'Done ‚Ä?files are listed above.' }]),
+      buildSSE([{ type: 'text', data: 'Done ‚Äî files are listed above.' }]),
       buildSSE([{ type: 'done', data: '' }]),
     ]);
     const result = await consumeHeadlessStream(stream, new AbortController());
     assert.equal(
       result.status,
       'failed',
-      'tool_use without a matching tool_result must flip to failed ‚Ä?recurring scheduler cannot trust the model\'s final text when at least one tool call lost its result mid-flight.',
+      'tool_use without a matching tool_result must flip to failed ‚Äî recurring scheduler cannot trust the model\'s final text when at least one tool call lost its result mid-flight.',
     );
     assert.equal(result.toolUseCount, 1);
     assert.equal(result.toolResultCount, 0);
@@ -771,7 +773,7 @@ describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
     );
   });
 
-  it('pseudo-XML in text + zero tool_result ‚Ü?status flips to failed (Codex P2 follow-up)', async () => {
+  it('pseudo-XML in text + zero tool_result ‚Üí status flips to failed (Codex P2 follow-up)', async () => {
     const { consumeHeadlessStream } = await import('../../lib/headless-claude');
     // The exact failure mode the user reported: the model emits its
     // tool call as XML text. The proxy doesn't translate. The SDK
@@ -795,7 +797,7 @@ describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
     // The XML itself is preserved in assistantText so the runner
     // can persist it to the chat session for diagnostic visibility.
     assert.match(result.assistantText, /tool_call_list/);
-    // The error message must explain *why* ‚Ä?"tools not executed".
+    // The error message must explain *why* ‚Äî "tools not executed".
     assert.ok(
       result.error && /Â∑•ÂÖ∑Êú™ÊâßË°å|tools? (?:were )?not executed/i.test(result.error),
       'failed-status error must explain that tools were not actually executed (so the user knows it is a config / proxy issue, not the prompt).',
@@ -831,12 +833,13 @@ describe('consumeHeadlessStream ‚Ä?tool event semantics', () => {
     ]);
     const result = await consumeHeadlessStream(stream, new AbortController());
     assert.equal(result.status, 'succeeded');
-    // result event lands after status, so it's the one we keep ‚Ä?    // matches what the runner ultimately writes back to chat_sessions.
+    // result event lands after status, so it's the one we keep ‚Äî
+    // matches what the runner ultimately writes back to chat_sessions.
     assert.equal(result.sdkSessionId, 'sdk-final-xyz');
   });
 });
 
-describe('runner ‚Ä?failed runs persist model output to session for diagnostics', () => {
+describe('runner ‚Äî failed runs persist model output to session for diagnostics', () => {
   it('headless.status==="failed" with non-empty assistantText writes an annotated assistant message', () => {
     const runnerSrc = readFileSync(
       path.resolve(__dirname, '../../lib/agent-task-runner.ts'),
@@ -845,7 +848,7 @@ describe('runner ‚Ä?failed runs persist model output to session for diagnostics'
     // Earlier rev only wrote the run row for failures, leaving the
     // chat session blank. After the pseudo-XML detection started
     // flipping status to failed, that blank session would tell the
-    // user nothing ‚Ä?they wouldn't see WHAT the model said. Pin the
+    // user nothing ‚Äî they wouldn't see WHAT the model said. Pin the
     // failed-branch addMessage call so the diagnostic stays visible.
     const failedBranch = runnerSrc.match(
       /headless\.status\s*===\s*['"]failed['"][\s\S]{0,2500}?return\s*\{[\s\S]{0,200}?status:\s*['"]failed['"]/,
@@ -854,14 +857,14 @@ describe('runner ‚Ä?failed runs persist model output to session for diagnostics'
     assert.match(
       failedBranch![0],
       /addMessage\([\s\S]{0,500}?task_run_id:\s*runId/,
-      'failed branch must call addMessage with task_run_id metadata when assistantText is non-empty ‚Ä?otherwise the user opens the task session and sees an empty conversation despite the run row being terminal failed.',
+      'failed branch must call addMessage with task_run_id metadata when assistantText is non-empty ‚Äî otherwise the user opens the task session and sees an empty conversation despite the run row being terminal failed.',
     );
     // Pin the failure annotation suffix so the user sees `‚ö†Ô∏è ...
-    // Â∑•ÂÖ∑Êú™ÊâßË°?...` rather than just the raw pseudo-XML.
+    // Â∑•ÂÖ∑Êú™ÊâßË°å ...` rather than just the raw pseudo-XML.
     assert.match(
       failedBranch![0],
       /‚ö†Ô∏è/,
-      'failed branch must annotate the message with a clear visual marker (‚ö†Ô∏è) ‚Ä?otherwise pseudo-XML reads as if it were the actual answer.',
+      'failed branch must annotate the message with a clear visual marker (‚ö†Ô∏è) ‚Äî otherwise pseudo-XML reads as if it were the actual answer.',
     );
   });
 });

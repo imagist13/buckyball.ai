@@ -38,7 +38,8 @@ describe('/api/files/suggest route', () => {
   it('accepts workingDirectory outside $HOME when sessionId is not provided', async () => {
     // Before: new-chat @ suggestions rejected anything outside os.homedir(),
     // breaking valid projects on external volumes, /tmp, or mounted
-    // workspaces. The workspace the user selected is the trust boundary â€?    // only filesystem-root paths should be rejected.
+    // workspaces. The workspace the user selected is the trust boundary â€”
+    // only filesystem-root paths should be rejected.
     const outsideHome = path.join(process.cwd(), '.codepilot-non-home-' + randomUUID());
     fs.mkdirSync(outsideHome, { recursive: true });
     try {

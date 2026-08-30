@@ -1,5 +1,5 @@
 /**
- * Phase 5B â€?main-thread client for the Shiki tokenization worker.
+ * Phase 5B â€” main-thread client for the Shiki tokenization worker.
  *
  * Responsibilities:
  *   - spawn / terminate the worker (lazily, browser-only),
@@ -71,7 +71,7 @@ export function createShikiWorkerClient(
 
   function ensureWorker(): WorkerLike {
     if (worker) return worker;
-    const spawned = spawn(); // may throw â€?caller catches and falls back
+    const spawned = spawn(); // may throw â€” caller catches and falls back
 
     spawned.addEventListener("message", (event: unknown) => {
       const data = (event as MessageEvent<ShikiWorkerResponse>).data;
@@ -87,8 +87,8 @@ export function createShikiWorkerClient(
     });
 
     // A worker script that fails to load (e.g. missing chunk) fires `error`
-    // rather than throwing from the constructor. Treat it â€?and messageerror
-    // (uncloneable payloads) â€?as a hard failure: reject in-flight work and
+    // rather than throwing from the constructor. Treat it â€” and messageerror
+    // (uncloneable payloads) â€” as a hard failure: reject in-flight work and
     // stop routing to the worker for the rest of the session.
     spawned.addEventListener("error", (event: unknown) => {
       const message = (event as { message?: string })?.message;
@@ -110,7 +110,7 @@ export function createShikiWorkerClient(
       try {
         worker?.terminate();
       } catch {
-        // ignore â€?terminating a dead worker is best-effort
+        // ignore â€” terminating a dead worker is best-effort
       }
       worker = null;
     },
@@ -171,7 +171,7 @@ export async function tokenizeWithFallback(
     try {
       return await client.tokenize(params);
     } catch {
-      // Worker unavailable or tokenize failed â€?fall through to main thread.
+      // Worker unavailable or tokenize failed â€” fall through to main thread.
     }
   }
   return fallback(
@@ -203,7 +203,7 @@ export function getShikiWorkerClient(): ShikiWorkerClient | null {
   }
   // Only attempt to spawn once. If the worker hard-failed, we don't keep
   // re-spawning a broken worker on every code block for the rest of the
-  // session â€?we route straight to the main-thread fallback.
+  // session â€” we route straight to the main-thread fallback.
   if (spawnAttempted) return null;
   spawnAttempted = true;
   try {

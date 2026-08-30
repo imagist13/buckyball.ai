@@ -1,7 +1,7 @@
 'use client';
 
 import { NotePencil, GlobeSimple, Folder, File } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 import type { PopoverItem, PopoverMode } from '@/types';
@@ -17,7 +17,7 @@ export type { PopoverItem, PopoverMode } from '@/types';
 // Codex-style attached card: drops the in-popover search bar and the
 // "manage shortcut" footer per April 2026 feedback. Filtering is driven
 // from textarea content (handleInputChange in useSlashCommands), and
-// keyboard nav comes from MessageInput's textarea handleKeyDown â?the
+// keyboard nav comes from MessageInput's textarea handleKeyDown — the
 // popover is purely presentational here.
 interface SlashCommandPopoverProps {
   popoverMode: PopoverMode;
@@ -62,15 +62,15 @@ export function SlashCommandPopover({
           ? <Folder size={16} className="shrink-0 text-muted-foreground" />
           : <File size={16} className="shrink-0 text-muted-foreground" />
       ) : item.builtIn && item.iconName ? (
-        <BuckyballIcon name={item.iconName} size="md" className="shrink-0 text-muted-foreground" aria-hidden />
+        <CodePilotIcon name={item.iconName} size="md" className="shrink-0 text-muted-foreground" aria-hidden />
       ) : item.kind === 'agent_skill' ? (
-        <BuckyballIcon name="skill" size="md" className="shrink-0 text-muted-foreground" />
+        <CodePilotIcon name="skill" size="md" className="shrink-0 text-muted-foreground" />
       ) : item.kind === 'slash_command' ? (
         <NotePencil size={16} className="shrink-0 text-muted-foreground" />
       ) : !item.builtIn ? (
         <GlobeSimple size={16} className="shrink-0 text-muted-foreground" />
       ) : (
-        <BuckyballIcon name="terminal" size="md" className="shrink-0 text-muted-foreground" />
+        <CodePilotIcon name="terminal" size="md" className="shrink-0 text-muted-foreground" />
       )}
       <span className="font-mono text-xs truncate">{item.display || item.label}</span>
       {(item.descriptionKey || item.description) && (
@@ -126,7 +126,7 @@ export function SlashCommandPopover({
               {(aiSuggestions.length > 0 || aiSearchLoading) && (
                 <CommandListGroup>
                   <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                    <BuckyballIcon name="assistant" size="sm" />
+                    <CodePilotIcon name="assistant" size="sm" />
                     {t('messageInput.aiSuggested')}
                     {aiSearchLoading && (
                       <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />

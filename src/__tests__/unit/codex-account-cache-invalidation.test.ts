@@ -1,5 +1,5 @@
 /**
- * Phase 0 fix round (2026-07-17) â€?an account transition must drop cached
+ * Phase 0 fix round (2026-07-17) â€” an account transition must drop cached
  * Codex capability, on the PRODUCTION route path.
  *
  * The `cacheOnly` model read ignores TTL by design (P0.3 spawn decoupling), so
@@ -8,7 +8,7 @@
  * `logoutCodex()`, so after logout the full catalog and the `turn/start` effort
  * allowlist still answered with the logged-out account's capability.
  *
- * These tests go through the real route handlers â€?request parsing, branching,
+ * These tests go through the real route handlers â€” request parsing, branching,
  * the invalidating transition wrapper, the real cache and both real readers.
  * The ONLY thing replaced is the bottom JSON-RPC call (the `perform` seam), so
  * no Codex app-server is spawned. Everything above that seam is production code.
@@ -44,7 +44,7 @@ const MODELS_RESULT = {
   nextCursor: null,
 };
 
-/** DI seam standing in for getCodexAppServer â€?never spawns anything. */
+/** DI seam standing in for getCodexAppServer â€” never spawns anything. */
 const okAppServer = async () =>
   ({
     client: {
@@ -67,7 +67,7 @@ async function warmCache() {
   );
 }
 
-/** Both readers must fail closed â€?no group, no allowlist. */
+/** Both readers must fail closed â€” no group, no allowlist. */
 async function assertCacheCleared(when: string) {
   assert.equal(
     await buildCodexProviderModelGroup({ cacheOnly: true }),
@@ -87,7 +87,7 @@ const loginRequest = (body?: unknown) =>
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 
-describe('DELETE /api/codex/account â€?logout drops the previous account cache', () => {
+describe('DELETE /api/codex/account â€” logout drops the previous account cache', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   it('a successful logout leaves both readers failing closed', async () => {
@@ -120,7 +120,7 @@ describe('DELETE /api/codex/account â€?logout drops the previous account cache',
   });
 });
 
-describe('POST /api/codex/login â€?an account switch drops the previous account cache', () => {
+describe('POST /api/codex/login â€” an account switch drops the previous account cache', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   const branches: Array<{

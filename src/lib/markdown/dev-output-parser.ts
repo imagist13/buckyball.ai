@@ -1,25 +1,25 @@
 /**
- * Dev-output format adaptation â€?Phase 4.D.
+ * Dev-output format adaptation â€” Phase 4.D.
  *
  * AI / Codex output frequently contains "engineer-ish" references that
  * are useful when clicked: file paths with optional line anchors,
  * localhost URLs, diff fences. This module turns a chunk of text into
- * a list of tokens â€?plain text + typed references â€?so the chat
+ * a list of tokens â€” plain text + typed references â€” so the chat
  * renderer can replace the typed references with interactive chips.
  *
  * Coverage:
- *   - `/abs/path/file.ext`                â€?abs path
- *   - `/abs/path/file.ext:12`             â€?abs path + line
- *   - `/abs/path/file.ext:12:5`           â€?abs path + line + col
- *   - `relative/file.ext`                 â€?relative path (has dir sep)
- *   - `relative/file.ext:12`              â€?relative + line
- *   - `file.ext#L12`                      â€?file + heading-anchor-style line
- *   - `http://localhost:PORT/...`         â€?localhost URL
- *   - `https://localhost:PORT/...`        â€?localhost URL (TLS dev)
- *   - `http://127.0.0.1:PORT/...`         â€?localhost URL (numeric)
+ *   - `/abs/path/file.ext`                â€” abs path
+ *   - `/abs/path/file.ext:12`             â€” abs path + line
+ *   - `/abs/path/file.ext:12:5`           â€” abs path + line + col
+ *   - `relative/file.ext`                 â€” relative path (has dir sep)
+ *   - `relative/file.ext:12`              â€” relative + line
+ *   - `file.ext#L12`                      â€” file + heading-anchor-style line
+ *   - `http://localhost:PORT/...`         â€” localhost URL
+ *   - `https://localhost:PORT/...`        â€” localhost URL (TLS dev)
+ *   - `http://127.0.0.1:PORT/...`         â€” localhost URL (numeric)
  *
  * Markdown links of the form `[label](path)` are not re-tokenized
- * here â€?the chat renderer already handles them via streamdown's link
+ * here â€” the chat renderer already handles them via streamdown's link
  * pipeline. This module focuses on bare references that appear in
  * regular prose / log dumps.
  */
@@ -52,7 +52,8 @@ export type DevOutputToken =
       filePath: string;
       /** Anchor in normalized form: `:12` / `:12:5` / `#L12` / `#slug` */
       anchor?: string;
-      /** True when the path has one of the previewable extensions â€?       *  chat surface enables a Preview action only in that case. */
+      /** True when the path has one of the previewable extensions â€”
+       *  chat surface enables a Preview action only in that case. */
       previewable: boolean;
     }
   | { kind: "localhost-url"; value: string; url: string };
@@ -60,7 +61,7 @@ export type DevOutputToken =
 /**
  * Tokenize a piece of text into a flat list of `text` and reference
  * tokens. Concatenating `value` across all tokens reconstructs the
- * input exactly â€?useful for tests + for callers that want to render
+ * input exactly â€” useful for tests + for callers that want to render
  * around references without losing whitespace.
  *
  * Recognized references (in priority order so localhost URL doesn't
@@ -72,7 +73,7 @@ export type DevOutputToken =
  *   3. relative file path with separator (at least one `/`) + extension
  *      + optional anchor
  *   4. bare filename ending in a PREVIEWABLE_FILE_EXTENSIONS extension
- *      + optional anchor â€?only fires for the small whitelist so prose
+ *      + optional anchor â€” only fires for the small whitelist so prose
  *      words like "okay.md" only match when `.md` is in the whitelist,
  *      which it intentionally is (Markdown filenames are the most
  *      common bare reference in chat).
@@ -100,7 +101,7 @@ export function tokenizeDevOutput(input: string): DevOutputToken[] {
       '((?:\\/|(?:[A-Za-z]:\\\\))[^\\s)\\],]+?\\.[A-Za-z0-9]+(?:#L\\d+|:\\d+(?::\\d+)?)?)',
       // Relative file path with separator + extension + optional anchor
       '((?:[\\w.-]+\\/)+[\\w.-]+\\.[A-Za-z0-9]+(?:#L\\d+|:\\d+(?::\\d+)?)?)',
-      // Bare filename â€?must be a previewable extension AND surrounded
+      // Bare filename â€” must be a previewable extension AND surrounded
       // by word boundaries so prose words don't get tokenized.
       `(\\b[\\w.-]+\\.(?:${bareExtensions})(?:#L\\d+|:\\d+(?::\\d+)?)?\\b)`,
     ].join('|'),
@@ -142,10 +143,10 @@ function buildFileToken(raw: string): DevOutputToken {
 }
 
 function splitFileAndAnchor(raw: string): { filePath: string; anchor?: string } {
-  // `#L12` first â€?it's unambiguous.
+  // `#L12` first â€” it's unambiguous.
   const hashLine = raw.match(/^(.+?)(#L\d+)$/i);
   if (hashLine) return { filePath: hashLine[1], anchor: hashLine[2] };
-  // Trailing `:12` or `:12:5` â€?anchored to the end so Windows drive
+  // Trailing `:12` or `:12:5` â€” anchored to the end so Windows drive
   // letters mid-path (C:\...) aren't mistaken for anchors.
   const colon = raw.match(/^(.+?)(:\d+(?::\d+)?)$/);
   if (colon) return { filePath: colon[1], anchor: colon[2] };

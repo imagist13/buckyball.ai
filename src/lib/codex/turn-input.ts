@@ -5,21 +5,21 @@ import type { CodexTurnInputBlock } from './types';
 /**
  * Build the Codex app-server `turn/start` input[] from the prompt + attachments.
  *
- * #632 / Phase 2 #3 â€?before this, runtime.ts sent `[{ type:'text', text }]`
+ * #632 / Phase 2 #3 â€” before this, runtime.ts sent `[{ type:'text', text }]`
  * only, so image attachments (passed all the way to the runtime via
  * `runtimeOptions.files`) were silently dropped: Codex received text only.
  *
  * Image wire format confirmed by POC (docs/research/codex-image-input-poc/
  * FINDINGS.md) against a real codex app-server:
- *   - a persisted local file (`filePath`) â†?`{ type:'localImage', path }`
- *     â€?preferred: the send path writes uploads to disk and clears the base64
+ *   - a persisted local file (`filePath`) â†’ `{ type:'localImage', path }`
+ *     â€” preferred: the send path writes uploads to disk and clears the base64
  *       `data` (route.ts), and a local path avoids a multi-MB data URL.
- *   - an in-memory image (base64 `data`, no `filePath`) â†?`{ type:'image',
- *     url:'data:<mime>;base64,...' }` â€?fallback for paths that bypass disk.
+ *   - an in-memory image (base64 `data`, no `filePath`) â†’ `{ type:'image',
+ *     url:'data:<mime>;base64,...' }` â€” fallback for paths that bypass disk.
  *
  * Only image/* attachments are wired (the composer image path is what this
  * issue covers; the Codex turn input has no generic file/document block, so
- * non-image files are skipped here â€?unchanged behavior). Text always leads.
+ * non-image files are skipped here â€” unchanged behavior). Text always leads.
  *
  * Pure + dependency-light so it unit-tests without the codex spawn graph.
  */
@@ -35,7 +35,7 @@ export function buildCodexTurnInput(
     } else if (f.data) {
       blocks.push({ type: 'image', url: `data:${f.type};base64,${f.data}` });
     }
-    // image with neither a path nor data â†?nothing to send; skip (don't emit
+    // image with neither a path nor data â†’ nothing to send; skip (don't emit
     // an empty block the server would reject).
   }
   return blocks;

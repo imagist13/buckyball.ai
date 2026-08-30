@@ -9,7 +9,7 @@ import type { ChannelType, InboundMessage, OutboundMessage, SendResult } from '.
 
 // ── Card Stream Controller ──────────────────────────────────────
 
-/** Controls a streaming card lifecycle (create �?update �?finalize). */
+/** Controls a streaming card lifecycle (create → update → finalize). */
 /** Tool call info for card display */
 export interface ToolCallInfo {
   id: string;

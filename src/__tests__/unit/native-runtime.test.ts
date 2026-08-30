@@ -1,5 +1,5 @@
 /**
- * native-runtime.test.ts �?Tests for the native Agent Runtime stack.
+ * native-runtime.test.ts — Tests for the native Agent Runtime stack.
  *
  * Covers: permission flow, provider transport, claude-code-compat URL building,
  * event bus, system prompt, and session primitives.
@@ -94,7 +94,7 @@ describe('Claude Code compat URL building', () => {
 // ── Provider transport detection ────────────────────────────────
 
 describe('Provider transport detection', () => {
-  it('official anthropic URL �?standard-messages', async () => {
+  it('official anthropic URL → standard-messages', async () => {
     // This test validates the logic in provider-transport.ts
     // We can't easily test without a real provider, so test the helper logic
     const isOfficial = (url: string) => {

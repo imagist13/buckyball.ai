@@ -1,5 +1,5 @@
 /**
- * Phase 4 Phase 1 â€?shared write-tool classification.
+ * Phase 4 Phase 1 â€” shared write-tool classification.
  *
  * Both MessageItem (DiffSummary cards) and stream-session-manager
  * (codepilot:file-changed dispatch) consume this module. Drift between
@@ -52,7 +52,7 @@ describe('write-tool classification', () => {
 
   it('extractWritePath handles MultiEdit input shape (file_path + edits[])', () => {
     // MultiEdit's input is `{ file_path, edits: [{old_string, new_string}, ...] }`.
-    // We only need the file path â€?the edits[] payload is irrelevant
+    // We only need the file path â€” the edits[] payload is irrelevant
     // to the "which file just changed" question.
     const input = {
       file_path: '/Users/me/proj/docs/x.md',
@@ -65,7 +65,7 @@ describe('write-tool classification', () => {
   });
 
   it('every CREATE_TOOLS entry is also in WRITE_TOOLS', () => {
-    // CREATE_TOOLS is a strict subset â€?used only to refine the label
+    // CREATE_TOOLS is a strict subset â€” used only to refine the label
     // ('Created' vs 'Modified') on the DiffSummary card. A create-only
     // tool that isn't in WRITE_TOOLS would never produce a card at all.
     for (const name of CREATE_TOOLS) {
@@ -102,7 +102,7 @@ describe('extractWritePath', () => {
   });
 
   it('prefers file_path over fallback keys when both are present', () => {
-    // A tool that mixes shapes (file_path + path) â€?go with the
+    // A tool that mixes shapes (file_path + path) â€” go with the
     // canonical one so the same input produces the same dispatched
     // path regardless of which legacy key got merged in.
     assert.equal(

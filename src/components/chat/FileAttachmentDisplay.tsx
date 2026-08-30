@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import type { FileUIPart } from 'ai';
 import type { FileAttachment } from '@/types';
 import { isImageFile } from '@/types';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import {
   Attachment,
   AttachmentInfo,
@@ -21,7 +21,7 @@ interface FileAttachmentDisplayProps {
 
 /**
  * Build a display URL for a file attachment.
- * - Directories (`inode/directory`) carry no content â?return '' so
+ * - Directories (`inode/directory`) carry no content — return '' so
  *   ai-elements falls back to the Folder icon (set via fallbackIcon).
  * - If base64 `data` is available (optimistic / in-memory): use data URI
  * - If `filePath` is available (reloaded from DB): use the uploads API
@@ -36,7 +36,7 @@ function fileUrl(f: FileAttachment): string {
 /**
  * Adapt a FileAttachment (project domain type) into a `FileUIPart` so
  * ai-elements `<Attachment>` can render it. The `id` is also needed by
- * the AttachmentData union â?pass it through as a custom field.
+ * the AttachmentData union — pass it through as a custom field.
  */
 function toFileUIPart(file: FileAttachment): FileUIPart & { id: string } {
   return {
@@ -111,14 +111,14 @@ export function FileAttachmentDisplay({ files }: FileAttachmentDisplayProps) {
                 data={toFileUIPart(file)}
                 // List chip = white card on the bubble's grey backdrop
                 // (instead of transparent + border, which blended with
-                // the muted bubble background â?Codex April 2026 review).
+                // the muted bubble background — Codex April 2026 review).
                 className="bg-background border-border/60"
               >
                 <AttachmentPreview
                   // Inner icon box stays grey to keep the icon column
                   // visually separate from the filename column.
                   className="bg-muted"
-                  fallbackIcon={isDir ? <BuckyballIcon name="folder" size="md" className="text-muted-foreground" aria-hidden /> : undefined}
+                  fallbackIcon={isDir ? <CodePilotIcon name="folder" size="md" className="text-muted-foreground" aria-hidden /> : undefined}
                 />
                 <AttachmentInfo showMediaType={!isDir} />
               </Attachment>

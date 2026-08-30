@@ -1,5 +1,5 @@
 /**
- * Phase 4.A Markdown data layer â€?parsers + rewriters.
+ * Phase 4.A Markdown data layer â€” parsers + rewriters.
  *
  * Coverage:
  *  - frontmatter split (scalar / list / multi-line list / quoted /
@@ -93,7 +93,7 @@ body`);
   });
 
   it('formatFrontmatterValue handles arrays + null', () => {
-    assert.equal(formatFrontmatterValue(null), 'â€?);
+    assert.equal(formatFrontmatterValue(null), 'â€”');
     assert.equal(formatFrontmatterValue(['a', 'b']), 'a, b');
     assert.equal(formatFrontmatterValue(true), 'true');
     assert.equal(formatFrontmatterValue(42), '42');
@@ -215,7 +215,7 @@ describe('callout rewriter', () => {
     const out = rewriteCallouts(src);
     // Sentinel string survives streamdown render and is detected by
     // PreviewPanel's post-render pass to stamp the class.
-    assert.match(out, /âŸ¦codepilot-callout:noteâŸ?);
+    assert.match(out, /âŸ¦codepilot-callout:noteâŸ§/);
     assert.equal(readCalloutMarker(out), 'note');
     // body text preserved
     assert.match(out, /Body line/);
@@ -270,17 +270,17 @@ describe('callout rewriter', () => {
 });
 
 describe('anchor parser', () => {
-  it('parses #L12 â†?line', () => {
+  it('parses #L12 â†’ line', () => {
     assert.deepEqual(parseAnchor('#L12'), { kind: 'line', line: 12 });
     assert.deepEqual(parseAnchor('#l12'), { kind: 'line', line: 12 });
   });
 
-  it('parses :12 / :12:5 â†?line (column dropped)', () => {
+  it('parses :12 / :12:5 â†’ line (column dropped)', () => {
     assert.deepEqual(parseAnchor(':12'), { kind: 'line', line: 12 });
     assert.deepEqual(parseAnchor(':42:7'), { kind: 'line', line: 42 });
   });
 
-  it('parses #heading-slug â†?heading', () => {
+  it('parses #heading-slug â†’ heading', () => {
     assert.deepEqual(parseAnchor('#intro'), { kind: 'heading', slug: 'intro' });
     assert.deepEqual(parseAnchor('#section-a'), { kind: 'heading', slug: 'section-a' });
   });

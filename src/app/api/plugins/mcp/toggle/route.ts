@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/plugins/mcp/toggle â€?Enable or disable an MCP server.
+ * POST /api/plugins/mcp/toggle â€” Enable or disable an MCP server.
  *
  * Operates on the MCP connection manager directly. Changes take effect
  * immediately for disconnect, and on next message for re-connect
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: true });
         }
       } catch { /* fall through to deferred */ }
-      // Config not found or connect failed â€?will pick up on next message
+      // Config not found or connect failed â€” will pick up on next message
       return NextResponse.json({ success: true, note: 'Will take effect on next message' });
     } else {
       await disconnectServer(serverName);

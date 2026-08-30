@@ -6,7 +6,7 @@
  *
  * The PersonalAgent archetype auto-configures Bot capability, IM scopes,
  * event subscriptions (im.message.receive_v1, card.action.trigger), and
- * long-connection mode â€?no manual setup needed (verified by POC 2026-04-13).
+ * long-connection mode â€” no manual setup needed (verified by POC 2026-04-13).
  *
  * Session state is stored in globalThis to survive Next.js HMR.
  */
@@ -105,7 +105,7 @@ export async function startRegistration(): Promise<{ sessionId: string; verifica
   sessions.set(sessionId, session);
 
   // Auto-cleanup after TTL. unref() so the timer doesn't block Node from
-  // exiting â€?in production the process is long-lived so this is a no-op,
+  // exiting â€” in production the process is long-lived so this is a no-op,
   // but in tests each session would otherwise keep the event loop alive
   // for the full 10 minutes.
   setTimeout(() => { sessions.delete(sessionId); }, SESSION_CLEANUP_MS).unref();
@@ -162,18 +162,18 @@ export async function pollRegistration(sessionId: string): Promise<FeishuRegistr
     return session;
   }
 
-  // Success â€?check if we need Lark retry
+  // Success â€” check if we need Lark retry
   let clientId = result.client_id || '';
   let clientSecret = result.client_secret || '';
   let domain: 'feishu' | 'lark' = 'feishu';
 
   if (!clientSecret && result.user_info?.tenant_brand === 'lark') {
-    // Lark tenant â€?switch to lark endpoint and keep polling until success/failure,
+    // Lark tenant â€” switch to lark endpoint and keep polling until success/failure,
     // matching the official CLI behavior (full retry loop, not single shot).
     session.domain = 'lark';
     const larkResult = await doPoll(LARK_ACCOUNTS, session.deviceCode);
     if (larkResult.error === 'authorization_pending' || larkResult.error === 'slow_down') {
-      // Still pending on Lark side â€?let the next pollRegistration call retry
+      // Still pending on Lark side â€” let the next pollRegistration call retry
       if (larkResult.error === 'slow_down') {
         session.interval = Math.min(session.interval + 5000, MAX_INTERVAL_MS);
       }
@@ -234,7 +234,7 @@ async function doPoll(accountsBase: string, deviceCode: string): Promise<Registr
     signal: AbortSignal.timeout(15_000),
   });
 
-  // Always parse body â€?Device Flow returns HTTP 400 for authorization_pending/slow_down,
+  // Always parse body â€” Device Flow returns HTTP 400 for authorization_pending/slow_down,
   // which is standard behavior, not a real error. The error field in the body tells us what to do.
   try {
     return await res.json();

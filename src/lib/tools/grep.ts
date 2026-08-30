@@ -1,5 +1,5 @@
 /**
- * tools/grep.ts â€?Search file contents using ripgrep.
+ * tools/grep.ts â€” Search file contents using ripgrep.
  */
 
 import { tool } from 'ai';

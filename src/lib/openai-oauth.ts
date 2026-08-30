@@ -1,10 +1,10 @@
 /**
- * openai-oauth.ts â€?OpenAI PKCE OAuth + Token Exchange.
+ * openai-oauth.ts â€” OpenAI PKCE OAuth + Token Exchange.
  *
  * Implements the Codex CLI OAuth flow for ChatGPT Plus/Pro users.
  * Based on CraftAgent's verified implementation.
  *
- * Flow: PKCE auth â†?code exchange â†?id_token â†?RFC 8693 token exchange â†?OpenAI API Key
+ * Flow: PKCE auth â†’ code exchange â†’ id_token â†’ RFC 8693 token exchange â†’ OpenAI API Key
  */
 
 import { randomBytes, createHash } from 'node:crypto';
@@ -90,7 +90,7 @@ export function prepareOAuthFlow(): PreparedFlow {
  *
  * Network errors (TypeError from fetch on connection reset, ETIMEDOUT, DNS
  * failure) and transient 5xx server errors are retryable. 4xx (auth errors)
- * are not â€?retrying won't help if the code is genuinely invalid.
+ * are not â€” retrying won't help if the code is genuinely invalid.
  *
  * 403 sits in a grey zone: OpenAI's token endpoint occasionally returns 403
  * for first-attempt requests when the auth code is fresh and propagation
@@ -130,7 +130,7 @@ export async function exchangeCodeForTokens(
   // Retry up to 3 times with exponential backoff (1s, 2s, 4s) for transient
   // network failures + 403/5xx. Issue #464 reports users on macOS + Windows
   // hitting "Token exchange failed: 403" while the maintainer's two machines
-  // never reproduce â€?strong signal of network-stability dependence. The
+  // never reproduce â€” strong signal of network-stability dependence. The
   // upstream OpenCode reference implementation handles this with polling
   // retries on the same status codes.
   const MAX_ATTEMPTS = 3;
@@ -176,7 +176,7 @@ export async function exchangeCodeForTokens(
       };
     }
 
-    // Non-OK response â€?capture body for the error message and decide whether to retry
+    // Non-OK response â€” capture body for the error message and decide whether to retry
     lastStatus = response.status;
     lastBody = await response.text();
 
@@ -187,7 +187,7 @@ export async function exchangeCodeForTokens(
     break;
   }
 
-  // Out of retries â€?produce a useful error. JSON.stringify the body when
+  // Out of retries â€” produce a useful error. JSON.stringify the body when
   // possible so users (and Sentry) see structured fields instead of the
   // legacy "[object Object]" placeholder that issue #464 complained about.
   let msg: string;
@@ -268,7 +268,7 @@ export function extractAccountId(claims: JwtClaims): string | undefined {
 }
 
 /**
- * Codex API endpoint â€?ChatGPT Plus/Pro users access OpenAI models through this.
+ * Codex API endpoint â€” ChatGPT Plus/Pro users access OpenAI models through this.
  * Uses access_token as Bearer + ChatGPT-Account-Id header.
  */
 export const CODEX_API_ENDPOINT = 'https://chatgpt.com/backend-api/codex/responses';

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CaretDown } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 
 export type TaskItemFileProps = ComponentProps<"div">;
 
@@ -60,7 +60,7 @@ export const TaskTrigger = ({
   <CollapsibleTrigger asChild className={cn("group", className)} {...props}>
     {children ?? (
       <div className="flex w-full cursor-pointer items-center gap-2 text-muted-foreground text-sm transition-colors hover:text-foreground">
-        <BuckyballIcon name="search" size="md" aria-hidden />
+        <CodePilotIcon name="search" size="md" aria-hidden />
         <p className="text-sm">{title}</p>
         <CaretDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
       </div>

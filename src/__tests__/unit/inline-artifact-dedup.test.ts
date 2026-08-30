@@ -1,12 +1,12 @@
 /**
- * Phase 4 UX III â€?inline artifact content-hash dedup.
+ * Phase 4 UX III â€” inline artifact content-hash dedup.
  *
  * `tabFromPreviewSource` now fingerprints inline-* sources by a fast
  * 32-bit hash of their content, not by virtualName. The contract:
- *   - Same content + same kind â†?same tab id (dedup)
- *   - Different content (even with the same virtualName) â†?different
+ *   - Same content + same kind â†’ same tab id (dedup)
+ *   - Different content (even with the same virtualName) â†’ different
  *     tab ids (no false collapse)
- *   - Different kind but same content â†?different tab ids
+ *   - Different kind but same content â†’ different tab ids
  *
  * Run: npx tsx --test src/__tests__/unit/inline-artifact-dedup.test.ts
  */
@@ -37,7 +37,7 @@ describe('djb2Hex', () => {
 });
 
 describe('inline artifact tab dedup by content hash', () => {
-  it('same html content â†?same tab id (multiple Preview clicks reuse one tab)', () => {
+  it('same html content â†’ same tab id (multiple Preview clicks reuse one tab)', () => {
     const a = tabFromPreviewSource({
       kind: 'inline-html',
       html: '<h1>x</h1>',
@@ -51,7 +51,7 @@ describe('inline artifact tab dedup by content hash', () => {
     assert.equal(a.id, b.id, 'identical content must produce identical tab id');
   });
 
-  it('different html content â†?different tab ids', () => {
+  it('different html content â†’ different tab ids', () => {
     const a = tabFromPreviewSource({
       kind: 'inline-html',
       html: '<h1>A</h1>',
@@ -65,7 +65,7 @@ describe('inline artifact tab dedup by content hash', () => {
     assert.notEqual(a.id, b.id, 'different content with same virtualName must NOT collapse');
   });
 
-  it('different kinds with same content â†?different tab ids', () => {
+  it('different kinds with same content â†’ different tab ids', () => {
     const a = tabFromPreviewSource({
       kind: 'inline-json',
       text: 'shared',
@@ -79,7 +79,7 @@ describe('inline artifact tab dedup by content hash', () => {
     assert.notEqual(a.id, b.id, 'kind must be part of the fingerprint');
   });
 
-  it('openDynamicTab dedups: same content opened twice â†?tabs.length stays 3', () => {
+  it('openDynamicTab dedups: same content opened twice â†’ tabs.length stays 3', () => {
     let s = initialState();
     s = openDynamicTab(
       s,

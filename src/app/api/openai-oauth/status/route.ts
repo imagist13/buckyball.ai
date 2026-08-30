@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { getOAuthStatus, clearOAuthTokens, cancelOAuthFlow } from '@/lib/openai-oauth-manager';
 
 /**
- * GET /api/openai-oauth/status â€?Check OpenAI OAuth login status.
+ * GET /api/openai-oauth/status â€” Check OpenAI OAuth login status.
  */
 export async function GET() {
   return NextResponse.json(getOAuthStatus());
 }
 
 /**
- * DELETE /api/openai-oauth/status â€?Logout: clear tokens AND cancel any pending OAuth flow.
+ * DELETE /api/openai-oauth/status â€” Logout: clear tokens AND cancel any pending OAuth flow.
  */
 export async function DELETE() {
   clearOAuthTokens();

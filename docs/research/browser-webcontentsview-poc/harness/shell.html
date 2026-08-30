@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>CodePilot WebContentsView POC</title>
+    <style>
+      :root { color-scheme: light dark; font-family: ui-sans-serif, system-ui; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: transparent; color: CanvasText; }
+      header { height: 56px; display: flex; align-items: center; gap: 8px; padding: 12px 16px 8px 92px; }
+      button, input { height: 32px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 8px; background: Canvas; color: CanvasText; padding: 0 10px; }
+      #address { min-width: 280px; flex: 1; }
+      #slot { position: fixed; inset: 64px 16px 16px 16px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 14px; overflow: hidden; }
+      #overlay { position: fixed; inset: 90px 48px 48px 48px; z-index: 10; display: none; place-items: center; border-radius: 16px; background: color-mix(in srgb, Canvas 96%, transparent); box-shadow: 0 20px 80px #0008; }
+      #overlay[data-open="true"] { display: grid; }
+      .card { width: min(420px, 80%); padding: 24px; border: 1px solid color-mix(in srgb, CanvasText 20%, transparent); border-radius: 14px; background: Canvas; }
+      #status { font: 11px ui-monospace, monospace; opacity: .7; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <input id="address" aria-label="Address" />
+      <button id="go">Go</button>
+      <button id="show-overlay">Overlay</button>
+      <button id="crash">Crash guest</button>
+      <span id="status">starting</span>
+    </header>
+    <div id="slot" aria-label="Native browser slot"></div>
+    <div id="overlay" data-open="false">
+      <div class="card">
+        <h2>Renderer overlay</h2>
+        <p>This must remain visible and clickable over the native browser area.</p>
+        <button id="close-overlay">Close</button>
+      </div>
+    </div>
+    <script>
+      const slot = document.querySelector('#slot');
+      const address = document.querySelector('#address');
+      const status = document.querySelector('#status');
+      const overlay = document.querySelector('#overlay');
+      const reportBounds = () => {
+        const rect = slot.getBoundingClientRect();
+        window.browserPoc.setBounds({
+          x: Math.round(rect.x), y: Math.round(rect.y),
+          width: Math.round(rect.width), height: Math.round(rect.height),
+        }).then((result) => { status.textContent = result.ok ? 'bounds ok' : result.error; });
+      };
+      new ResizeObserver(reportBounds).observe(slot);
+      window.addEventListener('resize', reportBounds);
+      document.querySelector('#go').addEventListener('click', () => window.browserPoc.navigate(address.value));
+      address.addEventListener('keydown', (event) => { if (event.key === 'Enter') window.browserPoc.navigate(address.value); });
+      document.querySelector('#show-overlay').addEventListener('click', async () => {
+        overlay.dataset.open = 'true';
+        await window.browserPoc.setOverlayOpen(true);
+      });
+      document.querySelector('#close-overlay').addEventListener('click', async () => {
+        overlay.dataset.open = 'false';
+        await window.browserPoc.setOverlayOpen(false);
+      });
+      document.querySelector('#crash').addEventListener('click', () => window.browserPoc.crashGuest());
+      window.browserPoc.getStatus().then((value) => {
+        address.value = value.url;
+        status.textContent = value.platform + ' Electron ' + value.electron;
+        reportBounds();
+      });
+    </script>
+  </body>
+</html>

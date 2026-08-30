@@ -356,7 +356,7 @@ describe('subagent_runs durable lifecycle', () => {
     const upstream = db.startSubagentRun({
       id: 'parallel-upstream',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Researcher',
       workflowId: 'parallel-workflow',
@@ -366,7 +366,7 @@ describe('subagent_runs durable lifecycle', () => {
     const downstream = db.startSubagentRun({
       id: 'parallel-downstream',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Writer',
       workflowId: 'parallel-workflow',
@@ -601,7 +601,7 @@ describe('subagent_runs durable lifecycle', () => {
     const first = db.startSubagentRun({
       id: 'workflow-task-first',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Researcher',
       workflowId: 'duplicate-workflow',
@@ -615,7 +615,7 @@ describe('subagent_runs durable lifecycle', () => {
     assert.throws(() => db.startSubagentRun({
       id: 'workflow-task-duplicate',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Researcher',
       workflowId: 'duplicate-workflow',
@@ -630,7 +630,7 @@ describe('subagent_runs durable lifecycle', () => {
       id: 'workflow-task-retry',
       logicalRunId: first.logical_run_id,
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Researcher',
       workflowId: 'duplicate-workflow',
@@ -646,7 +646,7 @@ describe('subagent_runs durable lifecycle', () => {
     db.startSubagentRun({
       id: 'cycle-task-a',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Task A',
       workflowId: 'cycle-workflow',
@@ -667,7 +667,7 @@ describe('subagent_runs durable lifecycle', () => {
     }), (error: unknown) => {
       const rejection = db.describeSubagentRunStartRejection(error);
       assert.equal(rejection?.error.code, 'INVALID_DEPENDENCY_SPEC');
-      assert.match(rejection?.message || '', /a â†?b â†?a|b â†?a â†?b/);
+      assert.match(rejection?.message || '', /a â†’ b â†’ a|b â†’ a â†’ b/);
       return true;
     });
     assert.equal(db.getSubagentRun('cycle-task-b'), undefined);
@@ -750,7 +750,7 @@ describe('subagent_runs durable lifecycle', () => {
       id: 'attempt-bounded-events',
       logicalRunId: 'bounded-events',
       parentSessionId: session.id,
-      runtime: 'bbagent',
+      runtime: 'codepilot_runtime',
       toolName: 'Agent',
       agentName: 'Writer',
       providerId: 'provider-deepseek',
@@ -902,13 +902,13 @@ describe('subagent_runs durable lifecycle', () => {
 
   it('stores durable lifecycle facts for every managed Runtime', () => {
     const session = createParentSession('all runtime durability');
-    for (const runtime of ['bbagent', 'claude_code', 'codex_runtime'] as const) {
+    for (const runtime of ['codepilot_runtime', 'claude_code', 'codex_runtime'] as const) {
       const runId = `run-${runtime}`;
       db.startSubagentRun({
         id: runId,
         parentSessionId: session.id,
         runtime,
-        toolName: runtime === 'bbagent' ? 'Agent' : 'codepilot_spawn_subagent',
+        toolName: runtime === 'codepilot_runtime' ? 'Agent' : 'codepilot_spawn_subagent',
         agentName: `${runtime} worker`,
         providerId: 'provider-child',
         requestedModel: 'child-model',
@@ -925,7 +925,7 @@ describe('subagent_runs durable lifecycle', () => {
     }
     assert.deepEqual(
       new Set(db.listSubagentRuns(session.id).map((run) => run.runtime)),
-      new Set(['bbagent', 'claude_code', 'codex_runtime']),
+      new Set(['codepilot_runtime', 'claude_code', 'codex_runtime']),
     );
   });
 

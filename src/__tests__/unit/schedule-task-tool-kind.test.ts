@@ -1,5 +1,5 @@
 /**
- * Phase 3 Step 3 �?`kind` contract for the AI tool that creates tasks.
+ * Phase 3 Step 3 — `kind` contract for the AI tool that creates tasks.
  *
  * v3/v4 plan: AI tool input must declare `kind: 'reminder' | 'ai_task'`
  * so models can route "5 分钟后提醒我喝水" to the reminder path during
@@ -12,7 +12,7 @@
  *   2. Both schemas mention "reminder" and "ai_task" in their description
  *      so the model gets enough hint to route correctly.
  *   3. The session-task object literal in notification-mcp.ts (durable=false
- *      branch �?bypasses /api/tasks/schedule's server-side kind check)
+ *      branch — bypasses /api/tasks/schedule's server-side kind check)
  *      stamps `kind` onto the in-memory task. v4 fix #1.
  *   4. /api/tasks/schedule rejects requests with missing or invalid `kind`.
  *   5. Type-side: `ScheduledTask` interface declares the `kind` field.
@@ -54,7 +54,7 @@ describe('codepilot_schedule_task kind contract (Phase 3 Step 3)', () => {
   });
 
   it('notification-mcp.ts session-task literal (durable=false) stamps kind', () => {
-    // v4 fix #1 �?the in-memory session task object literal must carry
+    // v4 fix #1 — the in-memory session task object literal must carry
     // `kind`, otherwise the durable=false path bypasses the API's
     // kind validation and creates a task with no kind.
     const src = read('lib/notification-mcp.ts');
@@ -69,12 +69,12 @@ describe('codepilot_schedule_task kind contract (Phase 3 Step 3)', () => {
     );
     assert.ok(
       taskLiteral,
-      'durable=false branch must build a `const task = { �?}` literal then call addSessionTask(task)',
+      'durable=false branch must build a `const task = { … }` literal then call addSessionTask(task)',
     );
     assert.match(
       taskLiteral![0],
       /\bkind\s*[,:]/,
-      'session task literal must include a `kind` field �?without it the in-memory path defaults to ai_task and reminders accidentally call providers',
+      'session task literal must include a `kind` field — without it the in-memory path defaults to ai_task and reminders accidentally call providers',
     );
   });
 
@@ -103,7 +103,7 @@ describe('codepilot_schedule_task kind contract (Phase 3 Step 3)', () => {
     assert.match(
       src,
       /interface\s+ScheduledTask\b[\s\S]{0,1200}kind:\s*ScheduledTaskKind/,
-      'ScheduledTask interface must require the kind field �?typecheck propagates the contract to every read/write site',
+      'ScheduledTask interface must require the kind field — typecheck propagates the contract to every read/write site',
     );
     assert.match(
       src,

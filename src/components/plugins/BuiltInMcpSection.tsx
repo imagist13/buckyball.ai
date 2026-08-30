@@ -1,17 +1,17 @@
 "use client";
 
 /**
- * Built-in MCP capabilities â?read-only descriptor of every in-process
+ * Built-in MCP capabilities — read-only descriptor of every in-process
  * MCP CodePilot ships (Phase 2D.2 + 2026-05-01 visual unification).
  *
  * Visual rule: the card chrome mirrors the canonical Settings shell card
- * (`ProviderCard.tsx`, `OverviewSection.tsx`) â?`rounded-lg bg-card
+ * (`ProviderCard.tsx`, `OverviewSection.tsx`) — `rounded-lg bg-card
  * border border-border/50 p-5`, no shadow, soft border. shadcn's
  * `<Card>` component is intentionally avoided because its defaults
  * (`rounded-3xl shadow-md ring-1 px-6`) conflict with `docs/design.md`.
  *
  * Detail (full tools list + trigger explanation) lives behind a click
- * â?`<Dialog>`. This section is purely descriptive â?it doesn't try to
+ * → `<Dialog>`. This section is purely descriptive — it doesn't try to
  * report whether a MCP is registered for the current message; the
  * section header explicitly disclaims live status.
  */
@@ -24,7 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
@@ -40,7 +40,8 @@ const TRIGGER_LABEL_KEY: Record<BuiltInMcpTriggerCondition, TranslationKey> = {
   keyword: "mcp.builtin.trigger.keyword",
 };
 
-// Status-pill dialect from `docs/design.md` Â§ Status & source badges â?// rounded-full, dot + label, muted background tones.
+// Status-pill dialect from `docs/design.md` § Status & source badges —
+// rounded-full, dot + label, muted background tones.
 const TRIGGER_TONE: Record<BuiltInMcpTriggerCondition, string> = {
   always: "bg-status-success-muted text-status-success-foreground",
   workspace: "bg-primary/10 text-primary",
@@ -68,8 +69,8 @@ export function BuiltInMcpSection({ search = "" }: { search?: string }) {
     : BUILTIN_MCP_CATALOG;
 
   // When the filter hides every built-in row, swallow the whole
-  // section â?no header, no dialog mount â?so the search result
-  // doesn't show an empty åç½®è½å stub above the installed list.
+  // section — no header, no dialog mount — so the search result
+  // doesn't show an empty 内置能力 stub above the installed list.
   if (visible.length === 0) {
     return (
       <BuiltInMcpDetailDialog
@@ -83,7 +84,7 @@ export function BuiltInMcpSection({ search = "" }: { search?: string }) {
     <>
       <header className="mb-3">
         <div className="flex items-center gap-2">
-          <BuckyballIcon name="permission" size="sm" className="text-muted-foreground" aria-hidden />
+          <CodePilotIcon name="permission" size="sm" className="text-muted-foreground" aria-hidden />
           <h4 className="text-sm font-medium">
             {t("mcp.builtin.sectionTitle" as TranslationKey)}
           </h4>
@@ -140,12 +141,12 @@ function BuiltInMcpCard({
           onOpenDetail();
         }
       }}
-      aria-label={`${entry.name} â?${t(entry.descriptionKey as TranslationKey)}`}
+      aria-label={`${entry.name} — ${t(entry.descriptionKey as TranslationKey)}`}
       // Canonical settings card: rounded-lg + soft border + p-5, no shadow.
       // Adds cursor + hover/focus affordances for the click-to-open detail.
       // Clickable cards (open detail dialog) get a subtle hover wash so
       // the affordance is visible. Non-clickable cards (external MCP
-      // server list) intentionally stay flat â?see McpServerList.tsx.
+      // server list) intentionally stay flat — see McpServerList.tsx.
       className="rounded-lg bg-card border border-border/50 p-5 cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="flex items-center gap-2 flex-wrap">
@@ -215,9 +216,9 @@ function BuiltInMcpDetailDialog({
               </DialogDescription>
             </DialogHeader>
 
-            {/* Single-scroll body â?`flex-1 min-h-0 overflow-y-auto`
-                is the canonical pattern from `docs/design.md` Â§
-                "Card â?Detail dialog". */}
+            {/* Single-scroll body — `flex-1 min-h-0 overflow-y-auto`
+                is the canonical pattern from `docs/design.md` §
+                "Card → Detail dialog". */}
             <div className="flex-1 min-h-0 overflow-y-auto mt-4 space-y-4">
               {entry.triggerHintKey && (
                 <section>
@@ -232,10 +233,10 @@ function BuiltInMcpDetailDialog({
 
               <section>
                 <h5 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
-                  {t("mcp.builtin.toolsHeading" as TranslationKey)} Â·{" "}
+                  {t("mcp.builtin.toolsHeading" as TranslationKey)} ·{" "}
                   {entry.toolNames.length}
                 </h5>
-                {/* Inset-divider sub-card per design.md card system Â§
+                {/* Inset-divider sub-card per design.md card system §
                     "rounded-md bg-muted/40 + px-3.5 + divide-y". */}
                 <div className="rounded-md bg-muted/40">
                   <ul className="px-3.5 divide-y divide-border/50">

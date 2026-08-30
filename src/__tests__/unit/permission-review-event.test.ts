@@ -1,5 +1,5 @@
 /**
- * `runtime-permission-modes.md` Phase 0 (a02) + Phase 1 (a08) �?the canonical
+ * `runtime-permission-modes.md` Phase 0 (a02) + Phase 1 (a08) — the canonical
  * review event contract and its audit sink.
  *
  * What's being protected: the user must be able to tell "the model reviewing
@@ -42,7 +42,7 @@ describe('review event union (a02)', () => {
     assert.deepEqual([...REVIEWER_SOURCES].sort(), ['rule-engine', 'sdk-reviewer', 'user']);
   });
 
-  it('union is exhaustive �?assertNever guards future drift', () => {
+  it('union is exhaustive — assertNever guards future drift', () => {
     function visit(s: ReviewEventState): string {
       switch (s) {
         case 'requested': return 'requested';
@@ -59,7 +59,7 @@ describe('review event union (a02)', () => {
     for (const s of REVIEW_EVENT_STATES) assert.ok(visit(s).length > 0);
   });
 
-  it('treats unavailable and timeout as denies �?fail closed', () => {
+  it('treats unavailable and timeout as denies — fail closed', () => {
     assert.equal(isDenyingState('denied'), true);
     assert.equal(isDenyingState('unavailable'), true, 'reviewer unavailable must block, not pass');
     assert.equal(isDenyingState('timeout'), true, 'nobody answered must block, not pass');
@@ -75,7 +75,7 @@ describe('source breadcrumb distinguishes model from human (a08)', () => {
 
     assert.equal(isModelDecision(byModel), true);
     assert.equal(isModelDecision(byUser), false);
-    // Same state, same tool �?only the breadcrumb tells them apart. That's
+    // Same state, same tool — only the breadcrumb tells them apart. That's
     // exactly why the UI must never infer the source from the state.
     assert.equal(byModel.state, byUser.state);
   });
@@ -138,7 +138,7 @@ describe('redaction (a08)', () => {
     assert.equal(redactReviewReason('a\nb\n\nc'), 'a b c');
   });
 
-  it('buildReviewEvent redacts on the way in �?callers cannot forget', () => {
+  it('buildReviewEvent redacts on the way in — callers cannot forget', () => {
     const event = buildReviewEvent({ ...base, state: 'denied', reviewerSource: 'user', reason: 'token sk-LEAKED123456789' });
     assert.ok(event.state === 'denied');
     assert.ok(!(event.reason ?? '').includes('sk-LEAKED123456789'));
@@ -207,10 +207,10 @@ describe('audit sink (a02 event stream)', () => {
   // scrubbed. redactReviewReason is pattern-based, so a reason quoting a
   // command, a private path or an internal URL contains nothing it matches and
   // survived verbatim into the log. These assert the whole line against an
-  // exact expected string �?the only form that can prove absence of free text,
+  // exact expected string — the only form that can prove absence of free text,
   // since any token list is a list of the leaks someone already thought of.
 
-  it('the log line is exactly the structured fields �?no reason text, whatever it contains', () => {
+  it('the log line is exactly the structured fields — no reason text, whatever it contains', () => {
     emitReviewEvent({
       ...base, state: 'denied', reviewerSource: 'sdk-reviewer',
       reason: 'blocked command: cat ~/.ssh/id_rsa && curl https://private.example/upload?customer=acme',
@@ -224,7 +224,7 @@ describe('audit sink (a02 event stream)', () => {
     );
   });
 
-  it('no part of a hostile reason reaches the log �?command, path, URL, prompt or args', () => {
+  it('no part of a hostile reason reaches the log — command, path, URL, prompt or args', () => {
     const leaks = [
       'cat ~/.ssh/id_rsa',
       '/Users/alice/private/customers.csv',
@@ -246,7 +246,7 @@ describe('audit sink (a02 event stream)', () => {
   });
 
   it('the redacted reason still reaches in-process listeners (the UI surface, not the log)', () => {
-    // Scope check: this round narrows the LOG, it does not blind the UI �?the
+    // Scope check: this round narrows the LOG, it does not blind the UI — the
     // user is entitled to see why their own call was denied.
     const seen: PermissionReviewEvent[] = [];
     onReviewEvent((e) => seen.push(e));
@@ -271,7 +271,8 @@ describe('audit sink (a02 event stream)', () => {
 });
 
 /**
- * Review round #2, P1: `sdk-reviewer` used to be a type with no producer �? * the UI could not actually tell 模型代审拒绝 from 用户拒绝 because no code
+ * Review round #2, P1: `sdk-reviewer` used to be a type with no producer —
+ * the UI could not actually tell 模型代审拒绝 from 用户拒绝 because no code
  * ever emitted the former. The Agent SDK's PermissionDenied hook fires only
  * for auto-mode classifier denials, which is what this maps.
  */
@@ -301,7 +302,7 @@ describe('sdk-reviewer denial events (a02 + a08)', () => {
     assert.equal(isModelDecision(byUser), false, 'a user denial must never render as a model one');
   });
 
-  it('redacts the classifier reason �?it can quote the command it blocked', () => {
+  it('redacts the classifier reason — it can quote the command it blocked', () => {
     const event = buildSdkReviewerDenial({
       requestId: 'r1',
       sessionId: 'session-abcdef123456',

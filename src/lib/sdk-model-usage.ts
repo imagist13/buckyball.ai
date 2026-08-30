@@ -1,6 +1,6 @@
 /**
- * sdk-model-usage.ts â€?extract `contextWindow` / `maxOutputTokens`
- * from `SDKResultMessage.modelUsage` (Claude Agent SDK â‰?0.2.111).
+ * sdk-model-usage.ts â€” extract `contextWindow` / `maxOutputTokens`
+ * from `SDKResultMessage.modelUsage` (Claude Agent SDK â‰¥ 0.2.111).
  *
  * Lives in its own module (not inside claude-client.ts) so unit tests
  * can import it directly without pulling claude-client's Node-only
@@ -40,7 +40,7 @@ export interface ModelUsageHints {
  *   2. Exact match on resolved upstream model id (catalog mapping).
  *   3. The single entry, when there's exactly one. Common case for
  *      third-party brands the catalog doesn't enumerate (GLM /
- *      Bailian / MiniMax / Kimi / Volcengine / DeepSeek / etc.) â€?the
+ *      Bailian / MiniMax / Kimi / Volcengine / DeepSeek / etc.) â€” the
  *      SDK round-trips one ModelUsage and walking by name would be
  *      brittle.
  *   4. The first entry with `contextWindow > 0`. Last-resort fallback

@@ -1,24 +1,24 @@
 'use client';
 
 /**
- * Phase 3 Step 4b â€?inline panel rendered in MessageList when the
+ * Phase 3 Step 4b â€” inline panel rendered in MessageList when the
  * latest run for the current chat session is `waiting_for_permission`.
  * Lets the user pick "Re-run this task" or "Abandon", which is the
  * v2 plan's hard line: NO durable resume. A paused run is dead;
  * re-run creates a new runId from scratch.
  *
- *   - **Re-run** â†?POST `/api/tasks/{taskId}/run` (existing endpoint
+ *   - **Re-run** â†’ POST `/api/tasks/{taskId}/run` (existing endpoint
  *     from Step 3 / 4a). The old `waiting_for_permission` row stays
  *     in `task_run_logs` as history; a new row is created with
  *     `status: 'running'`, the agent re-evaluates from scratch.
  *
- *   - **Abandon** â†?PATCH `/api/tasks/runs/{runId}` (new endpoint
+ *   - **Abandon** â†’ PATCH `/api/tasks/runs/{runId}` (new endpoint
  *     from 4a). Flips the old row to `cancelled` and unpauses
  *     `scheduled_tasks.status` so the scheduler can re-fire on its
  *     normal cadence.
  *
  * The panel doesn't render any "continue from where it left off"
- * affordance â€?that would imply durable resume which v1 explicitly
+ * affordance â€” that would imply durable resume which v1 explicitly
  * doesn't do. A future Phase that ships durable agent state checkpoint
  * + replay can replace this panel with a richer UI; the abandon
  * endpoint and the re-run endpoint already match what that future
@@ -82,7 +82,7 @@ export function TaskWaitingForPermissionPanel({ run, onAction }: TaskWaitingForP
         return;
       }
       onAction?.();
-      // Stay on the chat page â€?the run row is now `cancelled` and
+      // Stay on the chat page â€” the run row is now `cancelled` and
       // the panel won't re-render on next reconcile.
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Abandon failed');

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// In-memory cache: repo source â†?Map<skillId, raw-content path>
+// In-memory cache: repo source â†’ Map<skillId, raw-content path>
 const treeCache = new Map<string, { paths: Map<string, string>; ts: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Use GitHub Git Trees API to find the actual path of a SKILL.md for a given skillId.
- * Repos have widely varying structures, so we can't guess the path â€?we scan the tree.
+ * Repos have widely varying structures, so we can't guess the path â€” we scan the tree.
  */
 async function findSkillPath(
   source: string,

@@ -1,13 +1,14 @@
 /**
- * Tool mutation level â?Phase 5e Phase 5 (2026-05-17).
+ * Tool mutation level — Phase 5e Phase 5 (2026-05-17).
  *
- * Replaces the Phase 5e Phase 0.5 P0 æ­¢è¡ hand-written
+ * Replaces the Phase 5e Phase 0.5 P0 止血 hand-written
  * `PERMISSION_SAFE_TOOLS` allowlist with an explicit per-tool
  * declaration. Same fail-safe semantics:
  *
- *   - `safe_read` â?may skip the permission wrapper
- *   - `mutating_local` / `mutating_external` / `side_effect` â? *     wrapper asks the user unless `bypassPermissions` is on
- *   - any tool the table does NOT classify â?wrapper falls back to
+ *   - `safe_read` → may skip the permission wrapper
+ *   - `mutating_local` / `mutating_external` / `side_effect` →
+ *     wrapper asks the user unless `bypassPermissions` is on
+ *   - any tool the table does NOT classify → wrapper falls back to
  *     ask (fail-safe; no silent execution)
  *
  * Why mutationLevel and not the old prefix shortcut:
@@ -16,7 +17,7 @@
  *   (`codepilot_cli_tools_install`, `codepilot_notify`, etc.). The
  *   Phase 0.5 P0 patch replaced it with a hand-maintained allowlist
  *   that listed every read-only tool. That's correct but doesn't
- *   scale â?new codepilot tools have to remember to be added to the
+ *   scale — new codepilot tools have to remember to be added to the
  *   right list. mutationLevel pushes the classification onto the
  *   tool author at the point they declare the tool, which is exactly
  *   where the read/write knowledge lives.
@@ -36,7 +37,7 @@ export type MutationLevel =
   /** Mutates state local to CodePilot (DB row, in-memory cache, UI
    *  surface). No filesystem writes outside the user's media
    *  library; no shell execution; no external API calls beyond
-   *  buckyball.ai's own backend. Example: `codepilot_dashboard_pin`,
+   *  CodePilot's own backend. Example: `codepilot_dashboard_pin`,
    *  `codepilot_schedule_task`. */
   | 'mutating_local'
   /** Shell executes, installs/uninstalls system packages, calls
@@ -58,29 +59,29 @@ export type MutationLevel =
  * make missing entries a deterministic failure, not a silent regression.
  */
 export const CODEPILOT_TOOL_MUTATION_LEVELS: Readonly<Record<string, MutationLevel>> = {
-  // Memory â?read-only assistant_workspace/memory/ access.
+  // Memory — read-only assistant_workspace/memory/ access.
   codepilot_memory_recent: 'safe_read',
   codepilot_memory_search: 'safe_read',
   codepilot_memory_get: 'safe_read',
 
-  // Widget â?loads static design spec; no model state mutation.
+  // Widget — loads static design spec; no model state mutation.
   codepilot_load_widget_guidelines: 'safe_read',
 
-  // Tasks/notify â?read-only LIST + mutating writes.
+  // Tasks/notify — read-only LIST + mutating writes.
   codepilot_list_tasks: 'safe_read',
   codepilot_schedule_task: 'mutating_local',
   codepilot_cancel_task: 'mutating_local',
   codepilot_notify: 'side_effect',
   codepilot_hatch_buddy: 'mutating_local',
 
-  // Dashboard â?read-only LIST + REFRESH; mutating pin/update/remove.
+  // Dashboard — read-only LIST + REFRESH; mutating pin/update/remove.
   codepilot_dashboard_list: 'safe_read',
   codepilot_dashboard_refresh: 'safe_read',
   codepilot_dashboard_pin: 'mutating_local',
   codepilot_dashboard_update: 'mutating_local',
   codepilot_dashboard_remove: 'mutating_local',
 
-  // CLI tools â?read-only LIST + CHECK; install/add/remove/update
+  // CLI tools — read-only LIST + CHECK; install/add/remove/update
   // shell-exec.
   codepilot_cli_tools_list: 'safe_read',
   codepilot_cli_tools_check_updates: 'safe_read',
@@ -89,16 +90,16 @@ export const CODEPILOT_TOOL_MUTATION_LEVELS: Readonly<Record<string, MutationLev
   codepilot_cli_tools_remove: 'mutating_external',
   codepilot_cli_tools_update: 'mutating_external',
 
-  // Media â?generation calls third-party API + writes file;
+  // Media — generation calls third-party API + writes file;
   // import writes user file into media library.
   codepilot_generate_image: 'mutating_external',
   codepilot_generate_video: 'mutating_external',
   codepilot_import_media: 'mutating_local',
 
-  // Session search â?reads SQLite messages table.
+  // Session search — reads SQLite messages table.
   codepilot_session_search: 'safe_read',
 
-  // Managed Sub Agent â?spawning itself does not mutate host state. The child
+  // Managed Sub Agent — spawning itself does not mutate host state. The child
   // inherits the parent permission profile, so every mutating child tool still
   // reaches the normal approval/sandbox boundary (or the user's explicit
   // full-access profile); recursive delegation is removed.

@@ -1,8 +1,8 @@
 /**
- * codepilot-dashboard MCP �?in-process MCP server for dashboard widget management.
+ * codepilot-dashboard MCP — in-process MCP server for dashboard widget management.
  *
  * Provides tools for the AI model to directly manage the project dashboard:
- * pin widgets, list/refresh/update/remove widgets �?all with full conversation context.
+ * pin widgets, list/refresh/update/remove widgets — all with full conversation context.
  *
  * Keyword-gated: registered when the conversation involves dashboard/看板 topics.
  */
@@ -56,14 +56,15 @@ RULES:
 1. When pinning, infer dataContract and dataSource from conversation context.
 2. Title must be human-readable in the user's language. Never use snake_case IDs.
 3. For refresh: call refresh to read source data, generate updated HTML preserving the original design, then call update to save.
-4. Preserve visual design exactly during refresh �?only update data-driven content.
+4. Preserve visual design exactly during refresh — only update data-driven content.
 </dashboard-capability>`;
 
 // ── MCP Server factory ───────────────────────────────────────────────────────
 
 export interface DashboardMcpOpts {
   /**
-   * Optional allowlist of tool names. When set, only these tools register �?   * everything else is filtered out. Default: all 5 tools register.
+   * Optional allowlist of tool names. When set, only these tools register —
+   * everything else is filtered out. Default: all 5 tools register.
    *
    * Used by the Codex `codepilot_dashboard_read` / `codepilot_dashboard_write`
    * routes to split safe-read tools (`list` / `refresh`, auto_accept) from

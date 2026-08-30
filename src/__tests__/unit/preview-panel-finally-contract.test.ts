@@ -1,5 +1,5 @@
 /**
- * Phase 4 P1 (Codex review) â€?guardrail for the PreviewPanel load
+ * Phase 4 P1 (Codex review) â€” guardrail for the PreviewPanel load
  * effect's `finally` block.
  *
  * Background: `setLoading(false)` was previously gated on
@@ -7,7 +7,7 @@
  * twice; the first pass writes `prevFilePathRef.current = filePath`
  * synchronously, so by the time the second pass's `finally` runs
  * the closure has `isFilePathChange = false` and the conditional
- * skips clearing loading â€?leaving the panel pinned to its spinner
+ * skips clearing loading â€” leaving the panel pinned to its spinner
  * forever even though the data arrived.
  *
  * This test pins the contract that the load effect's finally must
@@ -22,7 +22,7 @@
  *   2. The block does NOT mention `isFilePathChange` at all.
  *
  * String-grep against source is the same technique we use for
- * heartbeat-copy-honesty and other UX-contract guardrails â€?robust
+ * heartbeat-copy-honesty and other UX-contract guardrails â€” robust
  * against refactors as long as the call site is recognizable.
  *
  * Run: npx tsx --test src/__tests__/unit/preview-panel-finally-contract.test.ts
@@ -88,7 +88,7 @@ function extractLoadPreviewFinally(): string {
  * want to gate on real code references.
  */
 function stripComments(src: string): string {
-  // Block comments first â€?non-greedy.
+  // Block comments first â€” non-greedy.
   let out = src.replace(/\/\*[\s\S]*?\*\//g, '');
   // Then line comments.
   out = out
@@ -101,7 +101,7 @@ function stripComments(src: string): string {
   return out;
 }
 
-describe('PreviewPanel load-effect finally â€?Phase 4 P1 contract', () => {
+describe('PreviewPanel load-effect finally â€” Phase 4 P1 contract', () => {
   it('clears `loading` unconditionally after fetch resolves', () => {
     const block = stripComments(extractLoadPreviewFinally());
     assert.match(
@@ -121,7 +121,7 @@ describe('PreviewPanel load-effect finally â€?Phase 4 P1 contract', () => {
         '',
         'Why: in React StrictMode dev mode the load effect runs twice.',
         '  - Run 1 writes prevFilePathRef.current = filePath',
-        '  - Run 2 sees prevFilePathRef.current === filePath â†?isFilePathChange = false',
+        '  - Run 2 sees prevFilePathRef.current === filePath â†’ isFilePathChange = false',
         'If the finally is gated on isFilePathChange, the second run never',
         'clears loading, and the panel sits on its spinner forever even',
         'after the fetch resolves. Codex P1 review caught exactly this.',

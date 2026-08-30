@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/media/jobs â€?List all jobs, optionally filtered by sessionId
+ * GET /api/media/jobs â€” List all jobs, optionally filtered by sessionId
  */
 export async function GET(request: NextRequest) {
   try {
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/media/jobs â€?Create a new job with items (after plan confirmation)
+ * POST /api/media/jobs â€” Create a new job with items (after plan confirmation)
  */
 export async function POST(request: NextRequest) {
   try {

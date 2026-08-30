@@ -16,7 +16,7 @@ function tmp(): string {
   return d;
 }
 // createRotatingLogWriter now writes synchronously (openSync/writeSync), so file
-// content is on disk the instant we read it â€?these tests exercise the REAL
+// content is on disk the instant we read it â€” these tests exercise the REAL
 // writer against real files, not a fake stream (B-025 review finding).
 after(() => {
   for (const d of tmpDirs) {
@@ -59,7 +59,7 @@ describe('rotateLogFiles (B-025 archive ring)', () => {
     fs.writeFileSync(active, 'active');
     fs.writeFileSync(`${active}.1`, 'a1');
     fs.writeFileSync(`${active}.2`, 'a2');
-    rotateLogFiles(active, 2); // maxArchives=2 â†?.2 dropped, .1â†?2, activeâ†?1
+    rotateLogFiles(active, 2); // maxArchives=2 â†’ .2 dropped, .1â†’.2, activeâ†’.1
     assert.equal(fs.readFileSync(`${active}.1`, 'utf8'), 'active');
     assert.equal(fs.readFileSync(`${active}.2`, 'utf8'), 'a1');
     assert.ok(!fs.existsSync(`${active}.3`), 'must not keep more than maxArchives');

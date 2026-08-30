@@ -51,7 +51,7 @@ describe('planStreamHandoffAfterCompaction', () => {
     assert.equal(
       handoff.sdkSessionId,
       undefined,
-      'after compaction the caller must not resume the stale SDK session â€?' +
+      'after compaction the caller must not resume the stale SDK session â€” ' +
       'otherwise the SDK replays its own pre-compaction transcript and our ' +
       'fresh summary never reaches the model',
     );
@@ -69,7 +69,7 @@ describe('planStreamHandoffAfterCompaction', () => {
       handoff.conversationHistory,
       toKeep,
       'after compaction the fallback context must use messagesToKeep, not the ' +
-      'full history â€?the older turns are already represented inside the summary',
+      'full history â€” the older turns are already represented inside the summary',
     );
     assert.equal(handoff.conversationHistory.length, 2);
   });
@@ -103,7 +103,7 @@ describe('planStreamHandoffAfterCompaction', () => {
 });
 
 // Co-locate a regression test that ensures buildContextCompressedStatus and
-// planStreamHandoffAfterCompaction export from the same module â€?chat route
+// planStreamHandoffAfterCompaction export from the same module â€” chat route
 // relies on this pairing and a refactor that splits them should show up here.
 describe('context-compressor post-compaction API surface', () => {
   it('exports helpers needed by the chat route post-compaction flow', () => {
@@ -221,8 +221,8 @@ describe('resolveReactiveCompactBoundaryRowid', () => {
 });
 
 // Regression for the plan-method-A rowid propagation: chat/route.ts MUST
-// preserve _rowid when mapping historyAfterBoundary â†?historyMsgs AND when
-// mapping rowsToKeep â†?messagesToKeep. Dropping _rowid silently degrades
+// preserve _rowid when mapping historyAfterBoundary â†’ historyMsgs AND when
+// mapping rowsToKeep â†’ messagesToKeep. Dropping _rowid silently degrades
 // reactive compact on the very next fresh-SDK turn, because streamClaude
 // receives conversationHistory without rowids and falls back to
 // "preserve existing boundary" instead of writing the freshly-advanced
@@ -260,7 +260,7 @@ describe('chat route rowid propagation', () => {
 // Source-scan test because we don't have a route-level integration harness
 // in this repo; ugly but catches accidental re-introduction of addMessage
 // in this block.
-describe('/compact handler â€?no DB transcript writes', () => {
+describe('/compact handler â€” no DB transcript writes', () => {
   it('does not call addMessage/addDbMessage anywhere in the /compact block in route.ts', () => {
     const routeSrc = fs.readFileSync(
       path.join(__dirname, '..', '..', 'app', 'api', 'chat', 'route.ts'),
@@ -284,7 +284,7 @@ describe('/compact handler â€?no DB transcript writes', () => {
     assert.ok(blockEnd > openBraceIdx, 'could not find the matching end brace of the /compact block');
     const block = routeSrc.slice(blockStart, blockEnd);
     // Match a call to addMessage or addDbMessage: identifier followed by `(`.
-    // Comments mentioning the name are fine â€?they don't match the `(`.
+    // Comments mentioning the name are fine â€” they don't match the `(`.
     const callPattern = /\b(addDbMessage|addMessage)\s*\(/;
     const match = block.match(callPattern);
     assert.equal(
@@ -292,7 +292,7 @@ describe('/compact handler â€?no DB transcript writes', () => {
       null,
       `Regression: /compact handler must not persist slash-command feedback via ` +
       `addMessage/addDbMessage. Both the success path and the no-op path are ` +
-      `UI artifacts â€?persisting them leaks rows after context_summary_boundary_rowid ` +
+      `UI artifacts â€” persisting them leaks rows after context_summary_boundary_rowid ` +
       `into the model's transcript. If you need to keep a record of compact ` +
       `events, add a separate non-transcript table. Found call: ${match?.[0]}`,
     );
@@ -332,7 +332,7 @@ describe('filterHistoryByCompactBoundary', () => {
       summary: 'a summary',
       summaryBoundaryRowid: 0,
     });
-    assert.equal(result, allHistory, '0 means no boundary known â€?only safe choice is passthrough');
+    assert.equal(result, allHistory, '0 means no boundary known â€” only safe choice is passthrough');
   });
 
   it('drops messages at-or-before the boundary, keeps strictly newer', () => {
@@ -389,7 +389,7 @@ describe('filterHistoryByCompactBoundary', () => {
 
   // Regression for iteration 4 (6cbf1d1): the auto pre-compression path
   // must not silently drop the current unsummarized user turn. Modelled
-  // with rowid here â€?the current user turn has _rowid strictly greater
+  // with rowid here â€” the current user turn has _rowid strictly greater
   // than any row in messagesToCompress, so it survives the filter as long
   // as the boundary is set to "last compressed rowid" and NOT to
   // "now/write-time" (a synthetic "any future rowid" in the wrong-path
@@ -419,8 +419,8 @@ describe('filterHistoryByCompactBoundary', () => {
   });
 
   // Regression for iteration 6: a second manual /compact call used to
-  // feed ALL DB rows â€?including the ones already covered by
-  // existingSummary â€?back into compressConversation, duplicating covered
+  // feed ALL DB rows â€” including the ones already covered by
+  // existingSummary â€” back into compressConversation, duplicating covered
   // context inside the new summary. The handler now pre-filters allMsgs
   // with this same helper before building msgData. This test asserts the
   // helper returns exactly the rows that should feed into the next
@@ -459,7 +459,7 @@ describe('filterHistoryByCompactBoundary', () => {
 
   // Regression for iteration 5 (THIS commit): DB created_at is second
   // precision. On fast paths the last compressed message and the first
-  // kept message can share a wall-clock second â€?any timestamp-based
+  // kept message can share a wall-clock second â€” any timestamp-based
   // boundary would mis-classify one of them. rowid is monotonic per insert
   // so this scenario resolves cleanly.
   it('handles same-second writes correctly (last-compressed and first-kept share created_at)', () => {
@@ -477,7 +477,7 @@ describe('filterHistoryByCompactBoundary', () => {
     assert.equal(result[1].content, 'also kept');
   });
 
-  // Messages synthesized without a DB origin don't have _rowid â€?they
+  // Messages synthesized without a DB origin don't have _rowid â€” they
   // should pass through (we can't compare them against the boundary).
   it('keeps messages without _rowid (non-DB-origin synthetic rows)', () => {
     interface Row { role: string; content: string; _rowid?: number }

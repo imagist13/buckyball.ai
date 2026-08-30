@@ -1,5 +1,5 @@
 /**
- * aisdk-trace-redaction.test.ts �?AI SDK 7 Phase 4 �?content spot-checks for
+ * aisdk-trace-redaction.test.ts — AI SDK 7 Phase 4 ③ content spot-checks for
  * the redacted-by-default trace (src/lib/aisdk-trace.ts).
  *
  * Per the required check, this is CONTENT INSPECTION, not assertion of
@@ -9,10 +9,10 @@
  * events), and every emitted trace line is checked by
  *   1. key/marker substring comparison (the exact planted values must not
  *      appear anywhere), and
- *   2. shape greps (sk-ant-�? Bearer �? api-key header shapes must not
+ *   2. shape greps (sk-ant-…, Bearer …, api-key header shapes must not
  *      match any line).
  * A positive check pins that the trace still carries useful diagnostics
- * (model id, tool name, event types) �?redaction must not degenerate into
+ * (model id, tool name, event types) — redaction must not degenerate into
  * an empty log.
  *
  * Default-off is pinned: isAiSdkTraceEnabled() is false without the
@@ -49,7 +49,7 @@ const MARKERS = [
   PLANTED_TOOL_OUTPUT,
 ];
 
-/** Shape greps �?credential FORMS must not match either. */
+/** Shape greps — credential FORMS must not match either. */
 const SHAPE_PATTERNS: Array<[string, RegExp]> = [
   ['anthropic key shape', /sk-ant-[A-Za-z0-9_-]{10,}/],
   ['generic sk- key shape', /sk-[A-Za-z0-9]{20,}/],
@@ -134,7 +134,7 @@ describe('redactTraceValue policy', () => {
   it('never throws on hostile shapes (cycles, functions, deep nesting)', () => {
     const cyclic: Record<string, unknown> = { a: 1 };
     cyclic.self = cyclic;
-    // Cycle �?depth cap �?digest of the remainder; JSON.stringify inside
+    // Cycle → depth cap → digest of the remainder; JSON.stringify inside
     // digest would throw on the cycle, which the try/catch converts.
     const out = redactTraceValue(cyclic) as Record<string, unknown>;
     assert.equal(out.a, 1);
@@ -148,7 +148,7 @@ describe('redactTraceValue policy', () => {
 
 // ── 2. Real trace sample content inspection ──────────────────────
 
-describe('real ai@7 telemetry trace �?content spot-check', () => {
+describe('real ai@7 telemetry trace — content spot-check', () => {
   it('a tool-call turn emits trace lines with NO planted secret, prompt, or credential shape', async () => {
     const lines: string[] = [];
     const integration = createRedactedTraceTelemetry((line) => lines.push(line));
@@ -195,7 +195,7 @@ describe('real ai@7 telemetry trace �?content spot-check', () => {
       assert.ok(!re.test(all), `trace matched credential shape: ${label}`);
     }
 
-    // Positive: the trace is still a useful diagnostic �?event types, model
+    // Positive: the trace is still a useful diagnostic — event types, model
     // id, tool name and numeric fields survive redaction.
     assert.ok(lines.some((l) => l.includes('"event":"model-call-start"')), 'model-call-start present');
     assert.ok(lines.some((l) => l.includes('"event":"tool-execution-end"')), 'tool-execution-end present');

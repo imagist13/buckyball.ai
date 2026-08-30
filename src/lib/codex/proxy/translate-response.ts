@@ -1,5 +1,5 @@
 /**
- * Phase 5b â€?ai-sdk `GenerateTextResult` â†?Codex Responses JSON body.
+ * Phase 5b â€” ai-sdk `GenerateTextResult` â†’ Codex Responses JSON body.
  *
  * Used when the inbound request had `stream:false`. Walks the ai-sdk
  * result's content / tool calls and builds the Responses output[]
@@ -7,12 +7,12 @@
  *
  * Mapping:
  *
- *   result.text                â†?output[0] = message with output_text block
- *   result.toolCalls[i]        â†?output[i+1] = function_call item
- *   result.usage               â†?usage (totalUsage preferred)
- *   result.finishReason        â†?finish_reason (kebab â†?snake)
+ *   result.text                â†’ output[0] = message with output_text block
+ *   result.toolCalls[i]        â†’ output[i+1] = function_call item
+ *   result.usage               â†’ usage (totalUsage preferred)
+ *   result.finishReason        â†’ finish_reason (kebab â†’ snake)
  *
- * Tool calls produced by `generateText` are static or dynamic â€?both
+ * Tool calls produced by `generateText` are static or dynamic â€” both
  * carry `toolCallId`, `toolName`, `input`. We forward verbatim.
  */
 
@@ -45,7 +45,7 @@ interface TranslateResponseOptions {
   responseId: string;
   model: string;
   result: NonStreamResultLite;
-  /** Phase 5c (2026-05-16) â€?names belonging to the CodePilot
+  /** Phase 5c (2026-05-16) â€” names belonging to the CodePilot
    *  built-in tool bridge. function_call entries with these names
   *  are dropped from the Codex-visible output[] because the bridge
   *  already executed them server-side. */
@@ -70,7 +70,7 @@ export function translateNonStreamResponse(
     });
   }
   for (const call of result.toolCalls ?? []) {
-    // Phase 5c â€?skip bridge-owned tool calls; Codex doesn't need to
+    // Phase 5c â€” skip bridge-owned tool calls; Codex doesn't need to
     // see them (matches the suppression rule in translate-stream).
     if (builtinToolNames.has(call.toolName)) continue;
     const namespaceRoute = opts.namespaceToolRoutes?.get(call.toolName);

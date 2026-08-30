@@ -1,5 +1,5 @@
 /**
- * ChannelPluginAdapter â€?bridges a ChannelPlugin to BaseChannelAdapter.
+ * ChannelPluginAdapter â€” bridges a ChannelPlugin to BaseChannelAdapter.
  *
  * This allows any ChannelPlugin implementation to be used as a
  * BaseChannelAdapter in the bridge system without modification.

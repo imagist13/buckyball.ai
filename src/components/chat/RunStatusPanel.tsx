@@ -1,24 +1,24 @@
 "use client";
 
 /**
- * Unified Run Status panel â?opens from any of the per-chat status
+ * Unified Run Status panel — opens from any of the per-chat status
  * cells in the composer (Runtime / Pinned / Permission / Context).
  *
  * Design intent (April 2026 review): the chat composer's bottom-right
  * cluster used to be three separate chips, each linking to a different
  * Settings page. Users had to assemble "this is how the run works" in
  * their head. This panel surfaces all six dimensions in one read-only
- * card, with quiet "â?è®¾ç½®" links per row when deeper editing is
+ * card, with quiet "→ 设置" links per row when deeper editing is
  * needed. Issues that block the run get a separate flagged section so
  * they can't be missed.
  *
- * The panel is intentionally NOT a settings dialog â?it's a status
+ * The panel is intentionally NOT a settings dialog — it's a status
  * snapshot of THIS chat. All edits redirect to the canonical Settings
  * pages; the panel never writes state itself.
  */
 
 import type { ReactNode } from "react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 
 interface RowProps {
@@ -43,7 +43,7 @@ function Row({ label, value, tone = "default", actionLabel, onAction }: RowProps
       <span className="shrink-0 text-muted-foreground">{label}</span>
       <span className={valueClass}>{value}</span>
       {actionLabel && onAction && (
-        // Action links default to a very faded weight â?the panel's
+        // Action links default to a very faded weight — the panel's
         // primary job is to *explain* the run, not act as a settings
         // page. Hovering anywhere on the row brings the link up to
         // muted-foreground; hovering the link itself lifts it to full
@@ -54,7 +54,7 @@ function Row({ label, value, tone = "default", actionLabel, onAction }: RowProps
           className="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/40 transition-colors group-hover/row:text-muted-foreground hover:!text-foreground"
         >
           {actionLabel}
-          <BuckyballIcon name="external" size={10} aria-hidden />
+          <CodePilotIcon name="external" size={10} aria-hidden />
         </button>
       )}
     </div>
@@ -92,7 +92,7 @@ export interface RunStatusPanelProps {
     tone: "default" | "error";
   };
   contextRow: {
-    /** Composed value, e.g. "31K Â· 16%" or "31K Â· å®¹éæªç¥". */
+    /** Composed value, e.g. "31K · 16%" or "31K · 容量未知". */
     value: string;
     tone: "default" | "warning" | "error";
   };
@@ -176,7 +176,7 @@ export function RunStatusPanel({
                       className="ml-2 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                     >
                       {issue.actionLabel}
-                      <BuckyballIcon name="external" size={10} aria-hidden />
+                      <CodePilotIcon name="external" size={10} aria-hidden />
                     </button>
                   )}
                 </div>

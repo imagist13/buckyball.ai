@@ -1,8 +1,8 @@
 /**
- * Phase 5c slice 7 (2026-05-16) �?Harness Capability Contract tests.
+ * Phase 5c slice 7 (2026-05-16) — Harness Capability Contract tests.
  *
  * Goal: catch the kind of drift that produced the slice-6 widget
- * regression �?three independent `WIDGET_SYSTEM_PROMPT` copies, each
+ * regression — three independent `WIDGET_SYSTEM_PROMPT` copies, each
  * paraphrasing the same rules differently, so ClaudeCode SDK / Native
  * Runtime / Codex Runtime users got different format expectations.
  *
@@ -10,20 +10,20 @@
  * the canonical prompt fragment per capability and points at the
  * factory function in each runtime that exposes it. These tests check:
  *
- *   1. Catalog hygiene �?every entry has the required fields; live
+ *   1. Catalog hygiene — every entry has the required fields; live
  *      capabilities have all three runtimes flagged; deferred/
  *      unsupported entries have a deferredReason.
- *   2. Tool-name agreement �?the runtime exposure factories actually
+ *   2. Tool-name agreement — the runtime exposure factories actually
  *      register the names the contract claims.
- *   3. Drift detection �?every runtime exposure file either re-exports
+ *   3. Drift detection — every runtime exposure file either re-exports
  *      the canonical prompt verbatim (TypeScript import) OR includes
  *      it as a substring of the local constant. Anything else is
  *      paraphrasing and fails the test.
- *   4. Widget artifact wire format �?the `canonicalJson` in the
+ *   4. Widget artifact wire format — the `canonicalJson` in the
  *      contract MUST JSON.parse + parseAllShowWidgets MUST return a
  *      `widget` segment (not malformed_widget). This is the slice-7
  *      direct fix for the slice-6 broken example.
- *   5. UI render path consistency �?for media-bearing capabilities
+ *   5. UI render path consistency — for media-bearing capabilities
  *      the render path mentions MediaPreview / SSE tool_result.media.
  *
  * The test is intentionally strict on widget (the smoke-broken one)
@@ -59,7 +59,7 @@ function readSource(rel: string): string {
 // (1) Catalog hygiene
 // ─────────────────────────────────────────────────────────────────────
 
-describe('HARNESS_CAPABILITIES �?catalog hygiene', () => {
+describe('HARNESS_CAPABILITIES — catalog hygiene', () => {
   it('every entry has the required fields', () => {
     for (const cap of HARNESS_CAPABILITIES) {
       assert.ok(cap.id, `entry must have id; got: ${JSON.stringify(cap)}`);
@@ -89,7 +89,7 @@ describe('HARNESS_CAPABILITIES �?catalog hygiene', () => {
   });
 
   it('live capabilities have NO unsupported exposures (strict semantics)', () => {
-    // Phase 5d slice 7b (2026-05-16) �?pre-fix the test accepted
+    // Phase 5d slice 7b (2026-05-16) — pre-fix the test accepted
     // "live with one unsupported runtime" if at least two runtimes
     // were wired. That permitted exactly the混合口径 the user flagged:
     // a `live` capability that's actually missing on Codex (or any
@@ -131,17 +131,17 @@ describe('Tool names declared in the contract appear in the runtime exposure fil
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (3) Drift detection �?Codex bridge alignment is strict
+// (3) Drift detection — Codex bridge alignment is strict
 // ─────────────────────────────────────────────────────────────────────
 
 describe('Codex bridge prompt does not redefine widget semantics', () => {
   it('bridge holds NO local prompt scalars; compiler is the sole producer (slice 2e + Phase 3 facade)', () => {
-    // Phase 5d Phase 2 slice 2e (2026-05-17) �?pre-fix the bridge held
+    // Phase 5d Phase 2 slice 2e (2026-05-17) — pre-fix the bridge held
     // WIDGET_PROMPT (and MEDIA / MEMORY / NOTIFY before that). Slice 2e
     // removed all four scalars; the Context Compiler is the only
     // producer of capability prompts now.
     //
-    // Phase 5d Phase 3 (2026-05-17) �?assertion shifted from "direct
+    // Phase 5d Phase 3 (2026-05-17) — assertion shifted from "direct
     // compileContext import" to "Runtime Capability Adapter facade
     // (`adaptForCodexProxy`) wraps the compiler call". The contract is
     // strictly stronger: the bridge prompt MUST flow through the
@@ -151,7 +151,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       /^const\s+(WIDGET_PROMPT|MEDIA_PROMPT|MEMORY_PROMPT|NOTIFY_PROMPT)\s*=/m.test(bridgeSrc),
       false,
-      'bridge MUST NOT declare WIDGET_PROMPT / MEDIA_PROMPT / MEMORY_PROMPT / NOTIFY_PROMPT scalars �?capability prompts flow through the Runtime Capability Adapter now',
+      'bridge MUST NOT declare WIDGET_PROMPT / MEDIA_PROMPT / MEMORY_PROMPT / NOTIFY_PROMPT scalars — capability prompts flow through the Runtime Capability Adapter now',
     );
     // unified-adapter.ts must call adaptForCodexProxy and use its
     // systemPromptInstructions for the bridge prompt.
@@ -164,7 +164,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       /from\s+['"]@\/lib\/harness\/context-compiler['"]/.test(adapterSrc),
       false,
-      'unified-adapter must NOT import the compiler directly �?go through the adapter facade',
+      'unified-adapter must NOT import the compiler directly — go through the adapter facade',
     );
     assert.match(
       adapterSrc,
@@ -188,7 +188,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
   });
 
   it('Native Runtime memory / notification / media builtin-tools files consume shared canonicals (slice 2d)', () => {
-    // Phase 5d Phase 2 slice 2d (2026-05-17) �?Native ran with its
+    // Phase 5d Phase 2 slice 2d (2026-05-17) — Native ran with its
     // own paraphrased prompts pre-Phase-5d. Slice 2d migrated them
     // to consume shared prompt authorities. Media now uses a pure
     // dependency-free authority so Native loading cannot pull the
@@ -241,13 +241,13 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
   });
 
   it('ClaudeCode SDK Runtime claude-client.ts calls the Runtime Capability Adapter facade (slice 2c + Phase 3)', () => {
-    // Phase 5d Phase 2 slice 2c �?claude-client.ts mounts MCP servers
+    // Phase 5d Phase 2 slice 2c — claude-client.ts mounts MCP servers
     // per-gate (transport layer) and let the Context Compiler produce
     // the capability system prompt content (semantic layer).
     // Pre-Phase-5d this file appended per-capability `_SYSTEM_PROMPT`
     // strings inline.
     //
-    // Phase 5d Phase 3 (2026-05-17) �?the compiler call is now wrapped
+    // Phase 5d Phase 3 (2026-05-17) — the compiler call is now wrapped
     // by `adaptForClaudeCode`. The entry point consumes the adapter
     // facade, not the compiler directly; the adapter is the only path
     // from this file to the catalog.
@@ -257,7 +257,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       /from\s+['"]@\/lib\/builtin-tools\/(memory-search|notification|media|cli-tools|dashboard|widget-guidelines)['"]/.test(claudeSrc),
       false,
-      'claude-client.ts must not import capability prompts from builtin-tools/* �?those are the Native runtime path',
+      'claude-client.ts must not import capability prompts from builtin-tools/* — those are the Native runtime path',
     );
 
     // (b) No local _SYSTEM_PROMPT declarations.
@@ -278,7 +278,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       /from\s+['"]@\/lib\/harness\/context-compiler['"]/.test(claudeSrc),
       false,
-      'claude-client.ts must NOT import the compiler directly �?go through adaptForClaudeCode',
+      'claude-client.ts must NOT import the compiler directly — go through adaptForClaudeCode',
     );
     assert.match(
       claudeSrc,
@@ -295,16 +295,16 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       inlineAppendRe.test(claudeSrc),
       false,
-      'claude-client.ts must not inline-append per-capability _SYSTEM_PROMPT strings �?use the adapter facade output instead',
+      'claude-client.ts must not inline-append per-capability _SYSTEM_PROMPT strings — use the adapter facade output instead',
     );
   });
 
   it('Native Runtime builtin-tools/index.ts routes capability prompts through the Runtime Capability Adapter (slice 2d + Phase 3)', () => {
-    // Phase 5d Phase 2 slice 2d �?getBuiltinTools() decides gating
+    // Phase 5d Phase 2 slice 2d — getBuiltinTools() decides gating
     // per group (workspace / keyword / always), then calls into the
     // Context Compiler to produce the canonical capability prompt.
     //
-    // Phase 5d Phase 3 (2026-05-17) �?the compiler call is wrapped by
+    // Phase 5d Phase 3 (2026-05-17) — the compiler call is wrapped by
     // `adaptForNative`. Non-capability groups (session-search /
     // ask-user-question) still pass through their raw `systemPrompt`
     // until they get their own capability contract entries.
@@ -318,12 +318,12 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.equal(
       /from\s+['"]@\/lib\/harness\/context-compiler['"]/.test(indexSrc),
       false,
-      'builtin-tools/index.ts must NOT import the compiler directly �?go through adaptForNative',
+      'builtin-tools/index.ts must NOT import the compiler directly — go through adaptForNative',
     );
     assert.match(
       indexSrc,
       /capabilityIdsForGroup/,
-      'builtin-tools/index.ts must declare capabilityIdsForGroup mapping (group name �?list of capability ids)',
+      'builtin-tools/index.ts must declare capabilityIdsForGroup mapping (group name → list of capability ids)',
     );
     assert.match(
       indexSrc,
@@ -350,7 +350,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
   });
 
   it('codepilot-media group maps to BOTH media_import and image_generation capabilities (slice 2d P1 fix)', () => {
-    // Phase 5d Phase 2 P1 fix (2026-05-17) �?`createMediaTools()`
+    // Phase 5d Phase 2 P1 fix (2026-05-17) — `createMediaTools()`
     // mounts `codepilot_import_media` (media_import) AND
     // `codepilot_generate_image` (image_generation). Pre-fix the
     // builtin-tools/index.ts capability map only listed
@@ -367,10 +367,10 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     assert.ok(arm, 'capabilityIdsForGroup must have a `codepilot-media` arm that returns an array');
     const ids = arm![1];
     assert.match(ids, /'media_import'/, 'codepilot-media must include media_import');
-    assert.match(ids, /'image_generation'/, 'codepilot-media must include image_generation �?createMediaTools mounts the codepilot_generate_image tool too');
+    assert.match(ids, /'image_generation'/, 'codepilot-media must include image_generation — createMediaTools mounts the codepilot_generate_image tool too');
   });
 
-  it('Native getBuiltinTools �?codepilot_generate_image present implies image_generation in compiled toolDescriptors (runtime check)', async () => {
+  it('Native getBuiltinTools — codepilot_generate_image present implies image_generation in compiled toolDescriptors (runtime check)', async () => {
     // Live runtime check via the compiler: when Native gates in the
     // codepilot-media group (always-on per builtin-tools/index.ts)
     // the compiler MUST emit a toolDescriptor for
@@ -380,7 +380,7 @@ describe('Codex bridge prompt does not redefine widget semantics', () => {
     const compiled = compileContext({
       sessionId: 'native-test',
       workingDirectory: '/tmp/native-test',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       providerId: '',
       model: '',
       userPrompt: '',
@@ -413,7 +413,7 @@ describe('Capability prompts inject WITHOUT a base systemPrompt (P1 fix, 2026-05
     assert.match(
       src,
       /\[\s*systemPrompt\s*,\s*\.\.\.toolSystemPrompts\s*\]\.filter\(Boolean\)\.join/,
-      'agent-loop.ts must compose effectiveSystemPrompt via [systemPrompt, ...toolSystemPrompts].filter(Boolean).join �?drops nothing when one side is empty',
+      'agent-loop.ts must compose effectiveSystemPrompt via [systemPrompt, ...toolSystemPrompts].filter(Boolean).join — drops nothing when one side is empty',
     );
     // Negative: the broken pre-fix shape must be gone.
     assert.equal(
@@ -431,11 +431,11 @@ describe('Capability prompts inject WITHOUT a base systemPrompt (P1 fix, 2026-05
     // silently dropped. Pin the new fallback branch that mounts
     // the SDK preset shape on demand.
     //
-    // Phase 5d Phase 3 (2026-05-17) �?`compiled.systemPromptText` was
+    // Phase 5d Phase 3 (2026-05-17) — `compiled.systemPromptText` was
     // renamed to `adapted.systemPromptAppend` when the call moved into
     // the Runtime Capability Adapter facade.
     //
-    // Phase 5e review round 4 fix P2 #1 (2026-05-18) �?the
+    // Phase 5e review round 4 fix P2 #1 (2026-05-18) — the
     // `if (enabledCapabilities.size > 0)` outer guard around the
     // entire scan + adapter block was removed: User / External
     // harness extensions also need injection, even when no built-in
@@ -455,7 +455,7 @@ describe('Capability prompts inject WITHOUT a base systemPrompt (P1 fix, 2026-05
     assert.match(
       src,
       /if\s*\(adapted\.systemPromptAppend\.length\s*>\s*0\)/,
-      'claude-client.ts must gate the systemPrompt splice on `adapted.systemPromptAppend.length > 0` �?that is the sole condition (no outer enabledCapabilities.size gate)',
+      'claude-client.ts must gate the systemPrompt splice on `adapted.systemPromptAppend.length > 0` — that is the sole condition (no outer enabledCapabilities.size gate)',
     );
     assert.match(
       src,
@@ -466,10 +466,10 @@ describe('Capability prompts inject WITHOUT a base systemPrompt (P1 fix, 2026-05
 
   it('Native runtime: getBuiltinTools returns the compiler-produced systemPrompt[0] even when caller passes no prompt', async () => {
     // Live runtime check. getBuiltinTools is the Native-side entry
-    // �?its return value is used as `toolSystemPrompts` in
+    // — its return value is used as `toolSystemPrompts` in
     // agent-loop.ts. With workspacePath provided but no userPrompt,
     // tasks_and_notify (always-on, always-mounted) should still
-    // produce a capability prompt �?proving the path from group
+    // produce a capability prompt — proving the path from group
     // gating through compileContext returns a non-empty fragment
     // independent of base prompt presence.
     const { getBuiltinTools } = await import('@/lib/builtin-tools');
@@ -491,10 +491,10 @@ describe('Capability prompts inject WITHOUT a base systemPrompt (P1 fix, 2026-05
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// (4) Widget artifact wire format �?copy/paste-safe JSON
+// (4) Widget artifact wire format — copy/paste-safe JSON
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Widget artifact contract �?canonicalJson is JSON.parse-safe + renders via parseAllShowWidgets', () => {
+describe('Widget artifact contract — canonicalJson is JSON.parse-safe + renders via parseAllShowWidgets', () => {
   it('JSON.parse(canonicalJson) returns an object with the required fields', () => {
     const widget = getCapability('widget');
     assert.ok(widget?.artifactContract, 'widget capability must declare an artifactContract');
@@ -520,7 +520,7 @@ describe('Widget artifact contract �?canonicalJson is JSON.parse-safe + renders
     const widget = getCapability('widget');
     assert.ok(widget?.artifactContract);
     const { fenceLanguage, canonicalJson } = widget!.artifactContract!;
-    // Build the literal fence the model would emit �?three backticks
+    // Build the literal fence the model would emit — three backticks
     // + fence language + JSON + three backticks. If the renderer
     // returns malformed_widget for this, the example in the prompt
     // is broken (slice-6 regression mode).
@@ -529,7 +529,7 @@ describe('Widget artifact contract �?canonicalJson is JSON.parse-safe + renders
     const widgetSeg = segs.find((s) => s.type === 'widget');
     const malformed = segs.find((s) => s.type === 'malformed_widget');
     assert.ok(widgetSeg, `canonical show-widget example must parse as a widget segment, got: ${JSON.stringify(segs)}`);
-    assert.equal(malformed, undefined, 'canonical example must never trip malformed_widget �?if it does, the prompt is broken');
+    assert.equal(malformed, undefined, 'canonical example must never trip malformed_widget — if it does, the prompt is broken');
     if (widgetSeg?.type !== 'widget') return;
     assert.equal(widgetSeg.data.title, 'Hello');
     // The widget_code should be exactly what's in the JSON, no
@@ -538,7 +538,7 @@ describe('Widget artifact contract �?canonicalJson is JSON.parse-safe + renders
   });
 
   it('the canonical example appears inside WIDGET_WIRE_FORMAT_SPEC; artifactContract is the sole carrier (slice 2c)', () => {
-    // Phase 5d Phase 2 slice 2c (2026-05-17) �?pin shifted. The
+    // Phase 5d Phase 2 slice 2c (2026-05-17) — pin shifted. The
     // Context Compiler's artifactContract for `widget` is now the
     // single source of the wire-format spec + canonical example.
     // WIDGET_SYSTEM_PROMPT no longer embeds the literal example so
@@ -548,12 +548,12 @@ describe('Widget artifact contract �?canonicalJson is JSON.parse-safe + renders
     const example = widget!.artifactContract!.canonicalJson;
     assert.ok(
       WIDGET_WIRE_FORMAT_SPEC.includes(example),
-      'WIDGET_WIRE_FORMAT_SPEC must still embed the canonical example �?that block lives in the compiled artifactContract',
+      'WIDGET_WIRE_FORMAT_SPEC must still embed the canonical example — that block lives in the compiled artifactContract',
     );
     assert.equal(
       CANONICAL_WIDGET_PROMPT.includes(example),
       false,
-      'WIDGET_SYSTEM_PROMPT must NOT embed the canonical example after slice 2c �?duplicates would let the wire format land in the compiled prompt twice',
+      'WIDGET_SYSTEM_PROMPT must NOT embed the canonical example after slice 2c — duplicates would let the wire format land in the compiled prompt twice',
     );
   });
 });
@@ -569,7 +569,7 @@ describe('Media-bearing capabilities declare a MediaPreview render path', () => 
       assert.match(
         cap.uiRenderPath,
         /MediaPreview/,
-        `${cap.id} produces media but renderPath doesn't mention MediaPreview �?the chain is broken`,
+        `${cap.id} produces media but renderPath doesn't mention MediaPreview — the chain is broken`,
       );
     }
   });
@@ -589,7 +589,7 @@ describe('Deferred / unsupported capabilities have honest exposure shapes', () =
       ].some((e) => e.kind === 'unsupported');
       assert.ok(
         anyUnsupported,
-        `${cap.id} is deferred but every exposure is wired �?should be flipped to 'live'`,
+        `${cap.id} is deferred but every exposure is wired — should be flipped to 'live'`,
       );
     }
   });
@@ -625,7 +625,7 @@ describe('System prompt fragments are present for live capabilities (unless expl
       if (cap.id === 'cli_tools') continue;
       assert.ok(
         cap.systemPromptFragment.length > 0,
-        `${cap.id} is live but systemPromptFragment is empty �?either point at the canonical source or mark as tech-debt`,
+        `${cap.id} is live but systemPromptFragment is empty — either point at the canonical source or mark as tech-debt`,
       );
     }
   });
@@ -637,12 +637,12 @@ describe('System prompt fragments are present for live capabilities (unless expl
 
 describe('Codex bridge tool surface matches the contract', () => {
   it('every codex_proxy.kind = bridge_executable tool name is mounted by createCodePilotBuiltinTools (no notes exceptions)', async () => {
-    // Phase 5d slice 7b (2026-05-16) �?strict mount check. Pre-fix
+    // Phase 5d slice 7b (2026-05-16) — strict mount check. Pre-fix
     // the test had a `notes`-based exception clause: if a tool was
     // declared bridge_executable but not actually mounted, a note
     // mentioning "not exposed" silenced the failure. That let
     // tasks_and_notify carry codepilot_hatch_buddy in its toolNames
-    // while the bridge mounted only 4 of 5 �?a half-truth in the
+    // while the bridge mounted only 4 of 5 — a half-truth in the
     // catalog.
     //
     // New rule: if codex_proxy.kind === 'bridge_executable', then
@@ -651,7 +651,7 @@ describe('Codex bridge tool surface matches the contract', () => {
     //   - flip that runtime's `kind` to 'unsupported' + add notes
     //   - split the tool out into its own capability (e.g.
     //     assistant_buddy holds codepilot_hatch_buddy separately
-    //     from tasks_and_notify �?its codex_proxy is still
+    //     from tasks_and_notify — its codex_proxy is still
     //     'unsupported' even though Native + ClaudeCode both ship
     //     post-round-8)
     const { createCodePilotBuiltinTools } = await import('@/lib/codex/proxy/builtin-bridge');
@@ -667,7 +667,7 @@ describe('Codex bridge tool surface matches the contract', () => {
       for (const toolName of cap.toolNames) {
         assert.ok(
           mounted.has(toolName),
-          `${cap.id}.${toolName} is declared bridge_executable but createCodePilotBuiltinTools does NOT mount it. Fix the bridge factory, mark this runtime unsupported, or split the tool into a deferred capability �?notes-based exceptions are no longer accepted.`,
+          `${cap.id}.${toolName} is declared bridge_executable but createCodePilotBuiltinTools does NOT mount it. Fix the bridge factory, mark this runtime unsupported, or split the tool into a deferred capability — notes-based exceptions are no longer accepted.`,
         );
       }
     }

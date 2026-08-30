@@ -1,16 +1,16 @@
 /**
- * Bridge system types â?shared across all bridge modules.
+ * Bridge system types — shared across all bridge modules.
  *
  * The bridge connects external IM channels (Telegram, Discord, Slack)
  * to CodePilot chat sessions, allowing users to interact with Claude
  * from their preferred messaging platform.
  */
 
-// ââ Channel Types ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Channel Types ──────────────────────────────────────────────
 
 /**
  * Channel type identifier.
- * Extensible â?any string is valid so new adapters can register without
+ * Extensible — any string is valid so new adapters can register without
  * modifying this definition. Well-known values: 'telegram', 'discord', 'slack'.
  */
 export type ChannelType = string;
@@ -29,7 +29,7 @@ export interface SessionKey {
   chatId: string;
 }
 
-// ââ Messages âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Messages ───────────────────────────────────────────────────
 
 /** Inbound message from an IM channel */
 export interface InboundMessage {
@@ -81,14 +81,14 @@ export interface SendResult {
   error?: string;
 }
 
-// ââ Bindings âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Bindings ───────────────────────────────────────────────────
 
-/** Links an IM chat to a buckyball.ai session */
+/** Links an IM chat to a CodePilot session */
 export interface ChannelBinding {
   id: string;
   channelType: ChannelType;
   chatId: string;
-  /** buckyball.ai session ID this chat is bound to */
+  /** CodePilot session ID this chat is bound to */
   codepilotSessionId: string;
   /** SDK session ID for resume (cached from last conversation) */
   sdkSessionId: string;
@@ -106,7 +106,7 @@ export interface ChannelBinding {
   updatedAt: string;
 }
 
-// ââ Bridge Status ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Bridge Status ──────────────────────────────────────────────
 
 /** Overall bridge system status */
 export interface BridgeStatus {
@@ -124,7 +124,7 @@ export interface AdapterStatus {
   error: string | null;
 }
 
-// ââ Audit & Dedup ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Audit & Dedup ──────────────────────────────────────────────
 
 /** Audit log entry */
 export interface AuditLogEntry {
@@ -147,7 +147,7 @@ export interface PermissionLink {
   createdAt: string;
 }
 
-// ââ Streaming Preview âââââââââââââââââââââââââââââââââââââââââ
+// ── Streaming Preview ─────────────────────────────────────────
 
 /** Capabilities of a channel adapter's streaming preview support */
 export interface PreviewCapabilities {
@@ -161,12 +161,12 @@ export interface StreamingPreviewState {
   chatId: string;
   lastSentText: string;      // last text actually sent as draft
   lastSentAt: number;        // timestamp (ms) of last sent draft
-  degraded: boolean;         // set true after API failure â?skip further previews
+  degraded: boolean;         // set true after API failure → skip further previews
   throttleTimer: ReturnType<typeof setTimeout> | null;
   pendingText: string;       // latest accumulated text (may not yet be sent due to throttle)
 }
 
-// ââ Config âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Config ─────────────────────────────────────────────────────
 
 /** Platform-specific message length limits */
 export const PLATFORM_LIMITS: Record<string, number> = {

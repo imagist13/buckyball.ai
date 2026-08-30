@@ -39,7 +39,7 @@ afterEach(() => {
   while (createdIds.length) deleteProvider(createdIds.pop()!);
 });
 
-describe('PUT /api/providers/[id] â€?explicit preset switch', () => {
+describe('PUT /api/providers/[id] â€” explicit preset switch', () => {
   it('rejects changing a managed preset base URL while silently retaining its identity', async () => {
     const provider = createTokenProvider('qwen-token-plan-personal-cn');
     const response = await PUT(

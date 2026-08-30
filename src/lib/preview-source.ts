@@ -1,5 +1,5 @@
 /**
- * Preview source classification â€?Phase 4 Phase 1 (Markdown / Artifact closure).
+ * Preview source classification â€” Phase 4 Phase 1 (Markdown / Artifact closure).
  *
  * The `kind: 'file'` variant of PreviewSource carries a `trust` tier so the
  * UI can decide whether to fetch the path automatically, whether to allow
@@ -21,7 +21,7 @@
  *                         project root silently.
  *  - 'agent-referenced' : path was named by an AI tool and lives outside
  *                         the workspace. Must NOT be fetched until the
- *                         user confirms â€?the panel renders a confirm
+ *                         user confirms â€” the panel renders a confirm
  *                         card and on accept the source transitions to
  *                         'user-selected'.
  */
@@ -50,7 +50,7 @@ export interface PathClassification {
  * doesn't have Node's `path.resolve`; we just need consistent comparison
  * for "is child under parent" against the working directory.
  *
- * Case is preserved â€?macOS HFS+ / APFS default to case-insensitive but
+ * Case is preserved â€” macOS HFS+ / APFS default to case-insensitive but
  * the tool output we compare against (workingDirectory + tool input)
  * comes from the same shell process, so casing matches in practice.
  */
@@ -75,10 +75,10 @@ function isUnderDirectory(child: string, parent: string): boolean {
 /**
  * Classify a file path against the current workingDirectory.
  *
- * Empty / null workingDirectory â‡?we can't tell scope, so the path is
+ * Empty / null workingDirectory â‡’ we can't tell scope, so the path is
  * treated as agent-referenced and the user has to confirm before fetch.
  * This mirrors the production case where a chat is opened without a
- * resolved cwd yet (very early page state) â€?better to ask the user
+ * resolved cwd yet (very early page state) â€” better to ask the user
  * than to blindly open paths we can't scope.
  *
  * Frontend-only: this helper does NOT enforce filesystem-level

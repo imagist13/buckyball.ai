@@ -1,5 +1,5 @@
 /**
- * Phase 4 P1.2 â€?inline-html CSP injection.
+ * Phase 4 P1.2 â€” inline-html CSP injection.
  *
  * The route-served file preview gets a Round 4 CSP at the HTTP level.
  * srcDoc inline-html (code-fence Preview, Markdownâ†’HTML presentation,
@@ -18,13 +18,13 @@ import {
   injectInlineHtmlCsp,
 } from '../../lib/inline-html-csp';
 
-describe('buildInlineHtmlCspMeta â€?strict mode (default)', () => {
+describe('buildInlineHtmlCspMeta â€” strict mode (default)', () => {
   it('emits a meta tag with the Round 4 Static baseline', () => {
     const meta = buildInlineHtmlCspMeta();
     assert.match(meta, /<meta http-equiv="Content-Security-Policy"/i);
     // Default-deny baseline
     assert.match(meta, /default-src 'none'/);
-    // Static resource families â€?https allowed
+    // Static resource families â€” https allowed
     assert.match(meta, /img-src [^;"]*https:/);
     assert.match(meta, /style-src [^;"]*https:/);
     assert.match(meta, /font-src [^;"]*https:/);
@@ -44,7 +44,7 @@ describe('buildInlineHtmlCspMeta â€?strict mode (default)', () => {
   });
 });
 
-describe('buildInlineHtmlCspMeta â€?navigate mode', () => {
+describe('buildInlineHtmlCspMeta â€” navigate mode', () => {
   it('still locks fetch / frame / worker; keeps form-action none', () => {
     const meta = buildInlineHtmlCspMeta('navigate');
     assert.match(meta, /default-src 'none'/);
@@ -57,7 +57,7 @@ describe('buildInlineHtmlCspMeta â€?navigate mode', () => {
   });
 });
 
-describe('injectInlineHtmlCsp â€?placement', () => {
+describe('injectInlineHtmlCsp â€” placement', () => {
   it('inserts after an existing <head>', () => {
     const input = '<!doctype html><html><head><title>x</title></head><body>y</body></html>';
     const out = injectInlineHtmlCsp(input);

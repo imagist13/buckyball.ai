@@ -8,8 +8,8 @@ import {
 describe('BoundedNdjsonReader', () => {
   it('assembles frames across chunk boundaries and strips CRLF', () => {
     const reader = new BoundedNdjsonReader(64);
-    assert.deepEqual(reader.push(Buffer.from('{"a":"�?)), []);
-    const frames = reader.push(Buffer.from('�?}\r\n{"b":2}\n'));
+    assert.deepEqual(reader.push(Buffer.from('{"a":"你')), []);
+    const frames = reader.push(Buffer.from('好"}\r\n{"b":2}\n'));
     assert.deepEqual(frames.map((frame) => frame.text), ['{"a":"你好"}', '{"b":2}']);
     assert.equal(reader.currentFrameBytes, 0);
   });

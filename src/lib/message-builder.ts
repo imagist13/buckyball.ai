@@ -1,5 +1,5 @@
 /**
- * message-builder.ts â€?Convert DB messages to Vercel AI SDK CoreMessage[] format.
+ * message-builder.ts â€” Convert DB messages to Vercel AI SDK CoreMessage[] format.
  *
  * The DB stores all messages as `{ role: 'user' | 'assistant', content: string }`.
  * For assistant messages, `content` may be a JSON array of MessageContentBlock[]:
@@ -15,7 +15,7 @@
  *
  * This module bridges the gap, splitting a single DB assistant record
  * (which may contain interleaved text + tool_use + tool_result) into
- * the correct alternating assistant â†?tool â†?assistant structure.
+ * the correct alternating assistant â†’ tool â†’ assistant structure.
  */
 
 import type {
@@ -81,7 +81,7 @@ export function buildCoreMessages(dbMessages: Message[]): ModelMessage[] {
     if (msg.role === 'user') {
       raw.push(buildUserMessage(msg.content));
     } else {
-      // assistant â€?may contain structured blocks
+      // assistant â€” may contain structured blocks
       const blocks = parseMessageContent(msg.content);
       const converted = convertAssistantBlocks(blocks);
       raw.push(...converted);
@@ -186,11 +186,11 @@ function buildUserMessage(content: string): ModelMessage {
         const base64 = data.toString('base64');
         parts.push({ type: 'file', data: base64, mediaType: meta.type });
       } catch {
-        // File no longer exists â€?mention it in text
+        // File no longer exists â€” mention it in text
         parts.push({ type: 'text', text: `[Attached file: ${meta.name} (no longer available)]` });
       }
     } else if (isTextLikeMime(meta.type, meta.name)) {
-      // Actual text content â€?inline it (truncated)
+      // Actual text content â€” inline it (truncated)
       try {
         const fileContent = fs.readFileSync(meta.filePath, 'utf-8');
         parts.push({ type: 'text', text: `\n--- ${meta.name} ---\n${fileContent.slice(0, 50000)}\n--- end ---` });
@@ -198,13 +198,13 @@ function buildUserMessage(content: string): ModelMessage {
         parts.push({ type: 'text', text: `[Attached file: ${meta.name}]` });
       }
     } else {
-      // Binary content (audio, video, archives, PDFs, etc) â€?reading as UTF-8
+      // Binary content (audio, video, archives, PDFs, etc) â€” reading as UTF-8
       // would inject garbled bytes into the prompt and waste tokens. Keep a
       // reference note so the model knows the attachment existed, and include
       // the file path so tools like Read can open it on demand.
       parts.push({
         type: 'text',
-        text: `[Attached file: ${meta.name} (${meta.type}, binary â€?content not inlined; path: ${meta.filePath})]`,
+        text: `[Attached file: ${meta.name} (${meta.type}, binary â€” content not inlined; path: ${meta.filePath})]`,
       });
     }
   }
@@ -259,7 +259,7 @@ function convertAssistantBlocks(blocks: MessageContentBlock[]): ModelMessage[] {
     }
   };
 
-  // Build a map of tool_use_id â†?toolName so tool_result can reference it
+  // Build a map of tool_use_id â†’ toolName so tool_result can reference it
   const toolNameMap = new Map<string, string>();
   for (const block of blocks) {
     if (block.type === 'tool_use') {
@@ -270,7 +270,7 @@ function convertAssistantBlocks(blocks: MessageContentBlock[]): ModelMessage[] {
   for (const block of blocks) {
     switch (block.type) {
       case 'text':
-        // If we have pending tool results, flush them first (tool â†?assistant transition)
+        // If we have pending tool results, flush them first (tool â†’ assistant transition)
         if (toolResults.length > 0) {
           flushToolResults();
         }
@@ -282,7 +282,7 @@ function convertAssistantBlocks(blocks: MessageContentBlock[]): ModelMessage[] {
       case 'thinking':
         // Thinking blocks are Anthropic-specific. The AI SDK supports ReasoningPart
         // but sending reasoning back to the model is provider-dependent.
-        // Skip â€?thinking is informational and not sent back to the model
+        // Skip â€” thinking is informational and not sent back to the model
         // in most cases. Anthropic's sendReasoning option controls this at the provider level.
         break;
 
@@ -300,7 +300,7 @@ function convertAssistantBlocks(blocks: MessageContentBlock[]): ModelMessage[] {
         break;
 
       case 'tool_result':
-        // Flush assistant first (assistant â†?tool transition)
+        // Flush assistant first (assistant â†’ tool transition)
         flushAssistant();
         toolResults.push({
           type: 'tool-result',

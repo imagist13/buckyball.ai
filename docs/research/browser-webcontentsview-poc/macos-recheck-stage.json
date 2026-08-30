@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "startedAt": "2026-08-25T13:52:13.477Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "electron": "40.10.6",
+  "chrome": "144.0.7559.236",
+  "checks": [],
+  "events": [],
+  "stage": "waiting-app-ready",
+  "terminatedAfterSeconds": 60,
+  "note": "Sanitized checkpoint from the revised immediate-reload harness baseline recheck; no window or guest check started. The process was terminated manually after remaining before app.whenReady()."
+}

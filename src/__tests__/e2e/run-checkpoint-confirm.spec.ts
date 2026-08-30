@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Run Checkpoint Round 2 â€?confirm-and-send contract regression
+ * Run Checkpoint Round 2 â€” confirm-and-send contract regression
  * (Codex P2 follow-up, 2026-04-30).
  *
  * Locks down two assertions a refactor could silently break:
@@ -13,14 +13,16 @@ import { test, expect } from '@playwright/test';
  *
  *   2. Dispatching `run-checkpoint-confirm-send` on the window must
  *      produce a /api/chat POST. This proves the whole chain still
- *      works: window event â†?MessageInput listener â†?bypass flag â†? *      button.click() â†?form submit â†?handleSubmit â†?onSend â†? *      stream-session-manager â†?/api/chat.
+ *      works: window event â†’ MessageInput listener â†’ bypass flag â†’
+ *      button.click() â†’ form submit â†’ handleSubmit â†’ onSend â†’
+ *      stream-session-manager â†’ /api/chat.
  *
  * If anyone renames the attribute, removes it, or breaks the listener,
  * this test goes red instead of the bug shipping silently in the zh
  * locale (where the original `button[aria-label="Submit"]` selector
  * was missing).
  */
-test.describe('Run Checkpoint â€?confirm-and-send chain @smoke', () => {
+test.describe('Run Checkpoint â€” confirm-and-send chain @smoke', () => {
   const fixtureId = 'mock-rc-confirm-session';
 
   test.beforeEach(async ({ page }) => {
@@ -63,7 +65,7 @@ test.describe('Run Checkpoint â€?confirm-and-send chain @smoke', () => {
   test('submit button carries stable data-message-input-submit attribute', async ({ page }) => {
     // `goToConversation` waits for networkidle, which the chat-detail
     // page sometimes never reaches (Run cockpit polls). Wait for the
-    // composer textarea directly â€?that's the actual readiness signal.
+    // composer textarea directly â€” that's the actual readiness signal.
     await page.goto(`/chat/${fixtureId}`, { waitUntil: 'commit' });
     const input = page.locator('textarea[name="message"]').first();
     try {
@@ -72,7 +74,7 @@ test.describe('Run Checkpoint â€?confirm-and-send chain @smoke', () => {
       test.skip(true, 'Chat composer unavailable in current test environment');
     }
 
-    // The data-attribute MUST exist on a button â€?that's the hook
+    // The data-attribute MUST exist on a button â€” that's the hook
     // Round 2's confirm-and-send uses to find this composer's submit
     // in a locale-agnostic way. Pin both presence and uniqueness so a
     // future refactor can't silently degrade to "two buttons share
@@ -86,9 +88,9 @@ test.describe('Run Checkpoint â€?confirm-and-send chain @smoke', () => {
     // Spy on HTMLButtonElement.click before navigation so every
     // .click() call (programmatic or user-driven) is recorded with
     // whether the button carried `data-message-input-submit`. We
-    // can't assert on a real /api/chat POST in this mock env â€?the
+    // can't assert on a real /api/chat POST in this mock env â€” the
     // chat composer's submit button stays disabled because there's
-    // no real provider/model loaded â€?and that's an environmental
+    // no real provider/model loaded â€” and that's an environmental
     // concern, not the contract we're locking. What WE care about:
     // when the window event fires, the listener resolves the right
     // button via the data-attribute and invokes click() on it. If

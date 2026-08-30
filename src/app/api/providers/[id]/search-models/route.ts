@@ -33,6 +33,11 @@ import {
 } from '@/lib/provider-catalog';
 import { discoverModels } from '@/lib/model-discovery';
 import { getOpenRouterCatalog } from '@/lib/openrouter-catalog';
+import {
+  classifyCatalogModelPresence,
+  type CatalogIdentityModel,
+  type CatalogModelPresenceState,
+} from '@/lib/catalog-model-identity';
 import type { ErrorResponse } from '@/types';
 
 interface SearchModelCandidate {
@@ -44,6 +49,8 @@ interface SearchModelCandidate {
   alreadyAdded: boolean;
   existingHidden: boolean;
   existingModelId?: string;
+  presenceState: CatalogModelPresenceState;
+  conflictModelIds?: string[];
 }
 
 interface SearchModelsResponse {
@@ -81,18 +88,15 @@ export async function POST(
     // state: presenting it as plain "Added" recreates the original complaint
     // (the picker has no row, yet the dialog offers no recovery action).
     const localModels = getAllModelsForProvider(provider.id);
-    const getPresence = (modelId: string, upstreamModelId = modelId) => {
-      const identities = new Set([modelId, upstreamModelId]);
-      const matches = localModels.filter(model =>
-        identities.has(model.model_id) || identities.has(model.upstream_model_id),
-      );
-      const existing = matches.find(model => model.enabled === 1)
-        ?? matches.find(model => model.model_id === modelId)
-        ?? matches[0];
+    const getPresence = (model: CatalogIdentityModel) => {
+      const presence = classifyCatalogModelPresence(localModels, model);
+      const isCurrent = presence.state === 'current_enabled' || presence.state === 'current_hidden';
       return {
-        alreadyAdded: !!existing,
-        existingHidden: !!existing && existing.enabled !== 1,
-        ...(existing ? { existingModelId: existing.model_id } : {}),
+        alreadyAdded: isCurrent,
+        existingHidden: presence.state === 'current_hidden',
+        presenceState: presence.state,
+        ...(presence.existingModelId ? { existingModelId: presence.existingModelId } : {}),
+        ...(presence.conflictModelIds ? { conflictModelIds: presence.conflictModelIds } : {}),
       };
     };
 
@@ -106,7 +110,7 @@ export async function POST(
           displayName: c.displayName,
           contextWindow: c.contextWindow,
           pricing: c.pricing,
-          ...getPresence(c.modelId),
+          ...getPresence({ modelId: c.modelId, displayName: c.displayName }),
         })),
         total: candidates.length,
         cachedAt,
@@ -131,7 +135,7 @@ export async function POST(
           modelId: model.modelId,
           upstreamModelId,
           displayName: model.displayName,
-          ...getPresence(model.modelId, upstreamModelId),
+          ...getPresence(model),
         };
       });
       return NextResponse.json<SearchModelsResponse>({
@@ -179,7 +183,7 @@ export async function POST(
       return {
         modelId,
         displayName: modelId,
-        ...getPresence(modelId),
+        ...getPresence({ modelId, displayName: modelId }),
       };
     });
     const result: SearchModelsResponse = {

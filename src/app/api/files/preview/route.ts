@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // Real-path scope check â€?delegated to the single shared helper so read
+  // Real-path scope check â€” delegated to the single shared helper so read
   // / write / mkdir / rename / delete all enforce identical symlink
   // semantics. allowMissing=true because nonexistent files are a valid
   // case here (readFilePreview's own FilePreviewError('not_found') will

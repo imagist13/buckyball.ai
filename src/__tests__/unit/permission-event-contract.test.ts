@@ -1,5 +1,5 @@
 /**
- * Phase 0.5 Slice A guardrail â€?Permission event union must be
+ * Phase 0.5 Slice A guardrail â€” Permission event union must be
  * exactly the 4 canonical types (request / granted / denied /
  * unavailable). Adapters translate their native approval / sandbox /
  * confirm events into this union; UI only consumes the union.
@@ -29,7 +29,7 @@ describe('RuntimePermissionEvent contract', () => {
     );
   });
 
-  it('union is exhaustive â€?assertNever guards future drift', () => {
+  it('union is exhaustive â€” assertNever guards future drift', () => {
     // Compile-time exhaustiveness: switch on every member of
     // RuntimePermissionEventType. Adding a new event without updating
     // this switch will fail typecheck (the default branch's
@@ -58,7 +58,7 @@ describe('RuntimePermissionEvent contract', () => {
   it('every event carries runtimeId + sessionId + requestId base fields', () => {
     // Sample one event of each shape and assert the base fields are
     // present at the type level. Runtime construction validates the
-    // type â€?TS will catch missing fields here.
+    // type â€” TS will catch missing fields here.
     const request: RuntimePermissionEvent = {
       type: 'permission_request',
       runtimeId: 'claude_code',
@@ -75,13 +75,13 @@ describe('RuntimePermissionEvent contract', () => {
     };
     const denied: RuntimePermissionEvent = {
       type: 'permission_denied',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       sessionId: 's',
       requestId: 'r',
     };
     const unavailable: RuntimePermissionEvent = {
       type: 'permission_unavailable',
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
       sessionId: 's',
       requestId: 'r',
       reason: 'adapter cannot map this approval kind',

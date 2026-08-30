@@ -24,7 +24,7 @@ import {
 
 function requestedRuntime(request: NextRequest): RuntimeId | null {
   const candidate =
-    request.nextUrl.searchParams.get('runtime') ?? 'bbagent';
+    request.nextUrl.searchParams.get('runtime') ?? 'codepilot_runtime';
   return isRuntimeId(candidate) ? candidate : null;
 }
 
@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
     // Validate a complete generation before persisting the selection.
     projectCanonicalRepository({
       repository,
-      runtimeId: 'bbagent',
+      runtimeId: 'codepilot_runtime',
     });
     setSetting(HARNESS_HOME_ROOT_SETTING, repository.root);
     const manifest = repository.manifest;

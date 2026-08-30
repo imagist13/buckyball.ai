@@ -1,12 +1,12 @@
 /**
- * builtin-tools/session-search.ts �?Historical session search tool.
+ * builtin-tools/session-search.ts — Historical session search tool.
  *
  * Exposes a `codepilot_session_search` tool to the model so it can search
  * across past conversations. The underlying SQLite `messages` table stores
  * the complete history; this tool makes it queryable by the agent without
  * requiring the user to manually copy / paste from old chats.
  *
- * Design: mirrors the structure of memory-search.ts �?AI SDK `tool()`
+ * Design: mirrors the structure of memory-search.ts — AI SDK `tool()`
  * definition with a Zod schema, delegating the heavy lifting to a
  * dynamically-imported db function (`searchMessages`). The implementation
  * uses LIKE queries (no FTS5) to keep the schema requirements minimal;
@@ -22,7 +22,7 @@ export const SESSION_SEARCH_SYSTEM_PROMPT = `## 历史会话搜索
 
 如果用户提到之前讨论过某件事，或你需要检索过往对话中的上下文：
 
-- codepilot_session_search: 在所有历史会话的消息中按关键词搜索，返回匹配的会话标�?+ 时间 + 片段`;
+- codepilot_session_search: 在所有历史会话的消息中按关键词搜索，返回匹配的会话标题 + 时间 + 片段`;
 
 export function createSessionSearchTools() {
   return {
@@ -63,7 +63,7 @@ export function createSessionSearchTools() {
             .map((r, i) => {
               const roleLabel = r.role === 'user' ? '👤 User' : '🤖 Assistant';
               return [
-                `**${i + 1}. ${r.sessionTitle}** �?${roleLabel}`,
+                `**${i + 1}. ${r.sessionTitle}** — ${roleLabel}`,
                 `Session: \`${r.sessionId}\` · ${r.createdAt}`,
                 r.snippet.trim(),
               ].join('\n');

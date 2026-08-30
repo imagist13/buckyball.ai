@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { Message, FileAttachment } from '@/types';
-// getLocalDateString removed �?heartbeat no longer auto-triggers
+// getLocalDateString removed — heartbeat no longer auto-triggers
 import { startStream } from '@/lib/stream-session-manager';
 
 // ── localStorage heartbeat for cross-tab liveness detection ──
@@ -77,7 +77,7 @@ interface UseAssistantTriggerOpts {
    * Runtime-filtered resolved pair from useProviderModels. Auto-trigger
    * uses these (not the raw currentModel/currentProviderId) so welcome /
    * heartbeat messages flow through the same runtime gate as user-typed
-   * sends �?otherwise a stale saved provider would silently route past
+   * sends — otherwise a stale saved provider would silently route past
    * the gate via env-default re-resolution at /api/chat.
    */
   resolvedModel: string;
@@ -87,7 +87,7 @@ interface UseAssistantTriggerOpts {
   initialMessages: Message[];
   handleModeChange: (mode: string) => void;
   buildThinkingConfig: () => { type: string } | undefined;
-  // Returns boolean | void �?false means the send was gated/not delivered
+  // Returns boolean | void — false means the send was gated/not delivered
   // (#615 composer-preservation contract). Auto-trigger ignores the result.
   sendMessageRef: React.MutableRefObject<((content: string, files?: FileAttachment[]) => Promise<boolean | void>) | undefined>;
   initMetaRef: React.MutableRefObject<{ tools?: unknown; slash_commands?: unknown; skills?: unknown } | null>;
@@ -131,7 +131,8 @@ export function useAssistantTrigger({
   const checkAssistantTrigger = useCallback(async () => {
     // Don't trigger if already streaming or already triggered in this mount
     if (isStreaming || assistantTriggerFiredRef.current) return;
-    // Don't trigger before the runtime-filtered picker feed has loaded �?    // resolved pair would be the raw saved values, defeating the gate.
+    // Don't trigger before the runtime-filtered picker feed has loaded —
+    // resolved pair would be the raw saved values, defeating the gate.
     if (fetchState !== 'loaded') return;
     // Don't trigger when no provider is compatible with the active runtime.
     // Welcome / heartbeat would post a stale provider/model that the
@@ -153,14 +154,14 @@ export function useAssistantTrigger({
 
       // Guard against duplicate triggers across sessions:
       // 1. If ANOTHER session owns the lock, check if its tab is still alive via
-      //    localStorage heartbeat. No fixed timeout �?the heartbeat stops immediately
+      //    localStorage heartbeat. No fixed timeout — the heartbeat stops immediately
       //    when the tab closes/crashes, and we detect it within 30s.
       // 2. If THIS session already triggered and has messages, don't re-trigger.
       if (state.hookTriggeredSessionId && state.hookTriggeredSessionId !== sessionId) {
         if (isOwnerAlive(state.hookTriggeredSessionId)) {
           return; // Owning tab is still open, don't interfere
         }
-        // Owner tab is gone �?atomically clear the stale lock (CAS: only if owner
+        // Owner tab is gone — atomically clear the stale lock (CAS: only if owner
         // is still the stale session we observed).  If another tab already swapped
         // in, the server returns owner_mismatch and we bail out.
         try {
@@ -189,9 +190,9 @@ export function useAssistantTrigger({
       // Onboarding is now handled by the frontend Wizard component (OnboardingWizard.tsx).
       if (needsOnboarding) return;
 
-      // Codex P1 �?heartbeat is no longer triggered from the foreground.
+      // Codex P1 — heartbeat is no longer triggered from the foreground.
       // Earlier rev: chat mount checked `data.needsHeartbeat` and called
-      // startStream({content: '心跳检�?, autoTrigger: true}) which ran a
+      // startStream({content: '心跳检查', autoTrigger: true}) which ran a
       // FULL streamClaude turn through /api/chat with every tool the
       // chat had access to (codepilot_list_tasks, Search, memory_recent,
       // shell). Since headless / chat had no idle/tool/total timeout
@@ -205,7 +206,7 @@ export function useAssistantTrigger({
       // scheduled_tasks, fired by `executeDueTask` when next_run + the
       // stale-check guard both pass). Page mounts only READ state.
       //
-      // Buddy welcome stays �?it's a one-shot adoption flow, not a
+      // Buddy welcome stays — it's a one-shot adoption flow, not a
       // recurring background check, and its prompt is plain text with
       // no tools.
       const needsBuddyWelcome = state.onboardingComplete && !state.buddy && initialMessages.length === 0;
@@ -214,7 +215,7 @@ export function useAssistantTrigger({
       // Mark fired so we don't re-trigger on focus/re-render
       assistantTriggerFiredRef.current = true;
 
-      // Start heartbeat BEFORE marking persistent state �?so the heartbeat is
+      // Start heartbeat BEFORE marking persistent state — so the heartbeat is
       // already running when other tabs check liveness.
       stopHeartbeatRef.current?.();
       stopHeartbeatRef.current = startHeartbeat(sessionId);
@@ -228,7 +229,7 @@ export function useAssistantTrigger({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ sessionId, expectedOwner: null }),
         });
-        // Bail on any non-2xx (including 500) or CAS rejection �?never
+        // Bail on any non-2xx (including 500) or CAS rejection — never
         // proceed to startStream without a confirmed lock.
         if (!setRes.ok) {
           assistantTriggerFiredRef.current = false;
@@ -238,14 +239,14 @@ export function useAssistantTrigger({
         }
         const setData = await setRes.json();
         if (!setData.success) {
-          // Lost race �?another tab claimed ownership
+          // Lost race — another tab claimed ownership
           assistantTriggerFiredRef.current = false;
           stopHeartbeatRef.current?.();
           stopHeartbeatRef.current = null;
           return;
         }
       } catch {
-        // Network error �?bail out
+        // Network error — bail out
         assistantTriggerFiredRef.current = false;
         stopHeartbeatRef.current?.();
         stopHeartbeatRef.current = null;
@@ -254,13 +255,13 @@ export function useAssistantTrigger({
 
       // Use autoTrigger: the message is invisible (no user bubble, no title update).
       // Only buddy welcome reaches this point; heartbeat is scheduler-only.
-      const triggerMsg = '请做自我介绍并引导用户领养伙伴�?;
+      const triggerMsg = '请做自我介绍并引导用户领养伙伴。';
       startStream({
         sessionId,
         content: triggerMsg,
         mode,
         // Use the runtime-filtered resolved pair, not the raw saved
-        // currentModel/currentProviderId �?same contract as ChatView's
+        // currentModel/currentProviderId — same contract as ChatView's
         // user-typed send path.
         model: resolvedModel,
         providerId: resolvedProviderId,

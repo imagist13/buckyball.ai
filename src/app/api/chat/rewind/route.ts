@@ -6,12 +6,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/chat/rewind â€?Rewind conversation to a previous user message.
+ * POST /api/chat/rewind â€” Rewind conversation to a previous user message.
  *
  * Dual-path:
- * - If an SDK conversation exists for this session â†?use SDK's rewindFiles()
+ * - If an SDK conversation exists for this session â†’ use SDK's rewindFiles()
  *   (SDK tracks its own file modifications and has full git-based rewind)
- * - Otherwise â†?native path: truncate DB messages + restore file checkpoints
+ * - Otherwise â†’ native path: truncate DB messages + restore file checkpoints
  */
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'sessionId and userMessageId are required' }, { status: 400 });
     }
 
-    // Try SDK path first â€?SDK sessions have their own file checkpointing
+    // Try SDK path first â€” SDK sessions have their own file checkpointing
     try {
       const { getConversation } = await import('@/lib/conversation-registry');
       const conversation = getConversation(sessionId);
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         const result = await conversation.rewindFiles(userMessageId, { dryRun: !!dryRun });
         return NextResponse.json(result);
       }
-    } catch { /* SDK not available â€?fall through to native */ }
+    } catch { /* SDK not available â€” fall through to native */ }
 
     // Native path: truncate messages in DB + restore file checkpoints
     const db = getDb();

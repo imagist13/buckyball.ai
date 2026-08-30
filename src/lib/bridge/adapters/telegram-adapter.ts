@@ -1,5 +1,5 @@
 /**
- * Telegram Adapter â€?implements BaseChannelAdapter for Telegram Bot API.
+ * Telegram Adapter â€” implements BaseChannelAdapter for Telegram Bot API.
  *
  * Uses long polling to consume updates, persists offset watermark to DB,
  * and routes messages/callbacks through an internal async queue.
@@ -83,7 +83,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
   /** Chat IDs where sendMessageDraft has permanently failed (method not found / 400 / 404). */
   private previewDegraded = new Set<string>();
 
-  /** Committed offset â€?the highest update_id that has been safely enqueued or skipped. */
+  /** Committed offset â€” the highest update_id that has been safely enqueued or skipped. */
   private committedOffset = 0;
   /** In-memory set of recently processed update_ids for idempotency on restart. */
   private recentUpdateIds = new Set<number>();
@@ -113,7 +113,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
     // Register bot commands menu with Telegram
     this.registerCommands().catch(() => {});
 
-    // Start polling in background (no await â€?runs until stop())
+    // Start polling in background (no await â€” runs until stop())
     this.pollLoop().catch(err => {
       console.error('[telegram-adapter] Poll loop error:', err);
     });
@@ -243,7 +243,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
       return chatId === notifyChatId;
     }
 
-    // No auth configured â€?deny by default
+    // No auth configured â€” deny by default
     return false;
   }
 
@@ -312,11 +312,11 @@ export class TelegramAdapter extends BaseChannelAdapter {
     // Classify failure
     const status = result.httpStatus;
     if (status === 400 || status === 404) {
-      // Method not found or bad request â€?permanent degradation
+      // Method not found or bad request â€” permanent degradation
       this.previewDegraded.add(chatId);
       return 'degrade';
     }
-    // 429 (rate limit) or transient â€?skip this update but don't degrade
+    // 429 (rate limit) or transient â€” skip this update but don't degrade
     return 'skip';
   }
 
@@ -428,7 +428,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
   private markUpdateProcessed(updateId: number): void {
     this.recentUpdateIds.add(updateId);
 
-    // Walk committedOffset forward contiguously â€?only advance while
+    // Walk committedOffset forward contiguously â€” only advance while
     // the current position has been confirmed as processed.
     while (this.recentUpdateIds.has(this.committedOffset)) {
       this.committedOffset++;
@@ -558,11 +558,11 @@ export class TelegramAdapter extends BaseChannelAdapter {
 
             if (hasMedia && isImageEnabled()) {
               if (m.media_group_id) {
-                // Album message â€?buffer for debounce, advance fetchOffset immediately
+                // Album message â€” buffer for debounce, advance fetchOffset immediately
                 this.bufferMediaGroup(m.media_group_id, update, chatId, userId, displayName);
-                // Don't markUpdateProcessed yet â€?offset will be committed on flush
+                // Don't markUpdateProcessed yet â€” offset will be committed on flush
               } else {
-                // Single image message â€?process immediately
+                // Single image message â€” process immediately
                 await this.processSingleImageMessage(update, chatId, userId, displayName);
               }
             } else if (messageText) {
@@ -595,11 +595,11 @@ export class TelegramAdapter extends BaseChannelAdapter {
 
               this.enqueue(msg);
             } else {
-              // Unhandled message type (sticker, voice, etc.) â€?skip
+              // Unhandled message type (sticker, voice, etc.) â€” skip
               this.markUpdateProcessed(update.update_id);
             }
           } else {
-            // Unhandled update type â€?still safe to advance past it
+            // Unhandled update type â€” still safe to advance past it
             this.markUpdateProcessed(update.update_id);
           }
         }
@@ -679,7 +679,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
     const hasContent = attachments.length > 0 || text.trim();
 
     if (!hasContent) {
-      // Nothing usable (all images failed, no text) â€?mark processed
+      // Nothing usable (all images failed, no text) â€” mark processed
       this.markUpdateProcessed(update.update_id);
       return;
     }
@@ -746,7 +746,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
   }
 
   /**
-   * Flush a media group buffer â€?download all images and enqueue a single message.
+   * Flush a media group buffer â€” download all images and enqueue a single message.
    */
   private async flushMediaGroup(mediaGroupId: string): Promise<void> {
     const entry = this.mediaGroupBuffers.get(mediaGroupId);
@@ -762,7 +762,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
 
     const token = this.botToken;
     if (!token) {
-      // Can't download â€?mark all as processed
+      // Can't download â€” mark all as processed
       for (const uid of entry.updateIds) {
         this.markUpdateProcessed(uid);
       }
@@ -818,7 +818,7 @@ export class TelegramAdapter extends BaseChannelAdapter {
     const hasContent = attachments.length > 0 || text.trim();
 
     if (!hasContent) {
-      // All downloads failed and no caption â€?mark all processed
+      // All downloads failed and no caption â€” mark all processed
       for (const uid of entry.updateIds) {
         this.markUpdateProcessed(uid);
       }

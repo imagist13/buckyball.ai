@@ -8,7 +8,7 @@
  * - Private message sending (passive reply)
  * - msg_seq auto-increment per reply chain
  *
- * No business logic here â€?pure QQ protocol layer.
+ * No business logic here â€” pure QQ protocol layer.
  */
 
 import WebSocket from 'ws';
@@ -94,14 +94,14 @@ export async function getGatewayUrl(accessToken: string): Promise<string> {
 
 /** QQ Gateway opcodes */
 export const OP = {
-  DISPATCH: 0,        // Receive â€?server dispatches an event
+  DISPATCH: 0,        // Receive â€” server dispatches an event
   HEARTBEAT: 1,       // Send/Receive
-  IDENTIFY: 2,        // Send â€?identify after Hello
-  RESUME: 6,          // Send â€?resume a disconnected session
-  RECONNECT: 7,       // Receive â€?server asks client to reconnect
-  INVALID_SESSION: 9, // Receive â€?session is invalid
-  HELLO: 10,          // Receive â€?first message after connect, contains heartbeat_interval
-  HEARTBEAT_ACK: 11,  // Receive â€?heartbeat acknowledged
+  IDENTIFY: 2,        // Send â€” identify after Hello
+  RESUME: 6,          // Send â€” resume a disconnected session
+  RECONNECT: 7,       // Receive â€” server asks client to reconnect
+  INVALID_SESSION: 9, // Receive â€” session is invalid
+  HELLO: 10,          // Receive â€” first message after connect, contains heartbeat_interval
+  HEARTBEAT_ACK: 11,  // Receive â€” heartbeat acknowledged
 } as const;
 
 export interface GatewayPayload {

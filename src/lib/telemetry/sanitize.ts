@@ -57,10 +57,9 @@ export function sanitizeText(value: unknown, maxLength = 512): string {
   for (const pattern of SECRET_PATTERNS) text = text.replace(pattern, '[redacted]');
   text = text
     .replace(/https?:\/\/[^\s)\]}]+/gi, '[url]')
-    .replace(/file:\/\/[^\s)\]}]+/gi, '[local-path]')
-    .replace(/\/Users\/[^/\s]+/g, '/Users/<user>')
-    .replace(/\/home\/[^/\s]+/g, '/home/<user>')
-    .replace(/[A-Za-z]:\\Users\\[^\\\s]+/g, 'C:\\Users\\<user>')
+    .replace(/file:\/\/[^\r\n]+/gi, '[local-path]')
+    .replace(/(?:\/Users\/|\/home\/)[^\r\n]+/g, '[local-path]')
+    .replace(/[A-Za-z]:\\Users\\[^\r\n]+/g, '[local-path]')
     .replace(/\b[0-9a-f]{8}-[0-9a-f-]{27,}\b/gi, '[id]')
     .replace(/\b[0-9a-f]{24,}\b/gi, '[id]');
   if (text.length <= maxLength) return text;

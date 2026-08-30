@@ -1,17 +1,17 @@
 /**
- * Side-effect setup module â€?MUST be the first import in
+ * Side-effect setup module â€” MUST be the first import in
  * `codex-media-import.test.ts`. Two responsibilities, in order:
  *
  * 1. Set `CLAUDE_GUI_DATA_DIR` to a fresh temp root so that when the
  *    @/lib chain transitively loads `src/lib/db.ts` (which captures
  *    `process.env.CLAUDE_GUI_DATA_DIR` at module-load time, not
- *    per-call), the DB path lands inside the test root â€?NOT the user's
+ *    per-call), the DB path lands inside the test root â€” NOT the user's
  *    real `~/.codepilot/codepilot.db`.
  *
  * 2. **Pre-touch an empty `codepilot.db`** at the test root path. Without
  *    this, db.ts's first-time-setup branch (db.ts ~line 59) sees the new
  *    dataDir has no DB and auto-migrates from `~/Library/Application
- *    Support/CodePilot/codepilot.db` â€?copying the user's REAL DB
+ *    Support/CodePilot/codepilot.db` â€” copying the user's REAL DB
  *    contents (rows + WAL + SHM) into the temp dir. That doesn't corrupt
  *    the real DB, but it (a) leaks real user data into /tmp on every
  *    test run (residue on interrupt), and (b) couples the test against
@@ -23,7 +23,7 @@
  * `beforeEach`, but ESM imports are hoisted, so `@/lib/db` had already
  * captured the real path before the env swap fired. Media files (read
  * env per-call) went to the temp dir; DB rows (captured path) went to
- * the real DB â†?1896 dangling rows accumulated by 2026-05-28.
+ * the real DB â†’ 1896 dangling rows accumulated by 2026-05-28.
  *
  * Importing this module FIRST guarantees env-before-import (ES module
  * side effects run in declaration order across separate modules).
@@ -47,6 +47,6 @@ process.env.CLAUDE_GUI_DATA_DIR = CODEX_MEDIA_TEST_ROOT;
 // start from a clean, test-local schema with no real user data leaked.
 fs.writeFileSync(path.join(CODEX_MEDIA_TEST_ROOT, 'codepilot.db'), '');
 
-/** Path to the user's REAL DB â€?used by the regression guard to assert
+/** Path to the user's REAL DB â€” used by the regression guard to assert
  *  this test file does NOT leak any new rows into it. */
 export const REAL_USER_DB_PATH = path.join(os.homedir(), '.codepilot', 'codepilot.db');

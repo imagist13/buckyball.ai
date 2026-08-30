@@ -4,11 +4,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/chat/model â€?Switch model mid-session.
+ * POST /api/chat/model â€” Switch model mid-session.
  *
  * The frontend updates the session record in DB before calling this endpoint.
  * Native Runtime reads the model from the session DB at each agent-loop start,
- * so the DB update is all that's needed â€?no SDK conversation object required.
+ * so the DB update is all that's needed â€” no SDK conversation object required.
  */
 export async function POST(request: NextRequest) {
   try {

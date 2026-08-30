@@ -161,7 +161,7 @@ function parseSkillFrontMatter(content: string): { name?: string; description?: 
       continue;
     }
 
-    // Match description: | (multi-line YAML block scalar) â€?check FIRST
+    // Match description: | (multi-line YAML block scalar) â€” check FIRST
     if (/^description:\s*\|/.test(line)) {
       const descLines: string[] = [];
       for (let j = i + 1; j < lines.length; j++) {
@@ -393,7 +393,7 @@ export async function GET(request: NextRequest) {
     const annotatedPluginSkills = pluginSkills.map(skill => ({
       ...skill,
       loaded: loadedPluginPaths ? loadedPluginPaths.has(
-        // The skill filePath is inside commands/ â€?check if any loaded plugin path is a parent
+        // The skill filePath is inside commands/ â€” check if any loaded plugin path is a parent
         (() => {
           // Walk up from skill filePath to find plugin root
           let dir = path.dirname(skill.filePath);

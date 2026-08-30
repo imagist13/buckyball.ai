@@ -9,7 +9,7 @@ interface TerminalInstanceProps {
 }
 
 /**
- * TerminalInstance â€?renders terminal output with ANSI color support.
+ * TerminalInstance â€” renders terminal output with ANSI color support.
  *
  * Uses ansi-to-react for ANSI escape code rendering.
  * xterm.js integration can be added later for full terminal emulation.

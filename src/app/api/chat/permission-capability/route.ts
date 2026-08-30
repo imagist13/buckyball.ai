@@ -14,13 +14,13 @@ import { getCodexAutoReviewCapability } from '@/lib/codex/app-server-manager';
  * independent gates can refuse it, and they are reported as distinct reasons
  * because they have distinct remedies:
  *
- *   1. `runtime`      â€?Native AI SDK has no session-level model reviewer.
+ *   1. `runtime`      â€” Native AI SDK has no session-level model reviewer.
  *      Claude uses Agent SDK `permissionMode:auto`; Codex uses app-server
  *      `approvalsReviewer:auto_review`, so both bypass this refusal. Breadcrumb:
  *      the `runtime` query param (the composer's effective ChatRuntime).
- *   2. `sdk_version`  â€?the installed Agent SDK has no `permissionMode: 'auto'`.
+ *   2. `sdk_version`  â€” the installed Agent SDK has no `permissionMode: 'auto'`.
  *      A fact about node_modules. Breadcrumb: the package manifest.
- *   3. `external_mcp` â€?an external MCP server could load, and its tools cannot
+ *   3. `external_mcp` â€” an external MCP server could load, and its tools cannot
  *      be classified before the SDK's auto-mode classifier sees them (review
  *      round #4 P1). Breadcrumb: the config files named in `sources`.
  *
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     // The chat's working directory. Absent (new chat, no workspace yet) just
-    // means the project/local layers aren't probed â€?user-level still is.
+    // means the project/local layers aren't probed â€” user-level still is.
     const cwd = searchParams.get('cwd') ?? undefined;
     // The composer's effective ChatRuntime for this session. The composer always
     // sends it post review-round-6; an absent/unknown value is treated as

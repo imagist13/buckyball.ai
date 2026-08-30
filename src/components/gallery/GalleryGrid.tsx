@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -268,7 +268,7 @@ export function GalleryGrid({
                     className="flex min-h-36 flex-col items-center justify-center gap-2 px-4 text-center"
                     title={item.integrityReason}
                   >
-                    <BuckyballIcon name="warning" size="lg" className="text-status-warning-foreground" aria-hidden />
+                    <CodePilotIcon name="warning" size="lg" className="text-status-warning-foreground" aria-hidden />
                     <span className="text-xs text-muted-foreground">
                       {t(
                         item.integrityState === 'missing'
@@ -289,7 +289,7 @@ export function GalleryGrid({
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center bg-muted/30">
-                        <BuckyballIcon name="web" size="xl" className="text-muted-foreground/40" aria-hidden />
+                        <CodePilotIcon name="web" size="xl" className="text-muted-foreground/40" aria-hidden />
                       </div>
                     )}
                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-3 pb-2 pt-8 text-xs font-medium text-white">
@@ -298,7 +298,7 @@ export function GalleryGrid({
                   </div>
                 ) : isAudio && url ? (
                   <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-muted/40">
-                    <BuckyballIcon name="media_audio" size="xl" className="text-muted-foreground" aria-hidden />
+                    <CodePilotIcon name="media_audio" size="xl" className="text-muted-foreground" aria-hidden />
                     <span className="px-3 text-center text-xs text-muted-foreground">
                       {t('gallery.audioPreview')}
                     </span>
@@ -322,13 +322,13 @@ export function GalleryGrid({
                   )
                 ) : (
                   <div className="flex aspect-square items-center justify-center">
-                    <BuckyballIcon name="appearance" size="xl" className="text-muted-foreground/30" aria-hidden />
+                    <CodePilotIcon name="appearance" size="xl" className="text-muted-foreground/30" aria-hidden />
                   </div>
                 )}
                 {isVideo && url && (
                   <span className="absolute inset-0 flex items-center justify-center">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm">
-                      <BuckyballIcon name="play" size="lg" strokeWidth={2} className="ml-0.5 text-white" aria-hidden />
+                      <CodePilotIcon name="play" size="lg" strokeWidth={2} className="ml-0.5 text-white" aria-hidden />
                     </span>
                   </span>
                 )}
@@ -344,7 +344,7 @@ export function GalleryGrid({
                 )}
                     {item.favorited && (
                       <span className="absolute left-2.5 top-2.5">
-                        <BuckyballIcon
+                        <CodePilotIcon
                           name="favorite"
                           size="lg"
                           strokeWidth={1.5}
@@ -358,11 +358,11 @@ export function GalleryGrid({
               </ContextMenuTrigger>
               <ContextMenuContent className="min-w-40">
                 <ContextMenuItem onSelect={() => onManageTags(item)}>
-                  <BuckyballIcon name="tag" size="sm" aria-hidden />
+                  <CodePilotIcon name="tag" size="sm" aria-hidden />
                   {t('gallery.addTag')}
                 </ContextMenuItem>
                 <ContextMenuItem onSelect={() => onToggleFavorite(item)}>
-                  <BuckyballIcon
+                  <CodePilotIcon
                     name="favorite"
                     size="sm"
                     className="[&_path]:fill-current"
@@ -377,7 +377,7 @@ export function GalleryGrid({
                   variant="destructive"
                   onSelect={() => onRequestDelete(item)}
                 >
-                  <BuckyballIcon name="delete" size="sm" aria-hidden />
+                  <CodePilotIcon name="delete" size="sm" aria-hidden />
                   {t('gallery.delete')}
                 </ContextMenuItem>
               </ContextMenuContent>

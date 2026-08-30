@@ -1,5 +1,5 @@
 /**
- * Unit tests for resolveSessionModelPure â€?model/provider resolution logic.
+ * Unit tests for resolveSessionModelPure â€” model/provider resolution logic.
  *
  * Run with: npx tsx --test src/__tests__/unit/resolve-session-model.test.ts
  */
@@ -109,18 +109,18 @@ describe('resolveSessionModelPure', () => {
       globalProvider: 'anthropic',
     }));
     // Session provider not found, global default belongs to different provider
-    // No sessionGroup match, no global match â†?falls through to global default (no provider)
+    // No sessionGroup match, no global match â†’ falls through to global default (no provider)
     // Actually: sessionProviderId is truthy, so Case 1 runs but finds no group.
     // globalProvider !== sessionProviderId, so global not used.
-    // No sessionGroup models â†?falls through Case 1.
-    // Case 2: globalModel exists â†?use it with globalProvider
+    // No sessionGroup models â†’ falls through Case 1.
+    // Case 2: globalModel exists â†’ use it with globalProvider
     assert.deepEqual(result, { model: 'opus', providerId: 'anthropic' });
   });
 
   it('does NOT auto-migrate a Sonnet 4.6-pinned session to Sonnet 5 (s08)', async () => {
     const { resolveSessionModelPure } = await import('../../lib/resolve-session-model');
     // Group now offers sonnet-5 alongside the old sonnet alias, but a session
-    // already pinned to sonnet 4.6 must keep its pin â€?no silent upgrade.
+    // already pinned to sonnet 4.6 must keep its pin â€” no silent upgrade.
     const groups = [{
       provider_id: 'anthropic',
       models: [{ value: 'sonnet' }, { value: 'sonnet-5' }, { value: 'opus' }],
@@ -147,7 +147,7 @@ describe('resolveSessionModelPure', () => {
       lsModel: 'haiku',
       lsProvider: 'anthropic',
     }));
-    // No group found for anthropic, no global default â†?localStorage
+    // No group found for anthropic, no global default â†’ localStorage
     assert.deepEqual(result, { model: 'haiku', providerId: 'anthropic' });
   });
 });

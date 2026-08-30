@@ -37,7 +37,7 @@ function readReport(): PocReport {
       return { schema_version: 1, last_updated: parsed.last_updated ?? '', results: parsed.results };
     }
   } catch {
-    // File missing or malformed â€?we'll initialize a fresh one.
+    // File missing or malformed â€” we'll initialize a fresh one.
   }
   return { schema_version: 1, last_updated: '', results: {} };
 }
@@ -50,7 +50,7 @@ export function recordPocResult(key: string, value: unknown): void {
     fs.mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
     fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2) + '\n', 'utf-8');
   } catch (err) {
-    // Don't fail the POC just because we can't persist â€?log so CI still
+    // Don't fail the POC just because we can't persist â€” log so CI still
     // has the data on stdout.
     console.warn(`[poc-record] failed to write ${REPORT_PATH}:`, err);
   }

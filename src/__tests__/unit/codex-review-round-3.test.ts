@@ -1,13 +1,13 @@
 /**
- * Phase 5 review round 3 contract â€?wiring corrections.
+ * Phase 5 review round 3 contract â€” wiring corrections.
  *
- * P1 â€?Approval bridge actually wired into the runtime (not just
+ * P1 â€” Approval bridge actually wired into the runtime (not just
  *      shipped as a module). The Slice 2 commit landed
  *      approval-bridge.ts + its tests but a file-modification race
  *      lost the runtime edit, leaving declineByDefault in place.
  *      Codex reviewer caught it.
  *
- * P2 â€?file_changed upstream covers BOTH fs/changed notifications
+ * P2 â€” file_changed upstream covers BOTH fs/changed notifications
  *      (requires explicit fs/watch subscription) AND fileChange
  *      ThreadItem completions (synthesized from item.changes[]).
  *      Without both paths Codex's file edits would never trigger
@@ -25,7 +25,7 @@ const runtimeSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('Approval bridge wiring â€?P1 fix', () => {
+describe('Approval bridge wiring â€” P1 fix', () => {
   it('runtime imports handleCodexApprovalRequest from approval-bridge', () => {
     assert.match(
       runtimeSrc,
@@ -64,10 +64,10 @@ describe('Approval bridge wiring â€?P1 fix', () => {
   });
 });
 
-describe('synthesizeFileChangedFromCompletedItem â€?P2 fix', () => {
+describe('synthesizeFileChangedFromCompletedItem â€” P2 fix', () => {
   const ctx = { sessionId: 's1' };
 
-  it('fileChange item.completed with changes[] â†?file_changed with paths', () => {
+  it('fileChange item.completed with changes[] â†’ file_changed with paths', () => {
     const event = synthesizeFileChangedFromCompletedItem(
       {
         item: {
@@ -130,7 +130,7 @@ describe('synthesizeFileChangedFromCompletedItem â€?P2 fix', () => {
   });
 });
 
-describe('Runtime fs/watch lifecycle â€?P2 fix', () => {
+describe('Runtime fs/watch lifecycle â€” P2 fix', () => {
   it('runtime imports synthesizeFileChangedFromCompletedItem from event-mapper', () => {
     assert.match(
       runtimeSrc,

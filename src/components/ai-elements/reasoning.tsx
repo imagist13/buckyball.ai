@@ -14,7 +14,7 @@ import { code } from "@streamdown/code";
 import { math } from "@streamdown/math";
 import { mermaid } from "@streamdown/mermaid";
 import { CaretDown } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   createContext,
   memo,
@@ -185,7 +185,7 @@ export const ReasoningTrigger = memo(
       >
         {children ?? (
           <>
-            <BuckyballIcon name="assistant" size="md" aria-hidden />
+            <CodePilotIcon name="assistant" size="md" aria-hidden />
             {getThinkingMessage(isStreaming, duration)}
             <CaretDown
               className={cn(

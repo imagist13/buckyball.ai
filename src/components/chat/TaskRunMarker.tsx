@@ -5,10 +5,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 import type { TaskRunSummary } from '@/types';
 import type { TranslationKey } from '@/i18n';
 import { CheckCircle, X as XIcon } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 
 /**
- * Phase 3 Step 4 â?inline marker that appears in MessageList before
+ * Phase 3 Step 4 — inline marker that appears in MessageList before
  * the FIRST message belonging to a given `task_run_id`.
  *
  * Critically, this is a **render-only** component:
@@ -23,7 +23,7 @@ import { BuckyballIcon } from '@/components/ui/semantic-icon';
  *     column), so prompt builders constructing LLM context only
  *     read `content` and naturally exclude marker decoration. The
  *     v2 plan's earlier "sentinel string in message body" idea was
- *     rejected for exactly this reason â?it would have polluted the
+ *     rejected for exactly this reason — it would have polluted the
  *     model context.
  *
  *   - When the inline-join lookup is missing (a task got deleted
@@ -31,9 +31,9 @@ import { BuckyballIcon } from '@/components/ui/semantic-icon';
  *     a generic "task triggered" label rather than throwing.
  *
  * Heartbeat speak-up runs (`task_source === 'assistant_heartbeat'`)
- * get a slightly different label ("å¿è·³è§¦å Â· {date} Â· å©çæäº")
- * vs normal ai_task ("å®æ¶ä»»å¡ Â· {date} Â· {status}"). Silent
- * heartbeats don't appear at all â?the runner suppresses both the
+ * get a slightly different label ("心跳触发 · {date} · 助理有事")
+ * vs normal ai_task ("定时任务 · {date} · {status}"). Silent
+ * heartbeats don't appear at all — the runner suppresses both the
  * assistant message AND the marker when output trims to
  * `HEARTBEAT_OK`.
  */
@@ -42,7 +42,7 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
   const { t } = useTranslation();
 
   // Defensive: a deleted task / unknown run shouldn't crash the chat
-  // page. Render nothing in that case â?the message is still visible,
+  // page. Render nothing in that case — the message is still visible,
   // just without its origin badge.
   if (!run) return null;
 
@@ -52,7 +52,7 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
     : t('chat.taskRunMarker.taskLabel' as TranslationKey);
 
   // Status pill: green check for succeeded, X for failed/cancelled,
-  // â?for waiting_for_permission. Heartbeat speak-up renders as
+  // ⚠ for waiting_for_permission. Heartbeat speak-up renders as
   // "succeeded" semantically (model had something to say).
   let statusGlyph: React.ReactNode;
   let statusKey: TranslationKey;
@@ -68,7 +68,7 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
       statusKey = 'chat.taskRunMarker.failed' as TranslationKey;
       break;
     case 'waiting_for_permission':
-      statusGlyph = <BuckyballIcon name="assistant" size={12} className="text-status-warning-foreground" aria-hidden />;
+      statusGlyph = <CodePilotIcon name="assistant" size={12} className="text-status-warning-foreground" aria-hidden />;
       statusKey = 'chat.taskRunMarker.waitingForPermission' as TranslationKey;
       break;
     case 'cancelled':
@@ -76,7 +76,7 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
       statusKey = 'chat.taskRunMarker.cancelled' as TranslationKey;
       break;
     default:
-      statusGlyph = <BuckyballIcon name="assistant" size={12} className="text-muted-foreground" aria-hidden />;
+      statusGlyph = <CodePilotIcon name="assistant" size={12} className="text-muted-foreground" aria-hidden />;
       statusKey = 'chat.taskRunMarker.running' as TranslationKey;
   }
 
@@ -95,7 +95,7 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
         type="button"
         onClick={() => {
           // Navigate to the task detail row in the global Tasks page
-          // â?works for both ai_task and heartbeat runs (both are
+          // — works for both ai_task and heartbeat runs (both are
           // stored in scheduled_tasks).
           router.push(`/settings/tasks?focus=${encodeURIComponent(run.task_id)}`);
         }}
@@ -104,9 +104,9 @@ export function TaskRunMarker({ run }: { run: TaskRunSummary | undefined }) {
       >
         {statusGlyph}
         <span>{label}</span>
-        <span className="text-muted-foreground/70">Â·</span>
+        <span className="text-muted-foreground/70">·</span>
         <span>{localTime}</span>
-        <span className="text-muted-foreground/70">Â·</span>
+        <span className="text-muted-foreground/70">·</span>
         <span>{t(statusKey)}</span>
       </button>
       <div className="flex-1 h-px bg-border/40" />

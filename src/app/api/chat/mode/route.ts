@@ -4,7 +4,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * POST /api/chat/mode â€?Switch mode (code/plan) mid-session.
+ * POST /api/chat/mode â€” Switch mode (code/plan) mid-session.
  *
  * The frontend updates the session mode in DB before calling this endpoint.
  * Native Runtime reads the mode from the session at each agent-loop start

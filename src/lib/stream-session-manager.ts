@@ -1,5 +1,5 @@
 /**
- * Stream Session Manager â€?client-side singleton that manages SSE streams
+ * Stream Session Manager â€” client-side singleton that manages SSE streams
  * independently of React component lifecycle.
  *
  * When a user switches sessions, the old ChatView unmounts but the stream
@@ -50,7 +50,7 @@ interface ActiveStream {
   idleCheckTimer: ReturnType<typeof setInterval> | null;
   lastEventTime: number;
   gcTimer: ReturnType<typeof setTimeout> | null;
-  /** Tracked ad-hoc timeouts â€?cleaned up when the stream ends. */
+  /** Tracked ad-hoc timeouts â€” cleaned up when the stream ends. */
   pendingTimers: Set<ReturnType<typeof setTimeout>>;
   // Mutable accumulators (snapshot gets new object refs on each emit)
   accumulatedText: string;
@@ -64,7 +64,7 @@ interface ActiveStream {
   toolOutputAccumulated: string;
   toolTimeoutInfo: { toolName: string; elapsedSeconds: number } | null;
   isIdleTimeout: boolean;
-  /** #635 â€?true once the first model-output SSE (text / thinking / tool_use)
+  /** #635 â€” true once the first model-output SSE (text / thinking / tool_use)
    *  arrived. Gates the two-tier idle budget; status/init, tool_result/
    *  tool_output and the terminal result do NOT count as "first token". */
   sawUpstreamModelOutput: boolean;
@@ -84,11 +84,11 @@ export interface StartStreamParams {
   pendingImageNotices?: string[];
   /** When true, backend skips saving user message and title update (assistant auto-trigger) */
   autoTrigger?: boolean;
-  /** Called when SDK mode changes (e.g. plan â†?code) */
+  /** Called when SDK mode changes (e.g. plan â†’ code) */
   onModeChanged?: (mode: string) => void;
   /** Reference to the outer sendMessage so tool-timeout auto-retry works */
   sendMessageFn?: (content: string, files?: FileAttachment[]) => void;
-  /** SDK effort level (low/medium/high/max) â€?only sent when model supports it */
+  /** SDK effort level (low/medium/high/max) â€” only sent when model supports it */
   effort?: string;
   /** SDK thinking config */
   thinking?: { type: string; budgetTokens?: number };
@@ -99,7 +99,7 @@ export interface StartStreamParams {
   /** Display-only content for user message (e.g. /skillName instead of expanded prompt) */
   displayOverride?: string;
   /**
-   * Phase 2 â€?Context Accounting Runtime Contract (2026-05-20). Names of
+   * Phase 2 â€” Context Accounting Runtime Contract (2026-05-20). Names of
    * Agent Skills selected via MessageInput badges. Used by the Context
    * Accounting producer to look up real `SKILL.md` filesizes (replaces
    * the previous regex on the prompt text that missed badge dispatch).
@@ -118,17 +118,17 @@ export interface StartStreamParams {
 
 const GLOBAL_KEY = '__streamSessionManager__' as const;
 const LISTENERS_KEY = '__streamSessionListeners__' as const;
-// #635 â€?two-tier idle budget. Before the first model-output SSE the upstream
+// #635 â€” two-tier idle budget. Before the first model-output SSE the upstream
 // may legitimately be queueing on a slow third-party proxy (the SDK is silent
-// during that wait â€?its keep_alive is filtered before the app iterator), so we
+// during that wait â€” its keep_alive is filtered before the app iterator), so we
 // give a longer fuse; once the model has started emitting we tighten it (a stream
 // that opened then went silent is more likely truly stuck). NOT an unconditional
-// keepalive â€?a dead upstream still aborts after the PRE budget. See
+// keepalive â€” a dead upstream still aborts after the PRE budget. See
 // docs/research/issue-635-stream-idle-liveness-design.md.
-const STREAM_IDLE_PRE_FIRST_TOKEN_MS = 600_000; // 10min â€?waiting for first model output
-const STREAM_IDLE_POST_FIRST_TOKEN_MS = 330_000; // 5.5min â€?mid-stream silence (unchanged)
+const STREAM_IDLE_PRE_FIRST_TOKEN_MS = 600_000; // 10min â€” waiting for first model output
+const STREAM_IDLE_POST_FIRST_TOKEN_MS = 330_000; // 5.5min â€” mid-stream silence (unchanged)
 const GC_DELAY_MS = 5 * 60 * 1000; // 5 minutes
-/** Bound on retained auto-review notices per turn â€?keeps the recent tail. */
+/** Bound on retained auto-review notices per turn â€” keeps the recent tail. */
 const MAX_REVIEW_NOTICES = 20;
 // stopStream: how long to wait for a graceful interrupt before force-aborting.
 // The force-abort is scheduled UNCONDITIONALLY (not behind the interrupt
@@ -143,7 +143,7 @@ function getStreamsMap(): Map<string, ActiveStream> {
   return (globalThis as Record<string, unknown>)[GLOBAL_KEY] as Map<string, ActiveStream>;
 }
 
-/** Listener registry â€?persists independently of stream entries so GC doesn't orphan listeners */
+/** Listener registry â€” persists independently of stream entries so GC doesn't orphan listeners */
 function getListenersMap(): Map<string, Set<StreamEventListener>> {
   if (!(globalThis as Record<string, unknown>)[LISTENERS_KEY]) {
     (globalThis as Record<string, unknown>)[LISTENERS_KEY] = new Map<string, Set<StreamEventListener>>();
@@ -158,15 +158,15 @@ function getListenersMap(): Map<string, Set<StreamEventListener>> {
 /**
  * Build the persisted `messages.content` JSON for a completed turn.
  *
- * Phase 5b smoke round 10 (2026-05-16) â€?extracted into a pure helper
+ * Phase 5b smoke round 10 (2026-05-16) â€” extracted into a pure helper
  * so the active-stream completion path and the persistence path share
  * one definition, and so we can unit-test all four corner cases:
  *
- *   text only          â†?return `accumulated.trim()` (no JSON envelope)
- *   thinking only      â†?blocks: [thinking]
- *   tool-only          â†?blocks: [tool_use+tool_result pairs + orphan
+ *   text only          â†’ return `accumulated.trim()` (no JSON envelope)
+ *   thinking only      â†’ blocks: [thinking]
+ *   tool-only          â†’ blocks: [tool_use+tool_result pairs + orphan
  *                                 tool_results]
- *   any combination    â†?blocks include text + thinking + tool pairs
+ *   any combination    â†’ blocks include text + thinking + tool pairs
  *
  * The pre-fix guard `(hasTools || hasThinking) && (messageContent ||
  * hasThinking)` returned null when only tools were present without any
@@ -183,7 +183,7 @@ function getListenersMap(): Map<string, Set<StreamEventListener>> {
  * remaining tool_results AFTER pairing and writes each one as a
  * standalone tool_result block.
  *
- * `tool_result.content` is forced to string defensively â€?the SSE
+ * `tool_result.content` is forced to string defensively â€” the SSE
  * boundary in `codex/runtime.ts:stringifyToolResultContent` is the
  * primary normalisation, but a non-string here would still break the
  * MessageContentBlock type contract.
@@ -209,7 +209,7 @@ export function buildFinalMessageContent(args: {
 
   if (!hasText && !hasThinking && !hasTools) return null;
 
-  // Pure text turn â€?keep the lightweight string form for
+  // Pure text turn â€” keep the lightweight string form for
   // back-compat with MessageItem's "plain text" fast path.
   if (hasText && !hasThinking && !hasTools) return text;
 
@@ -247,7 +247,7 @@ export function buildFinalMessageContent(args: {
       });
     }
   }
-  // Phase 5b smoke round 10 â€?orphan tool_results (no matching
+  // Phase 5b smoke round 10 â€” orphan tool_results (no matching
   // tool_use in this turn) still need to land in the persisted
   // content. MessageItem.pairTools() already renders orphan results;
   // dropping them at this layer is what made "tool completed but no
@@ -266,7 +266,7 @@ export function buildFinalMessageContent(args: {
   return JSON.stringify(blocks);
 }
 
-/** Defensive â€?content SHOULD be string by the time it reaches the
+/** Defensive â€” content SHOULD be string by the time it reaches the
  *  persistence layer (SSE boundary stringifies). Belt and braces. */
 function normalizeContentToString(value: unknown): string {
   if (typeof value === 'string') return value;
@@ -426,7 +426,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
 
   // Idle timeout checker
   stream.idleCheckTimer = setInterval(() => {
-    // #635 â€?longer fuse before the first model-output event (a slow proxy may
+    // #635 â€” longer fuse before the first model-output event (a slow proxy may
     // legitimately be queueing), shorter once the stream has started producing.
     const idleBudget = stream.sawUpstreamModelOutput
       ? STREAM_IDLE_POST_FIRST_TOKEN_MS
@@ -445,8 +445,8 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     effectiveContent = `${notices}\n\n---\n\n${params.content}`;
   }
 
-  // Adaptive snapshot emit throttle â€?avoids excessive React re-renders during
-  // fast streaming. Phase 2 â‘?â€?reused (kept the `Text` names for a minimal
+  // Adaptive snapshot emit throttle â€” avoids excessive React re-renders during
+  // fast streaming. Phase 2 â‘¡ â€” reused (kept the `Text` names for a minimal
   // diff) by the three high-frequency non-text handlers too: onThinking,
   // onToolOutput and onToolProgress. All four just schedule a coalesced
   // `emit(stream, 'snapshot-updated')`, and buildSnapshot always reads the
@@ -514,20 +514,21 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
           detail: { initialCard: err.initialCard ?? 'provider' },
         }));
       }
-      // Phase 2 Step 4b â€?`INVALID_SESSION_PROVIDER` 409: chat route
+      // Phase 2 Step 4b â€” `INVALID_SESSION_PROVIDER` 409: chat route
       // refuses to send because the session points at a deleted
       // provider. Surface as a typed window event ChatView listens
       // for, so the user gets an inline banner ("your saved provider
-      // was deleted â€?pick another in the composer below") instead
+      // was deleted â€” pick another in the composer below") instead
       // of a generic toast.
       //
       // **Step 4b review**: also tag the thrown Error with a `code`
       // marker AND mark the stream so the catch block at the bottom
-      // of this function knows to take the SILENT error path â€?      // otherwise the `**Error:** Session points at...` text would
+      // of this function knows to take the SILENT error path â€”
+      // otherwise the `**Error:** Session points at...` text would
       // get serialized into `finalMessageContent` and render as an
       // assistant bubble in the transcript, contradicting the "red
       // banner is the only signal" UX. Generic Error is still
-      // thrown so external callers' onError still fires â€?they just
+      // thrown so external callers' onError still fires â€” they just
       // can no longer rely on stream.snapshot carrying error text.
       if (err?.code === 'INVALID_SESSION_PROVIDER' && typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('chat-invalid-session-provider', {
@@ -543,11 +544,11 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
       throw e;
     }
 
-    // Accepted â€?the route has already persisted the user message and, if this
+    // Accepted â€” the route has already persisted the user message and, if this
     // was the session's first real message, committed the fallback title.
     // Pull it back so the top bar / sidebar update now rather than on the
     // sidebar's 5s poll. autoTrigger turns are skipped: they never write a
-    // title, so a GET would be pure noise. Fire-and-forget â€?this is cosmetic
+    // title, so a GET would be pure noise. Fire-and-forget â€” this is cosmetic
     // and must not touch the snapshot lifecycle below.
     if (!params.autoTrigger) {
       void refreshSessionTitle(params.sessionId);
@@ -559,14 +560,14 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     const result = await consumeSSEStream(reader, {
       onText: (acc) => {
         markActive();
-        stream.sawUpstreamModelOutput = true; // #635 â€?first model-output tier
+        stream.sawUpstreamModelOutput = true; // #635 â€” first model-output tier
         stream.accumulatedText = acc;
         stream.thinkingPhaseEnded = true;
         throttledTextEmit();
       },
       onThinking: (delta) => {
         markActive();
-        stream.sawUpstreamModelOutput = true; // #635 â€?first model-output tier
+        stream.sawUpstreamModelOutput = true; // #635 â€” first model-output tier
         // If non-thinking content has arrived since last thinking delta,
         // this is a new thinking phase (e.g. after a tool_use round-trip).
         // Reset the live accumulator so the UI shows only the current phase.
@@ -579,11 +580,11 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
           stream.thinkingPhaseEnded = false;
         }
         stream.accumulatedThinking += delta;
-        throttledTextEmit(); // Phase 2 â‘?â€?coalesce fast thinking deltas
+        throttledTextEmit(); // Phase 2 â‘¡ â€” coalesce fast thinking deltas
       },
       onToolUse: (tool) => {
         markActive();
-        stream.sawUpstreamModelOutput = true; // #635 â€?first model-output tier (tool-call-only first response)
+        stream.sawUpstreamModelOutput = true; // #635 â€” first model-output tier (tool-call-only first response)
         flushTextThrottle(); // Ensure text is up-to-date before tool events
         stream.thinkingPhaseEnded = true;
         stream.toolOutputAccumulated = '';
@@ -611,7 +612,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         // matching tool_use by id to read the name + input, then resolve
         // any relative path against the session's workingDirectory so the
         // PreviewPanel listener (which keys on absolute paths) matches.
-        // Errored tool_results are ignored â€?failed writes don't change
+        // Errored tool_results are ignored â€” failed writes don't change
         // the file on disk and the listener shouldn't refetch.
         if (!res.is_error) {
           const matchingUse = stream.toolUsesArray.find((u) => u.id === res.tool_use_id);
@@ -639,15 +640,15 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         } else {
           stream.toolOutputAccumulated = next;
         }
-        throttledTextEmit(); // Phase 2 â‘?â€?coalesce fast live tool-output frames
+        throttledTextEmit(); // Phase 2 â‘¡ â€” coalesce fast live tool-output frames
       },
       onToolProgress: (toolName, elapsed) => {
         markActive();
         stream.snapshot = { ...stream.snapshot, statusText: `Running ${toolName}... (${elapsed}s)` };
-        throttledTextEmit(); // Phase 2 â‘?â€?coalesce fast progress ticks
+        throttledTextEmit(); // Phase 2 â‘¡ â€” coalesce fast progress ticks
       },
       onSkillNudge: (data) => {
-        // Broadcast as window event â€?ChatView listens and renders a
+        // Broadcast as window event â€” ChatView listens and renders a
         // persistent banner. We don't use the snapshot because the nudge
         // should persist after the stream completes (snapshot gets cleared).
         if (typeof window !== 'undefined') {
@@ -730,14 +731,14 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         emit(stream, 'permission-request');
       },
       onPermissionResolved: (permissionRequestId, status) => {
-        // A5 Step 2 â€?registry auto-denied a pending request on timeout.
+        // A5 Step 2 â€” registry auto-denied a pending request on timeout.
         // Flip ONLY the prompt that's actually showing; a late event for an
         // already-answered or replaced request is ignored.
         markActive();
         if (stream.snapshot.pendingPermission?.permissionRequestId !== permissionRequestId) return;
         stream.snapshot = { ...stream.snapshot, permissionResolved: status };
         emit(stream, 'snapshot-updated');
-        // Hold the "auto-denied â€?timed out" line a touch longer than a manual
+        // Hold the "auto-denied â€” timed out" line a touch longer than a manual
         // resolve (the user wasn't watching), then clear it if nothing else
         // replaced the prompt in the meantime.
         const answeredId = permissionRequestId;
@@ -756,7 +757,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         // A decision made for the user, with no prompt to close. Appended to
         // its own list rather than folded into permissionResolved: that field
         // answers "what happened to the question you were asked", and this
-        // never was one. Keep the tail bounded â€?a long auto_review turn can
+        // never was one. Keep the tail bounded â€” a long auto_review turn can
         // produce many, and the useful ones are the recent ones.
         markActive();
         stream.snapshot = {
@@ -786,14 +787,14 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
       onFileChanged: (paths) => {
         // Phase 5 Phase 4 (2026-05-13). Codex Runtime emits explicit
         // file-changed SSE events from fs/changed + fileChange item
-        // lifecycle. ClaudeCode SDK doesn't emit this â€?its file
+        // lifecycle. ClaudeCode SDK doesn't emit this â€” its file
         // changes flow through onToolResult+isWriteTool above. Both
         // paths converge here at `dispatchFileChanged`, so PreviewPanel
         // / file-tree / artifact refresh logic is runtime-agnostic.
         markActive();
         if (paths.length === 0) return;
         // Resolve any relative path against the active session's
-        // working directory â€?Codex sometimes reports relative paths
+        // working directory â€” Codex sometimes reports relative paths
         // from `fs/changed`. PreviewPanel listener keys on absolute
         // paths.
         const absolute = paths.map((p) => resolveToolPath(p, stream.workingDirectory));
@@ -819,7 +820,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     // Flush any pending throttled text update before building final content
     flushTextThrottle();
 
-    // Stream completed successfully â€?build final message content via
+    // Stream completed successfully â€” build final message content via
     // the shared helper that handles text-only / thinking-only /
     // tool-only / mixed turns + orphan tool results.
     const accumulated = result.accumulated;
@@ -885,8 +886,8 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
             : STREAM_IDLE_PRE_FIRST_TOKEN_MS) / 1000,
         );
         const textPart = stream.accumulatedText.trim()
-          ? stream.accumulatedText.trim() + `\n\n**Error:** Stream idle timeout â€?no response for ${idleSecs}s. The connection may have dropped.`
-          : `**Error:** Stream idle timeout â€?no response for ${idleSecs}s. The connection may have dropped.`;
+          ? stream.accumulatedText.trim() + `\n\n**Error:** Stream idle timeout â€” no response for ${idleSecs}s. The connection may have dropped.`
+          : `**Error:** Stream idle timeout â€” no response for ${idleSecs}s. The connection may have dropped.`;
 
         stream.snapshot = {
           ...buildSnapshot(stream),
@@ -913,7 +914,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         }).catch(() => {});
         scheduleGC(stream);
       } else if (stream.toolTimeoutInfo) {
-        // Tool timeout â€?auto-retry
+        // Tool timeout â€” auto-retry
         const timeoutInfo = stream.toolTimeoutInfo;
         const textPart = stream.accumulatedText.trim()
           ? stream.accumulatedText.trim() + `\n\n*(tool ${timeoutInfo.toolName} timed out after ${timeoutInfo.elapsedSeconds}s)*`
@@ -948,7 +949,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
           }, 500);
         }
       } else {
-        // User manually stopped â€?add partial content with "(generation stopped)"
+        // User manually stopped â€” add partial content with "(generation stopped)"
         const textPart = stream.accumulatedText.trim()
           ? stream.accumulatedText.trim() + '\n\n*(generation stopped)*'
           : null;
@@ -974,7 +975,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     } else {
       // Non-abort error
       const errMsg = error instanceof Error ? error.message : 'Unknown error';
-      // Phase 2 Step 4b review â€?silent error path for
+      // Phase 2 Step 4b review â€” silent error path for
       // `INVALID_SESSION_PROVIDER`: the inline banner ChatView shows
       // (driven by the window event we dispatched in the !response.ok
       // branch above) is the canonical user-facing surface for this
@@ -1012,7 +1013,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
 // Stop
 // ==========================================
 
-/** Minimal stream surface stopStreamWith needs â€?lets the stop logic be
+/** Minimal stream surface stopStreamWith needs â€” lets the stop logic be
  *  unit-tested with a fake stream + spy deps, without the (un-injectable)
  *  module-level streams map. */
 interface StoppableStream {
@@ -1030,7 +1031,7 @@ interface StopStreamDeps {
   scheduleForceAbort: (fn: () => void, ms: number) => void;
   /** Converge the client phase to a TERMINAL phase (I4). Called only when the
    *  interrupt response reports the backend is already terminal while the
-   *  client is still 'active' â€?flips the composer's isStreaming gate off
+   *  client is still 'active' â€” flips the composer's isStreaming gate off
    *  without waiting for the reader to reject. Must NOT append content (the
    *  reader's own terminal transition still runs). */
   convergePhase: (terminalPhase: StreamPhase) => void;
@@ -1038,7 +1039,7 @@ interface StopStreamDeps {
 
 /**
  * Pure/DI core of stopStream. The force-abort safety net is scheduled FIRST
- * and UNCONDITIONALLY â€?never gated behind the interrupt request.
+ * and UNCONDITIONALLY â€” never gated behind the interrupt request.
  *
  * Regression (GitHub #578): the old code scheduled the force-abort inside the
  * interrupt fetch's `.finally()`. A hung `/api/chat/interrupt` never settles,
@@ -1049,10 +1050,10 @@ interface StopStreamDeps {
  * Interrupt/phase reconcile (I4/I2): the interrupt response now carries the backend's
  * authoritative runtime_status. If the backend is ALREADY terminal (idle /
  * interrupted / error), converge the client phase to a terminal phase in a
- * microtask â€?bounding phase off 'active' even if the reader never rejects. A
- * 'running'/unknown status maps to no correction (reconcilePhase â†?null or
+ * microtask â€” bounding phase off 'active' even if the reader never rejects. A
+ * 'running'/unknown status maps to no correction (reconcilePhase â†’ null or
  * 'active'), so the force-abort net remains the sole bound in the live-stop
- * case. No periodic poll (DP2) â€?this is one read off the stop response.
+ * case. No periodic poll (DP2) â€” this is one read off the stop response.
  */
 export function stopStreamWith(
   stream: StoppableStream | undefined,
@@ -1060,32 +1061,32 @@ export function stopStreamWith(
   forceAbortMs: number,
 ): void {
   if (!stream || stream.snapshot.phase !== 'active') return;
-  // 1) Safety net FIRST â€?independent of (and before) the interrupt request,
+  // 1) Safety net FIRST â€” independent of (and before) the interrupt request,
   //    so a hung or throwing interrupt can't prevent the fallback abort.
   deps.scheduleForceAbort(() => {
     if (stream.snapshot.phase === 'active') {
       stream.abortController.abort();
     }
   }, forceAbortMs);
-  // 2) Best-effort graceful interrupt â€?invoked immediately (its side effect
+  // 2) Best-effort graceful interrupt â€” invoked immediately (its side effect
   //    fires synchronously, right after the net is armed). Its resolved
   //    runtime_status drives phase convergence in a microtask.
   Promise.resolve(deps.requestInterrupt())
     .then((runtimeStatus) => {
       // The reader may have already settled (force-abort or a real terminal
-      // event) between the interrupt and its response â€?only converge a still-
+      // event) between the interrupt and its response â€” only converge a still-
       // active client.
       if (stream.snapshot.phase !== 'active') return;
       const next = reconcilePhase(runtimeStatus, stream.snapshot.phase);
       // Act on TERMINAL corrections only. A 'running' status maps back to
-      // 'active' (â†?skipped): we never re-lock behind a reader-less phase, and
+      // 'active' (â†’ skipped): we never re-lock behind a reader-less phase, and
       // the force-abort net still bounds it.
       if (next && next !== 'active') {
         deps.convergePhase(next);
       }
     })
     .catch(() => {
-      // Interrupt failed/timed out â€?the force-abort net (armed above) is the
+      // Interrupt failed/timed out â€” the force-abort net (armed above) is the
       // fallback that bounds the phase.
     });
 }
@@ -1107,11 +1108,11 @@ export function stopStream(sessionId: string): void {
           });
           if (!res.ok) return null;
           const data = await res.json().catch(() => null);
-          // Interrupt/phase reconcile â€?the interrupt route returns the backend's
+          // Interrupt/phase reconcile â€” the interrupt route returns the backend's
           // authoritative runtime_status (or null). Drives phase convergence.
           return data && typeof data.runtime_status === 'string' ? data.runtime_status : null;
         } catch {
-          // Interrupt failed/timed out â€?force-abort already scheduled.
+          // Interrupt failed/timed out â€” force-abort already scheduled.
           return null;
         }
       },
@@ -1120,9 +1121,9 @@ export function stopStream(sessionId: string): void {
       },
       convergePhase: (terminalPhase) => {
         // I4: bound the client phase off 'active' once the backend is confirmed
-        // terminal, so the composer's isStreaming gate (â‰?phase==='active',
+        // terminal, so the composer's isStreaming gate (â‰¡ phase==='active',
         // GitHub #578) releases without waiting for the reader to reject. We
-        // only flip the phase and emit â€?we do NOT append finalMessageContent or
+        // only flip the phase and emit â€” we do NOT append finalMessageContent or
         // schedule GC here: the reader's own terminal transition (line ~905, on
         // the force-abort's abort or a real stream close) still runs and appends
         // the partial output canonically. This bounds phase, not content.
@@ -1206,7 +1207,7 @@ export async function respondToPermission(
   const body = {
     permissionRequestId: perm.permissionRequestId,
     // Echo the server-issued HMAC token; the route rejects responses
-    // without a valid one (Phase 4 â‘?hardening).
+    // without a valid one (Phase 4 â‘¡ hardening).
     ...(perm.approvalToken ? { approvalToken: perm.approvalToken } : {}),
     decision: decision === 'deny'
       ? { behavior: 'deny' as const, message: denyMessage || 'User denied permission' }
@@ -1258,8 +1259,8 @@ export function clearSnapshot(sessionId: string): void {
   const stream = getStreamsMap().get(sessionId);
   if (stream && stream.snapshot.phase !== 'active') {
     // Only mark finalMessageContent as consumed (it must not be appended
-    // twice on remount). The rest of the snapshot â€?terminal reason, token
-    // usage, context usage â€?stays readable until GC: resetting startedAt
+    // twice on remount). The rest of the snapshot â€” terminal reason, token
+    // usage, context usage â€” stays readable until GC: resetting startedAt
     // to 0 here made getSnapshot() return null for the whole entry, which
     // is the root cause of the post-stream display loss after idle/remount.
     // The GC timer scheduled at the terminal transition keeps running so
@@ -1273,7 +1274,7 @@ export function clearSnapshot(sessionId: string): void {
 
 /**
  * Seed a snapshot with initial patch for paths that don't go through
- * startStream() â€?currently only the first-message flow in
+ * startStream() â€” currently only the first-message flow in
  * `app/chat/page.tsx`, which hand-parses SSE, creates a session row, and
  * redirects to /chat/[id]. Without this seed, the snapshot the redirected
  * ChatView reads is null and first-turn signals (terminal_reason,
@@ -1342,12 +1343,12 @@ export function seedSnapshotPatch(
   // registered directly in a terminal phase='completed' and never passes
   // through the stream lifecycle that would otherwise arm the timer). Without
   // this, a seeded first-turn snapshot leaks in the module-global map forever
-  // (audit â‘?. GC only reclaims when the entry is still non-active at fire.
+  // (audit â‘¤). GC only reclaims when the entry is still non-active at fire.
   scheduleGC(placeholder);
 }
 
 // ==========================================
-// Message queue (Phase 2 â‘?
+// Message queue (Phase 2 â‘£)
 // ==========================================
 
 /**
@@ -1355,11 +1356,11 @@ export function seedSnapshotPatch(
  * these above the composer and sends the next one when the current stream
  * finishes.
  *
- * Phase 2 â‘?â€?this used to live in `ChatView` React state, so switching away
- * from a streaming session and back (ChatView unmount â†?remount) dropped every
+ * Phase 2 â‘£ â€” this used to live in `ChatView` React state, so switching away
+ * from a streaming session and back (ChatView unmount â†’ remount) dropped every
  * queued message. Moving the store here (keyed by sessionId, in the same
  * globalThis-backed module the stream itself lives in) makes the queue survive
- * the remount and stay bucketed per session â€?the queue now shares the stream's
+ * the remount and stay bucketed per session â€” the queue now shares the stream's
  * lifecycle instead of the component's.
  */
 export interface QueuedMessage {

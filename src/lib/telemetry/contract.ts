@@ -41,6 +41,7 @@ const REPORTABLE_OUTCOMES = new Set<TelemetryOutcomeKind>([
 
 const USER_ACTION_CATEGORIES = new Set([
   'CLI_NOT_FOUND',
+  'EXECUTION_PERMISSION_DENIED',
   'CLI_INSTALL_CONFLICT',
   'MISSING_GIT_BASH',
   'NO_CREDENTIALS',
@@ -201,8 +202,12 @@ export function configureElectronMainIntegrations<T extends NamedIntegration>(
   integrations: T[],
   eagerMainProcessSession: T,
   breadcrumbOnlyChildProcess: T,
+  options: { allowNativeMinidumps?: boolean } = {},
 ): T[] {
-  const filtered = filterTelemetryIntegrations('electron_main', integrations);
+  const filtered = filterTelemetryIntegrations('electron_main', integrations)
+    .filter((integration) => (
+      integration.name !== 'SentryMinidump' || options.allowNativeMinidumps === true
+    ));
   let replacedSession = false;
   let replacedChildProcess = false;
   const configured = filtered.map((integration) => {

@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
 import type { CliToolRuntimeInfo, CliToolStructuredDesc } from "@/types";
@@ -44,7 +44,7 @@ export function CliToolExtraDetailDialog({
 
   const handleTryTool = () => {
     const prefill = isZh
-      ? `ææ³ç?${displayName} å·¥å·å®æï¼`
+      ? `我想用 ${displayName} 工具完成：`
       : `I want to use ${displayName} to: `;
     window.location.href = `/chat?prefill=${encodeURIComponent(prefill)}`;
   };
@@ -163,7 +163,7 @@ export function CliToolExtraDetailDialog({
                         onClick={() => copyToClipboard(isZh ? ep.promptZh : ep.promptEn)}
                         title={t('cliTools.copy')}
                       >
-                        <BuckyballIcon name="copy" size={12} aria-hidden />
+                        <CodePilotIcon name="copy" size={12} aria-hidden />
                       </Button>
                     </div>
                   </div>
@@ -200,7 +200,7 @@ export function CliToolExtraDetailDialog({
 
         <DialogFooter>
           <Button size="sm" className="gap-1.5" onClick={handleTryTool}>
-            <BuckyballIcon name="play" size="sm" aria-hidden />
+            <CodePilotIcon name="play" size="sm" aria-hidden />
             {t('cliTools.tryTool' as TranslationKey)}
           </Button>
         </DialogFooter>

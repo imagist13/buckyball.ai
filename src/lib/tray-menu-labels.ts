@@ -14,15 +14,15 @@ export interface TrayMenuLabels {
 }
 
 const ZH: TrayMenuLabels = {
-  open: '打开 buckyball.ai',
-  quit: '退�?buckyball.ai',
-  tooltip: 'buckyball.ai',
+  open: '打开 CodePilot',
+  quit: '退出 CodePilot',
+  tooltip: 'CodePilot',
 };
 
 const EN: TrayMenuLabels = {
-  open: 'Open buckyball.ai',
-  quit: 'Quit buckyball.ai',
-  tooltip: 'buckyball.ai',
+  open: 'Open CodePilot',
+  quit: 'Quit CodePilot',
+  tooltip: 'CodePilot',
 };
 
 export function getTrayMenuLabels(locale: string | undefined): TrayMenuLabels {

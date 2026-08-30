@@ -1,5 +1,5 @@
 /**
- * anthropic-sampling-notice.ts â€?decide whether a turn must tell the user that
+ * anthropic-sampling-notice.ts â€” decide whether a turn must tell the user that
  * its sampling params (temperature / top_p / top_k) were not sent.
  *
  * Extracted as its own dependency-free module (same convention as
@@ -9,7 +9,7 @@
  * Why this exists (Codex review P2, 2026-07-18): `sanitizeClaudeModelOptions`
  * strips non-default sampling params for the adaptive family (Sonnet 5 /
  * Fable 5 / Opus 4.7+ return 400 on them) and reports the removal via
- * `strippedSamplingParams` â€?but that field had ZERO production consumers. The
+ * `strippedSamplingParams` â€” but that field had ZERO production consumers. The
  * sanitizer's own contract says a strip must be surfaced, never swallowed (same
  * rule as `thinkingForcedOn`), so the strip was silent in exactly the way the
  * semantic-acceptance rules forbid. Both runtimes now build their notice here.
@@ -19,7 +19,7 @@
  *   - native (agent-loop / AI SDK): params that survive sanitization ARE sent
  *     to `streamText`, so only the STRIPPED ones are unsent.
  *   - sdk (claude-client / Claude Code SDK): `query()` exposes no sampling
- *     knobs at all, so EVERY provided param is unsent â€?stripped or not.
+ *     knobs at all, so EVERY provided param is unsent â€” stripped or not.
  */
 
 import type { ClaudeModelOptionsOutput } from './claude-model-options';
@@ -30,8 +30,8 @@ import type { ClaudeModelOptionsOutput } from './claude-model-options';
  * Carries a `reason` + interpolation params, NOT rendered prose (Codex review
  * P2, 2026-07-18): the server has no idea which locale the user reads, so
  * hardcoding English here shipped an untranslatable toast. The client maps
- * (code, reason) â†?i18n key in `status-notice-i18n.ts`. The server still logs a
- * plain-English breadcrumb via console.warn for diagnosis â€?that's an operator
+ * (code, reason) â†’ i18n key in `status-notice-i18n.ts`. The server still logs a
+ * plain-English breadcrumb via console.warn for diagnosis â€” that's an operator
  * surface, not a user surface.
  */
 export interface SamplingIgnoredNotice {
@@ -42,7 +42,7 @@ export interface SamplingIgnoredNotice {
   reason: 'model-rejects' | 'runtime-cannot-send';
   /** Param names that will not reach the model. Never empty. */
   unsent: string[];
-  /** Interpolation values for the i18n key â€?never pre-rendered sentences. */
+  /** Interpolation values for the i18n key â€” never pre-rendered sentences. */
   params: {
     /** Resolved model ID, or '' when the caller had none (key handles it). */
     model: string;
@@ -67,7 +67,7 @@ export function buildSamplingIgnoredNotice(args: {
 
   const unsent =
     runtime === 'sdk'
-      // The SDK runtime cannot send sampling params at all â€?surviving ones are
+      // The SDK runtime cannot send sampling params at all â€” surviving ones are
       // just as unsent as stripped ones, so both go in the notice.
       ? [...sanitized.strippedSamplingParams, ...Object.keys(sanitized.sampling)]
       // The native runtime forwards survivors to streamText; only strips are unsent.

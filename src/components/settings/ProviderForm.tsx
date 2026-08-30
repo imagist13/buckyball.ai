@@ -64,9 +64,9 @@ export interface ProviderFormData {
   /**
    * API key.
    *
-   * - `string` â†?new value (including empty string for providers that don't
+   * - `string` â†’ new value (including empty string for providers that don't
    *   need a key, e.g. env_only).
-   * - `undefined` â†?"unchanged" signal for edit mode. The backend PUT route
+   * - `undefined` â†’ "unchanged" signal for edit mode. The backend PUT route
    *   (src/app/api/providers/[id]/route.ts) will omit the field so
    *   updateProvider()'s `data.api_key ?? existing.api_key` preserves the
    *   stored key. This is how the UI represents "user did not touch the
@@ -201,7 +201,7 @@ export function ProviderForm({
     // labels rendered in the form so the error message reads as "<the
     // field you just looked at> must be valid JSON".
     // `envOverridesJson` is also a JSON textarea but was missing from the
-    // original validation list â€?invalid input would silently fail at the
+    // original validation list â€” invalid input would silently fail at the
     // backend instead of being caught here.
     for (const [labelKey, val] of [
       ['provider.extraEnvVars', extraEnv],
@@ -225,11 +225,11 @@ export function ProviderForm({
 
       // #449 fix: three distinct save intents for api_key in edit mode.
       // See PresetConnectDialog handleSubmit for the full rationale.
-      //   new value   â†?apiKey as-is
-      //   clear       â†?"" (overwrites DB since `?? existing` only falls
+      //   new value   â†’ apiKey as-is
+      //   clear       â†’ "" (overwrites DB since `?? existing` only falls
       //                 back on nullish)
-      //   keep        â†?undefined (PUT body omits field â†?DB preserved)
-      //   create/no stored â†?apiKey as-is
+      //   keep        â†’ undefined (PUT body omits field â†’ DB preserved)
+      //   create/no stored â†’ apiKey as-is
       const apiKeyForSave: string | undefined = (() => {
         if (apiKey) return apiKey;
         if (mode === "edit" && hasStoredKey && clearStoredKey) return "";
@@ -258,7 +258,7 @@ export function ProviderForm({
 
   // Show "keep existing" placeholder when the DB has a stored key and the
   // user hasn't typed anything yet. Replaces the old isMaskedKey derivation
-  // which was based on detecting "***" in apiKey state â€?we no longer load
+  // which was based on detecting "***" in apiKey state â€” we no longer load
   // masked values into state at all.
   const showStoredKeyPlaceholder = mode === "edit" && hasStoredKey && !apiKey;
   // Show the explicit "clear stored key" affordance under the same
@@ -348,7 +348,7 @@ export function ProviderForm({
               }}
               className="font-mono text-sm"
             />
-            {/* Explicit "clear stored key" action â€?see PresetConnectDialog
+            {/* Explicit "clear stored key" action â€” see PresetConnectDialog
                 for the rationale. Without this users cannot actually
                 delete a stored key. */}
             {showClearStoredKeyAction && (

@@ -1,5 +1,5 @@
 /**
- * bash-validator.ts â€?Bash command safety classification.
+ * bash-validator.ts â€” Bash command safety classification.
  *
  * Classifies bash commands into safety levels:
  * - safe: Read-only commands, common dev tools
@@ -101,6 +101,6 @@ export function validateBashCommand(command: string): BashValidationResult {
     return { level: 'safe', reasons: [] };
   }
 
-  // Unknown â€?default to caution
+  // Unknown â€” default to caution
   return { level: 'caution', reasons: ['Unknown command'] };
 }

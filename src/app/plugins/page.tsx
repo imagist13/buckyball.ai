@@ -1,19 +1,19 @@
 "use client";
 
 /**
- * Extensions page (`/plugins`) â?Phase 2D.4 P2 round 6 IA refactor
+ * Extensions page (`/plugins`) — Phase 2D.4 P2 round 6 IA refactor
  * (2026-05-02).
  *
  * Two-layer header:
  *   Row 1: Tabs only (Skills / MCP / CLI), each with its visible count.
- *   Row 2: Current-tab action bar â?search + the primary actions of the
- *          active tab. Skills gets æ°å»º Skill + æè½ååº? MCP gets æ·»å 
- *          MCP + JSON éç½®, CLI gets æ·»å  CLI å·¥å·. No global Create
- *          dropdown â?each tab's primary action lives in its own bar.
+ *   Row 2: Current-tab action bar — search + the primary actions of the
+ *          active tab. Skills gets 新建 Skill + 技能商店, MCP gets 添加
+ *          MCP + JSON 配置, CLI gets 添加 CLI 工具. No global Create
+ *          dropdown — each tab's primary action lives in its own bar.
  *
  * Page-level title / description are removed: this is a Settings inner
  * page reached from the left rail; the `nav.plugins` label already
- * tells the user where they are. Repeating "æ©å±è½å" + a paragraph
+ * tells the user where they are. Repeating "扩展能力" + a paragraph
  * description here adds noise without anchoring information.
  *
  * Filter selection lives in `window.location.hash` so deep links and
@@ -21,7 +21,7 @@
  * right view.
  *
  * Session context (cwd / sessionId) for SkillsManager:
- *   1. Prefer `usePanel()` â?populated when navigating from a chat session.
+ *   1. Prefer `usePanel()` — populated when navigating from a chat session.
  *   2. Fall back to `/api/chat/sessions[0]` (sorted by updated_at DESC).
  *   3. SkillsManager re-fetches when those props change.
  */
@@ -35,7 +35,7 @@ import {
   Code,
   Storefront,
 } from "@/components/ui/icon";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 import { SkillsManager, type SkillsManagerHandle } from "@/components/skills/SkillsManager";
 import { CreateSkillDialog } from "@/components/skills/CreateSkillDialog";
 import { MarketplaceBrowser } from "@/components/skills/MarketplaceBrowser";
@@ -68,7 +68,7 @@ interface RecentSessionContext {
   sessionId?: string;
 }
 
-const FILTER_META: Record<PluginFilter, { labelKey: TranslationKey; icon: BuckyballIconName }> = {
+const FILTER_META: Record<PluginFilter, { labelKey: TranslationKey; icon: CodePilotIconName }> = {
   skills: { labelKey: "plugins.tab.skills", icon: "skill" },
   mcp: { labelKey: "plugins.tab.mcp", icon: "mcp" },
   cli: { labelKey: "plugins.tab.cli", icon: "cli" },
@@ -114,7 +114,7 @@ export default function ExtensionsPage() {
   // filter clears the box so the user doesn't see "0 results" because
   // their query was scoped to a different list. Adjust during render
   // (React's "reset state when a prop changes" pattern) instead of a
-  // setState-in-effect â?React-Compiler-friendly and avoids a one-frame
+  // setState-in-effect — React-Compiler-friendly and avoids a one-frame
   // stale-search flash. https://react.dev/learn/you-might-not-need-an-effect
   const [search, setSearch] = useState("");
   const [prevFilter, setPrevFilter] = useState(filter);
@@ -126,7 +126,8 @@ export default function ExtensionsPage() {
   // Per-filter counts for the Tab labels ("Skills 35 / MCP 9 / CLI 11").
   // Each manager reports its own count via callback when mounted; the
   // host caches the last known number so Tabs don't flash back to "?"
-  // when the user switches tabs. `undefined` means "not yet known" â?  // Tabs omit the number rather than render a misleading "0".
+  // when the user switches tabs. `undefined` means "not yet known" —
+  // Tabs omit the number rather than render a misleading "0".
   const [skillsCount, setSkillsCount] = useState<number | undefined>(undefined);
   const [mcpCount, setMcpCount] = useState<number | undefined>(undefined);
   const [cliCount, setCliCount] = useState<number | undefined>(undefined);
@@ -168,7 +169,7 @@ export default function ExtensionsPage() {
     skillsRef.current?.refresh();
   };
 
-  // Body picker â?single-filter views render only that manager.
+  // Body picker — single-filter views render only that manager.
   const body = useMemo(() => {
     if (filter === "skills") {
       return (
@@ -188,18 +189,19 @@ export default function ExtensionsPage() {
     return <CliToolsManager ref={cliRef} variant="embedded" onCountChange={setCliCount} search={search} />;
     // handleSkillsCounts identity changes per render, but it only flows
     // into a child useEffect that re-fires harmlessly. Keeping it out of
-    // deps would cause stale closure on setSkillsCount. (deps are complete now â?    // no suppression needed.)
+    // deps would cause stale closure on setSkillsCount. (deps are complete now —
+    // no suppression needed.)
   }, [filter, cwd, activeSessionId, search]);
 
   return (
     <div className="flex h-full flex-col">
       {/* Two-layer header: Row 1 = Tabs only; Row 2 = current tab's
           action bar (search + primary actions). No global title /
-          description / Create dropdown â?this is a Settings inner page,
-          and tabs already say what's here. No bottom divider â?the
+          description / Create dropdown — this is a Settings inner page,
+          and tabs already say what's here. No bottom divider — the
           gap to the body grid is enough visual separation. */}
       <header className="shrink-0 px-6 pt-4 pb-3 space-y-3">
-        {/* Row 1 â?shadcn <Tabs>/<TabsList>/<TabsTrigger>. We don't use
+        {/* Row 1 — shadcn <Tabs>/<TabsList>/<TabsTrigger>. We don't use
             <TabsContent> because the body is rendered separately based
             on `filter` (refs / count callbacks need to live outside the
             tabs context); the Root + List + Triggers give us the
@@ -212,7 +214,7 @@ export default function ExtensionsPage() {
               const count = filterCounts[key];
               return (
                 <TabsTrigger key={key} value={key}>
-                  <BuckyballIcon name={meta.icon} size="md" className="text-inherit" aria-hidden />
+                  <CodePilotIcon name={meta.icon} size="md" className="text-inherit" aria-hidden />
                   {t(meta.labelKey)}
                   {typeof count === "number" && (
                     <span className="tabular-nums text-xs text-muted-foreground">
@@ -225,7 +227,7 @@ export default function ExtensionsPage() {
           </TabsList>
         </Tabs>
 
-        {/* Row 2 â?Current tab's action bar. Search on the left, primary
+        {/* Row 2 — Current tab's action bar. Search on the left, primary
             actions on the right. Wraps onto its own line at narrow
             widths so the search input never collides with the buttons. */}
         <CurrentTabToolbar
@@ -240,7 +242,7 @@ export default function ExtensionsPage() {
         />
       </header>
 
-      {/* Body â?single scroll container shared across filters */}
+      {/* Body — single scroll container shared across filters */}
       <div className="flex-1 min-h-0 overflow-y-auto px-6 py-5">{body}</div>
 
       <CreateSkillDialog

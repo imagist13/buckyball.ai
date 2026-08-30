@@ -126,7 +126,7 @@ export function useCliToolsFetch(opts: {
     if (!inputValue.trim()) {
       // Empty input: prefill with prompt template
       const prefix = locale === 'zh'
-        ? `我想�?${tool.name} 工具完成：`
+        ? `我想用 ${tool.name} 工具完成：`
         : `I want to use ${tool.name} to: `;
       setInputValue(prefix);
       setTimeout(() => {
@@ -152,7 +152,7 @@ export function useCliToolsFetch(opts: {
     setPopoverMode('cli');
     setCliFilter('');
     setSelectedIndex(0);
-    // Re-focus the textarea so keyboard nav works immediately �?there's
+    // Re-focus the textarea so keyboard nav works immediately — there's
     // no in-popover search input to focus any more.
     setTimeout(() => textareaRef.current?.focus(), 0);
     fetchCliTools();

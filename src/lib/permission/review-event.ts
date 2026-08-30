@@ -1,5 +1,5 @@
 /**
- * Canonical permission-review event contract â?`runtime-permission-modes.md`
+ * Canonical permission-review event contract — `runtime-permission-modes.md`
  * Phase 0.
  *
  * Distinct from `RuntimePermissionEvent` (`@/lib/runtime/contract`), which
@@ -10,7 +10,7 @@
  *   "Was this denied by the model reviewing on my behalf, or by me?"
  *
  * Every Runtime that grows an auto reviewer maps into this same union, so
- * `æ¨¡åä»£å®¡æç»` never renders as `ç¨æ·æç»` on one Runtime and not another.
+ * `模型代审拒绝` never renders as `用户拒绝` on one Runtime and not another.
  */
 
 import type { HumanOnlyCategory } from './profile';
@@ -26,12 +26,12 @@ export const REVIEW_EVENT_STATES = [
 export type ReviewEventState = (typeof REVIEW_EVENT_STATES)[number];
 
 /**
- * Source breadcrumb â?the "who decided" half of the contract.
+ * Source breadcrumb — the "who decided" half of the contract.
  *
- *   - `sdk-reviewer` â?the Runtime's own auto reviewer (Claude SDK
- *     `permissionMode: 'auto'`, Codex `approvals_reviewer`, â?.
- *   - `user` â?a human clicked approve/deny.
- *   - `rule-engine` â?buckyball.ai's own deterministic classification decided
+ *   - `sdk-reviewer` — the Runtime's own auto reviewer (Claude SDK
+ *     `permissionMode: 'auto'`, Codex `approvals_reviewer`, …).
+ *   - `user` — a human clicked approve/deny.
+ *   - `rule-engine` — CodePilot's own deterministic classification decided
  *     without asking anyone (host MCP allowlist, human-only interception,
  *     mutationLevel safe_read skip).
  */
@@ -42,7 +42,7 @@ export type ReviewerSource = (typeof REVIEWER_SOURCES)[number];
 /**
  * Guards for values arriving over the wire. Fail-closed by omission: an
  * unrecognised state or source is dropped, never coerced to a plausible
- * neighbour â?guessing 'denied' vs 'unavailable', or 'user' vs 'sdk-reviewer',
+ * neighbour — guessing 'denied' vs 'unavailable', or 'user' vs 'sdk-reviewer',
  * would fabricate the very fact the contract exists to carry.
  */
 export function isReviewEventState(value: unknown): value is ReviewEventState {
@@ -56,11 +56,11 @@ export function isReviewerSource(value: unknown): value is ReviewerSource {
 interface ReviewEventBase {
   readonly requestId: string;
   readonly sessionId: string;
-  /** Runtime that produced the decision â?'claude_code' | 'codex_runtime' | â?*/
+  /** Runtime that produced the decision — 'claude_code' | 'codex_runtime' | … */
   readonly runtimeId: string;
   /** Which component decided. Never inferred by the UI from shape. */
   readonly reviewerSource: ReviewerSource;
-  /** Tool the decision is about. Names only â?never arguments. */
+  /** Tool the decision is about. Names only — never arguments. */
   readonly toolName: string;
   /** Set iff the tool is human-only; explains why a reviewer was skipped. */
   readonly humanOnlyCategory?: HumanOnlyCategory;
@@ -81,10 +81,11 @@ export type PermissionReviewEvent =
  *
  * `pendingPermission` covers decisions the user is asked to make; this covers
  * decisions made *for* them. Without a surface of its own, an auto_review
- * denial is indistinguishable from the model quietly choosing not to act â? * which is the exact confusion the three-profile contract exists to remove.
+ * denial is indistinguishable from the model quietly choosing not to act —
+ * which is the exact confusion the three-profile contract exists to remove.
  *
  * `reviewerSource` travels with the notice so the UI labels it by breadcrumb
- * rather than inferring æ¨¡åä»£å®¡æç» vs ä½ æç»äº from the event's shape.
+ * rather than inferring 模型代审拒绝 vs 你拒绝了 from the event's shape.
  */
 export interface PermissionReviewNotice {
   readonly id: string;
@@ -92,13 +93,13 @@ export interface PermissionReviewNotice {
   readonly reviewerSource: ReviewerSource;
   readonly toolName: string;
   readonly reason?: string;
-  /** Epoch ms â?the UI ages these out. */
+  /** Epoch ms — the UI ages these out. */
   readonly at: number;
 }
 
 /**
  * The three states that mean "the tool call did NOT proceed". `unavailable`
- * and `timeout` are denies, not neutral outcomes â?this helper exists so no
+ * and `timeout` are denies, not neutral outcomes — this helper exists so no
  * caller re-derives fail-closed semantics and gets it subtly wrong.
  */
 export function isDenyingState(state: ReviewEventState): boolean {
@@ -120,13 +121,14 @@ export function isModelDecision(event: PermissionReviewEvent): boolean {
  * `node_modules/@anthropic-ai/claude-agent-sdk/cli.js` (0.2.111): the
  * `PermissionDenied` hook is dispatched inside a branch guarded by
  * `decisionReason.type === 'classifier' && decisionReason.classifier ===
- * 'auto-mode'`. It therefore fires **only** for auto-mode classifier denials â? * a user clicking Deny does not reach it. That exactness is what lets the UI
- * say æ¨¡åä»£å®¡æç» rather than ç¨æ·æç» without guessing from shape.
+ * 'auto-mode'`. It therefore fires **only** for auto-mode classifier denials —
+ * a user clicking Deny does not reach it. That exactness is what lets the UI
+ * say 模型代审拒绝 rather than 用户拒绝 without guessing from shape.
  *
  * The converse is a real gap, recorded rather than papered over: a classifier
  * **approval** returns `{behavior:'allow'}` with no hook and no callback, so
  * there is nothing to observe. `approved` events with `reviewerSource:
- * 'sdk-reviewer'` are consequently NOT emitted on the Claude path â?the
+ * 'sdk-reviewer'` are consequently NOT emitted on the Claude path — the
  * profile's approvals are invisible by construction of the upstream SDK. See
  * the plan's decision log.
  */
@@ -150,7 +152,7 @@ export function buildSdkReviewerDenial(input: {
 /**
  * Redact a reason string before it reaches a log line or the audit trail.
  *
- * Permission reasons can quote tool input â?file contents, prompts, shell
+ * Permission reasons can quote tool input — file contents, prompts, shell
  * arguments. The audit trail needs the *shape* of the decision, not the
  * payload. We keep a short, single-line, length-capped excerpt and strip
  * anything that looks like a secret.
@@ -171,7 +173,7 @@ export function redactReviewReason(reason: string | undefined): string | undefin
     out = out.replace(pattern, '[redacted]');
   }
   if (out.length > REVIEW_REASON_MAX_LENGTH) {
-    out = out.slice(0, REVIEW_REASON_MAX_LENGTH) + 'â?;
+    out = out.slice(0, REVIEW_REASON_MAX_LENGTH) + '…';
   }
   return out;
 }
@@ -179,7 +181,7 @@ export function redactReviewReason(reason: string | undefined): string | undefin
 /**
  * Build a review event with the reason redacted. Constructing the union
  * literal by hand is allowed, but going through here is what keeps raw
- * tool input out of the audit trail â?prefer it.
+ * tool input out of the audit trail — prefer it.
  */
 export function buildReviewEvent(event: PermissionReviewEvent): PermissionReviewEvent {
   if (event.state === 'denied') {

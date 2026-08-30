@@ -5,7 +5,7 @@
  * system that knows what the session IS must never be silently replaced by an
  * automatic writer. Everything below is a way for that to go wrong.
  *
- * Isolated temp DB â€?same pattern as session-search.test.ts.
+ * Isolated temp DB â€” same pattern as session-search.test.ts.
  */
 
 import { describe, it, after, beforeEach } from 'node:test';
@@ -38,7 +38,7 @@ const wd = tmpDir;
 /** A normal user session: created as a placeholder, no title yet. */
 const newPlaceholderSession = () => createSession(undefined, undefined, undefined, wd, 'code');
 
-describe('createSession â€?origin at birth', () => {
+describe('createSession â€” origin at birth', () => {
   beforeEach(() => __resetTitleClaimsForTest());
 
   it('a session created with no title is a placeholder', () => {
@@ -63,7 +63,7 @@ describe('createSession â€?origin at birth', () => {
   });
 });
 
-describe('updateSessionTitle â€?CAS semantics', () => {
+describe('updateSessionTitle â€” CAS semantics', () => {
   beforeEach(() => __resetTitleClaimsForTest());
 
   it('fallback fills in a placeholder', () => {
@@ -118,10 +118,10 @@ describe('updateSessionTitle â€?CAS semantics', () => {
   });
 });
 
-describe('generated titles â€?single-flight + claim gating', () => {
+describe('generated titles â€” single-flight + claim gating', () => {
   beforeEach(() => __resetTitleClaimsForTest());
 
-  /** A session that has a fallback title â€?the only state generation may act on. */
+  /** A session that has a fallback title â€” the only state generation may act on. */
   const sessionWithFallback = () => {
     const s = newPlaceholderSession();
     updateSessionTitle(s.id, 'fallback title', 'fallback', { expectOrigin: ['placeholder'] });
@@ -253,12 +253,12 @@ describe('title_origin migration', () => {
     const named = legacyDb.getSession('legacy-named');
     const empty = legacyDb.getSession('legacy-empty');
 
-    // 'New Chat' / '' never had a real title â†?placeholder, so the next real
+    // 'New Chat' / '' never had a real title â†’ placeholder, so the next real
     // message fills in a fallback.
     assert.equal(untitled?.title_origin, 'placeholder');
     assert.equal(empty?.title_origin, 'placeholder');
     // A legacy row with a real title is indistinguishable from a hand-typed
-    // rename, so it is backfilled 'manual' â€?the conservative direction.
+    // rename, so it is backfilled 'manual' â€” the conservative direction.
     assert.equal(named?.title_origin, 'manual');
     // No migration may rewrite a title the user can already see.
     assert.equal(named?.title, 'My old project');
@@ -279,7 +279,7 @@ describe('title_origin migration', () => {
   it('recovers when the column exists but the backfill never ran', () => {
     // The crash window: ADD COLUMN and the backfill UPDATE are two statements.
     // If the process dies between them, the column is there and every legacy
-    // row sits at '' â€?an origin no writer ever produces. A boot that keys the
+    // row sits at '' â€” an origin no writer ever produces. A boot that keys the
     // backfill off "column missing?" would skip these rows forever, leaving
     // them unclassified and outside every CAS rule.
     const halfDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codepilot-title-half-'));
@@ -322,7 +322,7 @@ describe('title_origin migration', () => {
 });
 
 describe('title_origin round-trips through the DB', () => {
-  it('every origin survives a write â†?read cycle', () => {
+  it('every origin survives a write â†’ read cycle', () => {
     for (const origin of ['placeholder', 'fallback', 'generated', 'manual', 'system', 'import'] as const) {
       const s = createSession('roundtrip', undefined, undefined, wd, 'code', undefined, undefined, undefined, origin);
       assert.equal(getSession(s.id)?.title_origin, origin, `origin ${origin} must round-trip`);

@@ -1,5 +1,5 @@
 /**
- * agent-registry.ts â€?Sub-agent definition registry.
+ * agent-registry.ts â€” Sub-agent definition registry.
  *
  * Stores built-in and custom agent definitions that can be spawned
  * via the AgentTool. Each definition specifies tools, model, system prompt,

@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DotsThree } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   Tooltip,
   TooltipContent,
@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 import { compatLabel, compatDotColor, compatTooltip } from "@/lib/runtime-compat";
 
 /**
- * Provider Card v3 â?compact pattern.
+ * Provider Card v3 — compact pattern.
  *
  * Header carries name + status pill on the left, primary/edit/delete actions
  * inline on the right (no separate footer). Sub-info renders as a single
- * combined sub-card with divider lines between rows â?same compact
+ * combined sub-card with divider lines between rows — same compact
  * info-card pattern used across provider cards.
  */
 
@@ -47,11 +47,11 @@ export interface ProviderCardData {
   name: string;
   status: ProviderCardStatus;
   statusLabel?: string;
-  /** Runtime compatibility â?drives the secondary pill in the card header.
+  /** Runtime compatibility — drives the secondary pill in the card header.
    *  Computed via `getProviderCompat` in `src/lib/runtime-compat.ts`. */
   compat?: import('@/types').ProviderRuntimeCompat;
   /** Rows shown as a single combined sub-card with `divide-y` between them.
-   *  Skip entries with no real data â?don't pad with "æªæ£æµ?. */
+   *  Skip entries with no real data — don't pad with "未检测". */
   info?: ProviderCardInfoRow[];
 }
 
@@ -65,9 +65,9 @@ interface ProviderCardProps {
 
   /* Inline header actions (right side).
    *
-   * Phase 1 Step 2 æ¶æ (2026-05-06): "Manage models" / "Refresh models"
+   * Phase 1 Step 2 收敛 (2026-05-06): "Manage models" / "Refresh models"
    * inline actions removed per Codex's Models / Providers experience
-   * spec â?Provider cards are for connecting services, not managing
+   * spec — Provider cards are for connecting services, not managing
    * models. Model management lives on the Models page; refresh decisions
    * are made there too (and only shown for providers where
    * `canReliablyFetchModels` returns true). */
@@ -87,10 +87,10 @@ const STATUS_TONE: Record<ProviderCardStatus, string> = {
 };
 
 const STATUS_LABEL_ZH: Record<ProviderCardStatus, string> = {
-  available: "å¯ç¨",
-  "needs-config": "ééç½®",
-  error: "å¼å¸¸",
-  unknown: "æªè¯æ?,
+  available: "可用",
+  "needs-config": "需配置",
+  error: "异常",
+  unknown: "未诊断",
 };
 
 const STATUS_LABEL_EN: Record<ProviderCardStatus, string> = {
@@ -119,10 +119,10 @@ export function ProviderCard({
 
   return (
     <div className="rounded-lg bg-card border border-border/50 p-5 flex flex-col gap-4 h-full">
-      {/* Header â?icon + name + actions on row 1; status / compat pills move
+      {/* Header — icon + name + actions on row 1; status / compat pills move
           to row 2 so they own the full inner width and never have to wrap
           mid-character (the previous layout shared row 1 with actions, which
-          squeezed long compat labels like "Claude Code å¼å®¹" into a 2-line
+          squeezed long compat labels like "Claude Code 兼容" into a 2-line
           break that hard-cut the middle of the word). */}
       <div className="flex items-start gap-3">
         <div className="shrink-0 size-9 rounded-md bg-muted/60 flex items-center justify-center">
@@ -141,7 +141,7 @@ export function ProviderCard({
                   onClick={onEdit}
                   className="h-8 px-2.5 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  {isZh ? "ç¼è¾" : "Edit"}
+                  {isZh ? "编辑" : "Edit"}
                 </Button>
               )}
               {onDelete && (
@@ -151,7 +151,7 @@ export function ProviderCard({
                   onClick={onDelete}
                   className="h-8 px-2.5 text-xs text-muted-foreground hover:text-destructive"
                 >
-                  {isZh ? "æ­å¼" : "Disconnect"}
+                  {isZh ? "断开" : "Disconnect"}
                 </Button>
               )}
               {hasKebabActions && (
@@ -161,8 +161,8 @@ export function ProviderCard({
                       variant="ghost"
                       size="icon-sm"
                       className="text-muted-foreground hover:text-foreground"
-                      aria-label={isZh ? 'æ´å¤æä½' : 'More actions'}
-                      title={isZh ? 'æ´å¤æä½' : 'More actions'}
+                      aria-label={isZh ? '更多操作' : 'More actions'}
+                      title={isZh ? '更多操作' : 'More actions'}
                     >
                       <DotsThree size={16} weight="bold" />
                     </Button>
@@ -170,13 +170,13 @@ export function ProviderCard({
                   <DropdownMenuContent align="end" className="min-w-[180px]">
                     {onDiagnose && (
                       <DropdownMenuItem onClick={onDiagnose}>
-                        <BuckyballIcon name="diagnose" size="sm" aria-hidden />
-                        <span>{isZh ? "è¯æ­" : "Diagnose"}</span>
+                        <CodePilotIcon name="diagnose" size="sm" aria-hidden />
+                        <span>{isZh ? "诊断" : "Diagnose"}</span>
                       </DropdownMenuItem>
                     )}
                     {onSyncToClaudeCode && (
                       <DropdownMenuItem onClick={onSyncToClaudeCode}>
-                        <span>{isZh ? "åæ­¥å?Claude Code" : "Sync to Claude Code"}</span>
+                        <span>{isZh ? "同步到 Claude Code" : "Sync to Claude Code"}</span>
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -184,7 +184,7 @@ export function ProviderCard({
               )}
             </div>
           </div>
-          {/* Row 2: status + compat pills â?own the full inner width */}
+          {/* Row 2: status + compat pills — own the full inner width */}
           <div className="flex flex-wrap items-center gap-1.5">
             <span className={cn(
               "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium",
@@ -199,9 +199,9 @@ export function ProviderCard({
               )} />
               {statusLabel}
             </span>
-            {/* Phase 1 Step 2 æ¶æ round 4 + 5 (2026-05-06): compat tag
+            {/* Phase 1 Step 2 收敛 round 4 + 5 (2026-05-06): compat tag
                 keeps the pill shape (rounded-full + padding + small
-                font) but uses a neutral muted background â?the compat
+                font) but uses a neutral muted background — the compat
                 tier is conveyed by a small colored dot inside the pill
                 rather than a full colored fill. Status pill above
                 follows the same pattern but stays on its colored bg
@@ -222,7 +222,7 @@ export function ProviderCard({
         </div>
       </div>
 
-      {/* Combined info sub-card â?inset dividers between rows */}
+      {/* Combined info sub-card — inset dividers between rows */}
       {data.info && data.info.length > 0 && (
         <div className="rounded-md bg-muted/40">
           <div className="px-3.5 divide-y divide-border/50">

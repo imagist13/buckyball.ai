@@ -1,5 +1,5 @@
 /**
- * Provider Doctor â?diagnostic engine for provider/CLI/auth health checks.
+ * Provider Doctor — diagnostic engine for provider/CLI/auth health checks.
  *
  * Runs a series of probes and produces a structured diagnosis with
  * findings, severity levels, and suggested repair actions.
@@ -33,6 +33,7 @@ import { classifyError, type ClassifiedError } from '@/lib/error-classifier';
 import { getOAuthStatus } from '@/lib/openai-oauth-manager';
 import { getXaiOAuthStatus } from '@/lib/xai-oauth-manager';
 import { query } from '@anthropic-ai/claude-agent-sdk';
+import { assertCliProviderLaunchAllowed } from '@/lib/cli-maintenance-lease';
 import type { Options, SDKResultSuccess } from '@anthropic-ai/claude-agent-sdk';
 import os from 'os';
 import path from 'path';
@@ -49,7 +50,7 @@ import {
   MACOS_KEYCHAIN_STATE_ENV,
 } from '@/lib/macos-keychain-guard';
 
-// ââ Types âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Types ───────────────────────────────────────────────────────
 
 export type Severity = 'ok' | 'warn' | 'error';
 
@@ -92,7 +93,7 @@ export interface DiagnosisResult {
   durationMs: number;
 }
 
-// ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Helpers ─────────────────────────────────────────────────────
 
 function maskKey(key: string | undefined | null): { exists: boolean; last4?: string } {
   if (!key) return { exists: false };
@@ -110,7 +111,7 @@ function probeSeverity(findings: Finding[]): Severity {
   return sev;
 }
 
-// ââ CLI Probe âââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── CLI Probe ───────────────────────────────────────────────────
 
 async function runCliProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -182,7 +183,7 @@ async function runCliProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Runtime execution-chain probe âââââââââââââââââââââââââââââââ
+// ── Runtime execution-chain probe ───────────────────────────────
 
 async function runRuntimeProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -192,7 +193,7 @@ async function runRuntimeProbe(): Promise<ProbeResult> {
   findings.push({
     severity: 'ok',
     code: 'runtime.native',
-    message: 'bb-agent Runtime is bundled and available in-process',
+    message: 'CodePilot Runtime is bundled and available in-process',
     detail: JSON.stringify(native),
   });
 
@@ -245,7 +246,7 @@ async function runRuntimeProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Auth Probe ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Auth Probe ──────────────────────────────────────────────────
 
 async function runAuthProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -336,12 +337,12 @@ async function runAuthProbe(): Promise<ProbeResult> {
     });
   }
 
-  // Warn if both API_KEY and AUTH_TOKEN are set â?ambiguous auth style
+  // Warn if both API_KEY and AUTH_TOKEN are set — ambiguous auth style
   if (envApiKey && envAuthToken) {
     findings.push({
       severity: 'warn',
       code: 'auth.both-styles-set',
-      message: 'Both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN are set in environment â?auth style is ambiguous',
+      message: 'Both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN are set in environment — auth style is ambiguous',
       detail: 'Remove one of them from your shell profile or .env file to avoid auth header conflicts. AUTH_TOKEN uses Bearer, API_KEY uses x-api-key.',
     });
   }
@@ -355,7 +356,7 @@ async function runAuthProbe(): Promise<ProbeResult> {
       findings.push({
         severity: oauthStatus.needsRefresh ? 'warn' : 'ok',
         code: 'auth.openai-oauth',
-        message: `OpenAI OAuth authenticated${oauthStatus.email ? ` (${oauthStatus.email})` : ''}${oauthStatus.plan ? ` â?${oauthStatus.plan}` : ''}`,
+        message: `OpenAI OAuth authenticated${oauthStatus.email ? ` (${oauthStatus.email})` : ''}${oauthStatus.plan ? ` — ${oauthStatus.plan}` : ''}`,
         ...(oauthStatus.needsRefresh ? { detail: 'Token is near expiry and will be refreshed on next use' } : {}),
       });
     }
@@ -415,9 +416,9 @@ async function runAuthProbe(): Promise<ProbeResult> {
         code: 'auth.resolved-no-creds',
         message: resolved.provider
           ? `Provider "${resolved.provider.name}" is selected but has no usable credentials`
-          : 'Resolver fell back to environment variables â?no configured provider is active',
+          : 'Resolver fell back to environment variables — no configured provider is active',
         detail: resolved.provider
-          ? `Check the API key for "${resolved.provider.name}" in Settings â?Providers`
+          ? `Check the API key for "${resolved.provider.name}" in Settings → Providers`
           : 'This usually means the default provider was deleted or never set. Check the Provider/Model probe for details.',
       });
     }
@@ -429,7 +430,7 @@ async function runAuthProbe(): Promise<ProbeResult> {
           findings.push({
             severity: 'warn',
             code: 'auth.style-mismatch',
-            message: `Provider "${resolved.provider.name}" has both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN in extra_env â?auth style is ambiguous`,
+            message: `Provider "${resolved.provider.name}" has both ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN in extra_env — auth style is ambiguous`,
           });
         }
       } catch { /* ignore parse errors */ }
@@ -451,7 +452,7 @@ async function runAuthProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Provider Probe ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Provider Probe ──────────────────────────────────────────────
 
 async function runProviderProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -488,23 +489,23 @@ async function runProviderProbe(): Promise<ProbeResult> {
       findings.push({
         severity: 'error',
         code: 'provider.default-missing',
-        message: `Default provider points to a deleted record â?resolver falls back to environment variables, bypassing your configured provider`,
+        message: `Default provider points to a deleted record — resolver falls back to environment variables, bypassing your configured provider`,
         detail: providers.length > 0
           ? `${providers.length} valid provider(s) exist but none is selected as default. Click "Fix" to set the first one.`
-          : 'No providers configured. Add a provider in Settings â?Providers.',
+          : 'No providers configured. Add a provider in Settings → Providers.',
       });
     }
   } else if (providers.length > 0) {
     findings.push({
       severity: 'warn',
       code: 'provider.no-default',
-      message: 'Providers exist but no default is set â?new conversations will use environment variables',
+      message: 'Providers exist but no default is set — new conversations will use environment variables',
     });
   }
 
   // Check each provider for common issues
   for (const p of providers) {
-    // Compute effective protocol up-front â?legacy Default rows have
+    // Compute effective protocol up-front — legacy Default rows have
     // protocol='' and rely on inference; driving diagnostics off raw
     // p.protocol would miss exactly those rows.
     const protocol: Protocol = getEffectiveProviderProtocol(
@@ -539,7 +540,7 @@ async function runProviderProbe(): Promise<ProbeResult> {
     // validation (/api/providers) blocks new occurrences of this state.
     //
     // Uses the *effective* protocol so legacy rows with raw protocol=''
-    // â?i.e. exactly the migrations we most want to flag â?still get
+    // — i.e. exactly the migrations we most want to flag — still get
     // the diagnostic.
     if (!p.base_url && protocol === 'anthropic') {
       findings.push({
@@ -558,7 +559,7 @@ async function runProviderProbe(): Promise<ProbeResult> {
       const catalogModels = getDefaultModelsForProvider(protocol, p.base_url, p.provider_type);
       if (catalogModels.length > 0) hasModels = true;
     }
-    // Also check role_models_json.default â?it synthesizes a model entry at runtime
+    // Also check role_models_json.default — it synthesizes a model entry at runtime
     let hasRoleDefault = false;
     try {
       const rm = JSON.parse(p.role_models_json || '{}');
@@ -576,7 +577,7 @@ async function runProviderProbe(): Promise<ProbeResult> {
       findings.push({
         severity: 'warn',
         code: 'provider.no-models',
-        message: `Provider "${p.name}" has no models configured â?set a default model name in provider settings`,
+        message: `Provider "${p.name}" has no models configured — set a default model name in provider settings`,
         detail: `Provider ID: ${p.id}. This provider's catalog has no default models. Add at least one model via role_models_json.default or provider model settings.`,
       });
     }
@@ -639,7 +640,7 @@ async function runProviderProbe(): Promise<ProbeResult> {
         ? `Model: ${resolved.model}`
         : isEnvMode || isOfficialAnthropic
           ? 'No model selected (will use provider defaults)'
-          : 'No model selected â?third-party providers may require an explicit model name',
+          : 'No model selected — third-party providers may require an explicit model name',
     });
   } catch (err) {
     findings.push({
@@ -658,7 +659,7 @@ async function runProviderProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Features Probe ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Features Probe ──────────────────────────────────────────────
 
 async function runFeaturesProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -668,7 +669,7 @@ async function runFeaturesProbe(): Promise<ProbeResult> {
     const resolved = resolveProvider();
     const protocol = resolved.protocol;
 
-    // Thinking support â?only Anthropic native API supports extended thinking
+    // Thinking support — only Anthropic native API supports extended thinking
     const thinkingMode = getSetting('thinking_mode');
     if (thinkingMode && thinkingMode !== 'disabled') {
       const supportsThinking = protocol === 'anthropic';
@@ -688,7 +689,7 @@ async function runFeaturesProbe(): Promise<ProbeResult> {
       }
     }
 
-    // Context 1M â?check if enabled on unsupported providers
+    // Context 1M — check if enabled on unsupported providers
     const context1m = getSetting('context_1m');
     if (context1m === 'true') {
       const supportsContext1m = protocol === 'anthropic';
@@ -731,7 +732,7 @@ async function runFeaturesProbe(): Promise<ProbeResult> {
       findings.push({
         severity: 'warn',
         code: 'features.stale-session-id',
-        message: `${staleSessions.length} session(s) have stored sdk_session_id â?may cause resume issues if stale`,
+        message: `${staleSessions.length} session(s) have stored sdk_session_id — may cause resume issues if stale`,
         detail: `Session: ${staleSessions[0].id.slice(0, 12)}..., sdk_session_id: ${staleSessions[0].sdk_session_id.slice(0, 8)}...`,
       });
     }
@@ -755,7 +756,7 @@ async function runFeaturesProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Network Probe âââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Network Probe ───────────────────────────────────────────────
 
 async function runNetworkProbe(): Promise<ProbeResult> {
   const findings: Finding[] = [];
@@ -800,7 +801,7 @@ async function runNetworkProbe(): Promise<ProbeResult> {
       const resp = await fetch(url, {
         method: 'HEAD',
         signal: controller.signal,
-        headers: { 'User-Agent': 'buckyball.ai-ProviderDoctor/1.0' },
+        headers: { 'User-Agent': 'CodePilot-ProviderDoctor/1.0' },
       });
       clearTimeout(timer);
 
@@ -832,7 +833,7 @@ async function runNetworkProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Live Probe ââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Live Probe ──────────────────────────────────────────────────
 
 /** Last classified error from the live probe, exposed for the export route. */
 let lastLiveProbeError: ClassifiedError | null = null;
@@ -891,7 +892,7 @@ function resolveScriptFromCmd(cmdPath: string): string | undefined {
 }
 
 /**
- * Live probe â?spawns a minimal Claude Code process to verify the
+ * Live probe — spawns a minimal Claude Code process to verify the
  * provider actually works at runtime, not just in config.
  */
 async function runLiveProbe(): Promise<ProbeResult> {
@@ -907,7 +908,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
     findings.push({
       severity: 'warn',
       code: 'live.resolve-failed',
-      message: 'Live probe skipped â?could not resolve provider',
+      message: 'Live probe skipped — could not resolve provider',
       detail: err instanceof Error ? err.message : String(err),
     });
     return { probe: 'live', severity: probeSeverity(findings), findings, durationMs: Date.now() - start };
@@ -918,7 +919,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
     findings.push({
       severity: 'ok',
       code: 'live.skipped',
-      message: 'Live probe skipped â?no credentials configured',
+      message: 'Live probe skipped — no credentials configured',
     });
     return { probe: 'live', severity: probeSeverity(findings), findings, durationMs: Date.now() - start };
   }
@@ -929,7 +930,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
     findings.push({
       severity: 'warn',
       code: 'live.no-cli',
-      message: 'Live probe skipped â?Claude CLI binary not found',
+      message: 'Live probe skipped — Claude CLI binary not found',
     });
     return { probe: 'live', severity: probeSeverity(findings), findings, durationMs: Date.now() - start };
   }
@@ -976,6 +977,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
 
   // 6. Run the probe
   try {
+    assertCliProviderLaunchAllowed('claude');
     const conversation = query({
       prompt: 'Say OK',
       options: queryOptions,
@@ -995,7 +997,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
       findings.push({
         severity: 'ok',
         code: 'live.passed',
-        message: 'Live test passed â?model responded',
+        message: 'Live test passed — model responded',
         detail: resolved.provider
           ? `Provider: "${resolved.provider.name}" (${resolved.protocol})`
           : `Environment mode (${resolved.protocol})`,
@@ -1034,7 +1036,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
       findings.push({
         severity: 'error',
         code: 'live.failed',
-        message: `Live test failed â?${classified.category}: ${classified.userMessage}`,
+        message: `Live test failed — ${classified.category}: ${classified.userMessage}`,
         detail: [
           classified.actionHint,
           stderrBuf ? `stderr: ${stderrBuf}` : '',
@@ -1054,7 +1056,7 @@ async function runLiveProbe(): Promise<ProbeResult> {
   };
 }
 
-// ââ Repair Actions ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Repair Actions ──────────────────────────────────────────────
 
 const REPAIR_ACTIONS: RepairAction[] = [
   {
@@ -1080,7 +1082,7 @@ const REPAIR_ACTIONS: RepairAction[] = [
     label: 'Switch auth style',
     description: 'Toggle between api_key and auth_token authentication for the current provider',
     // Only for provider-level conflicts (extra_env has both keys).
-    // auth.both-styles-set is an env-var conflict â?can't fix by editing a provider.
+    // auth.both-styles-set is an env-var conflict — can't fix by editing a provider.
     addresses: ['auth.style-mismatch'],
   },
   {
@@ -1131,7 +1133,8 @@ function attachRepairsToFindings(probes: ProbeResult[]): void {
             else continue; // no provider to set
             break;
           case 'clear-stale-resume':
-            // Don't try to extract truncated session IDs from detail text â?            // use the parameterless "clear all stale sessions" mode instead.
+            // Don't try to extract truncated session IDs from detail text —
+            // use the parameterless "clear all stale sessions" mode instead.
             // The repair route handles both single-session and bulk-clear.
             break;
           case 'switch-auth-style': {
@@ -1172,7 +1175,7 @@ function attachRepairsToFindings(probes: ProbeResult[]): void {
   }
 }
 
-// ââ Main Diagnosis ââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Main Diagnosis ──────────────────────────────────────────────
 
 /**
  * Run all diagnostic probes and return a unified diagnosis.

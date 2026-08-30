@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
             { status: 400 },
           );
         }
-        // Validate the provider actually exists â€?stale default IDs are a known issue
+        // Validate the provider actually exists â€” stale default IDs are a known issue
         const targetProvider = getProvider(providerId);
         if (!targetProvider) {
           // Try first available provider instead
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
         //   - anthropic_base_url    (read by toClaudeCodeEnv + toAiSdkConfig)
         //
         // ANTHROPIC_API_KEY is consumed directly from process.env by the
-        // resolver â€?writing it to a DB setting that nothing reads would be
+        // resolver â€” writing it to a DB setting that nothing reads would be
         // a no-op. Instead, if only API_KEY is present, we still don't write
         // it to anthropic_auth_token (that would change the auth style from
         // x-api-key to Bearer and break official API).
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
         if (envBaseUrl) { setSetting('anthropic_base_url', envBaseUrl); imported++; }
         console.log(`[doctor/repair] Re-imported ${imported} env setting(s)`);
         if (!envToken && process.env.ANTHROPIC_API_KEY) {
-          console.log(`[doctor/repair] ANTHROPIC_API_KEY is set in env â€?resolver reads it directly, no DB import needed`);
+          console.log(`[doctor/repair] ANTHROPIC_API_KEY is set in env â€” resolver reads it directly, no DB import needed`);
         }
         break;
       }

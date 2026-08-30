@@ -1,5 +1,5 @@
 /**
- * file-checkpoint.ts â€?File state checkpointing for native rewind.
+ * file-checkpoint.ts â€” File state checkpointing for native rewind.
  *
  * Before writing/editing files, captures a snapshot of the original file content.
  * On rewind, restores files to their pre-modification state using the snapshot,
@@ -82,7 +82,7 @@ export function recordFileModification(sessionId: string, filePath: string, cwd?
       const content = fs.readFileSync(absPath, 'utf-8');
       latest.snapshots.set(filePath, { content });
     } catch {
-      // File doesn't exist yet (new file) â€?snapshot as null
+      // File doesn't exist yet (new file) â€” snapshot as null
       latest.snapshots.set(filePath, { content: null });
     }
   }
@@ -133,13 +133,13 @@ export function restoreCheckpoint(sessionId: string, messageId: string, cwd: str
         fs.writeFileSync(absPath, snapshot.content, 'utf-8');
         restored.push(file);
       } else if (snapshot && snapshot.content === null) {
-        // File was new (didn't exist before) â€?delete it
+        // File was new (didn't exist before) â€” delete it
         try { fs.unlinkSync(absPath); } catch { /* already gone */ }
         restored.push(file);
       }
-      // If no snapshot exists, we can't safely restore â€?skip
+      // If no snapshot exists, we can't safely restore â€” skip
     } catch {
-      // Restore failed for this file â€?continue with others
+      // Restore failed for this file â€” continue with others
     }
   }
 

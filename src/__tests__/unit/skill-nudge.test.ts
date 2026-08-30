@@ -91,7 +91,7 @@ describe('buildSkillNudgePayload', () => {
   });
 });
 
-describe('buildSkillNudgeStatusEvent (fix 3 â€?SSE shape for web + bridge)', () => {
+describe('buildSkillNudgeStatusEvent (fix 3 â€” SSE shape for web + bridge)', () => {
   const stats = { step: 10, distinctTools: new Set(['Read', 'Write', 'Grep']) };
 
   it('sets notification: true for web SSE parser branch', () => {

@@ -1,7 +1,7 @@
 /**
  * Telegram-specific Markdown renderer.
  *
- * Converts Markdown �?IR �?Telegram-compatible HTML, with file-reference
+ * Converts Markdown → IR → Telegram-compatible HTML, with file-reference
  * wrapping and render-first chunking for long messages.
  *
  * Ported from openclaw src/telegram/format.ts.
@@ -44,7 +44,7 @@ const FILE_EXTENSIONS_WITH_TLD = new Set([
   'cc', // C++ source (Cocos Islands)
 ]);
 
-/** Detects when linkify auto-generated a link from a bare filename (e.g. README.md �?http://README.md) */
+/** Detects when linkify auto-generated a link from a bare filename (e.g. README.md → http://README.md) */
 function isAutoLinkedFileRef(href: string, label: string): boolean {
   const stripped = href.replace(/^https?:\/\//i, '');
   if (stripped !== label) {
@@ -78,7 +78,7 @@ function buildTelegramLink(link: MarkdownLinkSpan, text: string) {
   if (link.start === link.end) {
     return null;
   }
-  // Suppress auto-linkified file references (e.g. README.md �?http://README.md)
+  // Suppress auto-linkified file references (e.g. README.md → http://README.md)
   const label = text.slice(link.start, link.end);
   if (isAutoLinkedFileRef(href, label)) {
     return null;
@@ -327,7 +327,7 @@ function renderTelegramChunksWithinHtmlLimit(
 // ── Public API ────────────────────────────────────────────────
 
 /**
- * Full pipeline: markdown �?IR �?Telegram HTML with file ref wrapping.
+ * Full pipeline: markdown → IR → Telegram HTML with file ref wrapping.
  */
 export function markdownToTelegramHtml(markdown: string): string {
   const ir = markdownToIR(markdown ?? '', {
@@ -341,7 +341,8 @@ export function markdownToTelegramHtml(markdown: string): string {
 }
 
 /**
- * Render-first chunking: markdown �?IR �?chunk by IR text �? * render each chunk �?re-split if HTML exceeds limit.
+ * Render-first chunking: markdown → IR → chunk by IR text →
+ * render each chunk → re-split if HTML exceeds limit.
  */
 export function markdownToTelegramChunks(
   markdown: string,

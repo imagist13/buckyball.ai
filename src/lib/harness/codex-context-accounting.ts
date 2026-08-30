@@ -1,5 +1,5 @@
 /**
- * Phase 7 (2026-05-20) â€?Codex Runtime provider-backend resolution.
+ * Phase 7 (2026-05-20) â€” Codex Runtime provider-backend resolution.
  *
  * Originally housed `produceCodexAccountingSnapshot` (Phase 4 producer);
  * that producer is replaced by `collectAutoInvokeSnapshot` from
@@ -11,7 +11,7 @@ export type CodexProviderBackend = 'codex_account' | 'codepilot_proxy' | 'native
 
 /**
  * Resolve provider backend from runtime input. `providerId === 'codex_account'`
- * â†?codex_account; everything else through Codex runtime â†?codepilot_proxy
+ * â†’ codex_account; everything else through Codex runtime â†’ codepilot_proxy
  * (because the bridge layer routes user-supplied providers via CodePilot).
  * 'native_app_server' is reserved for future direct-SDK integration.
  */

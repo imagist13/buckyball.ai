@@ -1,7 +1,7 @@
 /**
  * Pure algorithm functions for MessageInput behavior.
  *
- * These functions contain no React dependencies â€?they are plain TypeScript
+ * These functions contain no React dependencies â€” they are plain TypeScript
  * and can be tested directly without any framework setup.
  */
 
@@ -73,7 +73,7 @@ export function detectPopoverTrigger(
   }
 
   // Check for / trigger. Only fires when `/` is at the start of input or
-  // immediately after whitespace â€?regex alone can't tell "hello/skill" from
+  // immediately after whitespace â€” regex alone can't tell "hello/skill" from
   // "src/app" or "foo/bar", so we accept the trade-off: typing `/` mid-word
   // does NOT open the picker (it would false-positive on every single-slash
   // path). Users who want to invoke a command mid-sentence use the slash
@@ -160,7 +160,7 @@ export function resolveItemSelection(
 }
 
 /**
- * Badge dispatch logic â€?what prompt is sent for each badge kind.
+ * Badge dispatch logic â€” what prompt is sent for each badge kind.
  * Used by handleSubmit in MessageInput.
  *
  * Accepts a single badge or an array. Multi-badge is only meaningful for
@@ -226,7 +226,7 @@ export function cycleIndex(current: number, direction: 'up' | 'down', length: nu
 }
 
 /**
- * Submit gating logic â€?determines whether submit is enabled.
+ * Submit gating logic â€” determines whether submit is enabled.
  * Used by FileAwareSubmitButton disabled logic.
  */
 export function isSubmitEnabled(opts: {
@@ -242,7 +242,7 @@ export function isSubmitEnabled(opts: {
 }
 
 /**
- * Keyboard dispatch logic â€?determines what action to take for a given key.
+ * Keyboard dispatch logic â€” determines what action to take for a given key.
  * Used by handleKeyDown in MessageInput.
  */
 export function resolveKeyAction(
@@ -284,7 +284,7 @@ export function resolveKeyAction(
 }
 
 /**
- * Direct slash command detection â€?when user types "/command" in input and submits.
+ * Direct slash command detection â€” when user types "/command" in input and submits.
  * Used by handleSubmit in MessageInput.
  */
 export function resolveDirectSlash(content: string): DirectSlashResult {
@@ -401,8 +401,8 @@ export function buildDirectoryAttachments(directoryRefs: ReadonlyArray<string>):
  * concatenates with the user-typed content to form `finalContent`.
  *
  * The two sections are:
- * - `[Referenced Directories]` â€?directory tree summaries
- * - `[Mention Limits]` â€?explanations for mentions/dirs that were dropped
+ * - `[Referenced Directories]` â€” directory tree summaries
+ * - `[Mention Limits]` â€” explanations for mentions/dirs that were dropped
  */
 export function buildMentionAppend(
   directoryNotes: ReadonlyArray<string>,
@@ -432,7 +432,7 @@ export function composeFinalContent(content: string, mentionAppend: string): str
  * `[Referenced Directories]` block but the bubble shows only the raw
  * user content (the chips above the bubble already convey the rest).
  *
- * Returns `undefined` when there's nothing to override â€?the caller
+ * Returns `undefined` when there's nothing to override â€” the caller
  * then falls back to `finalContent`.
  */
 export function computeDisplayOverride(
@@ -449,12 +449,12 @@ export function computeDisplayOverride(
  * @ mention chips, and + directory chips. Used by both the per-row
  * "+pending" annotation and the Run status panel preview.
  *
- * When all sources are empty, returns 0 â€?that's the post-send invariant.
+ * When all sources are empty, returns 0 â€” that's the post-send invariant.
  */
 export function computePendingContextTokens(opts: {
   attachmentPendingTokens: number;
   uniqueMentions: ReadonlyArray<MentionRef>;
-  /** `null` means estimate still loading â€?counted as 0 so the user
+  /** `null` means estimate still loading â€” counted as 0 so the user
    * doesn't see a flicker between "?" and the real number. */
   mentionEstimates: Readonly<Record<string, number | null | undefined>>;
   directoryRefs: ReadonlyArray<string>;
@@ -473,15 +473,15 @@ export function computePendingContextTokens(opts: {
 }
 
 /**
- * Phase 6 Phase 3 â€?per-source split of {@link computePendingContextTokens}.
+ * Phase 6 Phase 3 â€” per-source split of {@link computePendingContextTokens}.
  *
  * Returns the three composer-side pending sub-totals separately so the
  * Context popover can render `files_attachments` and `pending_next_turn`
  * as distinct rows with real numbers. Sums to the same value as
  * computePendingContextTokens when all sources are non-null.
  *
- * Logic mirror of computePendingContextTokens â€?same null filtering,
- * same iteration order â€?kept in lockstep so the displayed total never
+ * Logic mirror of computePendingContextTokens â€” same null filtering,
+ * same iteration order â€” kept in lockstep so the displayed total never
  * disagrees with the per-source rows.
  */
 export interface PendingContextSubTotals {
@@ -518,11 +518,11 @@ export function computePendingContextSubTotals(opts: {
 }
 
 // =====================================================================
-// Submit payload composition â€?full handleSubmit assembly as one fn
+// Submit payload composition â€” full handleSubmit assembly as one fn
 // =====================================================================
 
 /**
- * Resolved mention payload â€?output of `resolveMentionPayload()` in
+ * Resolved mention payload â€” output of `resolveMentionPayload()` in
  * MessageInput. Mirrors the shape returned by that helper so a test
  * can construct it without bringing the full hook chain in.
  */
@@ -539,7 +539,7 @@ export interface SubmitPayloadInput {
   /** Attachments uploaded via the `+` button (already converted from
    *  base64 form by `convertFiles()`). */
   uploadedFiles: ReadonlyArray<FileAttachment>;
-  /** What `resolveMentionPayload()` returned â€?files inlined from
+  /** What `resolveMentionPayload()` returned â€” files inlined from
    *  @mentions, plus directory summaries / over-limit notes. */
   mentionPayload: ResolvedMentionPayload;
   /** Directory paths attached via the file-tree `+` button. */
@@ -547,11 +547,11 @@ export interface SubmitPayloadInput {
 }
 
 export interface SubmitPayload {
-  /** Final ordered file list: uploads â†?@-mention files â†?+ directories. */
+  /** Final ordered file list: uploads â†’ @-mention files â†’ + directories. */
   files: ReadonlyArray<FileAttachment>;
   /** What goes to the model: `content` + mention/limit append, trimmed. */
   finalContent: string;
-  /** What goes in the user's message bubble â€?raw `content` when chips
+  /** What goes in the user's message bubble â€” raw `content` when chips
    *  exist, undefined otherwise (caller falls back to `finalContent`).
    *  Crucial: this NEVER contains `[Referenced Directories]`. */
   displayOverride: string | undefined;

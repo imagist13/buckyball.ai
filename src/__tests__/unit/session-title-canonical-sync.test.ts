@@ -5,7 +5,7 @@
  * announced the text they had SENT. PATCH canonicalizes (50-grapheme clamp,
  * single-lining), so for any rename the server rewrote, the top bar and split
  * view sat on the raw input while the sidebar's later re-fetch showed the
- * canonical form â€?one session, two titles, depending on where you looked.
+ * canonical form â€” one session, two titles, depending on where you looked.
  *
  * Both call sites now go through `renameSession`, so this drives the real
  * shared path and models the three consumers exactly as the components do:
@@ -59,7 +59,7 @@ let originalFetch: unknown;
 
 /**
  * Stand-in for the route: applies the SAME canonicalization the real PATCH
- * applies (`sanitizeManualTitle` â†?`deriveConversationTitle`) and answers with
+ * applies (`sanitizeManualTitle` â†’ `deriveConversationTitle`) and answers with
  * the stored session, so a divergence between sent and stored is reproduced
  * rather than assumed.
  */
@@ -103,7 +103,7 @@ function mountViews(sessionId: string) {
   return { views, unmount: () => unsubs.forEach((u) => u()) };
 }
 
-describe('renameSession â€?every view settles on the server title', () => {
+describe('renameSession â€” every view settles on the server title', () => {
   it('a rename the server rewrites does not leave views disagreeing', async () => {
     const { views, unmount } = mountViews('sess-1');
     // 80 graphemes: the server clamps to 50 + ellipsis. Echoing the request
@@ -145,7 +145,7 @@ describe('renameSession â€?every view settles on the server title', () => {
   });
 });
 
-describe('renameSession â€?nothing changes on a rejected or failed rename', () => {
+describe('renameSession â€” nothing changes on a rejected or failed rename', () => {
   it('a 400 leaves every view on its old title and returns empty', async () => {
     installServer('reject');
     const { views, unmount } = mountViews('sess-1');
@@ -156,7 +156,7 @@ describe('renameSession â€?nothing changes on a rejected or failed rename', () =
     unmount();
   });
 
-  it('a network error is fail-soft â€?no throw, no broadcast', async () => {
+  it('a network error is fail-soft â€” no throw, no broadcast', async () => {
     installServer('network-error');
     const { views, unmount } = mountViews('sess-1');
     const result = await renameSession('sess-1', 'anything');

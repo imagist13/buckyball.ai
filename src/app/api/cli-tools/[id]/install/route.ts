@@ -5,6 +5,7 @@ import { CLI_TOOLS_CATALOG } from '@/lib/cli-tools-catalog';
 import { invalidateDetectCache } from '@/lib/cli-tools-detect';
 import { createCustomCliTool } from '@/lib/db';
 import { getExpandedPath } from '@/lib/platform';
+import { SingleOwnerStreamWriter } from '@/lib/single-owner-stream-writer';
 import path from 'path';
 
 const execFileAsync = promisify(execFile);
@@ -52,10 +53,12 @@ export async function POST(
     });
 
     const encoder = new TextEncoder();
+    const writer = new SingleOwnerStreamWriter<Uint8Array>();
     const stream = new ReadableStream({
       start(controller) {
+        writer.attach(controller);
         const send = (event: string, data: string) => {
-          controller.enqueue(
+          writer.enqueue(
             encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
           );
         };
@@ -113,15 +116,16 @@ export async function POST(
           } else {
             send('error', `Process exited with code ${code}`);
           }
-          controller.close();
+          writer.close();
         });
 
         child.on('error', (err) => {
           send('error', err.message);
-          controller.close();
+          writer.close();
         });
       },
       cancel() {
+        writer.cancel();
         child.kill();
       },
     });

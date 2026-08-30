@@ -1,5 +1,5 @@
 /**
- * skill-discovery.ts â€?Discover SKILL.md files from multiple directories.
+ * skill-discovery.ts â€” Discover SKILL.md files from multiple directories.
  *
  * Scans:
  * - .claude/skills/ (project-level)
@@ -112,7 +112,7 @@ function tryParseSkill(filePath: string, skills: SkillDefinition[], seen: Set<st
     const content = fs.readFileSync(filePath, 'utf-8');
     const skill = parseSkillFile(content, filePath);
 
-    // Dedup by name (first one wins â€?project-level overrides user-level)
+    // Dedup by name (first one wins â€” project-level overrides user-level)
     const key = skill.name.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);

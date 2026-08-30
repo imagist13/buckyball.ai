@@ -1,16 +1,16 @@
 /**
- * Codex approval bridge â?Phase 5 Phase 4 Slice 2 (2026-05-13).
+ * Codex approval bridge — Phase 5 Phase 4 Slice 2 (2026-05-13).
  *
  * Routes Codex's server-originated approval requests through
- * buckyball.ai's existing PermissionPrompt UI instead of returning a
+ * CodePilot's existing PermissionPrompt UI instead of returning a
  * blanket decline-by-default.
  *
  * Flow:
  *
  *   Codex JSON-RPC server request `item/commandExecution/requestApproval`
- *     â?CodexAppServerClient.routeServerRequest
- *     â?CodexRuntime onServerRequest handler
- *     â?handleCodexApprovalRequest (this module):
+ *     → CodexAppServerClient.routeServerRequest
+ *     → CodexRuntime onServerRequest handler
+ *     → handleCodexApprovalRequest (this module):
  *         1. translate to canonical RuntimePermissionEvent via
  *            `translateCodexApproval`
  *         2. write a permission_requests DB row so the existing
@@ -18,23 +18,27 @@
  *         3. emit an SDK-shaped `permission_request` SSE event so the
  *            existing useSSEStream + PermissionPrompt path picks it up
  *            unchanged (UI doesn't branch on runtime)
- *         4. await `registerPendingPermission` â?same registry the SDK
+ *         4. await `registerPendingPermission` — same registry the SDK
  *            uses; user response from /api/chat/permission resolves it
- *         5. translate PermissionResult â?the Codex response shape that
+ *         5. translate PermissionResult → the Codex response shape that
  *            matches THIS approval method (execCommand, fileChange,
  *            permissions, or legacy alias all have different responses)
  *
- * Response shapes per `èµæ/codex/.../schema/typescript/v2/`:
+ * Response shapes per `资料/codex/.../schema/typescript/v2/`:
  *
- *   - `item/commandExecution/requestApproval` â? *     CommandExecutionRequestApprovalResponse = { decision:
+ *   - `item/commandExecution/requestApproval` →
+ *     CommandExecutionRequestApprovalResponse = { decision:
  *       'accept' | 'acceptForSession' | 'decline' | 'cancel' | ...amendments }
- *   - `item/fileChange/requestApproval` â? *     FileChangeRequestApprovalResponse = { decision: FileChangeApprovalDecision }
+ *   - `item/fileChange/requestApproval` →
+ *     FileChangeRequestApprovalResponse = { decision: FileChangeApprovalDecision }
  *     where FileChangeApprovalDecision = 'accept' | 'acceptForSession' |
  *       'decline' | 'cancel'
- *   - `item/permissions/requestApproval` â? *     PermissionsRequestApprovalResponse = { permissions, scope,
+ *   - `item/permissions/requestApproval` →
+ *     PermissionsRequestApprovalResponse = { permissions, scope,
  *       strictAutoReview? }. `permissions` is always a subset of the
  *       original request; an empty object is denial.
- *   - Legacy `execCommandApproval` + `applyPatchApproval` â? *     ApplyPatchApprovalResponse = { decision: ReviewDecision }
+ *   - Legacy `execCommandApproval` + `applyPatchApproval` →
+ *     ApplyPatchApprovalResponse = { decision: ReviewDecision }
  *     where ReviewDecision = 'approved' | 'approved_for_session' |
  *       'denied' | 'timed_out' | 'abort' | ...amendments
  */
@@ -58,7 +62,8 @@ export function makeCodexPermissionRequestId(jsonRpcId: number | string): string
 /**
  * Decode a stored `permission_requests` row back into the
  * `NativePermissionResult` shape so `resultToCodexResponse` can
- * translate it. Used by the duplicate-RPC short-circuit above â? * `existing.status` is one of `allow / deny / timeout / aborted`,
+ * translate it. Used by the duplicate-RPC short-circuit above —
+ * `existing.status` is one of `allow / deny / timeout / aborted`,
  * each maps to a `behavior` here. Timeout / aborted both surface
  * as deny on the Codex side since neither produced a user "allow".
  *
@@ -89,7 +94,7 @@ export function decodeStoredPermission(existing: {
         }
       }
     } catch {
-      // Same â?best-effort.
+      // Same — best-effort.
     }
     return {
       behavior: 'allow',
@@ -191,7 +196,7 @@ function structuredCloneRequestedPermissions(
 export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unknown> {
   const requestId = makeCodexPermissionRequestId(args.jsonRpcId);
 
-  // Phase 5d Phase 3 review fix #3 (P1, 2026-05-17) â?idempotent handling
+  // Phase 5d Phase 3 review fix #3 (P1, 2026-05-17) — idempotent handling
   // of duplicate approval RPCs for the same `codex:${jsonRpcId}`.
   //
   // Pre-fix the bridge always called `createPermissionRequest` which is
@@ -199,31 +204,31 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
   // transport retry, reconnect replay, concurrent handler trigger) hit
   // the UNIQUE constraint; the catch block only `console.warn`-ed,
   // then went on to emit a second SSE permission_request AND
-  // registerPendingPermission again â?overwriting the in-memory waiter
+  // registerPendingPermission again — overwriting the in-memory waiter
   // for the original prompt. User would see two prompts; clicking Deny
   // on one resolved the DB row, so the OTHER `/api/chat/permission`
   // POST hit the `dbRecord.status !== 'pending'` branch and returned
   // 409 ALREADY_RESOLVED. The original Codex turn's waiter promise
-  // never resolved (timeout-only) â?"chain not clean" after Deny.
+  // never resolved (timeout-only) → "chain not clean" after Deny.
   //
   // Fix: short-circuit before any side effect (DB write, SSE emit, in-
   // memory register) when the same requestId is already on record.
   const existing = getPermissionRequest(requestId);
   if (existing) {
     if (existing.status !== 'pending') {
-      // Already resolved â?replay the stored decision so Codex sees
+      // Already resolved — replay the stored decision so Codex sees
       // the same response it would have gotten for the original RPC.
       const stored = decodeStoredPermission(existing);
       return resultToCodexResponse(stored, args.method, args.params);
     }
-    // Still pending â?the user is mid-decision on the original prompt.
+    // Still pending — the user is mid-decision on the original prompt.
     // Don't emit a duplicate UI prompt and don't overwrite the in-
     // memory waiter; tell Codex "decline" for this duplicate. The
     // user's eventual decision on the original prompt resolves the
     // original turn normally; this duplicate RPC just gets a clean
     // soft-decline instead of a hang.
     return resultToCodexResponse(
-      { behavior: 'deny', message: 'Duplicate approval request â?original prompt still pending' },
+      { behavior: 'deny', message: 'Duplicate approval request — original prompt still pending' },
       args.method,
       args.params,
     );
@@ -236,7 +241,7 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
     requestId,
   });
 
-  // Conservative fallback: unmapped approval kinds â?permission_unavailable.
+  // Conservative fallback: unmapped approval kinds → permission_unavailable.
   // Don't emit a permission_request to UI; respond with an error so
   // Codex treats it as decline-failed rather than hanging.
   // (Type narrowing: translateCodexApproval only returns request OR
@@ -245,7 +250,7 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
     throw new Error(`Codex approval kind not yet supported: ${args.method}`);
   }
 
-  // Translate canonical â?SDK-shaped PermissionRequestEvent so the
+  // Translate canonical → SDK-shaped PermissionRequestEvent so the
   // existing useSSEStream / PermissionPrompt pipeline picks it up
   // unchanged. UI doesn't care about runtime; the bridge does the
   // shape adaptation.
@@ -263,8 +268,8 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
       ...(h.behavior !== undefined ? { behavior: h.behavior } : {}),
       ...(h.destination !== undefined ? { destination: h.destination } : {}),
     })),
-    // HMAC over (id, expiresAt) â?/api/chat/permission rejects approvals
-    // that don't echo it (Phase 4 â?hardening).
+    // HMAC over (id, expiresAt) — /api/chat/permission rejects approvals
+    // that don't echo it (Phase 4 ② hardening).
     approvalToken: issueApprovalToken(requestId, expiresAt),
   };
 
@@ -294,7 +299,7 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
   );
 
   // Wait for the user's decision. registerPendingPermission resolves
-  // via /api/chat/permission â?resolvePendingPermission â?the same
+  // via /api/chat/permission → resolvePendingPermission — the same
   // path the SDK uses, so PermissionPrompt's existing wire-up works.
   // onTimeout mirrors the SDK path: push permission_resolved(timeout) so a
   // Codex approval that times out shows the same auto-deny UI (A5 Step 2).
@@ -306,7 +311,7 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
       try {
         args.emitSse(`data: ${JSON.stringify(buildPermissionResolvedEvent(requestId))}\n\n`);
       } catch {
-        // stream already closed â?deny still applies
+        // stream already closed — deny still applies
       }
     },
   );
@@ -320,11 +325,11 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
  *
  * Mapping rules:
  *
- *   allow + updatedPermissions.length > 0  â?"acceptForSession" (canonical)
+ *   allow + updatedPermissions.length > 0  → "acceptForSession" (canonical)
  *                                          / "approved_for_session" (legacy)
- *   allow                                  â?"accept" (canonical)
+ *   allow                                  → "accept" (canonical)
  *                                          / "approved" (legacy)
- *   deny                                   â?"decline" (canonical)
+ *   deny                                   → "decline" (canonical)
  *                                          / "denied" (legacy)
  *
  * `item/permissions/requestApproval` requires an entirely different
@@ -332,7 +337,7 @@ export async function handleCodexApprovalRequest(args: HandleArgs): Promise<unkn
  */
 /**
  * Exported for unit testing the mapping table. Not part of the
- * public adapter surface â?runtime call sites use
+ * public adapter surface — runtime call sites use
  * `handleCodexApprovalRequest`.
  */
 export function resultToCodexResponse(

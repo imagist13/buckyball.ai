@@ -2,8 +2,8 @@
  * Feishu-specific Markdown processing.
  *
  * Rendering strategy (aligned with Openclaw):
- * - Code blocks / tables â†?interactive card (schema 2.0 markdown)
- * - Other text â†?post (msg_type: 'post') with md tag
+ * - Code blocks / tables â†’ interactive card (schema 2.0 markdown)
+ * - Other text â†’ post (msg_type: 'post') with md tag
  *
  * Schema 2.0 cards render code blocks, tables, bold, italic, links properly.
  * Post messages with md tag render bold, italic, inline code, links.

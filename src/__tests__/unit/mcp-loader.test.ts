@@ -14,7 +14,7 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
-// Import the module â€?will use real filesystem
+// Import the module â€” will use real filesystem
 // Tests are designed to work with the user's actual config
 import { loadCodePilotMcpServers, loadAllMcpServers, invalidateMcpCache } from '../../lib/mcp-loader';
 
@@ -57,7 +57,7 @@ describe('mcp-loader', () => {
   it('cache: consecutive calls return same reference', () => {
     const result1 = loadAllMcpServers();
     const result2 = loadAllMcpServers();
-    // Same cache should be hit â€?references should be equal
+    // Same cache should be hit â€” references should be equal
     // (unless there are no servers, in which case both are undefined)
     if (result1 !== undefined && result2 !== undefined) {
       assert.equal(result1, result2, 'cached results should be the same reference');

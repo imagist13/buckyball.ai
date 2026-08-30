@@ -1,28 +1,28 @@
 /**
- * parallel-safety.ts â?Safe parallel tool execution judgment.
+ * parallel-safety.ts — Safe parallel tool execution judgment.
  *
  * Ported from Hermes Agent's run_agent.py:213-336 four-layer judgment.
  * Design philosophy: **default serial, parallelize only when proven safe**
  * (whitelist-first, not blacklist-first).
  *
  * Four-layer judgment:
- *   1. Batch size <= 1 â?serial (nothing to parallelize)
- *   2. Any tool in NEVER_PARALLEL_TOOLS â?serial
- *   3. Path-scoped tools with overlapping paths â?serial
- *   4. Any tool not in PARALLEL_SAFE_TOOLS and not path-scoped â?serial
+ *   1. Batch size <= 1 → serial (nothing to parallelize)
+ *   2. Any tool in NEVER_PARALLEL_TOOLS → serial
+ *   3. Path-scoped tools with overlapping paths → serial
+ *   4. Any tool not in PARALLEL_SAFE_TOOLS and not path-scoped → serial
  *
  * Integration status: this module provides the judgment helpers and is
  * exported for use by a future integration layer. Full wiring into
  * AI SDK's `streamText` tool execution requires batch-level visibility
- * that `tool({ execute })` does not currently provide â?the model's
+ * that `tool({ execute })` does not currently provide — the model's
  * batch of tool calls is fanned out to individual execute calls inside
  * streamText without a pre-batch hook. Integrating will likely require
  * either (a) a shared per-session mutex for non-safe tools, or (b) a
  * wrapper layer that intercepts the fullStream's tool-call events
  * before dispatching to tool.execute.
  *
- * Reference: docs/research/hermes-agent-analysis.md Â§1.3, Â§3.1
- * Upstream:  /Users/op7418/Documents/code/èµæ/hermes-agent-main/run_agent.py:213-336
+ * Reference: docs/research/hermes-agent-analysis.md §1.3, §3.1
+ * Upstream:  /Users/op7418/Documents/code/资料/hermes-agent-main/run_agent.py:213-336
  */
 
 import path from 'path';
@@ -31,7 +31,7 @@ import path from 'path';
  * Tools that must NEVER run in parallel because they require user
  * interaction or have strong serialization semantics.
  *
- * Intentionally small â?mirrors Hermes' `_NEVER_PARALLEL_TOOLS` which
+ * Intentionally small — mirrors Hermes' `_NEVER_PARALLEL_TOOLS` which
  * contains only `clarify`. Callers that need to add project-specific
  * interactive tools can extend this set at runtime via the options
  * parameter on `shouldParallelizeToolBatch`.
@@ -39,8 +39,8 @@ import path from 'path';
 export const NEVER_PARALLEL_TOOLS: ReadonlySet<string> = new Set<string>([]);
 
 /**
- * Read-only tools with no shared mutable state â?always safe to
- * parallelize. Matches buckyball.ai's core tool names plus built-in
+ * Read-only tools with no shared mutable state — always safe to
+ * parallelize. Matches CodePilot's core tool names plus built-in
  * read-side MCP tools from `codepilot_*`.
  */
 export const PARALLEL_SAFE_TOOLS: ReadonlySet<string> = new Set<string>([
@@ -57,7 +57,8 @@ export const PARALLEL_SAFE_TOOLS: ReadonlySet<string> = new Set<string>([
  * Tools that scope their operations to a specific filesystem path.
  * These can run in parallel when their paths don't overlap.
  *
- * Note that `Read` appears here as well as in `PARALLEL_SAFE_TOOLS` â? * this mirrors Hermes' `read_file` which is in both sets. The
+ * Note that `Read` appears here as well as in `PARALLEL_SAFE_TOOLS` —
+ * this mirrors Hermes' `read_file` which is in both sets. The
  * path-scoped check is applied first; Hermes' semantic is that two
  * reads of the exact same path still serialize (conservative).
  */
@@ -97,8 +98,8 @@ const REDIRECT_OVERWRITE = /[^>]>[^>]|^>[^>]/;
 /**
  * Heuristic: does this terminal command look like it modifies / deletes files?
  *
- * Exported as a standalone helper â?not currently invoked by
- * `shouldParallelizeToolBatch` because buckyball.ai's `Bash` tool is not in
+ * Exported as a standalone helper — not currently invoked by
+ * `shouldParallelizeToolBatch` because CodePilot's `Bash` tool is not in
  * any of the parallel sets, so Bash calls always fall through to serial
  * execution via layer 4 regardless of destructiveness.
  *
@@ -124,16 +125,17 @@ function splitPath(p: string): string[] {
 /**
  * Prefix-compare two paths to detect overlap.
  *
- * Returns true when the two paths share a common ancestor chain â? * meaning they may refer to the same subtree. This is the same
+ * Returns true when the two paths share a common ancestor chain —
+ * meaning they may refer to the same subtree. This is the same
  * semantic as Hermes' `_paths_overlap`, implemented via component
  * prefix comparison. We intentionally do NOT call `fs.realpath`
  * because the target file may not exist yet (Write creates files).
  *
  * Examples:
- *   pathsOverlap('/a/b', '/a/b/c')     â?true
- *   pathsOverlap('/a/b', '/a/c')       â?false
- *   pathsOverlap('/a/b', '/a/b')       â?true
- *   pathsOverlap('/a',   '/b')         â?false
+ *   pathsOverlap('/a/b', '/a/b/c')     → true
+ *   pathsOverlap('/a/b', '/a/c')       → false
+ *   pathsOverlap('/a/b', '/a/b')       → true
+ *   pathsOverlap('/a',   '/b')         → false
  */
 export function pathsOverlap(left: string, right: string): boolean {
   const leftParts = splitPath(left);
@@ -155,8 +157,8 @@ export function pathsOverlap(left: string, right: string): boolean {
  * Mirrors Hermes' `_extract_parallel_scope_path`. Intentionally avoids
  * `fs.realpath` because the target file may not exist yet.
  *
- * buckyball.ai's Write / Edit tools use `file_path` as the arg key while
- * Read uses `path` â?both are tried. If neither is present, returns
+ * CodePilot's Write / Edit tools use `file_path` as the arg key while
+ * Read uses `path` — both are tried. If neither is present, returns
  * null and the caller will fall back to serial execution.
  */
 export function extractScopePath(
@@ -219,12 +221,12 @@ export interface ShouldParallelizeOptions {
  *
  * Four-layer judgment, mirrors Hermes' `_should_parallelize_tool_batch`:
  *
- *   Layer 1: batch size <= 1 â?false (nothing to parallelize)
- *   Layer 2: any call in NEVER_PARALLEL_TOOLS â?false
+ *   Layer 1: batch size <= 1 → false (nothing to parallelize)
+ *   Layer 2: any call in NEVER_PARALLEL_TOOLS → false
  *   Layer 3: per-call, path-scoped tools checked for path overlap
- *            against previously-reserved paths â?false if any overlap
- *   Layer 4: any non-safe, non-path-scoped tool â?false
- *            (whitelist-first â?unknown tools default to serial)
+ *            against previously-reserved paths → false if any overlap
+ *   Layer 4: any non-safe, non-path-scoped tool → false
+ *            (whitelist-first — unknown tools default to serial)
  *
  * @param calls Tool calls in the current batch.
  * @param opts  Optional overrides.
@@ -239,7 +241,7 @@ export function shouldParallelizeToolBatch(
   const cwd = opts.cwd ?? process.cwd();
   const extraNeverParallel = opts.extraNeverParallelTools;
 
-  // Layer 2: any blacklisted tool â?serialize whole batch.
+  // Layer 2: any blacklisted tool → serialize whole batch.
   for (const call of calls) {
     if (NEVER_PARALLEL_TOOLS.has(call.name)) return false;
     if (extraNeverParallel && extraNeverParallel.has(call.name)) return false;
@@ -248,10 +250,10 @@ export function shouldParallelizeToolBatch(
   // Layers 3 + 4: per-call evaluation with reserved-paths tracking.
   const reservedPaths: string[] = [];
   for (const call of calls) {
-    // Layer 3: path-scoped tools â?extract path, check for overlap.
+    // Layer 3: path-scoped tools — extract path, check for overlap.
     if (PATH_SCOPED_TOOLS.has(call.name)) {
       const scope = extractScopePath(call.name, call.args, cwd);
-      if (scope === null) return false; // unknown path â?serial (conservative)
+      if (scope === null) return false; // unknown path → serial (conservative)
       for (const existing of reservedPaths) {
         if (pathsOverlap(scope, existing)) return false;
       }

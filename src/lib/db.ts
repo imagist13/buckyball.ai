@@ -39,14 +39,28 @@ import {
 import type { TitleOrigin } from './conversation-title';
 import { normalizePermissionProfile, type SessionPermissionProfile } from './permission/profile';
 import type { DelegatedAgentResult, SubagentStatusError } from './subagent-status';
+import {
+  isLegacyCatalogModelRow,
+  type LocalCatalogIdentityRow,
+} from './catalog-model-identity';
+import { blockDatabaseBootstrap, verifyDatabaseBeforeBootstrap } from './database-integrity';
+import {
+  clearFreshDatabaseIntent,
+  DatabaseStartupError,
+  enforceFreshDatabaseIntent,
+  classifyDatabaseStartupCode,
+  formatDatabaseStartupDiagnostic,
+} from './database-recovery';
+import { resolveCodePilotDataDir } from './codepilot-data-dir';
 
-const dataDir = process.env.CLAUDE_GUI_DATA_DIR || path.join(os.homedir(), '.codepilot');
+const dataDir = resolveCodePilotDataDir();
 const DB_PATH = path.join(dataDir, 'codepilot.db');
 
 interface DatabaseProcessState {
   db: Database.Database | null;
   schemaRevision?: string;
   runtimeOwnerToken?: string;
+  startupError?: DatabaseStartupError;
 }
 
 interface RuntimeOwnerRecord {
@@ -63,7 +77,7 @@ const RUNTIME_OWNER_LOCK_PATH = `${DB_PATH}.runtime-owner.lock`;
 // replacing this module. Keep a code-owned revision beside that handle so a
 // newly loaded migration still runs without requiring the user to restart the
 // desktop client. Bump this value whenever initDb/migrateDb gains a migration.
-const DATABASE_SCHEMA_REVISION = '2026-08-06-provider-secret-envelope-v1';
+const DATABASE_SCHEMA_REVISION = '2026-08-28-native-notifications-v1';
 const LEGACY_NOTIFICATION_BACKLOG_MARKER = 'notification_delivery_legacy_backlog_v1';
 const LEGACY_NOTIFICATION_BACKLOG_MAX_AGE_MS = 60 * 60 * 1000;
 
@@ -96,7 +110,7 @@ function withMigrationLock(dbInstance: Database.Database, fn: (db: Database.Data
 
   while (true) {
     try {
-      // O_EXCL fails if file already exists ‚Ä?atomic lock acquisition
+      // O_EXCL fails if file already exists ‚Äî atomic lock acquisition
       const fd = fs.openSync(lockPath, fs.constants.O_CREAT | fs.constants.O_EXCL | fs.constants.O_WRONLY);
       fs.closeSync(fd);
       try {
@@ -108,14 +122,14 @@ function withMigrationLock(dbInstance: Database.Database, fn: (db: Database.Data
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
         if (Date.now() - start > maxWait) {
-          // Lock held too long ‚Ä?stale lock, force remove and retry once
+          // Lock held too long ‚Äî stale lock, force remove and retry once
           try { fs.unlinkSync(lockPath); } catch { /* ignore */ }
           continue;
         }
         // Wait a bit and retry
         const waitMs = 50 + Math.random() * 100;
         const waitUntil = Date.now() + waitMs;
-        while (Date.now() < waitUntil) { /* busy wait ‚Ä?better-sqlite3 is sync */ }
+        while (Date.now() < waitUntil) { /* busy wait ‚Äî better-sqlite3 is sync */ }
         continue;
       }
       throw err;
@@ -125,6 +139,7 @@ function withMigrationLock(dbInstance: Database.Database, fn: (db: Database.Data
 
 export function getDb(): Database.Database {
   const state = getDatabaseProcessState();
+  if (state.startupError) throw state.startupError;
   let openedDatabase = false;
   if (!state.db) {
     const dir = path.dirname(DB_PATH);
@@ -132,16 +147,27 @@ export function getDb(): Database.Database {
       fs.mkdirSync(dir, { recursive: true });
     }
 
+    // A user-confirmed fresh start is durable across relaunch. Consume it
+    // before looking at old paths so an old/corrupt legacy DB cannot be copied
+    // back and recreate a blocked ‚Üí fresh ‚Üí copy ‚Üí blocked loop.
+    let freshStartIntent = false;
+    try {
+      freshStartIntent = enforceFreshDatabaseIntent(DB_PATH);
+    } catch (error) {
+      if (error instanceof DatabaseStartupError) throw error;
+      throw new DatabaseStartupError(classifyDatabaseStartupCode(error), 'not_attempted');
+    }
+
     // Migrate from old locations if the new DB doesn't exist yet.
     //
     // CODEPILOT_DISABLE_DB_MIGRATION_IN_TESTS (set by the unit-test
-    // db-isolation setup, never in prod) skips this copy entirely. Without
-    // it, any fresh temp dataDir ‚Ä?including one a test re-points to in its
-    // own beforeEach without pre-touching an empty codepilot.db ‚Ä?would copy
-    // the user's REAL ~/Library/.../codepilot.db into /tmp, leaking real data
-    // and coupling the test to real contents. This is the worker-wide backstop
-    // (the setup's empty-file pre-touch only covers the initial dir).
-    if (!fs.existsSync(DB_PATH) && process.env.CODEPILOT_DISABLE_DB_MIGRATION_IN_TESTS !== '1') {
+    // db-isolation setup, never in prod) skips this copy entirely. This is an
+    // independent worker-wide backstop for tests that deliberately re-point
+    // the data directory after setup: an empty test root must remain a fresh
+    // install, not trigger a copy from the user's real legacy database.
+    if (!fs.existsSync(DB_PATH)
+      && !freshStartIntent
+      && process.env.CODEPILOT_DISABLE_DB_MIGRATION_IN_TESTS !== '1') {
       const home = os.homedir();
       const oldPaths = [
         // Old Electron userData paths (app.getPath('userData'))
@@ -170,11 +196,25 @@ export function getDb(): Database.Database {
       }
     }
 
-    state.db = new Database(DB_PATH);
-    state.db.pragma('journal_mode = WAL');
-    state.db.pragma('busy_timeout = 5000');
-    state.db.pragma('foreign_keys = ON');
-    openedDatabase = true;
+    try {
+      if (fs.existsSync(DB_PATH)) verifyDatabaseBeforeBootstrap(DB_PATH);
+      state.db = new Database(DB_PATH);
+      state.db.pragma('journal_mode = WAL');
+      state.db.pragma('busy_timeout = 5000');
+      state.db.pragma('foreign_keys = ON');
+      openedDatabase = true;
+      if (freshStartIntent) clearFreshDatabaseIntent(DB_PATH);
+    } catch (error) {
+      try { state.db?.close(); } catch { /* failed bootstrap */ }
+      state.db = null;
+      const startupError = error instanceof DatabaseStartupError
+        ? error
+        : blockDatabaseBootstrap(DB_PATH, error);
+      // A bounded transient lock is retryable inside this utility process;
+      // every other startup block remains stable until process restart.
+      if (startupError.code !== 'database_busy') state.startupError = startupError;
+      throw startupError;
+    }
   }
 
   // A live dev process can keep an older global database handle across HMR.
@@ -182,11 +222,39 @@ export function getDb(): Database.Database {
   // changes; runtime recovery remains tied to opening/owning the process and
   // must not run merely because a route module was hot-reloaded.
   if (openedDatabase || state.schemaRevision !== DATABASE_SCHEMA_REVISION) {
-    withMigrationLock(state.db, initDb);
-    state.schemaRevision = DATABASE_SCHEMA_REVISION;
+    try {
+      withMigrationLock(state.db, initDb);
+      state.schemaRevision = DATABASE_SCHEMA_REVISION;
+    } catch (error) {
+      console.error(formatDatabaseStartupDiagnostic('migration', error));
+      try { state.db.close(); } catch { /* migration failed */ }
+      state.db = null;
+      state.schemaRevision = undefined;
+      const classified = classifyDatabaseStartupCode(error);
+      const startupError = new DatabaseStartupError(
+        classified === 'database_busy' ? 'database_busy' : 'database_migration_failed',
+        'not_attempted',
+      );
+      if (startupError.code !== 'database_busy') state.startupError = startupError;
+      throw startupError;
+    }
   }
   if (openedDatabase) {
-    runRuntimeStartupRecoveryOnce(state.db);
+    try {
+      runRuntimeStartupRecoveryOnce(state.db);
+    } catch (error) {
+      console.error(formatDatabaseStartupDiagnostic('runtime_recovery', error));
+      try { state.db.close(); } catch { /* runtime recovery failed */ }
+      state.db = null;
+      state.schemaRevision = undefined;
+      const classified = classifyDatabaseStartupCode(error);
+      const startupError = new DatabaseStartupError(
+        classified === 'database_busy' ? 'database_busy' : 'database_runtime_recovery_failed',
+        'not_attempted',
+      );
+      if (startupError.code !== 'database_busy') state.startupError = startupError;
+      throw startupError;
+    }
   }
   return state.db;
 }
@@ -220,7 +288,7 @@ function initDb(db: Database.Database): void {
       logical_run_id TEXT NOT NULL DEFAULT '',
       attempt_number INTEGER NOT NULL DEFAULT 1 CHECK(attempt_number > 0),
       parent_session_id TEXT NOT NULL,
-      runtime TEXT NOT NULL CHECK(runtime IN ('bbagent', 'claude_code', 'codex_runtime')),
+      runtime TEXT NOT NULL CHECK(runtime IN ('codepilot_runtime', 'claude_code', 'codex_runtime')),
       tool_name TEXT NOT NULL DEFAULT '',
       agent_name TEXT NOT NULL DEFAULT 'Sub-agent',
       provider_id TEXT NOT NULL DEFAULT '',
@@ -460,7 +528,7 @@ function initDb(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_audit_logs_chat ON channel_audit_logs(channel_type, chat_id);
     CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON channel_audit_logs(created_at);
 
-    -- Bridge: permission request ‚Ü?IM message links
+    -- Bridge: permission request ‚Üí IM message links
     CREATE TABLE IF NOT EXISTS channel_permission_links (
       id TEXT PRIMARY KEY,
       permission_request_id TEXT NOT NULL,
@@ -483,7 +551,7 @@ function initDb(db: Database.Database): void {
   migrateDb(db);
 }
 
-/** Safely add a column ‚Ä?ignores "duplicate column name" errors from concurrent workers. */
+/** Safely add a column ‚Äî ignores "duplicate column name" errors from concurrent workers. */
 function safeAddColumn(db: Database.Database, sql: string): void {
   try {
     db.exec(sql);
@@ -534,7 +602,7 @@ function migrateDb(db: Database.Database): void {
   // Phase 2 Step 2 (2026-05-06): per-session execution-engine pin so
   // chats stop drifting when the user changes the global agent_runtime
   // setting. Empty string = "follow global"; 'claude_code' /
-  // 'bbagent' = "this session is pinned to that runtime".
+  // 'codepilot_runtime' = "this session is pinned to that runtime".
   // The send route / streamClaude / picker hook will be migrated to
   // read this in subsequent Phase 2 steps; this column is the data-
   // layer prerequisite. See docs/exec-plans/active/refactor-closeout.md
@@ -542,16 +610,16 @@ function migrateDb(db: Database.Database): void {
   if (!colNames.includes('runtime_pin')) {
     safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN runtime_pin TEXT NOT NULL DEFAULT ''");
   }
-  // Phase 5 Phase 3 (2026-05-13) ‚Ä?Codex Runtime thread/turn ids.
+  // Phase 5 Phase 3 (2026-05-13) ‚Äî Codex Runtime thread/turn ids.
   // Codex's `thread/resume` requires the original `threadId`; we
   // persist it per chat session so reload / cross-session resume
   // works. The runtime-side session ref flows through
-  // src/lib/runtime/session-store.ts ‚Ä?UI / API code never reads
+  // src/lib/runtime/session-store.ts ‚Äî UI / API code never reads
   // `codex_thread_id` directly.
   if (!colNames.includes('codex_thread_id')) {
     safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN codex_thread_id TEXT NOT NULL DEFAULT ''");
   }
-  // Phase 5b (2026-05-15) ‚Ä?Codex Runtime threads are provider-bound:
+  // Phase 5b (2026-05-15) ‚Äî Codex Runtime threads are provider-bound:
   // `thread/start` injects `model_providers.codepilot_proxy` for the
   // *targeted* CodePilot provider, so the thread can only safely
   // resume under that same provider. If the user switches provider
@@ -562,7 +630,7 @@ function migrateDb(db: Database.Database): void {
   if (!colNames.includes('codex_thread_provider_id')) {
     safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN codex_thread_provider_id TEXT NOT NULL DEFAULT ''");
   }
-  // Phase 8 Phase 2 (2026-05-27) ‚Ä?fingerprint of the MCP config the codex
+  // Phase 8 Phase 2 (2026-05-27) ‚Äî fingerprint of the MCP config the codex
   // thread was started with. A resume whose current MCP fingerprint differs
   // starts a fresh thread instead of resuming with a stale tool set.
   if (!colNames.includes('codex_thread_mcp_fingerprint')) {
@@ -586,7 +654,7 @@ function migrateDb(db: Database.Database): void {
     safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN permission_profile TEXT NOT NULL DEFAULT 'default'");
   }
   if (!colNames.includes('title_origin')) {
-    // Provenance for `title` ‚Ä?decides who is allowed to overwrite it later
+    // Provenance for `title` ‚Äî decides who is allowed to overwrite it later
     // (see TitleOrigin in lib/conversation-title.ts). Added with DEFAULT ''
     // rather than a real origin so existing rows land in a "not yet
     // classified" state that the backfill below can find and re-decide;
@@ -596,16 +664,17 @@ function migrateDb(db: Database.Database): void {
   }
   // Backfill, OUTSIDE the ADD COLUMN guard on purpose: ALTER and UPDATE are two
   // statements, and a crash between them used to leave every legacy row stuck
-  // at '' forever ‚Ä?the next boot saw the column present and skipped the fill.
+  // at '' forever ‚Äî the next boot saw the column present and skipped the fill.
   // `WHERE title_origin = ''` makes this re-entrant and a no-op once done; no
   // insert path ever writes '', so an empty origin can only mean "unclassified".
   // Conservative on purpose:
-  //   'New Chat' / '' ‚Ü?'placeholder': never had a real title, so the next
+  //   'New Chat' / '' ‚Üí 'placeholder': never had a real title, so the next
   //     real user message should fill in a fallback (the whole point).
-  //   anything else   ‚Ü?'manual': the row predates provenance, so we CANNOT
+  //   anything else   ‚Üí 'manual': the row predates provenance, so we CANNOT
   //     tell a user's hand-typed rename from an old auto-truncation. Both
   //     look like plain text. Guessing 'fallback' would let Phase 2's
-  //     generator silently rename a session the user deliberately named ‚Ä?  //     breaking "manual is never overwritten", the one promise this whole
+  //     generator silently rename a session the user deliberately named ‚Äî
+  //     breaking "manual is never overwritten", the one promise this whole
   //     feature rests on. 'manual' is the safe wrong answer: worst case a
   //     legacy session keeps its current (already user-visible, already
   //     accepted) title forever instead of gaining a semantic one.
@@ -773,7 +842,7 @@ function migrateDb(db: Database.Database): void {
   `);
 
   // Backfill columns for databases that existed before the source/refresh
-  // tracking migration. Keeps untouched user data ‚Ä?pre-existing rows default
+  // tracking migration. Keeps untouched user data ‚Äî pre-existing rows default
   // to source='manual' since we can't retroactively know if they were
   // discovered or hand-entered.
   const provModelCols = db.prepare("PRAGMA table_info(provider_models)").all() as Array<{ name: string }>;
@@ -789,7 +858,7 @@ function migrateDb(db: Database.Database): void {
   }
   if (!provModelColNames.has('enable_source')) {
     // Pre-existing rows: those with user_edited=1 are user choices we
-    // must respect ‚Ä?backfill to 'manual_enabled' / 'manual_hidden' so
+    // must respect ‚Äî backfill to 'manual_enabled' / 'manual_hidden' so
     // future refreshes don't flip them. Pristine rows backfill to
     // 'recommended' (their enabled state was set by the system).
     db.exec("ALTER TABLE provider_models ADD COLUMN enable_source TEXT NOT NULL DEFAULT 'recommended'");
@@ -1146,12 +1215,12 @@ function migrateDb(db: Database.Database): void {
   // @ai-sdk/openai chat-completions wire), and deleting user-created rows in a
   // migration violates the no-destructive-migration rule. The DELETE is
   // removed so valid openai-compatible providers survive restarts. (Rows the
-  // old DELETE already removed are gone ‚Ä?not recoverable ‚Ä?but no newly
+  // old DELETE already removed are gone ‚Äî not recoverable ‚Äî but no newly
   // created provider will be silently wiped.)
   try {
     const providerCols = db.prepare("PRAGMA table_info(api_providers)").all() as { name: string }[];
     if (providerCols.some(c => c.name === 'protocol')) {
-      // Backfill empty protocol for legacy custom providers ‚Ä?infer from base_url.
+      // Backfill empty protocol for legacy custom providers ‚Äî infer from base_url.
       // These are valid Anthropic-compatible providers (GLM, Kimi, MiniMax, etc.)
       // that were created before the protocol column existed.
       const legacyCustom = db.prepare(
@@ -1201,19 +1270,19 @@ function migrateDb(db: Database.Database): void {
   // Migration: add permanent column for existing databases
   safeAddColumn(db, "ALTER TABLE scheduled_tasks ADD COLUMN permanent INTEGER NOT NULL DEFAULT 0");
 
-  // Phase 3 Step 3 migration ‚Ä?`kind` column for legacy DBs. New rows
+  // Phase 3 Step 3 migration ‚Äî `kind` column for legacy DBs. New rows
   // MUST set this explicitly (API + tool schemas validate); the default
   // here only covers pre-existing rows from before the split.
   safeAddColumn(db, "ALTER TABLE scheduled_tasks ADD COLUMN kind TEXT NOT NULL DEFAULT 'ai_task'");
 
-  // Phase 3 Step 4 ‚Ä?`source` column for distinguishing user-created
+  // Phase 3 Step 4 ‚Äî `source` column for distinguishing user-created
   // tasks from the system-injected assistant heartbeat task. NO CHECK
   // constraint (SQLite can't ALTER CHECK on existing tables); validated
   // in `createScheduledTask` / `updateScheduledTask`. `assistant_heartbeat`
   // is the only non-default value today, used by ensureHeartbeatTask.
   safeAddColumn(db, "ALTER TABLE scheduled_tasks ADD COLUMN source TEXT NOT NULL DEFAULT 'user'");
 
-  // Phase 3 Step 4 follow-up ‚Ä?`origin_session_id` column. Records the
+  // Phase 3 Step 4 follow-up ‚Äî `origin_session_id` column. Records the
   // chat_sessions.id from which this task was originally created (the
   // user was chatting in project A, the model called
   // codepilot_schedule_task; that user-chat session is the "origin").
@@ -1224,27 +1293,27 @@ function migrateDb(db: Database.Database): void {
   // task-bound session, so a project-A task fires in project-A's
   // working dir + provider, not whatever the global default happens
   // to be when the scheduler ticks. Nullable: legacy rows + tasks
-  // created from non-chat surfaces (UI-driven Settings ‚Ü?Tasks "Add")
+  // created from non-chat surfaces (UI-driven Settings ‚Üí Tasks "Add")
   // simply have no origin and the runner falls back to whatever
   // task.working_directory was POSTed.
   safeAddColumn(db, "ALTER TABLE scheduled_tasks ADD COLUMN origin_session_id TEXT");
 
-  // Phase 3 Step 4 ‚Ä?`chat_sessions.source` column. Default `'user'`
+  // Phase 3 Step 4 ‚Äî `chat_sessions.source` column. Default `'user'`
   // so existing rows stay user-visible; new task-bound sessions
   // created by the agent task runner are tagged `'task'` and filtered
   // out of the main ChatListPanel list (only reachable from
   // /settings/tasks or notification click).
   safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN source TEXT NOT NULL DEFAULT 'user'");
 
-  // chat_origin_type / chat_origin_path ‚Ä?LEGACY / UNUSED. A short-lived "chat
+  // chat_origin_type / chat_origin_path ‚Äî LEGACY / UNUSED. A short-lived "chat
   // creation origin" modeling attempt (2026-06-03) was reverted per user
   // decision (see tech-debt #38). No code reads or writes these; they are kept
   // (empty, default '') only because destructive migrations are forbidden. They
-  // are NOT a product direction ‚Ä?don't build on them without re-scoping.
+  // are NOT a product direction ‚Äî don't build on them without re-scoping.
   safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN chat_origin_type TEXT NOT NULL DEFAULT ''");
   safeAddColumn(db, "ALTER TABLE chat_sessions ADD COLUMN chat_origin_path TEXT NOT NULL DEFAULT ''");
 
-  // Phase 3 Step 4 ‚Ä?`messages.task_run_id` column for the marker
+  // Phase 3 Step 4 ‚Äî `messages.task_run_id` column for the marker
   // render-side join. Soft reference (no FK) so a deleted task run
   // doesn't cascade-delete user-visible messages; render layer
   // gracefully ignores missing runs. NEVER read by prompt builder.
@@ -1256,8 +1325,8 @@ function migrateDb(db: Database.Database): void {
   ).run();
 
   // Migration (Phase 2C): backfill `global_default_mode` for existing rows.
-  // Rule: if both pinned values are present at migration time ‚Ü?'pinned'
-  // (preserves what these users had before ‚Ä?a committed default), else
+  // Rule: if both pinned values are present at migration time ‚Üí 'pinned'
+  // (preserves what these users had before ‚Äî a committed default), else
   // 'auto'. After this migration runs once, the mode is authoritative;
   // subsequent setProviderOptions writes update it directly.
   const existingMode = db.prepare("SELECT value FROM settings WHERE key = 'global_default_mode'").get() as { value: string } | undefined;
@@ -1269,7 +1338,7 @@ function migrateDb(db: Database.Database): void {
   }
 
   // Task execution history. Phase 3 Step 3: a SINGLE row per execution
-  // ‚Ä?`runScheduledTaskNow` inserts one with status='running', then
+  // ‚Äî `runScheduledTaskNow` inserts one with status='running', then
   // `updateTaskRunLog` flips it to 'success' / 'error' in place. Old
   // callers used `insertTaskRunLog` only on terminal states; both
   // patterns coexist (the function returns `runId` so the new path can
@@ -1289,14 +1358,14 @@ function migrateDb(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_task_run_logs_task_id ON task_run_logs(task_id);
   `);
 
-  // Phase 3 Step 3 migration ‚Ä?add notification_event_id for legacy DBs.
+  // Phase 3 Step 3 migration ‚Äî add notification_event_id for legacy DBs.
   safeAddColumn(db, "ALTER TABLE task_run_logs ADD COLUMN notification_event_id TEXT");
 
-  // Phase 3 Step 3 ‚Ä?notification events / deliveries split. The events
+  // Phase 3 Step 3 ‚Äî notification events / deliveries split. The events
   // table is the umbrella ("one task fire = one event"); deliveries is
   // per-channel. v4 plan locks the relationship as 1:N. v5 plan adds
   // UNIQUE(event_id, channel) so even a buggy ack route can't write
-  // two `delivered` rows for the same channel ‚Ä?DB layer rejects.
+  // two `delivered` rows for the same channel ‚Äî DB layer rejects.
   db.exec(`
     CREATE TABLE IF NOT EXISTS notification_events (
       id TEXT PRIMARY KEY,
@@ -1345,7 +1414,63 @@ function migrateDb(db: Database.Database): void {
   `);
 
   suppressLegacyQueuedNotificationBacklog(db);
+  migrateQueuedRendererNotificationsToNative(db);
   consolidateHeartbeatTasksAndEnsureUniqueIndex(db);
+}
+
+/**
+ * Renderer toast is no longer a product notification channel. Preserve all
+ * historical terminal rows, but move still-actionable queued work to the
+ * Electron Main-owned native channel. If an event already has a native row,
+ * close only the redundant renderer row as skipped to respect the UNIQUE
+ * `(event_id, channel)` constraint without deleting audit evidence.
+ */
+export function migrateQueuedRendererNotificationsToNative(
+  db: Database.Database,
+  now = new Date(),
+): { migrated: number; skippedDuplicates: number } {
+  const migrate = db.transaction(() => {
+    const ackedAt = now.toISOString();
+    const duplicateResult = db.prepare(`
+      UPDATE notification_deliveries AS renderer
+      SET status = 'skipped',
+          error = 'renderer_channel_retired_native_exists',
+          acked_at = ?,
+          claim_owner = NULL,
+          claimed_at = NULL,
+          next_attempt_at = NULL
+      WHERE renderer.channel = 'renderer-toast'
+        AND renderer.status = 'queued'
+        AND EXISTS (
+          SELECT 1
+          FROM notification_deliveries AS native
+          WHERE native.event_id = renderer.event_id
+            AND native.channel = 'electron-native'
+        )
+    `).run(ackedAt);
+
+    const migratedResult = db.prepare(`
+      UPDATE notification_deliveries AS renderer
+      SET channel = 'electron-native',
+          claim_owner = NULL,
+          claimed_at = NULL,
+          next_attempt_at = NULL
+      WHERE renderer.channel = 'renderer-toast'
+        AND renderer.status = 'queued'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM notification_deliveries AS native
+          WHERE native.event_id = renderer.event_id
+            AND native.channel = 'electron-native'
+        )
+    `).run();
+
+    return {
+      migrated: migratedResult.changes,
+      skippedDuplicates: duplicateResult.changes,
+    };
+  });
+  return migrate();
 }
 
 /**
@@ -1891,6 +2016,26 @@ export function getActiveSessions(): ChatSession[] {
   ).all() as ChatSession[];
 }
 
+/**
+ * Updater safety fact: an active-looking status is live only while the same
+ * session also has a non-expired runtime owner. A process crash can leave an
+ * active runtime_status behind; treating that residue as permanent work would
+ * make installation impossible until another startup repair writes it.
+ */
+export function hasActiveSessionWork(now: Date = new Date()): boolean {
+  const db = getDb();
+  const current = now.toISOString().replace('T', ' ').split('.')[0];
+  const row = db.prepare(`
+    SELECT 1
+    FROM chat_sessions AS sessions
+    INNER JOIN session_runtime_locks AS locks ON locks.session_id = sessions.id
+    WHERE sessions.runtime_status IN ('running', 'streaming', 'waiting_permission')
+      AND locks.expires_at >= ?
+    LIMIT 1
+  `).get(current);
+  return !!row;
+}
+
 export function getSession(id: string): ChatSession | undefined {
   const db = getDb();
   return db.prepare('SELECT * FROM chat_sessions WHERE id = ?').get(id) as ChatSession | undefined;
@@ -1898,7 +2043,7 @@ export function getSession(id: string): ChatSession | undefined {
 
 export function getSessionSummary(sessionId: string): {
   summary: string;
-  /** Wall-clock time the summary row was written (UI/debug only ‚Ä?do NOT use as coverage boundary) */
+  /** Wall-clock time the summary row was written (UI/debug only ‚Äî do NOT use as coverage boundary) */
   updatedAt: string;
   /** SQLite rowid of the last message covered by the summary; 0 = no boundary known */
   boundaryRowid: number;
@@ -1922,12 +2067,12 @@ export function getSessionSummary(sessionId: string): {
  * auto pre-compression path, or the last row of allMsgs for manual /compact).
  * Pass 0 only when the caller has no DB rowid available (reactive compact
  * inside streamClaude receives {role, content} pairs with no DB metadata);
- * 0 causes filterHistoryByCompactBoundary to passthrough ‚Ä?degraded but safe.
+ * 0 causes filterHistoryByCompactBoundary to passthrough ‚Äî degraded but safe.
  *
  * Do NOT pass `new Date()` or any wall-clock time here: write time and
  * coverage boundary diverge on the auto pre-compression path (see
  * filterHistoryByCompactBoundary doc). And do NOT reuse an earlier timestamp
- * column for filtering ‚Ä?second-precision timestamps can't distinguish a
+ * column for filtering ‚Äî second-precision timestamps can't distinguish a
  * last-compressed message from a first-kept message written in the same
  * second. rowid is the only robust boundary.
  */
@@ -1980,7 +2125,7 @@ export function createSession(
 }
 
 /**
- * Phase 3 Step 4a (review fix) ‚Ä?`opts.includeSources` lets callers
+ * Phase 3 Step 4a (review fix) ‚Äî `opts.includeSources` lets callers
  * filter by `chat_sessions.source`. Without this, a workspace whose
  * working directory happens to coincide with an `ai_task`'s
  * `working_directory` would return that task's hidden execution
@@ -2033,13 +2178,13 @@ export function updateSessionTimestamp(id: string): void {
 /**
  * Write a session title together with its provenance.
  *
- * `origin` is REQUIRED ‚Ä?a title without a recorded origin is what let the
+ * `origin` is REQUIRED ‚Äî a title without a recorded origin is what let the
  * old unconditional blind write clobber a user's manual rename. Every call
  * site now has to say, in the diff, who is writing and by what right.
  *
  * `opts.expectOrigin` makes the write a compare-and-swap: the row is only
  * touched if its CURRENT origin is in that list. This is the atomicity
- * boundary for background generation ‚Ä?`expectOrigin: ['fallback']` cannot
+ * boundary for background generation ‚Äî `expectOrigin: ['fallback']` cannot
  * overwrite 'manual' / 'system' / 'import', cannot double-apply (the first
  * write moves the row to 'generated'), and cannot resurrect a deleted
  * session (zero rows match). Omit it only for writes that are themselves the
@@ -2074,12 +2219,12 @@ export function updateSdkSessionId(id: string, sdkSessionId: string): void {
 }
 
 /**
- * Phase 5 Phase 3 (2026-05-13) ‚Ä?Codex Runtime thread id persistence.
+ * Phase 5 Phase 3 (2026-05-13) ‚Äî Codex Runtime thread id persistence.
  * Mirror of `updateSdkSessionId` for the codex_thread_id column.
  * Called only from `src/lib/runtime/session-store.ts` so adapter-
  * specific persistence stays scoped per the contract.
  *
- * Phase 5b (2026-05-15) ‚Ä?also writes `codex_thread_provider_id` so
+ * Phase 5b (2026-05-15) ‚Äî also writes `codex_thread_provider_id` so
  * a later resume can detect provider switches and start fresh rather
  * than running under a stale provider's injected config. Pass the
  * empty string to clear (matches the clear semantics for thread id).
@@ -2114,7 +2259,7 @@ export function updateSessionProviderId(id: string, providerId: string): void {
 /**
  * Phase 2 Step 2: write the per-session execution-engine pin. The
  * caller is responsible for keeping this empty when the user wants
- * "follow global", or one of `'claude_code'` / `'bbagent'`
+ * "follow global", or one of `'claude_code'` / `'codepilot_runtime'`
  * when they explicitly pin the session. See
  * `resolveRuntimeForSession` in `lib/chat-runtime.ts` for the read
  * side; nothing reads this column today outside that helper, so
@@ -2136,7 +2281,8 @@ export function getDefaultProviderId(): string | undefined {
 
 export function setDefaultProviderId(id: string): void {
   // Phase 2C: this writes the *legacy* `default_provider_id` only. It must
-  // NOT touch `global_default_model` / `global_default_model_provider` ‚Ä?  // those are the user's Pin commitment now (`global_default_mode='pinned'`),
+  // NOT touch `global_default_model` / `global_default_model_provider` ‚Äî
+  // those are the user's Pin commitment now (`global_default_mode='pinned'`),
   // and silently rewriting them is the exact silent-substitution the new
   // contract forbids. Auto-heal callers (like /api/providers/models when
   // the pin points at a deleted provider) still need a usable backend
@@ -2149,7 +2295,7 @@ export function setDefaultProviderId(id: string): void {
 export function updateSessionWorkingDirectory(id: string, workingDirectory: string): void {
   const db = getDb();
   const projectName = path.basename(workingDirectory);
-  // Sync sdk_cwd + clear sdk_session_id ‚Ä?old session context is invalid
+  // Sync sdk_cwd + clear sdk_session_id ‚Äî old session context is invalid
   db.prepare('UPDATE chat_sessions SET working_directory = ?, sdk_cwd = ?, project_name = ?, sdk_session_id = ? WHERE id = ?').run(workingDirectory, workingDirectory, projectName, '', id);
 }
 
@@ -2159,10 +2305,28 @@ export function updateSessionMode(id: string, mode: string): void {
 }
 
 /**
+ * Persist the consolidated Composer access pair in one SQLite statement. The
+ * route validates both fields first; this single write also prevents a storage
+ * error from leaving a half-applied `mode` / `permission_profile` transition.
+ */
+export function updateSessionAccessLevel(
+  id: string,
+  mode: 'code' | 'plan' | 'ask',
+  profile: SessionPermissionProfile,
+): void {
+  if (!['code', 'plan', 'ask'].includes(mode)) {
+    throw new Error(`Invalid session mode: ${mode}`);
+  }
+  const db = getDb();
+  db.prepare('UPDATE chat_sessions SET mode = ?, permission_profile = ? WHERE id = ?')
+    .run(mode, normalizePermissionProfile(profile), id);
+}
+
+/**
  * Persist a session's permission profile. `normalizePermissionProfile` is the
  * fail-closed floor: a caller that somehow reaches here with an unvalidated
  * value writes 'default', never an elevated profile. API validation still
- * rejects bad input with a 400 ‚Ä?this is the second line, not the first.
+ * rejects bad input with a 400 ‚Äî this is the second line, not the first.
  */
 export function updateSessionPermissionProfile(id: string, profile: SessionPermissionProfile): void {
   const db = getDb();
@@ -2316,7 +2480,7 @@ function assertNoSubagentWorkflowCycle(
   const cycle = visit(taskKey, []);
   if (cycle) {
     throw new SubagentDependencySpecError(
-      `workflow "${workflowId}" contains a dependency cycle (${cycle.join(' ‚Ü?')}). No durable attempt was created and no child was started.`,
+      `workflow "${workflowId}" contains a dependency cycle (${cycle.join(' ‚Üí ')}). No durable attempt was created and no child was started.`,
     );
   }
 }
@@ -3086,7 +3250,7 @@ export function getMessages(
  * agent task runner does this for both the user prompt and the
  * assistant result). The metadata is stored on the row, NEVER appended
  * to `content`, so prompt builders constructing LLM context only see
- * the actual conversation text. Backwards compatible ‚Ä?existing
+ * the actual conversation text. Backwards compatible ‚Äî existing
  * call sites still pass `tokenUsage` as the 4th positional arg.
  */
 export function addMessage(
@@ -3104,14 +3268,23 @@ export function addMessage(
   const now = new Date().toISOString().replace('T', ' ').split('.')[0];
   const taskRunId = metadata?.task_run_id ?? null;
   const streamStatus = metadata?.stream_status ?? 'completed';
-
-  db.prepare(
+  const insertMessage = db.prepare(
     'INSERT INTO messages (id, session_id, role, content, created_at, token_usage, task_run_id, stream_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(id, sessionId, role, content, now, tokenUsage || null, taskRunId, streamStatus);
+  );
+  const updateSession = db.prepare(
+    'UPDATE chat_sessions SET updated_at = ? WHERE id = ?',
+  );
+  const readMessage = db.prepare(
+    'SELECT *, rowid as _rowid FROM messages WHERE id = ?',
+  );
 
-  updateSessionTimestamp(sessionId);
-
-  return db.prepare('SELECT *, rowid as _rowid FROM messages WHERE id = ?').get(id) as Message;
+  return db.transaction((): Message => {
+    insertMessage.run(id, sessionId, role, content, now, tokenUsage || null, taskRunId, streamStatus);
+    updateSession.run(now, sessionId);
+    const saved = readMessage.get(id) as Message | undefined;
+    if (!saved) throw new Error('CODEPILOT_MESSAGE_PERSISTENCE_FAILED');
+    return saved;
+  })();
 }
 
 export function updateMessageContent(messageId: string, content: string): number {
@@ -3442,7 +3615,7 @@ export interface SessionSearchResult {
  *
  * Uses SQL LIKE for portability (no FTS5 dependency). Matches are case-insensitive
  * via LIKE's default behavior with ASCII text. For CJK queries the match is exact
- * byte-sequence substring ‚Ä?good enough for v1.
+ * byte-sequence substring ‚Äî good enough for v1.
  *
  * Results are ordered by created_at DESC (most recent first) and joined with
  * chat_sessions to include session titles. Heartbeat ACK messages are excluded
@@ -3470,7 +3643,7 @@ export function searchMessages(
   try {
     const cols = db.prepare("PRAGMA table_info(messages)").all() as { name: string }[];
     hasAckColumn = cols.some(c => c.name === 'is_heartbeat_ack');
-  } catch { /* ignore ‚Ä?assume no ack column */ }
+  } catch { /* ignore ‚Äî assume no ack column */ }
 
   const ackFilter = hasAckColumn ? ' AND (m.is_heartbeat_ack = 0 OR m.is_heartbeat_ack IS NULL)' : '';
 
@@ -3539,16 +3712,16 @@ function buildSnippet(content: string, lowerQuery: string): string {
   const lowerContent = content.toLowerCase();
   const idx = lowerContent.indexOf(lowerQuery);
   if (idx === -1) {
-    // Fall back to the first 200 chars ‚Ä?happens when content is a JSON blob
+    // Fall back to the first 200 chars ‚Äî happens when content is a JSON blob
     // and the query matches bytes inside quoted strings.
-    return content.length > 200 ? content.slice(0, 200) + '‚Ä? : content;
+    return content.length > 200 ? content.slice(0, 200) + '‚Ä¶' : content;
   }
   const LEADING = 28;
   const TAIL = 100;
   const start = Math.max(0, idx - LEADING);
   const end = Math.min(content.length, idx + lowerQuery.length + TAIL);
-  const prefix = start > 0 ? '‚Ä? : '';
-  const suffix = end < content.length ? '‚Ä? : '';
+  const prefix = start > 0 ? '‚Ä¶' : '';
+  const suffix = end < content.length ? '‚Ä¶' : '';
   return prefix + content.slice(start, end) + suffix;
 }
 
@@ -3720,6 +3893,16 @@ function providerSecretErrorCode(error: unknown): string {
   return 'provider_secret_decrypt_failed';
 }
 
+/**
+ * Return only the low-cardinality failure code for a provider secret that was
+ * materialized unsuccessfully. Callers use this to distinguish an unreadable
+ * encrypted credential from a provider that was intentionally saved empty;
+ * ciphertext and key material never leave this module.
+ */
+export function getProviderSecretErrorCode(providerId: string): string | null {
+  return providerSecretErrors.get(providerId) ?? null;
+}
+
 function encodeProviderSecret(providerId: string, plaintext: string): StoredProviderSecret {
   if (!plaintext) return { plaintext: '', ciphertext: '', storage: 'none' };
   const environment = getProviderSecretEnvironmentStatus();
@@ -3746,8 +3929,14 @@ function materializeProvider(row: ApiProviderStorageRow | undefined): ApiProvide
   // is the current user value; trusting the ciphertext can resurrect a stale
   // key or make the provider unusable after moving the database to a machine
   // with a different data-encryption key.
+  // A plaintext value can remain because a legacy-secret migration failed.
+  // Keep that migration diagnostic until an explicit user key write succeeds;
+  // merely reading the recoverable plaintext must not erase it.
   if (provider.api_key) return provider;
-  if (!ciphertext) return provider;
+  if (!ciphertext) {
+    providerSecretErrors.delete(row.id);
+    return provider;
+  }
   try {
     provider.api_key = decryptProviderSecret(row.id, ciphertext);
     providerSecretErrors.delete(row.id);
@@ -3919,6 +4108,11 @@ export function updateProvider(id: string, data: UpdateProviderRequest): ApiProv
      notes = ?, sort_order = ?, updated_at = ? WHERE id = ?`
   ).run(name, providerType, presetKey, protocol, baseUrl, storedSecret.plaintext, storedSecret.ciphertext, storedSecret.storage, extraEnv, headersJson, envOverridesJson, roleModelsJson, optionsJson, notes, sortOrder, now, id);
 
+  // A successful explicit key write replaces (or intentionally clears) the
+  // envelope that produced any prior decrypt error. Do not let the in-memory
+  // diagnostic misclassify a now-empty provider as still unreadable.
+  if (data.api_key !== undefined) providerSecretErrors.delete(id);
+
   return getProvider(id);
 }
 
@@ -3973,7 +4167,7 @@ export function getProviderOptions(providerId: string): import('@/types').Provid
 export function setProviderOptions(providerId: string, options: import('@/types').ProviderOptions): void {
   if (providerId === '__global__') {
     // Mode is authoritative. Setting mode='auto' must clear pinned values
-    // unconditionally ‚Ä?and we must short-circuit before the per-field
+    // unconditionally ‚Äî and we must short-circuit before the per-field
     // writes below, because the API route merges incoming options with
     // existing storage. Without the early return, a `{ default_mode: 'auto' }`
     // request gets merged with stored `default_model_provider`, the merged
@@ -4011,7 +4205,7 @@ export function setProviderOptions(providerId: string, options: import('@/types'
 
 // ‚îÄ‚îÄ Provider Models ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ‚îÄ
 
-/** Active models only (enabled = 1) ‚Ä?back-compat for existing consumers. */
+/** Active models only (enabled = 1) ‚Äî back-compat for existing consumers. */
 export function getModelsForProvider(providerId: string): import('@/types').ProviderModel[] {
   const db = getDb();
   return db.prepare(
@@ -4019,7 +4213,7 @@ export function getModelsForProvider(providerId: string): import('@/types').Prov
   ).all(providerId) as import('@/types').ProviderModel[];
 }
 
-/** All models including hidden ‚Ä?used by the Models management page. */
+/** All models including hidden ‚Äî used by the Models management page. */
 export function getAllModelsForProvider(providerId: string): import('@/types').ProviderModel[] {
   const db = getDb();
   return db.prepare(
@@ -4028,7 +4222,7 @@ export function getAllModelsForProvider(providerId: string): import('@/types').P
 }
 
 /**
- * Align `enabled` per the catalog default list ‚Ä?i.e. "reset every
+ * Align `enabled` per the catalog default list ‚Äî i.e. "reset every
  * SYSTEM-MANAGED row to the recommended set". Manual choices are never
  * touched; this is the central invariant.
  *
@@ -4038,19 +4232,20 @@ export function getAllModelsForProvider(providerId: string): import('@/types').P
  *
  * For system-managed rows:
  *
- *   - Catalog defaults missing from DB ‚Ü?INSERT (source='catalog',
+ *   - Catalog defaults missing from DB ‚Üí INSERT (source='catalog',
  *     enabled=1, enable_source='recommended')
- *   - In catalog, currently disabled ‚Ü?ENABLE + sync display_name /
+ *   - In catalog, currently disabled ‚Üí ENABLE + sync display_name /
  *     upstream / enable_source='recommended' so the badge matches
- *   - In catalog, currently enabled with stale display_name/upstream ‚Ü? *     refresh those fields (catalog-side rename propagation)
- *   - Not in catalog, source='catalog' ‚Ü?DELETE (stale catalog seed
+ *   - In catalog, currently enabled with stale display_name/upstream ‚Üí
+ *     refresh those fields (catalog-side rename propagation)
+ *   - Not in catalog, source='catalog' ‚Üí DELETE (stale catalog seed
  *     from when the provider matched a different preset)
- *   - Not in catalog, source='api'/'manual' ‚Ü?DISABLE +
+ *   - Not in catalog, source='api'/'manual' ‚Üí DISABLE +
  *     enable_source='discovered' (we found it but it isn't recommended)
  *
  * Critical: the `enabled` flag and `enable_source` MUST update together.
  * A row with `enabled=0, enable_source='recommended'` is internally
- * inconsistent ‚Ä?the badge would say "system enabled" while it's hidden.
+ * inconsistent ‚Äî the badge would say "system enabled" while it's hidden.
  */
 /**
  * The catalog fields these sync helpers propagate into provider_models.
@@ -4062,13 +4257,14 @@ type CatalogSyncModel = {
   upstreamModelId?: string;
   displayName: string;
   capabilities?: Record<string, unknown> | undefined;
+  legacyFingerprints?: import('./catalog-model-identity').CatalogModelLegacyFingerprint[];
 };
 
 /**
  * Serialize catalog capabilities for the DB, or null meaning "leave the
  * existing column alone".
  *
- * Phase 1 fix (2026-07-17) ‚Ä?before this, both sync paths hard-wrote '{}',
+ * Phase 1 fix (2026-07-17) ‚Äî before this, both sync paths hard-wrote '{}',
  * so a materialized GLM/Kimi row shadowed the catalog (models GET and
  * provider-resolver both let a same-id DB row win) and the picker lost
  * supportsEffort / supportedEffortLevels / effortNoteKey: the Auto/High/Max
@@ -4107,7 +4303,7 @@ export function alignEnabledWithCatalog(
     }[];
   const existingIds = new Set(rows.map(r => r.model_id));
 
-  // Phase 1 ‚Ä?compute every decision without writing. Same logic in dry-run
+  // Phase 1 ‚Äî compute every decision without writing. Same logic in dry-run
   // and apply paths so the preview shown to the user matches reality.
   //
   // `kind: 'enable'` always carries the next enable_source so we never
@@ -4140,7 +4336,7 @@ export function alignEnabledWithCatalog(
   }
 
   for (const row of rows) {
-    // Hard guard: any sign that the user has chosen for this row ‚Ü?leave
+    // Hard guard: any sign that the user has chosen for this row ‚Üí leave
     // alone. user_edited is the legacy signal; enable_source manual_*
     // is the canonical Phase B signal. Either is enough to opt out of
     // the system-managed reset.
@@ -4156,7 +4352,7 @@ export function alignEnabledWithCatalog(
     const shouldEnable = !!catEntry;
     const targetDisplay = catEntry?.displayName || row.model_id;
     const targetUpstream = catEntry?.upstreamModelId || row.model_id;
-    // null = catalog says nothing about capabilities ‚Ü?keep the column as-is.
+    // null = catalog says nothing about capabilities ‚Üí keep the column as-is.
     const targetCapabilities = catEntry ? serializeCatalogCapabilities(catEntry) : null;
 
     if (shouldEnable) {
@@ -4174,7 +4370,7 @@ export function alignEnabledWithCatalog(
       }
     } else {
       if (row.source === 'catalog') {
-        // Stale catalog seed ‚Ä?safe to remove (user_edited=0 already proven
+        // Stale catalog seed ‚Äî safe to remove (user_edited=0 already proven
         // by the isUserManaged guard above).
         decisions.push({ kind: 'prune', modelId: row.model_id });
         pruned++;
@@ -4191,13 +4387,13 @@ export function alignEnabledWithCatalog(
     return { enabled, disabled, unchanged, inserted, pruned };
   }
 
-  // Phase 2 ‚Ä?execute decisions in one transaction. The WHERE clauses
+  // Phase 2 ‚Äî execute decisions in one transaction. The WHERE clauses
   // re-assert the user-managed guard at write time so a row that flipped
   // to manual_* between phase 1 and phase 2 (race-free in practice
   // because we're in a single sync pass, but cheap belt-and-suspenders)
   // stays untouched.
   // capabilities_json via COALESCE(?, capabilities_json): a null param leaves
-  // the stored value untouched (catalog silent ‚Ü?don't erase discovered caps).
+  // the stored value untouched (catalog silent ‚Üí don't erase discovered caps).
   const enableStmt = db.prepare(
     `UPDATE provider_models
      SET enabled = 1, display_name = ?, upstream_model_id = ?,
@@ -4254,7 +4450,7 @@ export function alignEnabledWithCatalog(
 /**
  * Seed catalog defaults into provider_models when the row count is 0. Used
  * as a backfill for providers that can't be discovered (Xiaomi MiMo /
- * MiniMax / DeepSeek with `/anthropic` subpath etc.) ‚Ä?the catalog ships
+ * MiniMax / DeepSeek with `/anthropic` subpath etc.) ‚Äî the catalog ships
  * curated lists per preset and we surface them as `source='catalog'` rows.
  *
  * Idempotent: only inserts when the table is empty for this provider, so a
@@ -4320,22 +4516,15 @@ export function mergeCatalogManagedModels(
 
   const db = getDb();
   const rows = db.prepare(
-    `SELECT model_id, upstream_model_id, display_name, capabilities_json,
-            sort_order, source, user_edited, enable_source
+    `SELECT id, model_id, upstream_model_id, display_name, capabilities_json,
+            sort_order, enabled, source, user_edited, enable_source
      FROM provider_models
      WHERE provider_id = ?`,
-  ).all(providerId) as Array<{
-    model_id: string;
-    upstream_model_id: string;
-    display_name: string;
-    capabilities_json: string | null;
+  ).all(providerId) as Array<LocalCatalogIdentityRow & {
+    id: string;
     sort_order: number;
-    source: import('@/types').ProviderModelSource;
-    user_edited: number;
-    enable_source: import('@/types').ModelEnableSource;
   }>;
   const rowsById = new Map(rows.map(row => [row.model_id, row]));
-  const rowsByUpstream = new Map(rows.map(row => [row.upstream_model_id, row]));
   const now = new Date().toISOString().replace('T', ' ').split('.')[0];
   const insertStmt = db.prepare(
     `INSERT OR IGNORE INTO provider_models (id, provider_id, model_id, upstream_model_id, display_name, capabilities_json, variants_json, sort_order, enabled, created_at, source, last_refreshed_at, user_edited, enable_source)
@@ -4353,19 +4542,36 @@ export function mergeCatalogManagedModels(
        AND source = 'catalog' AND user_edited = 0
        AND enable_source NOT IN ('manual_enabled', 'manual_hidden')`,
   );
+  const updateLegacyStmt = db.prepare(
+    `UPDATE provider_models
+     SET upstream_model_id = ?, display_name = ?,
+         capabilities_json = COALESCE(?, capabilities_json), sort_order = ?,
+         source = 'catalog', enable_source = 'catalog'
+     WHERE id = ? AND provider_id = ? AND model_id = ?
+       AND upstream_model_id = ? AND display_name = ?
+       AND capabilities_json IS ?
+       AND user_edited = 0
+       AND enable_source NOT IN ('manual_enabled', 'manual_hidden')`,
+  );
 
   const isCatalogManaged = (row: (typeof rows)[number]) => row.source === 'catalog'
     && row.user_edited === 0
     && row.enable_source !== 'manual_enabled'
     && row.enable_source !== 'manual_hidden';
+  const isMergeManaged = (row: (typeof rows)[number], model: CatalogSyncModel) =>
+    isCatalogManaged(row) || isLegacyCatalogModelRow(row, model);
 
   // Catalog rows are movable, but every row outside that narrow ownership
   // boundary keeps its exact order. Allocate around those reserved slots so
   // adding a new catalog SKU never ties a user-pinned/manual row.
   const catalogIds = new Set(catalogModels.map(model => model.modelId));
+  const catalogById = new Map(catalogModels.map(model => [model.modelId, model]));
   const movableCatalogIds = new Set(
     rows
-      .filter(row => catalogIds.has(row.model_id) && isCatalogManaged(row))
+      .filter(row => {
+        const model = catalogById.get(row.model_id);
+        return catalogIds.has(row.model_id) && !!model && isMergeManaged(row, model);
+      })
       .map(row => row.model_id),
   );
   const reservedSortOrders = new Set(
@@ -4374,21 +4580,42 @@ export function mergeCatalogManagedModels(
       .map(row => row.sort_order),
   );
   const claimedModelIds = new Set<string>();
-  const claimedUpstreamIds = new Set(rowsByUpstream.keys());
+  const claimedUpstreamCounts = new Map<string, number>();
+  for (const row of rows) {
+    claimedUpstreamCounts.set(
+      row.upstream_model_id,
+      (claimedUpstreamCounts.get(row.upstream_model_id) ?? 0) + 1,
+    );
+  }
+  const isUpstreamClaimed = (upstreamModelId: string) =>
+    (claimedUpstreamCounts.get(upstreamModelId) ?? 0) > 0;
+  const releaseUpstream = (upstreamModelId: string) => {
+    const next = (claimedUpstreamCounts.get(upstreamModelId) ?? 0) - 1;
+    if (next <= 0) claimedUpstreamCounts.delete(upstreamModelId);
+    else claimedUpstreamCounts.set(upstreamModelId, next);
+  };
+  const claimUpstream = (upstreamModelId: string) => {
+    claimedUpstreamCounts.set(upstreamModelId, (claimedUpstreamCounts.get(upstreamModelId) ?? 0) + 1);
+  };
   const targetSortOrders = new Map<string, number>();
   catalogModels.forEach((model, index) => {
     if (claimedModelIds.has(model.modelId)) return;
     const upstreamModelId = model.upstreamModelId || model.modelId;
     const existing = rowsById.get(model.modelId);
-    if (existing && !isCatalogManaged(existing)) return;
-    if (!existing && claimedUpstreamIds.has(upstreamModelId)) return;
+    if (existing && !isMergeManaged(existing, model)) return;
+    if (existing && existing.upstream_model_id !== upstreamModelId && isUpstreamClaimed(upstreamModelId)) return;
+    if (!existing && isUpstreamClaimed(upstreamModelId)) return;
+
+    if (existing && existing.upstream_model_id !== upstreamModelId) {
+      releaseUpstream(existing.upstream_model_id);
+    }
 
     let targetSortOrder = index;
     while (reservedSortOrders.has(targetSortOrder)) targetSortOrder++;
     targetSortOrders.set(model.modelId, targetSortOrder);
     reservedSortOrders.add(targetSortOrder);
     claimedModelIds.add(model.modelId);
-    claimedUpstreamIds.add(upstreamModelId);
+    if (!existing || existing.upstream_model_id !== upstreamModelId) claimUpstream(upstreamModelId);
   });
 
   let inserted = 0;
@@ -4433,6 +4660,23 @@ export function mergeCatalogManagedModels(
         && (capabilitiesJson === null || existing.capabilities_json === capabilitiesJson);
       if (fieldsAlreadyMatch) return;
 
+      if (isLegacyCatalogModelRow(existing, model)) {
+        const result = updateLegacyStmt.run(
+          upstreamModelId,
+          displayName,
+          capabilitiesJson,
+          targetSortOrder,
+          existing.id,
+          providerId,
+          model.modelId,
+          existing.upstream_model_id,
+          existing.display_name,
+          existing.capabilities_json,
+        );
+        updated += result.changes;
+        return;
+      }
+
       const result = updateStmt.run(
         upstreamModelId,
         displayName,
@@ -4476,7 +4720,7 @@ export function upsertProviderModel(data: {
   const db = getDb();
   const id = crypto.randomBytes(16).toString('hex');
   const now = new Date().toISOString().replace('T', ' ').split('.')[0];
-  // ON CONFLICT preserves user_edited and enabled by default ‚Ä?those are the
+  // ON CONFLICT preserves user_edited and enabled by default ‚Äî those are the
   // user's own state; only the API-derived fields (upstream_model_id,
   // last_refreshed_at, source) update on a re-import. Use the dedicated
   // applyDiscoveryDiff helper for the refresh path so user edits stay safe.
@@ -4532,7 +4776,7 @@ export function updateProviderModelUserFields(
   // enable_source as the corresponding manual_* state so future
   // refreshes never flip it back to recommended/discovered. Other
   // edits (display_name / capabilities / sort_order) leave
-  // enable_source alone ‚Ä?those don't carry "I want this on/off"
+  // enable_source alone ‚Äî those don't carry "I want this on/off"
   // semantics.
   let nextEnableSource: import('@/types').ModelEnableSource = existing.enable_source;
   if (fields.enabled !== undefined && fields.enabled !== existing.enabled) {
@@ -4563,7 +4807,7 @@ export function deleteProviderModel(providerId: string, modelId: string): boolea
 /**
  * Bulk update of `last_refreshed_at` for all rows of one provider, without
  * touching any business field (enabled / source / display_name / etc.).
- * Used by the OpenRouter `/validate-models` route ‚Ä?refresh there is
+ * Used by the OpenRouter `/validate-models` route ‚Äî refresh there is
  * read-only validation against upstream, and only the timestamp moves.
  *
  * Returns the number of rows updated. Use the same wall-clock format as
@@ -4579,8 +4823,8 @@ export function touchProviderModelsRefreshed(providerId: string): number {
 }
 
 /**
- * "Recommended-but-not-user-edited" rows for a provider ‚Ä?used by the
- * OpenRouter "Êï¥ÁêÜÊó©ÊúüÂØºÂÖ•ÁöÑÁõÆÂΩ? entry to preview what would be hidden
+ * "Recommended-but-not-user-edited" rows for a provider ‚Äî used by the
+ * OpenRouter "Êï¥ÁêÜÊó©ÊúüÂØºÂÖ•ÁöÑÁõÆÂΩï" entry to preview what would be hidden
  * by a one-click cleanup. The WHERE clause guarantees:
  *   - never touches `enable_source IN ('manual_enabled', 'manual_hidden')`
  *   - never touches `user_edited = 1`
@@ -4608,7 +4852,7 @@ export function getRecommendedNotEditedRows(providerId: string): import('@/types
  * and `user_edited=1` so future OpenRouter validates / hypothetical
  * future refreshes can never flip them back on.
  *
- * Single SQL statement ‚Ä?no per-row loop, safe for the 300+ row case
+ * Single SQL statement ‚Äî no per-row loop, safe for the 300+ row case
  * that's the whole reason this entry exists.
  *
  * Returns the count of rows hidden.
@@ -4645,7 +4889,7 @@ export function hideRecommendedNotEditedRows(providerId: string): number {
  *       gets disabled on refresh, and vice versa)
  *   - existing user_edited=1 OR enable_source IN ('manual_enabled','manual_hidden'):
  *       UPDATE upstream_model_id + last_refreshed_at + source ONLY
- *       Never touch enabled / enable_source ‚Ä?that's a user choice
+ *       Never touch enabled / enable_source ‚Äî that's a user choice
  *   - DB-only (not in upstream): leave alone, caller surfaces as orphan
  *
  * `isRecommended` callback: caller (discover-models route) computes
@@ -4724,7 +4968,7 @@ export function applyDiscoveryDiff(
         && existing.enable_source !== 'manual_enabled'
         && existing.enable_source !== 'manual_hidden'
       ) {
-        // System-managed row ‚Ä?re-evaluate against current recommendation.
+        // System-managed row ‚Äî re-evaluate against current recommendation.
         updatePristineStmt.run(
           upstreamModelId, modelId, now,
           enabledOnInsert, enableSourceOnInsert,
@@ -4732,7 +4976,7 @@ export function applyDiscoveryDiff(
         );
         refreshedPristine++;
       } else {
-        // User has touched this row ‚Ä?never flip enabled / enable_source.
+        // User has touched this row ‚Äî never flip enabled / enable_source.
         updatePreservedStmt.run(upstreamModelId, now, providerId, modelId);
         refreshedPreserved++;
       }
@@ -4812,7 +5056,7 @@ export function getTokenUsageStats(days: number = 30, now?: Date): {
   // Daily bucketing: fetch raw rows and aggregate by local date in JS.
   // This handles DST correctly because getLocalDateString uses Date's
   // local-time methods, which account for the historical DST offset at
-  // each message's timestamp ‚Ä?unlike a single SQL offset modifier.
+  // each message's timestamp ‚Äî unlike a single SQL offset modifier.
   const rawRows = db.prepare(`
     SELECT
       m.created_at,
@@ -4840,7 +5084,7 @@ export function getTokenUsageStats(days: number = 30, now?: Date): {
   // Aggregate by (local_date, model)
   const buckets = new Map<string, { input_tokens: number; output_tokens: number; cost: number }>();
   for (const row of rawRows) {
-    // Parse UTC timestamp ‚Ü?local date via Date methods (DST-aware per row)
+    // Parse UTC timestamp ‚Üí local date via Date methods (DST-aware per row)
     const utcTs = new Date(row.created_at.replace(' ', 'T') + 'Z');
     const localDate = getLocalDateString(utcTs);
     const key = `${localDate}\0${row.model}`;
@@ -5098,7 +5342,7 @@ export function markContextEventSynced(id: string): void {
 /**
  * Acquire an exclusive lock for a session.
  * Uses SQLite's single-writer guarantee: within a transaction, delete expired
- * locks then INSERT. PK conflict = already locked ‚Ü?return false.
+ * locks then INSERT. PK conflict = already locked ‚Üí return false.
  */
 export function acquireSessionLock(
   sessionId: string,
@@ -5113,7 +5357,7 @@ export function acquireSessionLock(
   const txn = db.transaction(() => {
     // Delete expired locks first
     db.prepare("DELETE FROM session_runtime_locks WHERE expires_at < ?").run(now);
-    // Try to insert ‚Ä?PK conflict means session is already locked
+    // Try to insert ‚Äî PK conflict means session is already locked
     try {
       db.prepare(
         'INSERT INTO session_runtime_locks (session_id, lock_id, owner, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
@@ -5159,12 +5403,12 @@ export function releaseSessionLock(sessionId: string, lockId: string): boolean {
 
 /**
  * Read-only ownership check: does `lockId` still own the lock row for
- * `sessionId`? Pure SELECT ‚Ä?no writes, no side effects.
+ * `sessionId`? Pure SELECT ‚Äî no writes, no side effects.
  *
  * Deliberately does NOT check `expires_at`. Ownership (who holds the lock)
  * and liveness (TTL freshness) are separate concerns. A takeover only ever
  * happens inside acquireSessionLock, which deletes the stale row and inserts
- * a new one under a different lockId ‚Ä?so as long as THIS lockId's row still
+ * a new one under a different lockId ‚Äî so as long as THIS lockId's row still
  * exists, this lockId is still the owner, even if its TTL has lapsed. Callers
  * that also care about liveness must check TTL separately.
  */
@@ -5732,7 +5976,7 @@ export function deleteWeixinContextTokensByAccount(accountId: string): void {
 }
 
 // ==========================================
-// CLI Tools ‚Ä?Custom Tools
+// CLI Tools ‚Äî Custom Tools
 // ==========================================
 
 export function getAllCustomCliTools(): CustomCliTool[] {
@@ -5810,7 +6054,7 @@ export function deleteCustomCliTool(id: string): boolean {
 }
 
 // ==========================================
-// CLI Tools ‚Ä?Descriptions
+// CLI Tools ‚Äî Descriptions
 // ==========================================
 
 export function getAllCliToolDescriptions(): Record<string, { zh: string; en: string; structured?: unknown }> {
@@ -5880,7 +6124,7 @@ export function createScheduledTask(task: Omit<ScheduledTask, 'id' | 'created_at
   const id = crypto.randomBytes(8).toString('hex');
   // Phase 3 Step 3: `kind` is required on the type; the API + tool
   // schemas validate it server-side. We do NOT silently default here
-  // ‚Ä?letting an undefined slip through would re-introduce the
+  // ‚Äî letting an undefined slip through would re-introduce the
   // "natural-language reminder accidentally tries to call a model"
   // bug that the split was designed to prevent.
   if (task.kind !== 'reminder' && task.kind !== 'ai_task') {
@@ -5891,7 +6135,7 @@ export function createScheduledTask(task: Omit<ScheduledTask, 'id' | 'created_at
   // `'assistant_heartbeat'` only from `ensureHeartbeatTask`.
   const sourceValue: 'user' | 'assistant_heartbeat' =
     task.source === 'assistant_heartbeat' ? 'assistant_heartbeat' : 'user';
-  // v7 fix (defensive) ‚Ä?`notify_on_complete` is INTEGER in SQLite;
+  // v7 fix (defensive) ‚Äî `notify_on_complete` is INTEGER in SQLite;
   // better-sqlite3 throws on raw booleans. Callers should normalize
   // upstream (the route + AI tools do), but we coerce here as a
   // belt-and-suspenders so a future direct caller can't crash the DB
@@ -5908,7 +6152,7 @@ export function createScheduledTask(task: Omit<ScheduledTask, 'id' | 'created_at
 }
 
 /**
- * Phase 3 Step 4 ‚Ä?system-injected heartbeat task helpers. Heartbeat
+ * Phase 3 Step 4 ‚Äî system-injected heartbeat task helpers. Heartbeat
  * is identified by `source = 'assistant_heartbeat'` (kind stays
  * `'ai_task'`). `ensureHeartbeatTask` is idempotent: returns the
  * existing row if one already exists, otherwise creates one with the
@@ -5942,7 +6186,7 @@ export function listScheduledTasks(opts?: { status?: string }): ScheduledTask[] 
 
 export function getDueTasks(): ScheduledTask[] {
   const db = getDb();
-  // Phase 3 Step 3 fix ‚Ä?wrap `next_run` in datetime() so ISO strings
+  // Phase 3 Step 3 fix ‚Äî wrap `next_run` in datetime() so ISO strings
   // ('2026-05-09T09:05:00.000Z') compare correctly against `datetime('now')`
   // (which returns the space-separated form '2026-05-09 09:06:00').
   // The pre-fix comparison `next_run <= datetime('now')` did a string
@@ -5973,12 +6217,12 @@ export function updateScheduledTask(id: string, updates: Partial<ScheduledTask>)
  *     links to the notification event it produced;
  *   - `duration_ms` is now optional (running rows don't have one yet).
  *
- * One execution = one row. Use `updateTaskRunLog(runId, ‚Ä?` to flip
- * 'running' ‚Ü?'success' / 'error' on the same row instead of inserting
+ * One execution = one row. Use `updateTaskRunLog(runId, ‚Ä¶)` to flip
+ * 'running' ‚Üí 'success' / 'error' on the same row instead of inserting
  * a second.
  */
 /**
- * Phase 3 Step 4 ‚Ä?application-layer task_run_logs.status whitelist.
+ * Phase 3 Step 4 ‚Äî application-layer task_run_logs.status whitelist.
  * Includes the 5-state v2 enum AND the legacy `'success'` / `'error'`
  * values for backwards compatibility (existing rows stay untouched;
  * legacy callers writing those values continue to work, while new
@@ -6038,7 +6282,7 @@ export function insertTaskRunLog(log: {
 
 /**
  * Update an existing task_run_logs row in place. v3 plan locks
- * "one execution = one row" ‚Ä?terminal status flip happens here, not
+ * "one execution = one row" ‚Äî terminal status flip happens here, not
  * via a second insert. Caller passes only the fields that changed.
  */
 export function updateTaskRunLog(
@@ -6082,7 +6326,7 @@ export function updateTaskRunLog(
   db.prepare(`UPDATE task_run_logs SET ${fields.join(', ')} WHERE id = ?`).run(...values);
 }
 
-/** Pull the recent execution history for a task ‚Ä?newest first. */
+/** Pull the recent execution history for a task ‚Äî newest first. */
 export function listTaskRunLogs(taskId: string, limit = 50): Array<{
   id: string;
   task_id: string;
@@ -6111,7 +6355,7 @@ export function listTaskRunLogs(taskId: string, limit = 50): Array<{
 }
 
 /**
- * Phase 3 Step 4 ‚Ä?inline-join helper used by
+ * Phase 3 Step 4 ‚Äî inline-join helper used by
  * `/api/chat/sessions/[id]/messages` to surface `task_run_logs` rows
  * referenced by `messages.task_run_id` in a single round-trip. Returns
  * a record keyed by run id so the API caller can build a flat
@@ -6172,7 +6416,7 @@ export function getTaskRunSummariesByIds(
 }
 
 /**
- * Phase 3 Step 4 ‚Ä?fetch a single task_run_logs row by id, used by
+ * Phase 3 Step 4 ‚Äî fetch a single task_run_logs row by id, used by
  * `/api/tasks/runs/[runId]/cancel` and the WaitingForPermissionPanel
  * to confirm a run is still in `waiting_for_permission` before
  * cancelling. Returns undefined when the row doesn't exist.
@@ -6205,7 +6449,7 @@ export function getTaskRunById(runId: string): {
 }
 
 // ==========================================
-// Phase 3 Step 3 ‚Ä?notification events / deliveries
+// Phase 3 Step 3 ‚Äî notification events / deliveries
 // ==========================================
 
 /**
@@ -6244,20 +6488,20 @@ export function insertNotificationEvent(evt: {
 }
 
 /**
- * v5 fix ‚Ä?UPSERT a delivery row by `(event_id, channel)`. ack route +
+ * v5 fix ‚Äî UPSERT a delivery row by `(event_id, channel)`. ack route +
  * `sendNotification` channel-enumeration both use this; the DB
  * `UNIQUE(event_id, channel)` constraint plus this helper guarantees
  * at most one row per pair regardless of how many ack hits land.
  *
  * Behavior:
- *   - First call ‚Ü?INSERT; sets `created_at`, leaves `acked_at` null
+ *   - First call ‚Üí INSERT; sets `created_at`, leaves `acked_at` null
  *     unless the initial state is terminal (delivered / error /
  *     not_configured / skipped).
- *   - Subsequent calls ‚Ü?UPDATE existing row.
+ *   - Subsequent calls ‚Üí UPDATE existing row.
  *   - State transition guard: a row already in a terminal SUCCESS
  *     state ('delivered') will not be flipped to a terminal FAILURE
- *     ('error') by a stale ack and vice versa. `queued ‚Ü?terminal`
- *     and `not_configured ‚Ü?terminal` (config arrived after) are
+ *     ('error') by a stale ack and vice versa. `queued ‚Üí terminal`
+ *     and `not_configured ‚Üí terminal` (config arrived after) are
  *     allowed; everything else is a no-op (returns the existing row).
  *
  * Returns whether the call wrote anything (insert or update). False
@@ -6279,7 +6523,7 @@ export function upsertNotificationDelivery(args: {
       return true; // idempotent re-ack on the same terminal status
     }
     if (TERMINAL.has(existing.status) && existing.status !== args.status) {
-      return false; // refuse delivered ‚Ü?error or any backwards transition
+      return false; // refuse delivered ‚Üî error or any backwards transition
     }
     const acked = TERMINAL.has(args.status) ? new Date().toISOString() : null;
     db.prepare(

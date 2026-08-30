@@ -1,5 +1,5 @@
 /**
- * Phase 5d Phase 3 (2026-05-17) �?Runtime Capability Adapter contract tests.
+ * Phase 5d Phase 3 (2026-05-17) — Runtime Capability Adapter contract tests.
  *
  * Phase 2's `compileContext` is a pure function with its own
  * `harness-context-compiler.test.ts` pinning catalog hygiene + widget
@@ -10,16 +10,16 @@
  * facades thin out the per-runtime entry points so each entry point
  * consumes exactly ONE adapter call. These tests pin:
  *
- *   1. Shape contract �?each facade returns the documented fields.
- *   2. Phase 2 review invariants �?survived the migration into Phase 3:
+ *   1. Shape contract — each facade returns the documented fields.
+ *   2. Phase 2 review invariants — survived the migration into Phase 3:
  *      a. ClaudeCode/Native ALWAYS produce a string (never null) so
  *         the caller can inject the prompt even without a base
  *         systemPrompt.
  *      b. Native `codepilot-media` enabled set with BOTH
  *         `media_import` + `image_generation` emits BOTH tool names.
- *   3. Cross-runtime fragment identity �?the compiler's "same fragment
+ *   3. Cross-runtime fragment identity — the compiler's "same fragment
  *      text across runtimes" promise is preserved through each facade.
- *   4. Entry-point cleanliness �?`claude-client.ts` / `builtin-tools/index.ts`
+ *   4. Entry-point cleanliness — `claude-client.ts` / `builtin-tools/index.ts`
  *      / `codex/proxy/unified-adapter.ts` no longer import
  *      `compileContext` directly (drift surface closed).
  */
@@ -54,17 +54,17 @@ function baseInput(
     workingDirectory: '/tmp/test-workspace',
     providerId: 'prov-test',
     model: 'test-model',
-    userPrompt: 'irrelevant �?gating happens in caller',
+    userPrompt: 'irrelevant — gating happens in caller',
     enabledCapabilities: new Set<string>(),
     ...overrides,
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// 1. Shape contract �?each facade returns the documented fields.
+// 1. Shape contract — each facade returns the documented fields.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('adaptForClaudeCode �?shape contract', () => {
+describe('adaptForClaudeCode — shape contract', () => {
   it('returns systemPromptAppend (string) + mcpServerNames + allowedToolNames + compiled', () => {
     const out = adaptForClaudeCode(
       baseInput({ enabledCapabilities: new Set(['widget']) }),
@@ -76,7 +76,7 @@ describe('adaptForClaudeCode �?shape contract', () => {
     assert.equal(out.compiled.runtimeHints.claudecode_sdk !== undefined, true);
   });
 
-  it('empty enabledCapabilities �?empty append + empty hint arrays (no nulls)', () => {
+  it('empty enabledCapabilities → empty append + empty hint arrays (no nulls)', () => {
     const out = adaptForClaudeCode(
       baseInput({ enabledCapabilities: new Set<string>() }),
     );
@@ -85,7 +85,7 @@ describe('adaptForClaudeCode �?shape contract', () => {
     assert.equal(out.allowedToolNames.length, 0);
   });
 
-  it('widget enabled �?systemPromptAppend non-empty + mcpServerNames includes "codepilot-widget" + allowed includes widget tool', () => {
+  it('widget enabled → systemPromptAppend non-empty + mcpServerNames includes "codepilot-widget" + allowed includes widget tool', () => {
     const out = adaptForClaudeCode(
       baseInput({ enabledCapabilities: new Set(['widget']) }),
     );
@@ -95,7 +95,7 @@ describe('adaptForClaudeCode �?shape contract', () => {
   });
 });
 
-describe('adaptForNative �?shape contract', () => {
+describe('adaptForNative — shape contract', () => {
   it('returns systemPromptText (string) + toolSetKeys + compiled', () => {
     const out = adaptForNative(
       baseInput({ enabledCapabilities: new Set(['widget']) }),
@@ -106,7 +106,7 @@ describe('adaptForNative �?shape contract', () => {
     assert.equal(out.compiled.runtimeHints.native !== undefined, true);
   });
 
-  it('empty enabledCapabilities �?empty text + empty toolSetKeys (no nulls)', () => {
+  it('empty enabledCapabilities → empty text + empty toolSetKeys (no nulls)', () => {
     const out = adaptForNative(
       baseInput({ enabledCapabilities: new Set<string>() }),
     );
@@ -115,7 +115,7 @@ describe('adaptForNative �?shape contract', () => {
   });
 });
 
-describe('adaptForCodexProxy �?shape contract', () => {
+describe('adaptForCodexProxy — shape contract', () => {
   it('returns systemPromptInstructions + builtinToolNames + stopWhen + stepCount + compiled', () => {
     const out = adaptForCodexProxy(
       baseInput({ enabledCapabilities: new Set(['widget']) }),
@@ -128,7 +128,7 @@ describe('adaptForCodexProxy �?shape contract', () => {
     assert.equal(out.compiled.runtimeHints.codex_proxy !== undefined, true);
   });
 
-  it('empty enabledCapabilities �?empty instructions + builtinToolNames=�?+ stopWhen=never', () => {
+  it('empty enabledCapabilities → empty instructions + builtinToolNames=∅ + stopWhen=never', () => {
     const out = adaptForCodexProxy(
       baseInput({ enabledCapabilities: new Set<string>() }),
     );
@@ -137,7 +137,7 @@ describe('adaptForCodexProxy �?shape contract', () => {
     assert.equal(out.stopWhen, 'never');
     // `stepCount` is the static `BUILTIN_BRIDGE_STEP_LIMIT` (8) the
     // catalog declares for the Codex proxy hint, regardless of the
-    // enabled set �?the caller (`unified-adapter.ts`) gates use of
+    // enabled set — the caller (`unified-adapter.ts`) gates use of
     // `stopWhen: stepCountIs(stepCount)` on `builtinToolNames.size > 0`
     // separately, so the constant being non-zero when nothing is
     // enabled is harmless. Pin the constant so a future refactor of
@@ -145,7 +145,7 @@ describe('adaptForCodexProxy �?shape contract', () => {
     assert.equal(out.stepCount, 8);
   });
 
-  it('capability enabled �?stopWhen=stepCountIs with stepCount=8 (matches BUILTIN_BRIDGE_STEP_LIMIT)', () => {
+  it('capability enabled → stopWhen=stepCountIs with stepCount=8 (matches BUILTIN_BRIDGE_STEP_LIMIT)', () => {
     const out = adaptForCodexProxy(
       baseInput({ enabledCapabilities: new Set(['widget']) }),
     );
@@ -155,12 +155,12 @@ describe('adaptForCodexProxy �?shape contract', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 2a. Phase 2 review invariant �?capability prompt is always a string
+// 2a. Phase 2 review invariant — capability prompt is always a string
 //     (never null) so the runtime entry point can inject it even
 //     when no upstream systemPrompt was supplied.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('adapter Phase 2 review invariant �?string-always shape', () => {
+describe('adapter Phase 2 review invariant — string-always shape', () => {
   it('ClaudeCode adapter returns string systemPromptAppend even with no base prompt context', () => {
     const out = adaptForClaudeCode(
       baseInput({ enabledCapabilities: new Set(['tasks_and_notify']) }),
@@ -182,11 +182,11 @@ describe('adapter Phase 2 review invariant �?string-always shape', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 2b. Phase 2 review invariant �?Native `codepilot-media` exposes
+// 2b. Phase 2 review invariant — Native `codepilot-media` exposes
 //     BOTH `media_import` + `image_generation`.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('adapter Phase 2 review invariant �?Native media dual capability', () => {
+describe('adapter Phase 2 review invariant — Native media dual capability', () => {
   it('Native adapter with {media_import, image_generation} emits both tool names', () => {
     const out = adaptForNative(
       baseInput({
@@ -215,20 +215,20 @@ describe('adapter Phase 2 review invariant �?Native media dual capability', () 
     const clause = nextCaseIdx >= 0 ? after.slice(0, nextCaseIdx) : after;
     assert.ok(
       /['"]media_import['"]/.test(clause),
-      "codepilot-media �?does not return 'media_import'",
+      "codepilot-media → does not return 'media_import'",
     );
     assert.ok(
       /['"]image_generation['"]/.test(clause),
-      "codepilot-media �?does not return 'image_generation'",
+      "codepilot-media → does not return 'image_generation'",
     );
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 2c. Phase 5e round 8 follow-up �?Native `codepilot-notify` group
+// 2c. Phase 5e round 8 follow-up — Native `codepilot-notify` group
 //     mounts BOTH the task/notify quartet AND `codepilot_hatch_buddy`,
 //     so it must map to BOTH `tasks_and_notify` + `assistant_buddy`.
-//     Same shape as the media case �?Codex review caught this gap
+//     Same shape as the media case — Codex review caught this gap
 //     after the Native parity patch landed: tool was mounted at
 //     runtime, exposure.kind flipped to ai_sdk_tool, but the compiler
 //     never saw `assistant_buddy` because the group map only returned
@@ -236,7 +236,7 @@ describe('adapter Phase 2 review invariant �?Native media dual capability', () 
 //     second id back out.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('adapter Phase 5e round 8 �?Native notify dual capability', () => {
+describe('adapter Phase 5e round 8 — Native notify dual capability', () => {
   it('Native adapter with {tasks_and_notify, assistant_buddy} emits codepilot_hatch_buddy in toolSetKeys', () => {
     const out = adaptForNative(
       baseInput({
@@ -245,14 +245,14 @@ describe('adapter Phase 5e round 8 �?Native notify dual capability', () => {
     );
     assert.ok(
       out.toolSetKeys.includes('codepilot_hatch_buddy'),
-      'assistant_buddy is enabled but codepilot_hatch_buddy is not in toolSetKeys �?adapter not forwarding the second capability',
+      'assistant_buddy is enabled but codepilot_hatch_buddy is not in toolSetKeys — adapter not forwarding the second capability',
     );
   });
 
   it('Native adapter with {tasks_and_notify} ONLY does NOT emit codepilot_hatch_buddy (compiler shape, not Native ToolSet shape)', () => {
     // Belt: the compiler honors the enabledCapabilities set verbatim.
     // If a caller passes only tasks_and_notify, hatch_buddy must NOT
-    // appear in the compiler's toolSetKeys �?that's the signal the
+    // appear in the compiler's toolSetKeys — that's the signal the
     // capability wasn't gated in. (The Native ToolSet still carries
     // hatch_buddy because createNotificationTools mounts it
     // unconditionally; the compiler's view is what matters for
@@ -281,17 +281,17 @@ describe('adapter Phase 5e round 8 �?Native notify dual capability', () => {
     const clause = nextCaseIdx >= 0 ? tail.slice(0, nextCaseIdx) : tail.slice(0, 2000);
     assert.ok(
       /['"]tasks_and_notify['"]/.test(clause),
-      "codepilot-notify �?does not return 'tasks_and_notify'",
+      "codepilot-notify → does not return 'tasks_and_notify'",
     );
     assert.ok(
       /['"]assistant_buddy['"]/.test(clause),
-      "codepilot-notify �?does not return 'assistant_buddy' �?Native factory mounts codepilot_hatch_buddy but the compiler won't know about the capability",
+      "codepilot-notify → does not return 'assistant_buddy' — Native factory mounts codepilot_hatch_buddy but the compiler won't know about the capability",
     );
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 3. Cross-runtime fragment identity �?the compiler promise is
+// 3. Cross-runtime fragment identity — the compiler promise is
 //    preserved through every facade. For any capability that is
 //    `live` and supported on all three runtimes, the compiled
 //    fragment text MUST be byte-identical across the three adapters.
@@ -369,7 +369,7 @@ describe('adapter cross-runtime fragment identity', () => {
     assert.equal(wireA!.text, wireB!.text);
     assert.equal(wireB!.text, wireC!.text);
 
-    // Per Phase 2 review invariant #10 �?canonical JSON appears once.
+    // Per Phase 2 review invariant #10 — canonical JSON appears once.
     const occurrences = (a.systemPromptAppend.match(
       new RegExp(escapeRegExp(CANONICAL_SHOW_WIDGET_JSON), 'g'),
     ) || []).length;
@@ -378,7 +378,7 @@ describe('adapter cross-runtime fragment identity', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 4. Entry-point cleanliness �?three runtime entry points no longer
+// 4. Entry-point cleanliness — three runtime entry points no longer
 //    import `compileContext` directly. Drift surface closed.
 // ─────────────────────────────────────────────────────────────────────
 
@@ -424,7 +424,7 @@ describe('adapter entry-point cleanliness', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// 5. Codex proxy MUST consume adapter outputs �?no local step-limit
+// 5. Codex proxy MUST consume adapter outputs — no local step-limit
 //    constant; PathInput shape carries stopWhen + stepCount from
 //    `adapted.*`; bridge.toolNames is no longer the suppression set.
 //
@@ -435,7 +435,7 @@ describe('adapter entry-point cleanliness', () => {
 //    builtinToolNames` fields half-dead.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Codex proxy �?single source for stop / step / builtin tool names', () => {
+describe('Codex proxy — single source for stop / step / builtin tool names', () => {
   function adapterSrc(): string {
     return readSource('src/lib/codex/proxy/unified-adapter.ts');
   }
@@ -448,7 +448,7 @@ describe('Codex proxy �?single source for stop / step / builtin tool names', ()
     assert.equal(
       /^\s*const\s+BUILTIN_BRIDGE_STEP_LIMIT\s*=/m.test(src),
       false,
-      'unified-adapter.ts must not keep its own step-limit constant �?the value is sourced from adapter.stepCount (compiler-owned CODEX_BRIDGE_STEP_LIMIT)',
+      'unified-adapter.ts must not keep its own step-limit constant — the value is sourced from adapter.stepCount (compiler-owned CODEX_BRIDGE_STEP_LIMIT)',
     );
   });
 
@@ -479,12 +479,12 @@ describe('Codex proxy �?single source for stop / step / builtin tool names', ()
   it('bridge.toolNames is no longer passed straight to streamPath / nonStreamPath', () => {
     const src = adapterSrc();
     // Pre-fix shape was `builtinToolNames: bridge.toolNames`. Forbid
-    // it inside PathInput callers �?the suppression set must come
+    // it inside PathInput callers — the suppression set must come
     // from the adapter, not from bridge state.
     assert.equal(
       /builtinToolNames:\s*bridge\.toolNames/.test(src),
       false,
-      'streamPath / nonStreamPath must NOT receive bridge.toolNames directly �?they receive adapter.builtinToolNames (catalog-derived single source)',
+      'streamPath / nonStreamPath must NOT receive bridge.toolNames directly — they receive adapter.builtinToolNames (catalog-derived single source)',
     );
   });
 
@@ -518,7 +518,7 @@ describe('Codex proxy �?single source for stop / step / builtin tool names', ()
     // Pin the runtime contract: when any capability is enabled, the
     // adapter's stepCount equals the compiler-owned constant. The
     // literal `8` here is the test's expectation of the constant's
-    // current value �?if that constant changes, this assertion
+    // current value — if that constant changes, this assertion
     // changes alongside the source pin above.
     assert.equal(out.stepCount, 8);
     assert.equal(out.stopWhen, 'stepCountIs');

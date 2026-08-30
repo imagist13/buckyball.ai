@@ -57,7 +57,7 @@ describe('Slash command popover trigger detection', () => {
   });
 
   it('typing "/" right after text does NOT trigger skill mode', () => {
-    // Regex alone can't distinguish "hello/skill" from "src/app" â€?the
+    // Regex alone can't distinguish "hello/skill" from "src/app" â€” the
     // slash button inserts a leading space for the user-click path instead.
     const result = detectPopoverTrigger('hello/', 6);
     assert.equal(result, null);

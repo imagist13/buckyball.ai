@@ -12,7 +12,7 @@ import {
 import type { ErrorResponse } from '@/types';
 
 /*
- * POST /api/files/rename â€?rename or move a file/directory. Both `from` and
+ * POST /api/files/rename â€” rename or move a file/directory. Both `from` and
  * `to` run the same path-safety gauntlet; cross-baseDir moves are rejected
  * outright so a user can't drag a workspace file out into ~/Desktop by
  * mistake.
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     assertWritablePath(resolvedTo, baseDir);
     await assertNoSymlinkInChain(resolvedFrom);
     await assertNoSymlinkInChain(path.dirname(resolvedTo));
-    // Real-path check on both endpoints â€?the from side must not resolve
+    // Real-path check on both endpoints â€” the from side must not resolve
     // outside baseDir (no cross-root rename via a planted symlink), and
     // the to side must not either (when we're overwriting an existing
     // target). allowMissing=true for `to` because a brand-new target
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
     if (toExists && overwrite) {
       const toStat = await fs.lstat(resolvedTo);
-      // Forbid type conversion â€?rename a file *to* a directory path only if
+      // Forbid type conversion â€” rename a file *to* a directory path only if
       // both endpoints already share a type.
       if (toStat.isDirectory() !== fromStat.isDirectory()) {
         throw new FileIOError(

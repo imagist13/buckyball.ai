@@ -1,21 +1,21 @@
 /**
- * Phase 5c (2026-05-16) â€?translate-stream suppresses bridge-owned
+ * Phase 5c (2026-05-16) â€” translate-stream suppresses bridge-owned
  * tool events.
  *
  * The bridge tool's `execute()` ran the work server-side and emitted
  * canonical events via the side-channel bus. The Codex-bound
  * Responses SSE stream must NOT also forward a function_call
- * output_item for the same tool â€?Codex would try to execute it,
+ * output_item for the same tool â€” Codex would try to execute it,
  * fail, and the run gets stuck. Pre-5c, GLM/Kimi seeing imagegen
  * Skill text + no real tool was the trigger for the CLI fallback;
  * leaking a function_call here would put us right back in a similar
  * failure mode (Codex trying to execute `codepilot_generate_image`).
  *
  * The suppression rule:
- *   - tool-input-start with toolName in builtinToolNames â†?tracked
+ *   - tool-input-start with toolName in builtinToolNames â†’ tracked
  *     in suppressedToolCallIds set; no output_index reserved
- *   - tool-call with same toolName OR id in suppressed set â†?drop
- *   - tool-result / tool-error â†?always dropped (Codex has no slot)
+ *   - tool-call with same toolName OR id in suppressed set â†’ drop
+ *   - tool-result / tool-error â†’ always dropped (Codex has no slot)
  *   - same-named function calls from upstream that AREN'T in the
  *     builtin set still flow through normally
  */
@@ -50,8 +50,8 @@ async function collect(opts: { source: AsyncIterable<TextStreamPart<ToolSet>>; b
   return out;
 }
 
-describe('translate-stream â€?bridge-owned tools never reach Codex', () => {
-  it('tool-input-start + tool-call for a built-in name â†?NO function_call output_item', async () => {
+describe('translate-stream â€” bridge-owned tools never reach Codex', () => {
+  it('tool-input-start + tool-call for a built-in name â†’ NO function_call output_item', async () => {
     const events = await collect({
       source: iter([
         { type: 'start' } as TextStreamPart<ToolSet>,
@@ -114,7 +114,7 @@ describe('translate-stream â€?bridge-owned tools never reach Codex', () => {
 
   it('output_index sequence stays gap-free when bridge tool is suppressed', async () => {
     // If the suppression accidentally still incremented nextOutputIndex,
-    // Codex would see indices like [0, 2, 3] with no item at 1 â€?its
+    // Codex would see indices like [0, 2, 3] with no item at 1 â€” its
     // reader's per-index addressing would break.
     const events = await collect({
       source: iter([

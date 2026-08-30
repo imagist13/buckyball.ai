@@ -1,5 +1,5 @@
 /**
- * Context Estimator â€?token estimation and context window budgeting.
+ * Context Estimator â€” token estimation and context window budgeting.
  *
  * Provides rough token estimation (no API calls) for pre-flight context
  * size checks. Used by route.ts to decide whether to trigger compression,

@@ -6,14 +6,14 @@
  * permission request already lives in `permission_requests`; what that table
  * cannot yet express is **who decided** (`rule-engine` / `sdk-reviewer` /
  * `user`), because it has no column for it. Adding one is a schema change and
- * is out of scope here �?see the plan's decision log. Until then the source
+ * is out of scope here — see the plan's decision log. Until then the source
  * breadcrumb travels on the event stream and this log, both of which are
  * enough for the UI to tell "模型代审拒绝" from "用户拒绝".
  *
  * ## The log line carries no free text (review round #5, P1)
  *
- * It writes only closed-vocabulary fields �?state, reviewerSource, toolName,
- * humanOnlyCategory, outcome �?every one of which is drawn from a union
+ * It writes only closed-vocabulary fields — state, reviewerSource, toolName,
+ * humanOnlyCategory, outcome — every one of which is drawn from a union
  * defined in `review-event.ts`. `reason` is deliberately NOT among them.
  *
  * `redactReviewReason` scrubs *secret-shaped* substrings (API keys, bearer
@@ -37,7 +37,7 @@ type ReviewEventListener = (event: PermissionReviewEvent) => void;
 const listeners = new Set<ReviewEventListener>();
 
 /**
- * Subscribe to review events �?used by tests and, later, by the UI event
+ * Subscribe to review events — used by tests and, later, by the UI event
  * stream. Returns an unsubscribe function.
  */
 export function onReviewEvent(listener: ReviewEventListener): () => void {
@@ -52,7 +52,8 @@ export function onReviewEvent(listener: ReviewEventListener): () => void {
 export function emitReviewEvent(event: PermissionReviewEvent): PermissionReviewEvent {
   const safe = buildReviewEvent(event);
 
-  // Closed vocabulary only. `reason` is free text authored around tool input �?  // see the module note. `has-reason` records that one exists without quoting it.
+  // Closed vocabulary only. `reason` is free text authored around tool input —
+  // see the module note. `has-reason` records that one exists without quoting it.
   console.log(
     `[permission-review] ${safe.state} tool=${safe.toolName} by=${safe.reviewerSource}`
       + ` session=${safe.sessionId.slice(0, 8)}`
@@ -71,7 +72,7 @@ export function emitReviewEvent(event: PermissionReviewEvent): PermissionReviewE
   return safe;
 }
 
-/** Test-only �?drop all subscribers. */
+/** Test-only — drop all subscribers. */
 export function __resetReviewEventListeners(): void {
   listeners.clear();
 }

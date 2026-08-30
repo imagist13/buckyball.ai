@@ -1,20 +1,20 @@
 /**
- * External Framework Harness scanner â?Phase 5e Phase 1 (2026-05-17).
+ * External Framework Harness scanner — Phase 5e Phase 1 (2026-05-17).
  *
  * Surfaces user-installed extensions in OTHER agent frameworks
- * (`~/.claude/*`, `~/.codex/*`) into buckyball.ai's HarnessBundle so:
+ * (`~/.claude/*`, `~/.codex/*`) into CodePilot's HarnessBundle so:
  *
  *   - The model knows the user has e.g. a custom `~/.claude/mcp.json`
  *     even when running the current turn through Codex Runtime (the
  *     Codex side can't execute a ClaudeCode-only MCP, but it CAN
- *     mention "ä½ å¨ ClaudeCode éæäº?Xï¼å¦æè¦ç¨åå?ClaudeCode
+ *     mention "你在 ClaudeCode 里挂了 X，如果要用切回 ClaudeCode
  *     Runtime").
  *
  *   - Settings UI lists the user's external configuration cross-
  *     framework so they understand their full plugin surface in one
  *     place.
  *
- * ââ Strict safety boundaries ââââââââââââââââââââââââââââââââââââââ
+ * ── Strict safety boundaries ──────────────────────────────────────
  *
  *   1. **Read-only.** Never writes any file.
  *
@@ -33,7 +33,7 @@
  *
  * If a future scanner needs to inspect a file that COULD carry
  * secrets, the read must go through `readSafeConfig()` below which
- * rejects entire files (not field-level redaction â?too fragile).
+ * rejects entire files (not field-level redaction — too fragile).
  */
 
 import fs from 'node:fs';
@@ -70,7 +70,7 @@ function readSafeConfig(filePath: string): string | null {
   try {
     const stat = fs.statSync(filePath);
     if (!stat.isFile()) return null;
-    // Reject large files defensively â?config files are small;
+    // Reject large files defensively — config files are small;
     // anything > 1MB is suspicious (could be a leaked secrets store).
     if (stat.size > 1024 * 1024) return null;
     return fs.readFileSync(filePath, 'utf-8');
@@ -82,27 +82,27 @@ function readSafeConfig(filePath: string): string | null {
 /**
  * Scan external framework user configurations.
  *
- * The current Runtime informs the `executable` field â?extensions
+ * The current Runtime informs the `executable` field — extensions
  * that belong to the same framework as the active Runtime get
  * `executable: true` (subject to capability-contract); others get
  * `executable: false` + a perceptionHint telling the user / model
  * which Runtime to switch to.
  */
 export function scanExternalFrameworkExtensions(opts: {
-  /** Active Runtime â?used to mark extensions belonging to the same
+  /** Active Runtime — used to mark extensions belonging to the same
    *  framework as executable. */
   readonly activeFramework?: ExternalFrameworkId;
-  /** Override home directory â?used by tests with tmpdir. Defaults
+  /** Override home directory — used by tests with tmpdir. Defaults
    *  to `os.homedir()`. */
   readonly homeDir?: string;
 } = {}): readonly ExternalFrameworkHarnessRef[] {
   const home = opts.homeDir ?? os.homedir();
   const out: ExternalFrameworkHarnessRef[] = [];
 
-  // ââ ClaudeCode (~/.claude/*) ââââââââââââââââââââââââââââââââââââââ
+  // ── ClaudeCode (~/.claude/*) ──────────────────────────────────────
   out.push(...scanClaudeCodeFramework(home, opts.activeFramework));
 
-  // ââ Codex (~/.codex/*) âââââââââââââââââââââââââââââââââââââââââââ
+  // ── Codex (~/.codex/*) ───────────────────────────────────────────
   out.push(...scanCodexFramework(home, opts.activeFramework));
 
   return out;
@@ -146,7 +146,7 @@ function scanClaudeCodeFramework(
         });
       }
     } catch {
-      // JSON malformed â?skip
+      // JSON malformed — skip
     }
   }
 
@@ -215,7 +215,7 @@ function scanCodexFramework(
       ? undefined
       : `Detected in your Codex config (~/.codex/${kind}). Not callable in the current Runtime; switch to Codex Runtime to use it.`;
 
-  // ~/.codex/config.toml â?Codex CLI config. We DON'T parse TOML
+  // ~/.codex/config.toml — Codex CLI config. We DON'T parse TOML
   // (no deps + secrets risk); we only confirm the file's existence
   // as evidence that the user uses Codex. Auth fields are not read.
   const configToml = path.join(codexDir, 'config.toml');
@@ -231,7 +231,7 @@ function scanCodexFramework(
     });
   }
 
-  // ~/.codex/plugins/ â?directory of installed Codex plugins
+  // ~/.codex/plugins/ — directory of installed Codex plugins
   const pluginsDir = path.join(codexDir, 'plugins');
   for (const name of listSubdirsSafe(pluginsDir)) {
     out.push({
@@ -245,7 +245,7 @@ function scanCodexFramework(
     });
   }
 
-  // ~/.codex/prompts/ â?user prompt fragments (Codex 0.4+)
+  // ~/.codex/prompts/ — user prompt fragments (Codex 0.4+)
   const promptsDir = path.join(codexDir, 'prompts');
   for (const name of listFilenamesSafe(promptsDir, '.md')) {
     out.push({
@@ -297,10 +297,10 @@ function listFilenamesSafe(dir: string, ext?: string): readonly string[] {
   }
 }
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-// Test helpers â?exported so contract tests can verify the safety
+// ─────────────────────────────────────────────────────────────────────
+// Test helpers — exported so contract tests can verify the safety
 // boundary directly without spawning fixtures.
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
 /** Exported for unit tests: verify the auth-token allowlist. */
 export const __TEST_isFilenameSafe = isFilenameSafe;

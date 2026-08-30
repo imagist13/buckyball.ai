@@ -1,9 +1,9 @@
 /**
- * Codex dynamic tool-call bridge â€?Phase 8 Phase 5 (2026-05-27).
+ * Codex dynamic tool-call bridge â€” Phase 8 Phase 5 (2026-05-27).
  *
  * When the model AUTONOMOUSLY calls a tool mid-turn, Codex's app-server
  * sends the CLIENT a server-originated `item/tool/call` request (a
- * "dynamic tool call", params `DynamicToolCallParams`) â€?NOT the
+ * "dynamic tool call", params `DynamicToolCallParams`) â€” NOT the
  * clientâ†’server `mcpServer/tool/call` our Phase 0 POC drove. Without a
  * handler, `CodexAppServerClient.routeServerRequest` answers
  * `-32601 method-not-found` and Codex marks the call rejected. That is
@@ -121,7 +121,7 @@ function resultToText(result: McpToolCallResultLike): string {
  * Handle a Codex `item/tool/call` (dynamic tool call) by forwarding the
  * namespaced tool to Codex's MCP manager and shaping the response.
  * `forward` is `client.request('mcpServer/tool/call', ...)` in production;
- * tests inject a fake. NEVER throws â€?malformed input or a forward failure
+ * tests inject a fake. NEVER throws â€” malformed input or a forward failure
  * becomes a graceful `success: false` response (throwing would surface as
  * `-32603` and Codex would treat the call as a hard error).
  */

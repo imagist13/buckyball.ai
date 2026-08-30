@@ -8,15 +8,15 @@ import type { FeishuConfig } from './types';
  * Check if a user is authorized based on the current config.
  *
  * DM policy logic:
- * - disabled â†?false
- * - open â†?allowFrom must include '*' or user's open_id
- * - allowlist â†?allowFrom must include user's open_id
- * - pairing â†?always true (pairing handled elsewhere)
+ * - disabled â†’ false
+ * - open â†’ allowFrom must include '*' or user's open_id
+ * - allowlist â†’ allowFrom must include user's open_id
+ * - pairing â†’ always true (pairing handled elsewhere)
  *
  * Group chat logic (chatId starts with 'oc_'):
- * - groupPolicy === 'disabled' â†?false
- * - groupPolicy === 'allowlist' â†?groupAllowFrom must include chatId
- * - groupPolicy === 'open' â†?true
+ * - groupPolicy === 'disabled' â†’ false
+ * - groupPolicy === 'allowlist' â†’ groupAllowFrom must include chatId
+ * - groupPolicy === 'open' â†’ true
  */
 export function isUserAuthorized(
   config: FeishuConfig,
@@ -29,7 +29,7 @@ export function isUserAuthorized(
     if (config.groupPolicy === 'allowlist') {
       if (!config.groupAllowFrom.includes(chatId)) return false;
     }
-    // groupPolicy === 'open' â†?allowed
+    // groupPolicy === 'open' â†’ allowed
     return true;
   }
 

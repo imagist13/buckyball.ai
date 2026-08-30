@@ -1,20 +1,20 @@
 /**
- * Phase 5e Phase 1 (2026-05-17) �?HarnessBundle contract tests.
+ * Phase 5e Phase 1 (2026-05-17) — HarnessBundle contract tests.
  *
  * Pins:
  *   1. Three-layer round-trip: builtin / user / external must each be
  *      addressable in the bundle.
- *   2. `executable === false` requires `perceptionHint` �?builder
- *      throws on missing hint. Phase 5e contract: 感知 �?可执�?
+ *   2. `executable === false` requires `perceptionHint` — builder
+ *      throws on missing hint. Phase 5e contract: 感知 ≠ 可执行,
  *      but UI / model MUST get a string saying why and where to
  *      switch.
- *   3. `forceUnavailable` honoured �?Phase 3 Codex Account degradation
+ *   3. `forceUnavailable` honoured — Phase 3 Codex Account degradation
  *      flips capabilities to unavailable with `reason` + optional
  *      `suggestedRuntime`.
  *   4. Diagnostics count perception-only entries across BOTH user
  *      and external layers (Settings UI needs the count to show a
  *      banner).
- *   5. Capability decisions cover every attempted capability �?no
+ *   5. Capability decisions cover every attempted capability — no
  *      silent omissions.
  */
 
@@ -35,7 +35,7 @@ const baseInput = {
   attemptedCapabilities: new Set(['widget', 'memory']),
 };
 
-describe('HarnessBundle �?three-layer round-trip', () => {
+describe('HarnessBundle — three-layer round-trip', () => {
   it('builds with empty user + external layers (built-in only path)', () => {
     const bundle = buildHarnessBundle(baseInput);
     assert.ok(bundle.builtinCapabilities.length >= 1);
@@ -61,7 +61,7 @@ describe('HarnessBundle �?three-layer round-trip', () => {
     assert.equal(bundle.userCapabilities[0].id, 'mcp:my-server');
   });
 
-  it('preserves external extensions (executable=true case �?same framework as Runtime)', () => {
+  it('preserves external extensions (executable=true case — same framework as Runtime)', () => {
     const bundle = buildHarnessBundle({
       ...baseInput,
       externalExtensions: [
@@ -79,7 +79,7 @@ describe('HarnessBundle �?three-layer round-trip', () => {
   });
 });
 
-describe('HarnessBundle �?executable=false requires perceptionHint', () => {
+describe('HarnessBundle — executable=false requires perceptionHint', () => {
   it('throws when a UserHarnessExtension has executable=false but no hint', () => {
     assert.throws(
       () =>
@@ -134,7 +134,7 @@ describe('HarnessBundle �?executable=false requires perceptionHint', () => {
           displayName: 'foo (Codex plugin)',
           executable: false,
           perceptionHint:
-            '检测到 ~/.codex/plugins/foo；当�?Runtime 不可调用，请切到 Codex Runtime�?,
+            '检测到 ~/.codex/plugins/foo；当前 Runtime 不可调用，请切到 Codex Runtime。',
         },
       ],
     });
@@ -152,7 +152,7 @@ describe('HarnessBundle �?executable=false requires perceptionHint', () => {
           id: 'skill:x',
           displayName: 'x',
           executable: false,
-          perceptionHint: '切到 Native Runtime 才能运行�?,
+          perceptionHint: '切到 Native Runtime 才能运行。',
         },
       ],
       externalExtensions: [
@@ -163,7 +163,7 @@ describe('HarnessBundle �?executable=false requires perceptionHint', () => {
           id: 'codex:cli:y',
           displayName: 'y',
           executable: false,
-          perceptionHint: '切到 Codex Runtime 才能运行�?,
+          perceptionHint: '切到 Codex Runtime 才能运行。',
         },
       ],
     });
@@ -174,7 +174,7 @@ describe('HarnessBundle �?executable=false requires perceptionHint', () => {
   });
 });
 
-describe('HarnessBundle �?forceUnavailable (Codex Account degradation)', () => {
+describe('HarnessBundle — forceUnavailable (Codex Account degradation)', () => {
   it('flips a capability to unavailable with the supplied reason + suggested runtime', () => {
     const bundle = buildHarnessBundle({
       runtimeId: 'codex_runtime',
@@ -185,8 +185,8 @@ describe('HarnessBundle �?forceUnavailable (Codex Account degradation)', () => 
           'widget',
           {
             reason:
-              'Codex Account 协议不支持挂载第三方工具。如需 Widget，请切到 Native Runtime �?ClaudeCode SDK�?,
-            suggestedRuntime: 'bbagent' as const,
+              'Codex Account 协议不支持挂载第三方工具。如需 Widget，请切到 Native Runtime 或 ClaudeCode SDK。',
+            suggestedRuntime: 'codepilot_runtime' as const,
           },
         ],
       ]),
@@ -195,7 +195,7 @@ describe('HarnessBundle �?forceUnavailable (Codex Account degradation)', () => 
       (c) => c.capabilityId === 'widget',
     );
     assert.ok(widgetCell);
-    assert.equal(widgetCell!.suggestedRuntime, 'bbagent');
+    assert.equal(widgetCell!.suggestedRuntime, 'codepilot_runtime');
     assert.match(widgetCell!.reason, /Codex Account/);
 
     // widget MUST NOT appear in builtinCapabilities (forced
@@ -207,7 +207,7 @@ describe('HarnessBundle �?forceUnavailable (Codex Account degradation)', () => 
   });
 });
 
-describe('HarnessBundle �?diagnostic decisions', () => {
+describe('HarnessBundle — diagnostic decisions', () => {
   it('records a decision for every attempted capability', () => {
     const attempted = new Set(['widget', 'memory', 'tasks_and_notify']);
     const bundle = buildHarnessBundle({
@@ -239,14 +239,14 @@ describe('HarnessBundle �?diagnostic decisions', () => {
   });
 });
 
-describe('HarnessBundle �?deferred + unsupported capabilities', () => {
+describe('HarnessBundle — deferred + unsupported capabilities', () => {
   it('emits deferred capabilities (e.g. dashboard) as unavailable when attempted', () => {
     const bundle = buildHarnessBundle({
       runtimeId: 'codex_runtime',
       providerId: 'codex_account',
       attemptedCapabilities: new Set(['dashboard']),
     });
-    // dashboard.status === 'deferred' in capability-contract �?must
+    // dashboard.status === 'deferred' in capability-contract → must
     // be in unavailable, not in builtinCapabilities.
     assert.equal(
       bundle.builtinCapabilities.find((b) => b.capabilityId === 'dashboard'),
@@ -275,7 +275,7 @@ describe('HarnessBundle �?deferred + unsupported capabilities', () => {
   });
 });
 
-describe('HarnessBundle �?accessors', () => {
+describe('HarnessBundle — accessors', () => {
   it('bundleExecutableCapabilities returns only executable=true entries', () => {
     const bundle = buildHarnessBundle({
       runtimeId: 'claude_code',

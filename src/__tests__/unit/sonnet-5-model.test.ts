@@ -1,12 +1,22 @@
 /**
- * Sonnet 5 接入回归 (2026-07-18, model plan Phase 2 / s01–s08) �? * 模式沿用 fable-5-model.test.ts�? *
- * Sonnet 5 (claude-sonnet-5) �?Opus 4.7/4.8 / Fable 5 共享 adaptive-thinking
- * 请求契约（无手动 extended thinking�?M 默认上下文；非默认采样参�?400），
- * 但与 Fable 5 有一处关键差异：**思考可以显式关�?*。官方迁移指�? * (whats-new-sonnet-5, 2026-07-17 核实)：adaptive thinking 默认开启，�? * thinking:{type:'disabled'} 是合法且被尊重的请求（Fable 5 �?400）。所�? * Sonnet 5 绝不能走 fable �?thinkingForcedOn 分支 —�?'disabled' 原样透传�? * 语义�?Opus 4.8 一致�? *
- * 其它官方合同：effort low/medium/high(默认)/xhigh/max；新 tokenizer 同文�? * �?+30% token（budget 注记，非 wire 变更）。effort 现在�?Native 官方路径
- * 真正下发（@ai-sdk/anthropic 4.0.5 �?GA output_config.effort，无过期 beta
- * header）—�?s05 revert，UI 选择�?wire 一致�? *
- * 不接�?OpenRouter slug —�?仓库纪律要求显式 fixture，slug 未经验证�? */
+ * Sonnet 5 接入回归 (2026-07-18, model plan Phase 2 / s01–s08) —
+ * 模式沿用 fable-5-model.test.ts。
+ *
+ * Sonnet 5 (claude-sonnet-5) 与 Opus 4.7/4.8 / Fable 5 共享 adaptive-thinking
+ * 请求契约（无手动 extended thinking；1M 默认上下文；非默认采样参数 400），
+ * 但与 Fable 5 有一处关键差异：**思考可以显式关掉**。官方迁移指南
+ * (whats-new-sonnet-5, 2026-07-17 核实)：adaptive thinking 默认开启，但
+ * thinking:{type:'disabled'} 是合法且被尊重的请求（Fable 5 会 400）。所以
+ * Sonnet 5 绝不能走 fable 的 thinkingForcedOn 分支 —— 'disabled' 原样透传，
+ * 语义与 Opus 4.8 一致。
+ *
+ * 其它官方合同：effort low/medium/high(默认)/xhigh/max；新 tokenizer 同文本
+ * 约 +30% token（budget 注记，非 wire 变更）。effort 现在在 Native 官方路径
+ * 真正下发（@ai-sdk/anthropic 4.0.5 走 GA output_config.effort，无过期 beta
+ * header）—— s05 revert，UI 选择与 wire 一致。
+ *
+ * 不接入 OpenRouter slug —— 仓库纪律要求显式 fixture，slug 未经验证。
+ */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -23,7 +33,7 @@ import { getContextWindow } from '../../lib/model-context';
 const LIB = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../lib');
 const read = (f: string) => fs.readFileSync(path.join(LIB, f), 'utf8');
 
-describe('Sonnet 5 �?adaptive-thinking family detection', () => {
+describe('Sonnet 5 — adaptive-thinking family detection', () => {
   it('detects sonnet-5 in upstream / short / tagged forms', () => {
     assert.equal(isSonnet5Model('claude-sonnet-5'), true);
     assert.equal(isSonnet5Model('sonnet-5'), true);
@@ -34,7 +44,7 @@ describe('Sonnet 5 �?adaptive-thinking family detection', () => {
   it('does NOT misfire on the non-adaptive sonnet-4-6 (s06 no-regression)', () => {
     assert.equal(isSonnet5Model('claude-sonnet-4-6'), false);
     assert.equal(isOpusAdaptiveThinkingModel('claude-sonnet-4-6'), false);
-    // and sonnet-5 is not mistaken for fable �?different disable semantics
+    // and sonnet-5 is not mistaken for fable — different disable semantics
     assert.equal(isFableModel('claude-sonnet-5'), false);
   });
 
@@ -46,8 +56,8 @@ describe('Sonnet 5 �?adaptive-thinking family detection', () => {
   });
 });
 
-describe('Sonnet 5 �?request param guards', () => {
-  it('manual extended thinking �?adaptive/summarized; 1M default (no beta header)', () => {
+describe('Sonnet 5 — request param guards', () => {
+  it('manual extended thinking → adaptive/summarized; 1M default (no beta header)', () => {
     const out = sanitizeClaudeModelOptions({
       model: 'claude-sonnet-5',
       thinking: { type: 'enabled', budgetTokens: 10000 },
@@ -67,7 +77,7 @@ describe('Sonnet 5 �?request param guards', () => {
     // untouched (Opus 4.8 semantics), and the forced-on flag stays false.
     assert.deepEqual(out.thinking, { type: 'disabled' });
     assert.equal(out.thinkingForcedOn, false,
-      'sonnet-5 must NOT reuse the fable thinkingForcedOn path �?disabled is a real option');
+      'sonnet-5 must NOT reuse the fable thinkingForcedOn path — disabled is a real option');
   });
 
   it('adaptive without display gets summarized (reasoning UI stays visible)', () => {
@@ -96,7 +106,7 @@ describe('Sonnet 5 �?request param guards', () => {
   });
 });
 
-describe('Sonnet 5 �?sampling guard (s04: non-default temp/top_p/top_k 400s)', () => {
+describe('Sonnet 5 — sampling guard (s04: non-default temp/top_p/top_k 400s)', () => {
   it('strips a non-default temperature and reports it', () => {
     const out = sanitizeClaudeModelOptions({ model: 'claude-sonnet-5', temperature: 0.7 });
     assert.equal(out.sampling.temperature, undefined,
@@ -127,18 +137,18 @@ describe('Sonnet 5 �?sampling guard (s04: non-default temp/top_p/top_k 400s)', 
     assert.deepEqual(out.sampling, {});
   });
 
-  it('no sampling params �?nothing stripped, empty sampling', () => {
+  it('no sampling params → nothing stripped, empty sampling', () => {
     const out = sanitizeClaudeModelOptions({ model: 'claude-sonnet-5', effort: 'high' });
     assert.deepEqual(out.sampling, {});
     assert.deepEqual(out.strippedSamplingParams, []);
   });
 
-  it('the guard does NOT misfire on non-adaptive Sonnet 4.6 �?sampling passes through', () => {
+  it('the guard does NOT misfire on non-adaptive Sonnet 4.6 — sampling passes through', () => {
     const out = sanitizeClaudeModelOptions({
       model: 'claude-sonnet-4-6', temperature: 0.7, topP: 0.9, topK: 40,
     });
     assert.deepEqual(out.sampling, { temperature: 0.7, topP: 0.9, topK: 40 },
-      'Sonnet 4.6 is not in the 400-on-non-default family �?do not strip');
+      'Sonnet 4.6 is not in the 400-on-non-default family — do not strip');
     assert.deepEqual(out.strippedSamplingParams, []);
   });
 
@@ -151,7 +161,7 @@ describe('Sonnet 5 �?sampling guard (s04: non-default temp/top_p/top_k 400s)', 
   });
 });
 
-describe('Sonnet 5 �?context window', () => {
+describe('Sonnet 5 — context window', () => {
   it('claude-sonnet-5 resolves to 1M (exact + via upstream option)', () => {
     assert.equal(getContextWindow('claude-sonnet-5'), 1_000_000);
     assert.equal(
@@ -166,7 +176,7 @@ describe('Sonnet 5 �?context window', () => {
   });
 });
 
-describe('Sonnet 5 �?catalog / resolver source pins', () => {
+describe('Sonnet 5 — catalog / resolver source pins', () => {
   it('first-party Anthropic catalog ships sonnet-5 with concrete upstream and NO role', () => {
     const src = read('provider-catalog.ts');
     assert.match(src, /modelId: 'sonnet-5'/, 'catalog must contain sonnet-5');
@@ -188,7 +198,7 @@ describe('Sonnet 5 �?catalog / resolver source pins', () => {
   });
 });
 
-describe('Sonnet 5 �?s06 no-regression on the existing family', () => {
+describe('Sonnet 5 — s06 no-regression on the existing family', () => {
   it('Opus 4.8 thinking:disabled still honored (unchanged)', () => {
     const out = sanitizeClaudeModelOptions({
       model: 'claude-opus-4-8', thinking: { type: 'disabled' },

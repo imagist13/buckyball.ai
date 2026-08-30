@@ -11,11 +11,11 @@ export async function POST(request: NextRequest) {
       boundaries: string;
     };
 
-    // Always use the configured workspace path from settings �?never trust client input
+    // Always use the configured workspace path from settings — never trust client input
     const { getSetting } = await import('@/lib/db');
     const workspacePath = getSetting('assistant_workspace_path');
     if (!workspacePath) {
-      return NextResponse.json({ error: 'No workspace path configured. Set it in Settings �?Assistant.' }, { status: 400 });
+      return NextResponse.json({ error: 'No workspace path configured. Set it in Settings → Assistant.' }, { status: 400 });
     }
 
     const fs = await import('fs');
@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
 
     // Write soul.md
     const styleMap: Record<string, string> = {
-      concise: '简洁直接，不啰嗦，直奔主题。回答问题先给结论再展开�?,
-      detailed: '详细耐心，步骤清晰，适当举例。确保用户完全理解�?,
-      casual: '轻松友好，语气自然，像朋友聊天。适当使用口语化表达�?,
+      concise: '简洁直接，不啰嗦，直奔主题。回答问题先给结论再展开。',
+      detailed: '详细耐心，步骤清晰，适当举例。确保用户完全理解。',
+      casual: '轻松友好，语气自然，像朋友聊天。适当使用口语化表达。',
     };
     const soulContent = `# Soul
 

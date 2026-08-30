@@ -7,10 +7,10 @@
  *
  * Lifecycle per call:
  *
- *   1. getCodexAppServer() â?boot + initialize the app-server child
+ *   1. getCodexAppServer() — boot + initialize the app-server child
  *      process (cached singleton; subsequent calls reuse the same
  *      client).
- *   2. Resolve thread id â?`thread/resume` if the session-store has
+ *   2. Resolve thread id — `thread/resume` if the session-store has
  *      a Codex ref for this chat session, else `thread/start` with
  *      the working directory.
  *   3. Subscribe to canonical notifications (agentMessage/delta,
@@ -18,12 +18,12 @@
  *   4. `turn/start` with the user prompt + optional model override.
  *   5. Translate every notification into a `RuntimeRunEvent` via
  *      `translateCodexNotification`, then re-emit as SSE lines in
- *      buckyball.ai's existing format (`data: {"type":...,"data":...}\n\n`).
+ *      CodePilot's existing format (`data: {"type":...,"data":...}\n\n`).
  *   6. On `turn/completed` (or `turn/failed`), close the stream.
  *
  * Server-to-client approval requests (`execCommandApproval` etc.)
  * are NOT wired into the canonical permission channel in this slice
- * â?the JSON-RPC client doesn't yet support server-originated
+ * — the JSON-RPC client doesn't yet support server-originated
  * requests, only notifications. Phase 6 closes that loop.
  *
  * NOTE: this module is node-only (pulls app-server-manager which
@@ -39,7 +39,7 @@ import type { RuntimeContextAccountingSnapshot, FileAttachment } from '@/types';
 import type { CodexThreadResumeResponse, CodexThreadStartResponse } from './types';
 import { buildCodexTurnInput } from './turn-input';
 import { composeCodexDeveloperInstructions } from './developer-instructions';
-// Phase 4 â?Codex Context Accounting (2026-05-20). Imported at top so
+// Phase 4 — Codex Context Accounting (2026-05-20). Imported at top so
 // the closure-scoped cache + run_completed supplementary result event
 // don't need dynamic import inside the sync onAnyNotification handler.
 import {
@@ -138,15 +138,15 @@ function canonicalToSseLine(event: RuntimeRunEvent): string {
         data: JSON.stringify({ id: event.toolId, name: event.name, input: event.input ?? {} }),
       })}\n\n`;
     case 'tool_completed': {
-      // Phase 5b smoke round 8 (2026-05-16) â?forward `media` array
+      // Phase 5b smoke round 8 (2026-05-16) — forward `media` array
       // through the SSE `tool_result.media` channel. `useSSEStream.ts`
-      // â?`SSECallbacks.onToolResult` â?`MediaPreview` consumes this
+      // → `SSECallbacks.onToolResult` → `MediaPreview` consumes this
       // to render image / audio / video tool results inline. Without
       // this passthrough, Codex imageGeneration / imageView results
       // appeared as JSON inside `content` and never rendered as a
       // media card.
       //
-      // Phase 5b smoke round 10 (2026-05-16) â?two correctness fixes
+      // Phase 5b smoke round 10 (2026-05-16) — two correctness fixes
       // at the SSE boundary:
       //
       //   1. `content` is typed `string` by both ToolResultInfo and
@@ -154,7 +154,8 @@ function canonicalToSseLine(event: RuntimeRunEvent): string {
       //      hands us an object on `event.output`; the pre-fix code
       //      passed that object directly through JSON.stringify of
       //      the outer envelope, so the inner `content` became a
-      //      JSON-encoded object inside a JSON-encoded string â?      //      working accidentally for primitives but tripping the UI
+      //      JSON-encoded object inside a JSON-encoded string —
+      //      working accidentally for primitives but tripping the UI
       //      when downstream code does `String(content)` or trims it.
       //      `stringifyToolResultContent` normalises to a stable
       //      string at this boundary so everything downstream can
@@ -190,8 +191,11 @@ function canonicalToSseLine(event: RuntimeRunEvent): string {
         data: JSON.stringify({ id: event.commandId, name: 'Bash', input: { command: event.command, cwd: event.cwd } }),
       })}\n\n`;
     case 'file_changed':
-      // Phase 5 Phase 4 (2026-05-13) â?emit as the dedicated SSE
-      // `file_changed` event type. `useSSEStream.handleSSEEvent` â?      // SSECallbacks.onFileChanged â?stream-session-manager â?      // dispatchFileChanged â?window 'codepilot:file-changed' event â?      // PreviewPanel quiet-refresh. Same downstream path the
+      // Phase 5 Phase 4 (2026-05-13) — emit as the dedicated SSE
+      // `file_changed` event type. `useSSEStream.handleSSEEvent` →
+      // SSECallbacks.onFileChanged → stream-session-manager →
+      // dispatchFileChanged → window 'codepilot:file-changed' event →
+      // PreviewPanel quiet-refresh. Same downstream path the
       // ClaudeCode SDK isWriteTool inspection uses; the runtime
       // adapter is the only place that knows where the paths come
       // from.
@@ -226,13 +230,13 @@ function canonicalToSseLine(event: RuntimeRunEvent): string {
 }
 
 /**
- * Active Codex turn registry â?Phase 5 Phase 4 Slice 3 (2026-05-13).
+ * Active Codex turn registry — Phase 5 Phase 4 Slice 3 (2026-05-13).
  *
  * `turn/interrupt` requires both `threadId` AND `turnId` per
  * upstream schema (`TurnInterruptParams = { threadId, turnId }`).
  * threadId is already persisted via session-store; turnId is
  * transient (one per send, valid until turn/completed). We keep it
- * in-process per chat session â?losing it across process restart
+ * in-process per chat session — losing it across process restart
  * is acceptable because turns don't survive restarts either.
  *
  * Map cleared when turn/completed or turn/failed lands.
@@ -243,11 +247,11 @@ const activeCodexTurns = new CodexTurnInterruptRegistry();
  * Issue a best-effort `turn/interrupt` for whatever turn is currently active
  * on `sessionId`. Single implementation shared by BOTH interrupt paths so they
  * can't drift (codex-stop-recovery Phase 1/2):
- *   - the public `interrupt(sessionId)` entry â?HTTP `/api/chat/interrupt`
+ *   - the public `interrupt(sessionId)` entry — HTTP `/api/chat/interrupt`
  *     fan-out (Stop button, fires immediately);
- *   - the in-stream abort-signal handler â?honors the `abortController` the
+ *   - the in-stream abort-signal handler — honors the `abortController` the
  *     chat route already passes (force-abort / disconnect path).
- * Returns false (and no-ops) when there's no active turn yet â?the caller uses
+ * Returns false (and no-ops) when there's no active turn yet — the caller uses
  * that to defer until `turn/start` resolves (the abort-before-turnId race).
  * `source` is a diagnostic tag only; never logs prompt / files / credentials.
  */
@@ -263,13 +267,13 @@ function issueCodexTurnInterrupt(sessionId: string, source: string): boolean {
     })();
   });
   if (!issued) {
-    console.debug(`[codex.runtime] interrupt (${source}) â?no active turn for`, sessionId);
+    console.debug(`[codex.runtime] interrupt (${source}) — no active turn for`, sessionId);
   }
   return issued;
 }
 
 /**
- * Active fs/watch entries â?Phase 5 review round 3 (2026-05-13).
+ * Active fs/watch entries — Phase 5 review round 3 (2026-05-13).
  *
  * Codex's fs/changed notifications only fire after a corresponding
  * fs/watch subscription. We register one watch per Codex session
@@ -277,7 +281,7 @@ function issueCodexTurnInterrupt(sessionId: string, source: string): boolean {
  * that write files outside the fileChange item path still surface as
  * file_changed events. Entry cleared by fs/unwatch in closeStream.
  *
- * Map value is the watchId we sent â?Codex echoes it back in
+ * Map value is the watchId we sent — Codex echoes it back in
  * fs/changed notifications + accepts it for fs/unwatch.
  */
 const fsWatchEntries = new Map<string, string>();
@@ -318,7 +322,7 @@ export const codexRuntime: AgentRuntime = {
           }
         };
 
-        // Phase 4 â?Codex result event MUST carry usage + context_accounting
+        // Phase 4 — Codex result event MUST carry usage + context_accounting
         // (user spec #6). Codex emits live `context_usage` events
         // (`usage_updated`) but `run_completed` carries no usage. We
         // cache the last usage_updated values here and emit a
@@ -329,7 +333,7 @@ export const codexRuntime: AgentRuntime = {
           | { inputTokens: number; outputTokens: number; contextWindow: number | null }
           | null = null;
 
-        // Phase 7 â?per-turn ToolInvocationAccumulator. Wired in the
+        // Phase 7 — per-turn ToolInvocationAccumulator. Wired in the
         // onAnyNotification handler below (tool_started / tool_completed /
         // command_started records) and drained on run_completed for the
         // supplementary result event's context_accounting field. Shares the
@@ -337,14 +341,14 @@ export const codexRuntime: AgentRuntime = {
         const toolInvocationAccumulator = new ToolInvocationAccumulator();
 
         const closeStream = (extra?: { error?: string }) => {
-          // codebase-health A4 â?drop the active-turn entry on EVERY close,
+          // codebase-health A4 — drop the active-turn entry on EVERY close,
           // not just the terminal run_completed/run_failed branch. If the turn
           // is registered (turn/start resolved, activeCodexTurns.set below) and
           // the stream then closes via the error catch or an abort BEFORE a
           // terminal event arrives, closeStream is the single "explicit close
           // path" that codex-stop-recovery Phase 2 expects to do the cleanup.
           // Placed before the `active` guard + keyed by sessionId + idempotent
-          // so a redundant close (consumer aborted â?`active` already false,
+          // so a redundant close (consumer aborted → `active` already false,
           // then a late terminal event lands) still can't leave a stale turnId
           // for a future interrupt() to chase.
           activeCodexTurns.delete(sessionId);
@@ -360,7 +364,7 @@ export const codexRuntime: AgentRuntime = {
             try { u(); } catch { /* ignore */ }
           }
           try { controller.close(); } catch { /* ignore */ }
-          // Phase 5 review round 3 (2026-05-13) â?best-effort
+          // Phase 5 review round 3 (2026-05-13) — best-effort
           // fs/unwatch when the stream closes. We don't await: the
           // stream consumer doesn't care about the cleanup, and the
           // app-server forgets the watch on its end when the client
@@ -381,7 +385,7 @@ export const codexRuntime: AgentRuntime = {
         };
 
         try {
-          // ââ env exclusion (Phase 5b) âââââââââââââââââââââââââââââââ
+          // ── env exclusion (Phase 5b) ───────────────────────────────
           // Reject empty / env providerId BEFORE booting the app-server
           // so the subprocess isn't spawned for a request we won't honor.
           // Codex Runtime is opt-out for env (Claude Code default); the
@@ -427,23 +431,23 @@ export const codexRuntime: AgentRuntime = {
             }
           }
 
-          // ââ server-originated approval requests ââââââââââââââââââââââ
+          // ── server-originated approval requests ──────────────────────
           // Phase 5 Phase 4 Slice 2 (2026-05-13). Wires Codex's
-          // approval flow through buckyball.ai's existing PermissionPrompt
+          // approval flow through CodePilot's existing PermissionPrompt
           // via `handleCodexApprovalRequest`:
-          //   1. translateCodexApproval â?canonical permission_request
+          //   1. translateCodexApproval → canonical permission_request
           //   2. emits SDK-shape PermissionRequestEvent via SSE so
           //      useSSEStream + stream-session-manager + PermissionPrompt
           //      pick it up unchanged (UI doesn't branch on runtime)
           //   3. registers resolver in the existing permission-registry
           //      (same map ClaudeCode SDK uses); user response via
           //      /api/chat/permission resolves it
-          //   4. translates PermissionResult â?method-specific Codex
+          //   4. translates PermissionResult → method-specific Codex
           //      response shape (different per approval method per
-          //      `èµæ/codex/.../v2/{CommandExecution,FileChange,...}
+          //      `资料/codex/.../v2/{CommandExecution,FileChange,...}
           //      ApprovalDecision.ts`)
           //
-          // Review round 3 (2026-05-13) â?the original Slice 2 commit
+          // Review round 3 (2026-05-13) — the original Slice 2 commit
           // shipped approval-bridge.ts + tests, but the runtime edit
           // got lost in a file-modification race and never replaced
           // the decline-by-default loop. This restoration completes
@@ -472,9 +476,9 @@ export const codexRuntime: AgentRuntime = {
             unsubscribers.push(unsubReq);
           }
 
-          // ââ MCP elicitation / tool-call approval (Phase 3 + Phase 5 fix) ââ
-          // Codex sends `mcpServer/elicitation/request` (serverâclient) for
-          // MCP elicitation AND â?under approvalPolicy `on-request` â?as the
+          // ── MCP elicitation / tool-call approval (Phase 3 + Phase 5 fix) ──
+          // Codex sends `mcpServer/elicitation/request` (server→client) for
+          // MCP elicitation AND — under approvalPolicy `on-request` — as the
           // approval gate for an MCP tool call. The Phase 5 login smoke
           // showed the model AUTONOMOUSLY calling codepilot_memory_recent,
           // but our original blanket DECLINE turned every memory call into
@@ -492,8 +496,9 @@ export const codexRuntime: AgentRuntime = {
                 mode?: string;
                 requestedSchema?: unknown;
               };
-              // Policy (mcp-elicitation.ts, registry-driven): safe-read â?              // auto_accept; mutating/side-effect â?user_approval (surface to
-              // the user); unknown â?decline. Never blanket-accept.
+              // Policy (mcp-elicitation.ts, registry-driven): safe-read →
+              // auto_accept; mutating/side-effect → user_approval (surface to
+              // the user); unknown → decline. Never blanket-accept.
               const policy = codexElicitationPolicy(p.serverName);
               console.debug('[codex.mcp-elicitation]', {
                 serverName: p.serverName,
@@ -517,7 +522,7 @@ export const codexRuntime: AgentRuntime = {
                 return ACCEPT_ELICITATION;
               }
               if (policy === 'user_approval') {
-                // Mutating/side-effecting tool â?ask the user (the
+                // Mutating/side-effecting tool → ask the user (the
                 // permission_request SSE is emitted inside the handler).
                 return await handleCodexMcpElicitationApproval({
                   sessionId,
@@ -535,10 +540,10 @@ export const codexRuntime: AgentRuntime = {
           );
           unsubscribers.push(unsubElicit);
 
-          // ââ MCP dynamic tool call (Phase 8 Phase 5) âââââââââââââââââ
+          // ── MCP dynamic tool call (Phase 8 Phase 5) ─────────────────
           // When the model AUTONOMOUSLY calls an MCP tool mid-turn,
           // Codex routes it to us as a server-originated `item/tool/call`
-          // (dynamic tool call) â?NOT the clientâserver mcpServer/tool/call
+          // (dynamic tool call) — NOT the client→server mcpServer/tool/call
           // the Phase 0 POC used. Without this handler the client answers
           // -32601 and Codex marks the call rejected (the Phase 5 smoke
           // symptom). We forward the call back to Codex's own
@@ -552,7 +557,7 @@ export const codexRuntime: AgentRuntime = {
           // concurrent chats.
           client.onServerRequest('item/tool/call', dispatchCodexDynamicToolCall);
 
-          // ââ CodePilot built-in tool bridge subscription (Phase 5c) ââ
+          // ── CodePilot built-in tool bridge subscription (Phase 5c) ──
           // Side-channel events emitted by the proxy's bridge tools
           // (`codepilot_generate_image` execute() etc.) flow through
           // here. Subscribing BEFORE turn/start so even tools the
@@ -560,7 +565,7 @@ export const codexRuntime: AgentRuntime = {
           // The unsubscribe runs in closeStream via `unsubscribers`.
           //
           // Same materializeCodexEventMedia step the JSON-RPC path
-          // uses â?image paths outside `<dataDir>/.codepilot-media`
+          // uses — image paths outside `<dataDir>/.codepilot-media`
           // get imported here so `/api/media/serve` will accept them.
           const unsubBridge = subscribeBuiltinEvents(sessionId, (event) => {
             const materialised = materializeCodexEventMedia(event, {
@@ -571,17 +576,17 @@ export const codexRuntime: AgentRuntime = {
           });
           unsubscribers.push(unsubBridge);
 
-          // ââ proxy-injection params (Phase 5b) âââââââââââââââââââââââ
+          // ── proxy-injection params (Phase 5b) ───────────────────────
           // `buildCodexThreadParams` returns the same shape that both
           // `thread/start` and `thread/resume` accept (cwd /
           // modelProvider / config). We MUST re-attach this payload on
-          // every resume too, not just on start â?see provider-proxy.ts
+          // every resume too, not just on start — see provider-proxy.ts
           // for the three reload scenarios where a resume-without-config
           // would drop the codepilot_proxy injection and silently route
           // a continuation turn at the wrong upstream.
-          // ââ MCP injection (Phase 8 Phase 2) âââââââââââââââââââââââââ
+          // ── MCP injection (Phase 8 Phase 2) ─────────────────────────
           // Inject the CodePilot Memory MCP as a streamable-HTTP server
-          // when the session runs in the assistant workspace â?the same
+          // when the session runs in the assistant workspace — the same
           // gate the ClaudeCode path uses (claude-client.ts). It's served
           // in-process by /api/codex/mcp/memory, so it works in dev AND
           // packaged Electron without spawning a subprocess. User MCP
@@ -593,7 +598,8 @@ export const codexRuntime: AgentRuntime = {
           if (
             assistantWorkspacePath &&
             options.workingDirectory &&
-            // realpath-normalized compare (trailing slash / symlink safe) â?            // same helper the route authorizes with, so "inject" and
+            // realpath-normalized compare (trailing slash / symlink safe) —
+            // same helper the route authorizes with, so "inject" and
             // "authorized" never disagree.
             sameRealPath(options.workingDirectory, assistantWorkspacePath)
           ) {
@@ -604,7 +610,7 @@ export const codexRuntime: AgentRuntime = {
             });
             codexMcpServers[mem.name] = mem.entry;
           }
-          // Widget MCP (Phase 8 #31) â?keyword-gated, the SAME gate the
+          // Widget MCP (Phase 8 #31) — keyword-gated, the SAME gate the
           // ClaudeCode path uses (`promptNeedsWidget`, shared from
           // widget-guidelines). Static read-only guidelines, no workspace
           // scope. Lets the model load the show-widget wire format and emit
@@ -616,7 +622,7 @@ export const codexRuntime: AgentRuntime = {
             });
             codexMcpServers[widget.name] = widget.entry;
           }
-          // Tasks/Notify MCP (#31) â?always-on built-in (matches the
+          // Tasks/Notify MCP (#31) — always-on built-in (matches the
           // ClaudeCode "always" trigger). Its mutating tools (schedule /
           // cancel / notify) route to USER APPROVAL at call time (see the
           // elicitation handler below), so it's safe to inject unconditionally.
@@ -628,7 +634,7 @@ export const codexRuntime: AgentRuntime = {
             });
             codexMcpServers[tasks.name] = tasks.entry;
           }
-          // Dashboard split (Codex review next slice, 2026-05-28) â?same
+          // Dashboard split (Codex review next slice, 2026-05-28) — same
           // keyword gate as the ClaudeCode SDK path (`promptNeedsDashboard`,
           // shared from dashboard-mcp.ts). Two MCPs: read tools (list /
           // refresh) auto_accept on elicitation; write tools (pin / update /
@@ -636,7 +642,7 @@ export const codexRuntime: AgentRuntime = {
           //
           // Workspace gate MIRRORS memory's (`sameRealPath` against the
           // configured assistant workspace, line ~512). The dashboard route
-          // authorizes with the same realpath check â?without this gate the
+          // authorizes with the same realpath check — without this gate the
           // model would see the tools and Codex would 403 at call time.
           // (Codex review P1 fix, 2026-05-28.)
           if (
@@ -659,7 +665,7 @@ export const codexRuntime: AgentRuntime = {
             });
             codexMcpServers[dashWrite.name] = dashWrite.entry;
           }
-          // CLI tools split â?same keyword gate as the ClaudeCode SDK path
+          // CLI tools split — same keyword gate as the ClaudeCode SDK path
           // (`promptNeedsCli`, shared from cli-tools-mcp.ts). Read tools
           // (list / check_updates) auto_accept; mutating tools (install /
           // add / remove / update) routed to USER APPROVAL.
@@ -756,7 +762,7 @@ export const codexRuntime: AgentRuntime = {
 
           const accountDelegationInstructions = codexAccountManagedBridge
             ? [
-                'buckyball.ai exact-route delegation contract:',
+                'CodePilot exact-route delegation contract:',
                 '- When the user requests a specific CodePilot Provider or a model different from this Codex Account parent, call codepilot_spawn_subagent directly.',
                 '- Never use native spawn_agent/multi_agent_v1 as a substitute for a named Provider/Model; native workers inherit this parent route.',
                 '- If the requested managed route is unavailable or fails, stop and ask the user what to do. Do not silently fall back.',
@@ -772,11 +778,11 @@ export const codexRuntime: AgentRuntime = {
               providerId: requestedProviderId,
               workingDirectory: options.workingDirectory,
               proxyBaseUrl: resolveCodexProxyBaseUrl(),
-              // Phase 5b smoke follow-up (2026-05-15) â?Codex's
+              // Phase 5b smoke follow-up (2026-05-15) — Codex's
               // thread_start_params_from_config passes model alongside
               // modelProvider + config so the proxy resolves the selected id.
               model: options.model,
-              // Phase 5c â?lets the proxy mount CodePilot built-in tools and
+              // Phase 5c — lets the proxy mount CodePilot built-in tools and
               // address the side-channel event bus for this chat.
               sessionId,
               mcpServers: hasMcp ? codexMcpServers : undefined,
@@ -793,14 +799,14 @@ export const codexRuntime: AgentRuntime = {
               }
             : threadParams;
 
-          // ââ thread resolution: resume if we have a ref + provider AND
-          // MCP fingerprint match, else start ââ
+          // ── thread resolution: resume if we have a ref + provider AND
+          // MCP fingerprint match, else start ──
           const existingRef = getRuntimeSessionRef(sessionId, 'codex_runtime');
           const existingProviderBinding =
             typeof existingRef?.metadata?.providerId === 'string'
               ? existingRef.metadata.providerId
               : '';
-          // Phase 8 Phase 2 â?the MCP fingerprint the existing thread was
+          // Phase 8 Phase 2 — the MCP fingerprint the existing thread was
           // started with. A change (workspace switch, MCP config edit)
           // invalidates resume the same way a provider switch does.
           const existingMcpFingerprint =
@@ -822,7 +828,7 @@ export const codexRuntime: AgentRuntime = {
               applyPermissionEcho(result);
               threadId = existingRef.token;
             } catch {
-              // Resume failed (thread archived / unknown id) â?start fresh.
+              // Resume failed (thread archived / unknown id) → start fresh.
               const result = await client.request<CodexThreadStartResponse>(
                 'thread/start',
                 threadStartParams,
@@ -863,7 +869,7 @@ export const codexRuntime: AgentRuntime = {
             ...(parentAbortSignal ? { abortSignal: parentAbortSignal } : {}),
           }));
 
-          // ââ workspace filesystem watch ââââââââââââââââââââââââââââââ
+          // ── workspace filesystem watch ──────────────────────────────
           // Phase 5 review round 3 (2026-05-13). Register an fs/watch
           // scoped to the working directory so Codex emits fs/changed
           // notifications when shell commands (NOT through fileChange
@@ -889,10 +895,10 @@ export const codexRuntime: AgentRuntime = {
             }
           }
 
-          // ââ notification fan-out ââââââââââââââââââââââââââââââââââââ
+          // ── notification fan-out ────────────────────────────────────
           // Phase 5 review round 2 (2026-05-13): subscribe through the
           // wildcard hook so the canonical mapper sees EVERY notification.
-          // Previously we registered ~9 specific method handlers â?anything
+          // Previously we registered ~9 specific method handlers — anything
           // outside that allowlist silently dropped, contradicting the
           // mapper's `unknown_item` fallback contract. The wildcard puts
           // every notification through `translateCodexNotification`, so
@@ -914,7 +920,7 @@ export const codexRuntime: AgentRuntime = {
               return;
             }
             const rawEvent = translateCodexNotification(method, params, { sessionId });
-            // Phase 5b smoke round 9 (2026-05-16) â?materialise MediaBlocks
+            // Phase 5b smoke round 9 (2026-05-16) — materialise MediaBlocks
             // before SSE encoding. Codex hands us raw paths like
             // /tmp/codex-out.png; /api/media/serve only allows
             // .codepilot-media. The import step copies the file into
@@ -925,7 +931,7 @@ export const codexRuntime: AgentRuntime = {
               ? materializeCodexEventMedia(rawEvent, { sessionId, cwd: options.workingDirectory })
               : null;
             if (event) {
-              // Phase 4 â?cache usage from live usage_updated events
+              // Phase 4 — cache usage from live usage_updated events
               // so the supplementary run_completed result event below
               // can persist the final token count to DB.
               if (event.type === 'usage_updated') {
@@ -936,7 +942,7 @@ export const codexRuntime: AgentRuntime = {
                 };
               }
 
-              // Phase 7 â?accumulate tool invocations for Context Accounting.
+              // Phase 7 — accumulate tool invocations for Context Accounting.
               // Codex Runtime's canonical RuntimeRunEvent already separates
               // tool_started / tool_completed / command_started into discrete
               // events with stable id+name+input shape (see
@@ -963,7 +969,7 @@ export const codexRuntime: AgentRuntime = {
 
               tryEnqueue(canonicalToSseLine(event));
 
-              // Phase 4 â?Phase 7 â?supplement run_completed with usage +
+              // Phase 4 → Phase 7 — supplement run_completed with usage +
               // context_accounting so DB has final token account. The result
               // event canonicalToSseLine emitted just above carries only
               // `finish_reason`; chat/route.ts ignores it for usage. THIS
@@ -983,7 +989,7 @@ export const codexRuntime: AgentRuntime = {
                     providerBackend: resolveCodexProviderBackend(
                       options.providerId || options.sessionProviderId || '',
                     ),
-                    // Codex unsupported list â?same Phase 7 ClaudeCode set.
+                    // Codex unsupported list — same Phase 7 ClaudeCode set.
                     // system_prompt opaque (app-server preset); memory not
                     // wired for any backend in Phase 7; files_attachments
                     // via composer pending channel.
@@ -1015,7 +1021,7 @@ export const codexRuntime: AgentRuntime = {
               }
             }
 
-            // Review round 3 (2026-05-13) â?fileChange item/completed
+            // Review round 3 (2026-05-13) — fileChange item/completed
             // also synthesizes a `file_changed` event so PreviewPanel
             // auto-refresh fires for patch-applied files even without
             // a separate fs/changed notification. Two events from one
@@ -1031,7 +1037,7 @@ export const codexRuntime: AgentRuntime = {
             // (per the mapper); status=completed/interrupted/inProgress
             // lands as `run_completed`. Both close the stream.
             //
-            // Phase 5b smoke round 6 (2026-05-18) â?`error` with
+            // Phase 5b smoke round 6 (2026-05-18) — `error` with
             // `willRetry=true` now maps to `unknown_item`
             // (sourceType='codex_retry') instead of `run_failed`, so
             // it does NOT match this branch and the stream stays
@@ -1039,7 +1045,7 @@ export const codexRuntime: AgentRuntime = {
             // This is what "Codex will retry up to 5 times" looks
             // like on the canonical event surface.
             if (event?.type === 'run_completed' || event?.type === 'run_failed') {
-              // Slice 3 (2026-05-13) â?terminal event closes the stream.
+              // Slice 3 (2026-05-13) — terminal event closes the stream.
               // The active-turn entry cleanup now lives in closeStream
               // (codebase-health A4, the single close exit) so a future
               // interrupt() against this session can't chase a stale turnId
@@ -1049,15 +1055,16 @@ export const codexRuntime: AgentRuntime = {
           });
           unsubscribers.push(unsubAny);
 
-          // ââ kick off the turn âââââââââââââââââââââââââââââââââââââââ
-          // codex-stop-recovery Phase 2 â?honor the abort signal the chat
-          // route already hands us (chat/route.ts â?streamClaude â?          // options.abortController). Without this, Stop / the 2s force-abort
+          // ── kick off the turn ───────────────────────────────────────
+          // codex-stop-recovery Phase 2 — honor the abort signal the chat
+          // route already hands us (chat/route.ts → streamClaude →
+          // options.abortController). Without this, Stop / the 2s force-abort
           // never reaches the Codex app-server turn: the turn keeps running,
           // the stream never closes, and chat/route.ts renews the session lock
-          // forever â?"Stop åæ æ³åéæ°æä»¤".
+          // forever → "Stop 后无法发送新指令".
           const abortSignal = parentAbortSignal;
           if (abortSignal?.aborted) {
-            // Stop landed during turn setup, before turn/start â?don't kick
+            // Stop landed during turn setup, before turn/start — don't kick
             // off a turn just to interrupt it.
             closeStream();
             return;
@@ -1075,21 +1082,22 @@ export const codexRuntime: AgentRuntime = {
             abortSignal.addEventListener('abort', onAbort, { once: true });
             unsubscribers.push(() => abortSignal.removeEventListener('abort', onAbort));
             // Close the tiny race where abort landed between the pre-start
-            // check above and addEventListener â?an already-aborted signal
+            // check above and addEventListener — an already-aborted signal
             // never re-fires the listener, so defer the interrupt explicitly.
             if (abortSignal.aborted) pendingAbort = true;
           }
 
-          // Phase 5 Phase 4 Slice 3 â?capture the returned turn id so
+          // Phase 5 Phase 4 Slice 3 — capture the returned turn id so
           // `interrupt(sessionId)` can issue `turn/interrupt` with the
           // correct (threadId, turnId) pair per
           // `TurnInterruptParams = { threadId, turnId }` in the schema.
-          // Phase 0 (2026-07-17) â?send exactly the tier THIS model declares
+          // Phase 0 (2026-07-17) — send exactly the tier THIS model declares
           // in model/list. GPT-5.6 really supports xhigh/max, and the old
           // global clamp downgraded them to `high` behind the user's back.
           // Unknown/undeclared tiers are omitted (never coerced); a cold
           // cache yields no capability info and falls back to the
-          // conservative clamp inside resolveCodexEffort. cacheOnly read â?          // turn/start must never spawn an app-server (P0.3).
+          // conservative clamp inside resolveCodexEffort. cacheOnly read —
+          // turn/start must never spawn an app-server (P0.3).
           // codex_runtime only; Claude Code / Native keep the full union.
           let codexEffort: string | undefined;
           if (requestedProviderId === 'codex_account') {
@@ -1121,11 +1129,11 @@ export const codexRuntime: AgentRuntime = {
               availability.kind === 'ready' ? availability.version : undefined,
             );
           }
-          // #632 / Phase 2 #3 â?include image attachments in the turn input.
+          // #632 / Phase 2 #3 — include image attachments in the turn input.
           // Files reach the runtime via runtimeOptions.files (claude-client.ts);
           // before this the input was text-only and images were silently dropped.
           // buildCodexTurnInput maps image/* attachments to the app-server's
-          // image / localImage blocks (wire format from the POC â?see
+          // image / localImage blocks (wire format from the POC — see
           // docs/research/codex-image-input-poc/FINDINGS.md).
           const turnFiles = options.runtimeOptions?.files as FileAttachment[] | undefined;
           const turnResult = await client.request<{ turn: { id: string } }>('turn/start', {
@@ -1138,7 +1146,7 @@ export const codexRuntime: AgentRuntime = {
           });
           activeCodexTurns.set(sessionId, { threadId, turnId: turnResult.turn.id });
           if (pendingAbort) {
-            // Stop arrived before we had a turnId â?interrupt the just-started
+            // Stop arrived before we had a turnId — interrupt the just-started
             // turn now that the id is recorded.
             issueCodexTurnInterrupt(sessionId, 'abort-race');
           }
@@ -1151,7 +1159,7 @@ export const codexRuntime: AgentRuntime = {
   },
 
   interrupt(sessionId: string): void {
-    // Phase 5 Phase 4 Slice 3 (2026-05-13) â?best-effort `turn/interrupt`
+    // Phase 5 Phase 4 Slice 3 (2026-05-13) — best-effort `turn/interrupt`
     // with (threadId, turnId) from the in-process `activeCodexTurns` map
     // (populated when `turn/start` resolves, cleared on turn/completed |
     // turn/failed). Per upstream README it resolves to `{}` on success and the
@@ -1194,7 +1202,7 @@ export function stringifyToolResultContent(output: unknown): string {
   try {
     return JSON.stringify(output);
   } catch {
-    // Circular / non-serialisable â?fall back to toString so the
+    // Circular / non-serialisable — fall back to toString so the
     // chat surface still gets *something* instead of an empty string.
     return String(output);
   }

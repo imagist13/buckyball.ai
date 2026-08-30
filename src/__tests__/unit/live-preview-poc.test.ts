@@ -1,5 +1,5 @@
 /**
- * Phase 0.A â€?DOM-free Live Preview feasibility POC.
+ * Phase 0.A â€” DOM-free Live Preview feasibility POC.
  *
  * This file intentionally imports only a helper under `src/__tests__`.
  * It does not connect the POC to PreviewPanel, routes, menus, or any
@@ -152,7 +152,7 @@ describe('Phase 0.A IME freeze contract', () => {
     const doc = 'x **stable**';
     const before = stateWith(doc, 0);
     const previous = buildLivePreviewSnapshot(before, [{ from: 0, to: doc.length }]);
-    const transaction = before.update({ changes: { from: 0, insert: 'ä¸? } });
+    const transaction = before.update({ changes: { from: 0, insert: 'ä¸­' } });
     const mapped = reduceLivePreview(previous, transaction.state, {
       composing: true,
       docChanged: true,

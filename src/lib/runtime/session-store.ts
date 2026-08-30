@@ -1,13 +1,13 @@
 /**
- * Runtime session reference store â€?Phase 0.5 Slice C (2026-05-13).
+ * Runtime session reference store â€” Phase 0.5 Slice C (2026-05-13).
  *
  * Each runtime adapter owns its own session-side state. Today:
  *
- *   - `claude_code`        â€?backed by `chat_sessions.sdk_session_id`
+ *   - `claude_code`        â€” backed by `chat_sessions.sdk_session_id`
  *                            column (legacy, preserved for back-compat
  *                            with v0.x history rows).
- *   - `codepilot_runtime`  â€?no external session state.
- *   - future `codex_runtime` â€?will add its own persistence (likely a
+ *   - `codepilot_runtime`  â€” no external session state.
+ *   - future `codex_runtime` â€” will add its own persistence (likely a
  *                              JSON `runtime_session_metadata` column
  *                              or a dedicated `runtime_session_refs`
  *                              table). The switch cases below grow
@@ -21,7 +21,7 @@
  *
  * Cross-runtime invariant (codified in runtime-session-metadata.test.ts):
  * runtime switching on a chat session must NOT delete the metadata
- * of OTHER runtimes â€?only the runtime being switched out (or in)
+ * of OTHER runtimes â€” only the runtime being switched out (or in)
  * has its ref touched. Today this is trivially true because each
  * runtime has its own backing column / table; the Codex slice will
  * add `clearRuntimeSessionRef` calls scoped per-runtime, not a global
@@ -48,17 +48,17 @@ export function getRuntimeSessionRef(
       if (!session?.sdk_session_id) return null;
       return { runtimeId: 'claude_code', token: session.sdk_session_id };
     }
-    case 'bbagent':
+    case 'codepilot_runtime':
       // Native runtime keeps state in-memory in the runtime singleton.
       // No persistent ref to surface.
       return null;
     case 'codex_runtime': {
-      // Phase 5 Phase 3 (2026-05-13) â€?Codex thread id persistence.
+      // Phase 5 Phase 3 (2026-05-13) â€” Codex thread id persistence.
       // Backed by `chat_sessions.codex_thread_id` column. Codex's
       // `thread/resume` requires the original threadId, so we
       // persist it per chat session for cross-reload resume.
       //
-      // Phase 5b (2026-05-15) â€?also returns the provider id the
+      // Phase 5b (2026-05-15) â€” also returns the provider id the
       // thread was bound to via `metadata.providerId`. CodexRuntime
       // compares this to the current request's provider; on mismatch
       // it clears the ref and starts fresh instead of resuming under
@@ -70,14 +70,14 @@ export function getRuntimeSessionRef(
         token: session.codex_thread_id,
         metadata: {
           providerId: session.codex_thread_provider_id ?? '',
-          // Phase 8 Phase 2 â€?MCP config fingerprint the thread was started
+          // Phase 8 Phase 2 â€” MCP config fingerprint the thread was started
           // with. Empty when no MCP was injected (legacy / non-assistant).
           mcpConfigFingerprint: session.codex_thread_mcp_fingerprint ?? '',
         },
       };
     }
     default: {
-      // Exhaustiveness â€?when a new RuntimeId lands here, TS will fail
+      // Exhaustiveness â€” when a new RuntimeId lands here, TS will fail
       // compilation forcing the implementer to add a case.
       const _: never = runtimeId;
       throw new Error(`getRuntimeSessionRef: unknown runtime ${String(_)}`);
@@ -97,20 +97,20 @@ export function setRuntimeSessionRef(
     case 'claude_code':
       updateSdkSessionId(chatSessionId, ref.token);
       return;
-    case 'bbagent':
-      // No-op â€?native runtime has no persistent ref.
+    case 'codepilot_runtime':
+      // No-op â€” native runtime has no persistent ref.
       return;
     case 'codex_runtime': {
-      // Phase 5 Phase 3 (2026-05-13) â€?persist Codex thread id.
-      // Phase 5b (2026-05-15) â€?also persist the provider id the
+      // Phase 5 Phase 3 (2026-05-13) â€” persist Codex thread id.
+      // Phase 5b (2026-05-15) â€” also persist the provider id the
       // thread was bound to so a later resume can detect a provider
       // switch and start fresh rather than running under a stale
       // proxy injection. Adapters MUST pass providerId in metadata
       // for codex_runtime refs; missing metadata falls back to ''
-      // which means "unknown provider â€?always treat resume as stale".
+      // which means "unknown provider â€” always treat resume as stale".
       const providerId =
         typeof ref.metadata?.providerId === 'string' ? ref.metadata.providerId : '';
-      // Phase 8 Phase 2 â€?persist the MCP config fingerprint so a later
+      // Phase 8 Phase 2 â€” persist the MCP config fingerprint so a later
       // resume can detect an MCP-config change and start fresh.
       const mcpFingerprint =
         typeof ref.metadata?.mcpConfigFingerprint === 'string'
@@ -132,7 +132,7 @@ export function setRuntimeSessionRef(
  * resume context (e.g. swapping the provider mid-session would let an
  * old SDK session id leak into a different provider).
  *
- * Only the named runtime's ref is touched â€?other runtimes' refs (if
+ * Only the named runtime's ref is touched â€” other runtimes' refs (if
  * any) are preserved. This is the cross-runtime metadata invariant.
  */
 export function clearRuntimeSessionRef(
@@ -143,16 +143,16 @@ export function clearRuntimeSessionRef(
     case 'claude_code':
       updateSdkSessionId(chatSessionId, '');
       return;
-    case 'bbagent':
-      // No-op â€?nothing persisted.
+    case 'codepilot_runtime':
+      // No-op â€” nothing persisted.
       return;
     case 'codex_runtime':
-      // Phase 5 Phase 3 (2026-05-13) â€?clear the persisted Codex
+      // Phase 5 Phase 3 (2026-05-13) â€” clear the persisted Codex
       // thread id. Provider / model / runtime-pin changes that
       // invalidate the resume context call this path scoped to
       // codex_runtime; other runtimes' refs stay intact. Phase 5b
       // also clears the bound provider id so the next start writes
-      // a fresh pair. Phase 8 Phase 2 â€?also clears the MCP fingerprint.
+      // a fresh pair. Phase 8 Phase 2 â€” also clears the MCP fingerprint.
       updateCodexThreadId(chatSessionId, '', '', '');
       return;
     default: {

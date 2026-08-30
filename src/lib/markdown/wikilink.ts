@@ -1,5 +1,5 @@
 /**
- * Obsidian-style wikilink rewriting for streamdown â€?Phase 4 Markdown data layer.
+ * Obsidian-style wikilink rewriting for streamdown â€” Phase 4 Markdown data layer.
  *
  * Streamdown / remark-gfm doesn't recognize `[[Note]]` natively. Rather
  * than ship a full remark plugin, we pre-process the markdown text
@@ -9,13 +9,13 @@
  * the existing PreviewSource / trust-tier pipeline.
  *
  * Recognized forms:
- *   [[Foo]]         â†?link text "Foo",   target "Foo"
- *   [[Foo|alias]]   â†?link text "alias", target "Foo"
- *   [[Foo#Heading]] â†?link text "Foo > Heading", target "Foo#Heading"
+ *   [[Foo]]         â†’ link text "Foo",   target "Foo"
+ *   [[Foo|alias]]   â†’ link text "alias", target "Foo"
+ *   [[Foo#Heading]] â†’ link text "Foo > Heading", target "Foo#Heading"
  *   [[Foo|alias]]   with alias overrides the auto display text.
  *
  * Wikilinks inside code spans (`like this`) or fenced code blocks must
- * NOT be rewritten â€?they're often literal demonstrations of the
+ * NOT be rewritten â€” they're often literal demonstrations of the
  * syntax.
  */
 
@@ -24,7 +24,7 @@ const WIKILINK_TOKEN = /\[\[([^\[\]\n|]+?)(?:\|([^\[\]\n]+?))?\]\]/g;
 export interface WikilinkTarget {
   /** The note name (without .md extension), optionally with a #heading. */
   target: string;
-  /** Display text â€?alias when present, otherwise the target verbatim. */
+  /** Display text â€” alias when present, otherwise the target verbatim. */
   display: string;
 }
 
@@ -58,7 +58,7 @@ export function rewriteWikilinks(body: string): string {
 }
 
 /**
- * Wikilink URL scheme â€?fragment-style so the markdown renderer's URL
+ * Wikilink URL scheme â€” fragment-style so the markdown renderer's URL
  * sanitizer (which blocks unknown schemes like `codepilot:`) lets the
  * link through. The browser would naturally try to scroll to an id of
  * the same name on the current page; the PreviewPanel intercepts the
@@ -70,7 +70,7 @@ export function rewriteWikilinks(body: string): string {
 export const WIKILINK_HREF_PREFIX = '#codepilot-wikilink-';
 
 function rewriteLine(line: string): string {
-  // Skip inline code spans â€?preserve them verbatim, rewrite around them.
+  // Skip inline code spans â€” preserve them verbatim, rewrite around them.
   const codeSpans: Array<{ start: number; end: number }> = [];
   for (const match of line.matchAll(/`[^`]+`/g)) {
     if (match.index !== undefined) {
@@ -93,7 +93,7 @@ function rewriteLine(line: string): string {
 }
 
 /**
- * Inverse of the rewriter â€?extract the wikilink target from a
+ * Inverse of the rewriter â€” extract the wikilink target from a
  * rendered anchor's `href`. Returns null when the href is not a
  * wikilink hash; callers can ignore the click in that case.
  */
@@ -111,7 +111,7 @@ export function parseWikilinkHref(href: string | null | undefined): string | nul
  * workspace. The target may include a `#heading` fragment that we keep
  * separately so callers can pass the anchor through to PreviewSource.
  *
- * Returns null when no workingDirectory is available â€?callers should
+ * Returns null when no workingDirectory is available â€” callers should
  * treat that as "can't resolve, leave as a no-op link."
  */
 export function resolveWikilink(
@@ -139,11 +139,11 @@ function splitOnHash(raw: string): [string, string | undefined] {
 function displayFor(target: string): string {
   const [bare, anchor] = splitOnHash(target);
   if (!anchor) return bare;
-  return `${bare} â€?${anchor.replace(/[-_]/g, ' ')}`;
+  return `${bare} â€º ${anchor.replace(/[-_]/g, ' ')}`;
 }
 
 /**
- * Pull every wikilink token out of a body â€?used by tests + by callers
+ * Pull every wikilink token out of a body â€” used by tests + by callers
  * that want to surface "this note links to X, Y, Z" affordances later.
  */
 export function extractWikilinks(body: string): WikilinkTarget[] {

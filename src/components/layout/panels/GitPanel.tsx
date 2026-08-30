@@ -1,12 +1,12 @@
 "use client";
 
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 import { GitPanel } from "@/components/git/GitPanel";
 
 /**
- * GitTabContent â?the Git surface stripped of its outer chrome
+ * GitTabContent — the Git surface stripped of its outer chrome
  * (resize handle, panel title bar, close button). This is what the
  * Workspace Sidebar's `git` fixed Tab renders.
  *
@@ -32,7 +32,7 @@ export function GitTabContent() {
           title={t('git.refresh')}
           aria-label={t('git.refresh')}
         >
-          <BuckyballIcon name="refresh" size="sm" aria-hidden />
+          <CodePilotIcon name="refresh" size="sm" aria-hidden />
         </Button>
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">

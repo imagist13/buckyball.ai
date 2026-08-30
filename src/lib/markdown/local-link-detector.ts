@@ -1,10 +1,10 @@
 /**
- * Local-file link detection â€?Phase 4 P2.1.
+ * Local-file link detection â€” Phase 4 P2.1.
  *
  * The chat renders markdown via streamdown, which turns `[label](path)`
  * into an `<a href="path">label</a>`. When the path points at a local
  * filesystem reference (absolute, file URL, or a relative previewable
- * file/directory), the default behaviour â€?let the browser navigate â€?is
+ * file/directory), the default behaviour â€” let the browser navigate â€” is
  * wrong: the
  * browser tries to follow a relative URL against the current
  * `localhost:3000` page and 404s. The DOM-walk enrichment in
@@ -104,7 +104,7 @@ export function parseLocalMarkdownReference(
  *   2. Has a previewable extension (`.md`, `.html`, `.json`, etc.).
  *   3. Explicit relative-directory shape (`./docs`, `../docs`, `docs/`).
  *
- * Relative paths without a previewable extension fall through â€?we
+ * Relative paths without a previewable extension fall through â€” we
  * don't want every `[link](foo.bar)` to become a file ref.
  */
 export function isPotentialLocalFile(path: string): boolean {

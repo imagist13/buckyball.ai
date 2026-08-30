@@ -3,8 +3,9 @@ import type { MediaBlock } from '@/types';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { registerMediaGenerationAsset } from '@/lib/assets/service';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
+import { MediaUserActionError } from '@/lib/media-error';
 
 /**
  * Resolve `<dataDir>/.codepilot-media` PER-CALL so test setups that
@@ -16,8 +17,7 @@ import { registerMediaGenerationAsset } from '@/lib/assets/service';
  * the same per-call pattern.
  */
 export function getMediaDir(): string {
-  const dataDir = process.env.CLAUDE_GUI_DATA_DIR || path.join(os.homedir(), '.codepilot');
-  return path.join(dataDir, '.codepilot-media');
+  return path.join(resolveCodePilotDataDir(), '.codepilot-media');
 }
 
 const MIME_TO_EXT: Record<string, string> = {
@@ -162,7 +162,7 @@ export function stageFileForMediaPreview(
 ): { localPath: string } {
   const resolved = resolveSourcePath(filePath, opts.cwd);
   if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) {
-    throw new Error(`File not found: ${resolved}`);
+    throw new MediaUserActionError('MEDIA_SOURCE_NOT_FOUND', `File not found: ${resolved}`);
   }
   const mediaDir = ensureMediaDir();
   if (
@@ -303,7 +303,7 @@ export function importFileToLibrary(
   // not the app process cwd which is typically the project root.
   const resolved = resolveSourcePath(filePath, opts.cwd);
   if (!fs.existsSync(resolved)) {
-    throw new Error(`File not found: ${resolved}`);
+    throw new MediaUserActionError('MEDIA_SOURCE_NOT_FOUND', `File not found: ${resolved}`);
   }
 
   const ext = path.extname(resolved).toLowerCase();

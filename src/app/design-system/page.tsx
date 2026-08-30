@@ -29,29 +29,29 @@ import {
   MagnifyingGlass,
   Copy,
 } from "@/components/ui/icon";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 
-const ICON_SEMANTICS: { name: BuckyballIconName; use: string }[] = [
-  { name: "model", use: "æ¨¡åï¼Cubeï¼é Brainï¼? },
-  { name: "runtime", use: "æ§è¡å¼æï¼Chipï¼é Lightningï¼? },
-  { name: "provider", use: "æå¡å? },
-  { name: "memory", use: "è®°å¿ï¼Brainï¼? },
-  { name: "skill", use: "å¯è°ç¨è½åï¼é­æ³æ£ï¼" },
-  { name: "plugin", use: "å®è£å?/ å®¹å¨ï¼æ¼å¾ï¼" },
-  { name: "mcp", use: "MCP server / åè®®" },
-  { name: "cli", use: "å½ä»¤å·¥å·ç®å½ï¼â  terminalï¼? },
-  { name: "terminal", use: "shell ä¼è¯ï¼â  cliï¼? },
-  { name: "assistant", use: "å©ç / å·¥ä½å? },
-  { name: "task", use: "å®æ¶ä»»å¡" },
-  { name: "widget", use: "Widget ç»ä»¶" },
-  { name: "artifact", use: "Artifact è¡¨ç°å±? },
-  { name: "preview", use: "é¢è§å¨ä½" },
-  { name: "code", use: "ä»£ç  / snippet" },
-  { name: "file", use: "æä»¶èµæº" },
-  { name: "success", use: "æåç¶æ? },
-  { name: "warning", use: "è­¦åç¶æ? },
-  { name: "error", use: "éè¯¯ç¶æ? },
-  { name: "loading", use: "å è½½ä¸? },
+const ICON_SEMANTICS: { name: CodePilotIconName; use: string }[] = [
+  { name: "model", use: "模型（Cube，非 Brain）" },
+  { name: "runtime", use: "执行引擎（Chip，非 Lightning）" },
+  { name: "provider", use: "服务商" },
+  { name: "memory", use: "记忆（Brain）" },
+  { name: "skill", use: "可调用能力（魔法棒）" },
+  { name: "plugin", use: "安装包 / 容器（拼图）" },
+  { name: "mcp", use: "MCP server / 协议" },
+  { name: "cli", use: "命令工具目录（≠ terminal）" },
+  { name: "terminal", use: "shell 会话（≠ cli）" },
+  { name: "assistant", use: "助理 / 工作区" },
+  { name: "task", use: "定时任务" },
+  { name: "widget", use: "Widget 组件" },
+  { name: "artifact", use: "Artifact 表现层" },
+  { name: "preview", use: "预览动作" },
+  { name: "code", use: "代码 / snippet" },
+  { name: "file", use: "文件资源" },
+  { name: "success", use: "成功状态" },
+  { name: "warning", use: "警告状态" },
+  { name: "error", use: "错误状态" },
+  { name: "loading", use: "加载中" },
 ];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -66,7 +66,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function DesignSystemPage() {
   return (
     <SectionPage maxWidth="lg" className="space-y-12">
-      {/* ââ Buttons ââ */}
+      {/* ── Buttons ── */}
       <Section title="Buttons">
         <div className="flex flex-wrap gap-3">
           <Button>Default</Button>
@@ -81,7 +81,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Icon Actions ââ */}
+      {/* ── Icon Actions ── */}
       <Section title="Icon Actions">
         <div className="flex gap-3">
           <IconAction icon={<Gear size={16} />} tooltip="Settings" />
@@ -92,14 +92,15 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Icon Semantics (CodePilot layer) ââ */}
+      {/* ── Icon Semantics (CodePilot layer) ── */}
       <Section title="Icon Semantics">
         <p className="text-sm text-muted-foreground">
-          ä¸å¡ä»£ç ç?<code className="text-xs bg-muted px-1 py-0.5 rounded">{`<BuckyballIcon name="..." />`}</code> è¡¨è¾¾äº§åæ¦å¿µï¼ä¸ç´å¼ vendor icon åãä¸ä¸ªæ¦å¿µä¸ä¸?glyphï¼å²çªå¨ <code className="text-xs bg-muted px-1 py-0.5 rounded">SEMANTIC_MAP</code> åç¹è£å³ãå®æ´å­å¸è§ <code className="text-xs bg-muted px-1 py-0.5 rounded">docs/handover/icon-system.md</code>ã?        </p>
+          业务代码用 <code className="text-xs bg-muted px-1 py-0.5 rounded">{`<CodePilotIcon name="..." />`}</code> 表达产品概念，不直引 vendor icon 名。一个概念一个 glyph，冲突在 <code className="text-xs bg-muted px-1 py-0.5 rounded">SEMANTIC_MAP</code> 单点裁决。完整字典见 <code className="text-xs bg-muted px-1 py-0.5 rounded">docs/handover/icon-system.md</code>。
+        </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {ICON_SEMANTICS.map(({ name, use }) => (
             <div key={name} className="flex items-center gap-3 rounded-lg border border-border p-3">
-              <BuckyballIcon name={name} size="lg" aria-hidden />
+              <CodePilotIcon name={name} size="lg" aria-hidden />
               <div className="min-w-0">
                 <div className="text-sm font-medium">{name}</div>
                 <div className="text-xs text-muted-foreground truncate">{use}</div>
@@ -109,7 +110,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Inputs ââ */}
+      {/* ── Inputs ── */}
       <Section title="Inputs">
         <div className="space-y-3 max-w-md">
           <Input placeholder="Default input" />
@@ -127,7 +128,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Badges ââ */}
+      {/* ── Badges ── */}
       <Section title="Badges">
         <div className="flex flex-wrap gap-2">
           <Badge>Default</Badge>
@@ -137,14 +138,14 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Settings Card ââ */}
+      {/* ── Settings Card ── */}
       <Section title="Settings Card">
         <SettingsCard title="Card with title" description="This is a description for the card.">
           <p className="text-sm text-muted-foreground">Card content goes here.</p>
         </SettingsCard>
 
         <SettingsCard>
-          <p className="text-sm">Card without title â?just content.</p>
+          <p className="text-sm">Card without title — just content.</p>
         </SettingsCard>
 
         <SettingsCard className="border-primary/50 bg-primary/5" title="Active state card">
@@ -152,7 +153,7 @@ export default function DesignSystemPage() {
         </SettingsCard>
       </Section>
 
-      {/* ââ Field Row ââ */}
+      {/* ── Field Row ── */}
       <Section title="Field Row">
         <SettingsCard>
           <FieldRow label="Toggle setting" description="Enable or disable this feature">
@@ -175,7 +176,7 @@ export default function DesignSystemPage() {
         </SettingsCard>
       </Section>
 
-      {/* ââ Status Banner ââ */}
+      {/* ── Status Banner ── */}
       <Section title="Status Banner">
         <div className="space-y-3">
           <StatusBanner variant="success" icon={<CheckCircle size={16} />}>
@@ -193,7 +194,7 @@ export default function DesignSystemPage() {
         </div>
       </Section>
 
-      {/* ââ Empty State ââ */}
+      {/* ── Empty State ── */}
       <Section title="Empty State">
         <EmptyState
           icon={<MagnifyingGlass size={32} />}
@@ -203,7 +204,7 @@ export default function DesignSystemPage() {
         />
       </Section>
 
-      {/* ââ Section Page ââ */}
+      {/* ── Section Page ── */}
       <Section title="Section Page (layout)">
         <p className="text-sm text-muted-foreground">
           This entire page uses <code className="text-xs bg-muted px-1 py-0.5 rounded">SectionPage maxWidth=&quot;lg&quot;</code> for consistent max-width and spacing.

@@ -104,7 +104,7 @@ test('recovery page is self-contained, localized, and contains no raw detail', (
   const html = buildServerRecoveryHtml({
     locale: 'zh-CN', state: 'blocked', attempt: 2, reasonCode: '<unsafe-path>',
   });
-  assert.match(html, /CodePilot 需要你的操�?);
+  assert.match(html, /CodePilot 需要你的操作/);
   assert.match(html, /default-src 'none'/);
   assert.match(html, /&lt;unsafe-path&gt;/);
   assert.doesNotMatch(html, /<unsafe-path>/);
@@ -131,6 +131,74 @@ test('blocked recovery page offers plain quit only, never one-click relaunch', (
   assert.match(failed, /id="retry"/);
 });
 
+test('database recovery stops restart loops and exposes only fixed Main-owned recovery actions', () => {
+  const html = buildServerRecoveryHtml({
+    locale: 'zh-CN',
+    state: 'database',
+    reasonCode: 'database_corrupt:complete',
+  });
+  assert.match(html, /数据库完整性检查未通过/);
+  assert.match(html, /id="open-backups"/);
+  assert.match(html, /id="start-fresh"/);
+  assert.match(html, /id="quit"/);
+  assert.doesNotMatch(html, /id="restart"/);
+  assert.doesNotMatch(html, /id="retry"/);
+  assert.match(html, /openDatabaseBackups\(\)/);
+  assert.match(html, /startFreshDatabase\(\)/);
+
+  const transient = buildServerRecoveryHtml({
+    locale: 'zh-CN',
+    state: 'database-retryable',
+    reasonCode: 'database_busy:not_attempted',
+  });
+  assert.match(transient, /这不代表完整性检查失败/);
+  assert.match(transient, /id="retry"/);
+  assert.match(transient, /id="restart"/);
+  assert.doesNotMatch(transient, /id="start-fresh"/);
+  assert.doesNotMatch(transient, /openDatabaseBackups/);
+
+  const persistentAccessFailure = buildServerRecoveryHtml({
+    locale: 'zh-CN',
+    state: 'database-retryable',
+    reasonCode: 'database_access_denied:not_attempted',
+  });
+  assert.doesNotMatch(persistentAccessFailure, /数据库暂时被/);
+  assert.match(persistentAccessFailure, /可能持续存在/);
+  assert.match(persistentAccessFailure, /数据目录权限/);
+
+  const backupFailed = buildServerRecoveryHtml({
+    locale: 'en',
+    state: 'database',
+    reasonCode: 'database_corrupt:failed',
+  });
+  assert.match(backupFailed, /could not create a verified recovery backup/);
+  assert.doesNotMatch(backupFailed, /id="open-backups"/);
+  assert.doesNotMatch(backupFailed, /openDatabaseBackups\(\)/);
+  assert.match(backupFailed, /id="start-fresh"/);
+
+  const migration = buildServerRecoveryHtml({
+    locale: 'en',
+    state: 'database-migration',
+    reasonCode: 'database_migration_failed:not_attempted',
+  });
+  assert.match(migration, /Existing data was not declared corrupt/);
+  assert.match(migration, /id="retry"/);
+  assert.doesNotMatch(migration, /id="start-fresh"/);
+
+  const freshConflict = buildServerRecoveryHtml({
+    locale: 'zh-CN',
+    state: 'database-fresh-start-conflict',
+    reasonCode: 'database_fresh_start_conflict:complete',
+  });
+  assert.match(freshConflict, /没有自动删除/);
+  assert.match(freshConflict, /id="keep-restored"/);
+  assert.match(freshConflict, /id="continue-fresh"/);
+  assert.doesNotMatch(freshConflict, /id="restart"/);
+  assert.doesNotMatch(freshConflict, /id="retry"/);
+  assert.match(freshConflict, /keepRestoredDatabase\(\)/);
+  assert.match(freshConflict, /continueFreshDatabase\(\)/);
+});
+
 test('recovery action IPCs enforce the blocked-state quit-only boundary', () => {
   const main = readFileSync(path.resolve(__dirname, '../../../electron/main.ts'), 'utf8');
   const preload = readFileSync(path.resolve(__dirname, '../../../electron/preload.ts'), 'utf8');
@@ -151,8 +219,60 @@ test('recovery action IPCs enforce the blocked-state quit-only boundary', () => 
       < restartHandler.indexOf('app.relaunch()'),
   );
   assert.match(quitHandler, /isTrustedServerRecoverySender/);
-  assert.match(quitHandler, /lastServerRecoveryPageState !== 'blocked'/);
+  assert.match(quitHandler, /database-fresh-start-conflict/);
   assert.doesNotMatch(quitHandler, /relaunch/);
+});
+
+test('database retry restarts the utility even when initial startup never assigned serverPort', () => {
+  const main = readFileSync(path.resolve(__dirname, '../../../electron/main.ts'), 'utf8');
+  const initialRetryStart = main.indexOf('async function retryInitialServerStartupFromUser');
+  const retryStart = main.indexOf('function retryServerRecoveryFromUser', initialRetryStart);
+  const retryEnd = main.indexOf('function startServer', retryStart);
+  const ipcStart = main.indexOf("ipcMain.handle('server-recovery:retry'");
+  const ipcEnd = main.indexOf('\n  });', ipcStart);
+
+  assert.ok(initialRetryStart >= 0 && retryStart > initialRetryStart && retryEnd > retryStart);
+  assert.match(main.slice(initialRetryStart, retryStart), /await startServerOnStablePort\(\)/);
+  assert.match(main.slice(initialRetryStart, retryStart), /serverPort = port/);
+  assert.doesNotMatch(main.slice(retryStart, retryEnd), /!serverPort/);
+  assert.match(main.slice(retryStart, retryEnd), /serverPort[\s\S]*runServerRecovery[\s\S]*retryInitialServerStartupFromUser/);
+  assert.match(main.slice(ipcStart, ipcEnd), /return retryServerRecoveryFromUser\(\)/);
+});
+
+test('database startup markers bypass the generic 30-second server wait', () => {
+  const main = readFileSync(path.resolve(__dirname, '../../../electron/main.ts'), 'utf8');
+  const waitStart = main.indexOf('async function waitForServer');
+  const waitEnd = main.indexOf('function serverRecoveryLocale', waitStart);
+  const wait = main.slice(waitStart, waitEnd);
+  assert.match(wait, /lastError\.includes\(DATABASE_STARTUP_MARKER\)/);
+  assert.ok(
+    wait.indexOf('lastError.includes(DATABASE_STARTUP_MARKER)')
+      < wait.indexOf('setTimeout(r, 300)'),
+  );
+});
+
+test('fresh-start conflict actions are Main-owned, fixed-path and mutually explicit', () => {
+  const main = readFileSync(path.resolve(__dirname, '../../../electron/main.ts'), 'utf8');
+  const preload = readFileSync(path.resolve(__dirname, '../../../electron/preload.ts'), 'utf8');
+  assert.match(main, /database_fresh_start_conflict[\s\S]*database-fresh-start-conflict/);
+  assert.match(main, /server-recovery:keep-restored-database/);
+  assert.match(main, /cancelFreshDatabaseIntent\(databasePath\)/);
+  assert.match(main, /server-recovery:continue-fresh-database/);
+  assert.match(main, /continueFreshDatabaseIntent\(databasePath\)/);
+  assert.match(main, /path\.join\(codePilotDataDir, 'codepilot\.db'\)/);
+  assert.match(preload, /server-recovery:keep-restored-database/);
+  assert.match(preload, /server-recovery:continue-fresh-database/);
+  assert.doesNotMatch(preload, /databasePath/);
+});
+
+test('database migration diagnostics remain path-free and reach copied recovery diagnostics', () => {
+  const main = readFileSync(path.resolve(__dirname, '../../../electron/main.ts'), 'utf8');
+  assert.match(main, /DATABASE_STARTUP_DIAGNOSTIC_MARKER/);
+  assert.match(main, /SERVER_HEALTH_DIAGNOSTIC_MARKER/);
+  assert.match(main, /databaseStartupDiagnostic: lastDatabaseStartupDiagnostic/);
+  assert.match(main, /serverHealthDiagnostic: lastServerHealthDiagnostic/);
+  assert.match(main, /lastDatabaseStartupDiagnostic = msg/);
+  assert.match(main, /lastServerHealthDiagnostic = msg/);
 });
 
 test('recovery safe mode is enabled only by the exact Main-owned flag', () => {
@@ -197,9 +317,13 @@ test('utility failures emit one sanitized Sentry event per generation', () => {
   assert.ok(start >= 0 && end > start);
   assert.match(server, /let childFailureReported = false/);
   assert.match(server, /childFailureReported\s*\|\|\s*!electronTelemetry\.enabled/);
-  assert.match(server, /Sentry\.captureEvent\(buildUtilityProcessFailureEvent\(/);
+  assert.match(server, /const event = buildUtilityProcessFailureEvent\(/);
+  assert.match(server, /if \(!event\) return/);
+  assert.match(server, /Sentry\.captureEvent\(event\)/);
   assert.match(server, /reportUtilityFailureOnce\(childFailureReason\)/);
   assert.match(server, /reportUtilityFailureOnce\([\s\S]*'unexpected_exit'/);
+  assert.doesNotMatch(server, /expectedLifecycleExit/);
+  assert.match(server, /serverLifecyclePhase === 'running'\) \{/);
   assert.match(server, /void report/);
   assert.doesNotMatch(
     server.slice(server.indexOf('const reportUtilityFailureOnce'), server.indexOf("child.stdout?.on('data'")),

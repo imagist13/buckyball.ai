@@ -46,7 +46,7 @@ export function WorkspaceConfirmDialogs({
 
   return (
     <>
-      {/* Workspace identity boundary â€?warn before opening the OS picker. */}
+      {/* Workspace identity boundary â€” warn before opening the OS picker. */}
       <AlertDialog open={confirmDialog?.kind === 'switch_path'} onOpenChange={handleOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -67,7 +67,7 @@ export function WorkspaceConfirmDialogs({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Non-existent path â€?offer to create */}
+      {/* Non-existent path â€” offer to create */}
       <AlertDialog open={confirmDialog?.kind === 'not_found'} onOpenChange={handleOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>

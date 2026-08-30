@@ -19,9 +19,9 @@ import {
 } from './McpServerEditorForm';
 
 /**
- * Add-server Dialog (toolbar entry: "+ 添加 MCP 服务�?). Wraps the
+ * Add-server Dialog (toolbar entry: "+ 添加 MCP 服务器"). Wraps the
  * shared `<McpServerEditorForm>` in a Dialog. The card-edit flow no
- * longer reaches this component �?clicking a server card opens
+ * longer reaches this component — clicking a server card opens
  * `<McpServerDetailDialog>` which has its own in-place edit view that
  * also reuses `<McpServerEditorForm>`.
  */

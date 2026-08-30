@@ -2,7 +2,7 @@
  * Per-session single-flight + commit gate for semantic title generation.
  *
  * Phase 1 infrastructure. Phase 2 (the actual model call) is NOT implemented
- * yet â€?this module exists now so the write path is provably safe BEFORE
+ * yet â€” this module exists now so the write path is provably safe BEFORE
  * anything asynchronous is allowed to race with the user. The invariant it
  * enforces, stated once:
  *
@@ -11,22 +11,24 @@
  *
  * Three independent no-op paths, each closing a real race:
  *   1. `claimTitleGeneration` returns null when a generation is already in
- *      flight for that session â†?single-flight (no duplicate provider calls).
- *   2. `commitGeneratedTitle` rejects a token that is no longer current â†? *      a stale/expired claim (session was reset, a newer claim superseded it)
+ *      flight for that session â†’ single-flight (no duplicate provider calls).
+ *   2. `commitGeneratedTitle` rejects a token that is no longer current â†’
+ *      a stale/expired claim (session was reset, a newer claim superseded it)
  *      cannot write.
- *   3. The DB write is a compare-and-swap on `title_origin = 'fallback'` â†? *      a manual rename that landed mid-flight wins permanently, a second
+ *   3. The DB write is a compare-and-swap on `title_origin = 'fallback'` â†’
+ *      a manual rename that landed mid-flight wins permanently, a second
  *      result finds `generated` and no-ops, and a deleted session matches
  *      zero rows.
  *
  * In-memory by design: generation is a single-process, best-effort background
- * task. A server restart drops in-flight claims, which is correct â€?the CAS in
+ * task. A server restart drops in-flight claims, which is correct â€” the CAS in
  * the DB, not this map, is what actually protects the user's title.
  */
 
 import { updateSessionTitle } from '@/lib/db';
 import { deriveConversationTitle } from '@/lib/conversation-title';
 
-/** sessionId â†?the token of the generation currently allowed to commit. */
+/** sessionId â†’ the token of the generation currently allowed to commit. */
 const inFlight = new Map<string, number>();
 
 /**
@@ -34,7 +36,7 @@ const inFlight = new Map<string, number>();
  *
  * Single-flight alone is not "at most once": it only stops CONCURRENT calls, so
  * a duplicate completion event arriving after the first call finished would open
- * a second one, and only the DB CAS would stop the write â€?after the provider
+ * a second one, and only the DB CAS would stop the write â€” after the provider
  * had already been paid and the user's text had already been sent again. This
  * set is the actual once-per-session gate, and it is
  * recorded BEFORE the call, so a failed or empty generation burns the attempt
@@ -59,7 +61,7 @@ export function claimTitleGeneration(sessionId: string): number | null {
 /**
  * Atomically spend this session's single generation attempt.
  *
- * Call it immediately before the first provider call, never after â€?the whole
+ * Call it immediately before the first provider call, never after â€” the whole
  * point is that a call that was started but never returned still counts.
  *
  * @returns true if the caller may proceed, false if the attempt was already
@@ -81,7 +83,7 @@ export function isCurrentClaim(sessionId: string, token: number): boolean {
   return inFlight.get(sessionId) === token;
 }
 
-/** Drop the claim (only if `token` still owns it) â€?safe to call twice. */
+/** Drop the claim (only if `token` still owns it) â€” safe to call twice. */
 export function releaseTitleGeneration(sessionId: string, token: number): void {
   if (inFlight.get(sessionId) === token) inFlight.delete(sessionId);
 }
@@ -101,7 +103,7 @@ export function commitGeneratedTitle(
   if (!isCurrentClaim(sessionId, token)) return false;
   try {
     const title = deriveConversationTitle(rawTitle);
-    // Empty / junk model output â†?keep the fallback rather than write garbage.
+    // Empty / junk model output â†’ keep the fallback rather than write garbage.
     if (!title) return false;
     return updateSessionTitle(sessionId, title, 'generated', {
       expectOrigin: ['fallback'],

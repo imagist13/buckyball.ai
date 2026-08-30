@@ -1,5 +1,5 @@
 /**
- * subdirectory-hint-tracker.ts â€?Progressive subdirectory hint discovery.
+ * subdirectory-hint-tracker.ts â€” Progressive subdirectory hint discovery.
  *
  * As the agent navigates into subdirectories via tool calls (Read, Bash,
  * Glob, Grep, etc.), this module discovers and loads project context files
@@ -10,13 +10,14 @@
  * This complements the startup context loading in `agent-system-prompt.ts`
  * which only discovers CLAUDE.md/AGENTS.md at the cwd and its immediate
  * parent. Subdirectory hints are loaded lazily and injected into the
- * conversation **without modifying the system prompt** â€?this preserves
+ * conversation **without modifying the system prompt** â€” this preserves
  * prompt caching, matching the upstream design in Hermes / Block goose.
  *
  * Ported from /Users/op7418/Documents/code/èµ„æ–™/hermes-agent-main/
  * agent/subdirectory_hints.py (lines 1-224, v0.8.0 snapshot).
  *
- * Integration status: module-only. Wire-up point is in agent-tools.ts â€? * after a tool.execute resolves, call tracker.checkToolCall(name, args)
+ * Integration status: module-only. Wire-up point is in agent-tools.ts â€”
+ * after a tool.execute resolves, call tracker.checkToolCall(name, args)
  * and append the returned string to the tool result. This is deferred to
  * a follow-up because the integration requires touching each tool's
  * execute wrapper, which is structurally invasive; the tracker itself is
@@ -82,7 +83,7 @@ export class SubdirectoryHintTracker {
       this.workingDir = base;
     }
     this.loadedDirs = new Set<string>();
-    // Pre-mark the working dir as loaded â€?startup context already covers it.
+    // Pre-mark the working dir as loaded â€” startup context already covers it.
     this.loadedDirs.add(this.workingDir);
   }
 
@@ -120,7 +121,7 @@ export class SubdirectoryHintTracker {
       }
     }
 
-    // 2. Shell commands â€?extract path-like tokens.
+    // 2. Shell commands â€” extract path-like tokens.
     if (COMMAND_TOOLS.has(toolName)) {
       const cmd = args.command;
       if (typeof cmd === 'string') {
@@ -138,7 +139,7 @@ export class SubdirectoryHintTracker {
    * stopping at the first directory already in loadedDirs (or after
    * MAX_ANCESTOR_WALK levels). This ensures that reading
    * `project/src/main.py` discovers `project/AGENTS.md` even when
-   * `project/src/` has no hint files of its own â€?matching Hermes'
+   * `project/src/` has no hint files of its own â€” matching Hermes'
    * `_add_path_candidate` behavior.
    */
   private addPathCandidate(rawPath: string, candidates: Set<string>): void {
@@ -162,7 +163,7 @@ export class SubdirectoryHintTracker {
         p = path.dirname(p);
       }
 
-      // Walk up ancestors â€?stop at already-loaded dir or filesystem root.
+      // Walk up ancestors â€” stop at already-loaded dir or filesystem root.
       for (let i = 0; i < MAX_ANCESTOR_WALK; i++) {
         if (this.loadedDirs.has(p)) break;
         if (this.isValidSubdir(p)) {
@@ -235,10 +236,10 @@ export class SubdirectoryHintTracker {
         }
 
         foundHint = { relPath, content };
-        // First match per directory wins â€?break immediately.
+        // First match per directory wins â€” break immediately.
         break;
       } catch {
-        // Read error â€?try next filename.
+        // Read error â€” try next filename.
         continue;
       }
     }
@@ -252,7 +253,7 @@ export class SubdirectoryHintTracker {
    * Extract path-like tokens from a shell command string.
    *
    * Tokenizer is intentionally simple: splits on unquoted whitespace and
-   * strips outermost quotes. This is NOT a full shell parser â€?quoted
+   * strips outermost quotes. This is NOT a full shell parser â€” quoted
    * strings containing spaces work, but complex constructs (backticks,
    * here-docs, variable substitution) are treated conservatively.
    * Matches Hermes' `_extract_paths_from_command` intent.

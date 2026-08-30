@@ -2,7 +2,7 @@
  * Widget design guidelines and system prompt for generative UI.
  *
  * Based on Anthropic's actual generative UI guidelines extracted from claude.ai,
- * adapted for buckyball.ai's code-fence trigger mechanism and CSS variable bridge.
+ * adapted for CodePilot's code-fence trigger mechanism and CSS variable bridge.
  *
  * The WIDGET_SYSTEM_PROMPT is a minimal capability declaration (~150 tokens),
  * always injected into the system prompt. Full module guidelines are loaded
@@ -12,14 +12,14 @@
 import { createSdkMcpServer, tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 
-// ââ System prompt (always injected â?minimal version) âââââââââââââââââââââââ
+// ── System prompt (always injected — minimal version) ───────────────────────
 
 /**
  * Canonical show-widget JSON example, separated from the surrounding
  * prose so contract tests can `JSON.parse` it directly and feed it
  * into `parseAllShowWidgets` to verify the renderer accepts it.
  *
- * Phase 5c slice 7 (2026-05-16) â?replaced slice 6's `\\\\"`
+ * Phase 5c slice 7 (2026-05-16) — replaced slice 6's `\\\\"`
  * double-escaped attribute form. JSON.parse on a string containing
  * `\\\\\"` terminates the JSON string early and rejects the rest;
  * the model copying the example verbatim produced unparseable JSON.
@@ -38,7 +38,7 @@ export const CANONICAL_SHOW_WIDGET_JSON =
  * Wire format spec referenced by the system prompt, the on-demand
  * guidelines tool, the bridge prompt, and the contract test in
  * `codex-widget-format-contract.test.ts` + `harness-capability-contract.test.ts`.
- * Single source of truth â?any drift between them is the kind of
+ * Single source of truth — any drift between them is the kind of
  * "model returns raw HTML fence instead of JSON wrapper" failure
  * mode the post-smoke S4 scenario surfaced.
  *
@@ -46,7 +46,7 @@ export const CANONICAL_SHOW_WIDGET_JSON =
  * snippet so the model can't confuse it with the design-system
  * examples loaded later by `codepilot_load_widget_guidelines`.
  */
-export const WIDGET_WIRE_FORMAT_SPEC = `## FINAL OUTPUT FORMAT â?non-negotiable
+export const WIDGET_WIRE_FORMAT_SPEC = `## FINAL OUTPUT FORMAT — non-negotiable
 
 The ONLY way to render a widget is a code fence labelled \`show-widget\` whose body is a JSON object with a \`widget_code\` string:
 
@@ -54,21 +54,21 @@ The ONLY way to render a widget is a code fence labelled \`show-widget\` whose b
 {"title":"<human-readable title>","widget_code":"<escaped HTML/SVG string>"}
 \`\`\`
 
-- \`widget_code\` is a **JSON-encoded string**, not raw HTML. Prefer **single-quote** HTML attributes (\`<div style='...'>\`) so the JSON body never needs to escape double quotes â?copy/paste-safe.
-- If you absolutely need double-quote HTML attributes inside \`widget_code\`, use **one** backslash (\`\\\\\"\`) â?never two. Two-backslash escapes (\`\\\\\\\\\"\`) terminate the JSON string and break the widget.
+- \`widget_code\` is a **JSON-encoded string**, not raw HTML. Prefer **single-quote** HTML attributes (\`<div style='...'>\`) so the JSON body never needs to escape double quotes — copy/paste-safe.
+- If you absolutely need double-quote HTML attributes inside \`widget_code\`, use **one** backslash (\`\\\\\"\`) — never two. Two-backslash escapes (\`\\\\\\\\\"\`) terminate the JSON string and break the widget.
 - Escape newlines as \`\\\\n\` and backslashes as \`\\\\\\\\\` inside the JSON string.
-- A raw HTML fence (\`\`\`html â¦\`\`\`) is NEVER rendered as a widget.
-- A \`show-widget\` fence whose body is HTML (not JSON) is NEVER rendered as a widget â?the UI surfaces a "malformed widget" error block.
+- A raw HTML fence (\`\`\`html …\`\`\`) is NEVER rendered as a widget.
+- A \`show-widget\` fence whose body is HTML (not JSON) is NEVER rendered as a widget — the UI surfaces a "malformed widget" error block.
 - Any HTML example shown later in the design guidelines goes **inside** \`widget_code\`. It is not the wire format.
 
-Minimal correct example â?copy/paste-safe JSON (verified by contract test):
+Minimal correct example — copy/paste-safe JSON (verified by contract test):
 
 \`\`\`show-widget
 ${CANONICAL_SHOW_WIDGET_JSON}
 \`\`\``;
 
 /**
- * Phase 5d Phase 2 slice 2c (2026-05-17) â?WIDGET_SYSTEM_PROMPT no
+ * Phase 5d Phase 2 slice 2c (2026-05-17) — WIDGET_SYSTEM_PROMPT no
  * longer embeds WIDGET_WIRE_FORMAT_SPEC.
  *
  * Pre-fix the system prompt interpolated the entire wire-format spec
@@ -82,11 +82,11 @@ ${CANONICAL_SHOW_WIDGET_JSON}
  *
  * The compiler's `detectWireFormatDuplication` sanity check FAILs at
  * compile time if WIDGET_SYSTEM_PROMPT (or any capability fragment)
- * re-embeds an artifactContract's canonicalJson â?that's the forcing
+ * re-embeds an artifactContract's canonicalJson — that's the forcing
  * function that keeps this refactor honest.
  *
  * The 14 capability rules below still reference `widget_code` and JSON
- * encoding by name â?that's fine, it's vocabulary, not the literal
+ * encoding by name — that's fine, it's vocabulary, not the literal
  * canonical example string.
  */
 export const WIDGET_SYSTEM_PROMPT = `<widget-capability>
@@ -101,37 +101,37 @@ Available modules: interactive, chart, mockup, art, diagram.
 While building a widget, **do NOT** call \`codepilot_generate_image\` or any image-generation tool. Widgets render HTML/SVG inside \`widget_code\`; they do not embed generated images. Only call image-generation tools if the user explicitly asked for an image (separate from the widget).
 
 ## Required rules (always apply)
-1. widget_code is a JSON string â?escape quotes, newlines. No DOCTYPE/html/head/body
-2. Transparent background â?host provides bg
-3. Each widget â?3000 chars. Always close JSON + fence
-4. Streaming order: SVG â?\`<defs>\` first; HTML â?\`<style>\` â?content â?\`<script>\` last
+1. widget_code is a JSON string — escape quotes, newlines. No DOCTYPE/html/head/body
+2. Transparent background — host provides bg
+3. Each widget ≤ 3000 chars. Always close JSON + fence
+4. Streaming order: SVG → \`<defs>\` first; HTML → \`<style>\` → content → \`<script>\` last
 5. CDN allowlist: cdnjs.cloudflare.com, cdn.jsdelivr.net, unpkg.com, esm.sh
 6. CDN scripts: \`onload="initFn()"\` + \`if(window.Lib) initFn();\` fallback
 7. Text explanations go OUTSIDE the code fence
 8. Multi-widget: interleave text, each widget in a SEPARATE fence
 9. SVG: \`<svg width="100%" viewBox="0 0 680 H">\`, arrow marker in \`<defs>\`
-10. Interactive controls MUST update visuals â?call \`chart.update()\` after data changes
+10. Interactive controls MUST update visuals — call \`chart.update()\` after data changes
 11. Clickable drill-down: \`onclick="window.__widgetSendMessage('...')"\`
-12. Title should be human-readable in the user's language (e.g. "ç¨æ·åä¸åº? not "user_engagement")
+12. Title should be human-readable in the user's language (e.g. "用户参与度" not "user_engagement")
 13. Use \`min-height\` instead of \`height\` for the outermost container to prevent bottom clipping
 14. Cross-widget filter: \`window.__widgetPublish('topic', {key:'value'})\`. Other widgets listen via \`window.addEventListener('widget-filter', e => { /* e.detail */ })\`
 </widget-capability>`;
 
-// ââ Full module guidelines (injected on demand) ââââââââââââââââââââââââââââ
+// ── Full module guidelines (injected on demand) ────────────────────────────
 
 const CORE_DESIGN_SYSTEM = `## Core Design System
 
 ### Philosophy
 - **Seamless**: widget should feel native to the chat, not a foreign embed.
 - **Flat**: no gradients, shadows, blur, glow, neon. Solid fills only.
-- **Warm minimal**: clean geometric layouts with soft rounded corners (rx=12). Not cold/sterile â?use warm neutrals (slate tones) with indigo as primary accent.
-- **Diverse**: pick the visualization type that best fits the content â?flowchart, timeline, cycle, hierarchy, chart, interactive. Don't default to one type.
-- **Text outside, visuals inside** â?explanatory text OUTSIDE the code fence.
+- **Warm minimal**: clean geometric layouts with soft rounded corners (rx=12). Not cold/sterile — use warm neutrals (slate tones) with indigo as primary accent.
+- **Diverse**: pick the visualization type that best fits the content — flowchart, timeline, cycle, hierarchy, chart, interactive. Don't default to one type.
+- **Text outside, visuals inside** — explanatory text OUTSIDE the code fence.
 
 ### Streaming
-- **SVG**: \`<defs>\` first â?visual elements immediately.
-- **HTML**: \`<style>\` (short) â?content â?\`<script>\` last.
-- Solid fills only â?gradients/shadows flash during DOM diffs.
+- **SVG**: \`<defs>\` first → visual elements immediately.
+- **HTML**: \`<style>\` (short) → content → \`<script>\` last.
+- Solid fills only — gradients/shadows flash during DOM diffs.
 
 ### Rules
 - No comments, no emoji, no position:fixed, no iframes
@@ -139,7 +139,7 @@ const CORE_DESIGN_SYSTEM = `## Core Design System
 - No dark/colored backgrounds on outer containers
 - Typography: weights 400/500 only, sentence case
 - No DOCTYPE/html/head/body
-- CDN allowlist: \`cdnjs.cloudflare.com\`, \`esm.sh\`, \`cdn.jsdelivr.net\`, \`unpkg.com\`. No Tailwind CDN â?utilities are built-in.
+- CDN allowlist: \`cdnjs.cloudflare.com\`, \`esm.sh\`, \`cdn.jsdelivr.net\`, \`unpkg.com\`. No Tailwind CDN — utilities are built-in.
 
 ### CSS Variables (HTML widgets)
 - Backgrounds: \`--color-background-primary\` (white), \`-secondary\`, \`-tertiary\`
@@ -152,15 +152,15 @@ const UI_COMPONENTS = `## UI components (HTML widgets)
 ### Tokens
 - Borders: \`0.5px solid var(--color-border-tertiary)\`
 - Radius: \`var(--border-radius-md)\` (8px), \`var(--border-radius-lg)\` (12px)
-- Form elements pre-styled â?write bare tags
+- Form elements pre-styled — write bare tags
 - Round every displayed number
 
 ### Patterns
-1. **Chart + controls** â?sliders/buttons above or beside Chart.js canvas. Controls MUST update chart via \`chart.update()\`.
-2. **Metric dashboard** â?grid of stat cards above a chart.
-3. **Calculator** â?range sliders with live result display.
-4. **Bar comparison** â?horizontal bars with labels and percentages.
-5. **Toggle/select** â?buttons or select to switch between data views.`;
+1. **Chart + controls** — sliders/buttons above or beside Chart.js canvas. Controls MUST update chart via \`chart.update()\`.
+2. **Metric dashboard** — grid of stat cards above a chart.
+3. **Calculator** — range sliders with live result display.
+4. **Bar comparison** — horizontal bars with labels and percentages.
+5. **Toggle/select** — buttons or select to switch between data views.`;
 
 const COLOR_PALETTE = `## Color palette
 
@@ -197,7 +197,7 @@ if(window.Chart)init();
 \`\`\`
 
 ### Rules
-- Canvas cannot use CSS variables â?use hex from color ramps
+- Canvas cannot use CSS variables — use hex from color ramps
 - Height on wrapper div only. responsive:true, maintainAspectRatio:false
 - Always disable legend
 - borderRadius:6 for bars, tension:0.3 for smooth lines
@@ -216,7 +216,7 @@ function update(){
 
 const SVG_SETUP = `## SVG setup
 
-\`<svg width="100%" viewBox="0 0 680 H">\` â?680px fixed width. Adjust H to fit content + 40px buffer.
+\`<svg width="100%" viewBox="0 0 680 H">\` — 680px fixed width. Adjust H to fit content + 40px buffer.
 
 **ViewBox checklist**:
 1. max(y + height) of lowest element + 40 = H
@@ -232,9 +232,9 @@ const SVG_SETUP = `## SVG setup
 const DIAGRAM_TYPES = `## Diagram type catalog
 
 ### Flowchart (process)
-Nodes leftâright or topâbottom. Straight arrows. Color = semantic category.
+Nodes left→right or top→bottom. Straight arrows. Color = semantic category.
 - Decision points: diamond shape or bold-bordered node
-- â? nodes per row
+- ≤4 nodes per row
 
 ### Timeline
 Horizontal axis line with event markers. Stagger labels above/below to avoid overlap.
@@ -266,8 +266,8 @@ Central circle node, surrounding nodes connected by lines. Hub = larger circle, 
 Two parallel groups. Matching rows. Different fill colors per group. Optional connecting lines for correspondences.
 
 ### Design rules
-- â? nodes per row, â? words per title
-- Node width â?(chars Ã 8 + 40) px
+- ≤4 nodes per row, ≤5 words per title
+- Node width ≥ (chars × 8 + 40) px
 - Verify no arrow crosses unrelated boxes
 - 2-3 color ramps max, gray for structural
 - Clickable nodes: \`onclick="window.__widgetSendMessage('...')"\` on 2-3 key nodes
@@ -281,7 +281,7 @@ For complex topics, output multiple widgets of DIFFERENT types:
 5. Interactive Chart.js with controls
 Mix types freely.`;
 
-// ââ Module registry ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Module registry ────────────────────────────────────────────────────────
 
 const MODULE_SECTIONS: Record<string, string[]> = {
   interactive: [CORE_DESIGN_SYSTEM, UI_COMPONENTS, COLOR_PALETTE],
@@ -301,13 +301,13 @@ export const AVAILABLE_MODULES = Object.keys(MODULE_SECTIONS);
  *
  * Post-smoke S4 evidence (2026-05-16): GLM-5 Turbo called the load
  * tool, read the Chart.js example, then emitted a raw \`\`\`html-style
- * fence as the final output. The fix is to remind the model â?right
- * before it sees the HTML examples â?that those examples live INSIDE
+ * fence as the final output. The fix is to remind the model — right
+ * before it sees the HTML examples — that those examples live INSIDE
  * widget_code, not as the wire format.
  */
 const GUIDELINES_WRAPPER_REMINDER = `${WIDGET_WIRE_FORMAT_SPEC}
 
-> **Reading this document:** every HTML / SVG / Chart.js snippet below is an INTERNAL EXAMPLE â?it shows what to put INSIDE the \`widget_code\` JSON string. None of the snippets below are themselves the wire format. The only wire format is the \`show-widget\` JSON fence above.
+> **Reading this document:** every HTML / SVG / Chart.js snippet below is an INTERNAL EXAMPLE — it shows what to put INSIDE the \`widget_code\` JSON string. None of the snippets below are themselves the wire format. The only wire format is the \`show-widget\` JSON fence above.
 `;
 
 /**
@@ -337,7 +337,7 @@ export function getGuidelines(moduleNames: string[]): string {
   return parts.join('\n\n\n');
 }
 
-// ââ Keyword gate (shared contract â?Phase 8 #31) ââââââââââââââââââââââââââââ
+// ── Keyword gate (shared contract — Phase 8 #31) ────────────────────────────
 
 /**
  * Widget is keyword-gated: only loaded when the prompt hints at generative
@@ -346,14 +346,14 @@ export function getGuidelines(moduleNames: string[]): string {
  * injection (`codex/runtime.ts`) so the gate can't drift between runtimes.
  */
 export const WIDGET_KEYWORDS =
-  /å¯è§å|å¾è¡¨|æµç¨å¾|æ¶é´çº¿|æ¶æå¾|å¯¹æ¯|visualiz|diagram|chart|flowchart|timeline|infographic|interactive|widget|show-widget|hierarchy|dashboard/i;
+  /可视化|图表|流程图|时间线|架构图|对比|visualiz|diagram|chart|flowchart|timeline|infographic|interactive|widget|show-widget|hierarchy|dashboard/i;
 
 export function promptNeedsWidget(prompt: string, conversationHasWidget = false): boolean {
   if (prompt && WIDGET_KEYWORDS.test(prompt)) return true;
   return conversationHasWidget;
 }
 
-// ââ In-process MCP server for on-demand guideline loading âââââââââââââââââââ
+// ── In-process MCP server for on-demand guideline loading ───────────────────
 
 /**
  * Creates an in-process MCP server that exposes `codepilot_load_widget_guidelines`.

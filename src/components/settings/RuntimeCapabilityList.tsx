@@ -1,34 +1,34 @@
 /**
- * RuntimeCapabilityList â?Phase 5e Phase 3 (2026-05-18).
+ * RuntimeCapabilityList — Phase 5e Phase 3 (2026-05-18).
  *
- * Settings â?Runtime page sub-component that surfaces the capability
+ * Settings → Runtime page sub-component that surfaces the capability
  * clipboard for each Runtime. Per user decision (B-Settings variant)
- * this is the ONLY place buckyball.ai tells the user "this engine
- * supports X but not Y â?switch to Z to enable Y" â?never a
+ * this is the ONLY place CodePilot tells the user "this engine
+ * supports X but not Y — switch to Z to enable Y" — never a
  * chat-page banner.
  *
- * Phase 5e review round 7 (2026-05-18 user feedback) â?UI reads
+ * Phase 5e review round 7 (2026-05-18 user feedback) — UI reads
  * **user-facing copy** from `capability-display-text.ts`. The
  * `capability-contract.ts` strings (`displayName`,
  * `deferredReason`, `statusLine`) are engineering identifiers and
- * MUST NOT leak into Settings â?words like "MCP" / "bridge not yet
+ * MUST NOT leak into Settings — words like "MCP" / "bridge not yet
  * implemented" / "permission round-trip design" / "Phase 5d slice 7"
  * are noise for the end user. The display layer keeps the user
- * vocabulary stable (çæ Widget / çæ¿æä½ / ...) while the
+ * vocabulary stable (生成 Widget / 看板操作 / ...) while the
  * engineering contract evolves underneath.
  *
  * Phase 5e review round 7 also:
  *   - Removes the underline on the trigger (per user request).
  *   - Removes the explicit footer "Close" button (Radix Dialog
  *     ships its own corner X close button per
- *     `src/components/ui/dialog.tsx:53` â?having two close buttons
- *     was a "å¼¹çªå æé? smell).
+ *     `src/components/ui/dialog.tsx:53` — having two close buttons
+ *     was a "弹窗叠按钮" smell).
  *   - Adds a Codex Account header note when codex_account is the
- *     active provider: Codexâs own plugins / Skills are managed by
- *     Codex itself; the list below ONLY describes buckyball.ai Harness
+ *     active provider: Codex’s own plugins / Skills are managed by
+ *     Codex itself; the list below ONLY describes CodePilot Harness
  *     injection, not Codex native capabilities.
  *
- * Design (sync'd with `docs/design.md` "Click-card â?detail dialog"
+ * Design (sync'd with `docs/design.md` "Click-card → detail dialog"
  * spec):
  *   - Trigger: ghost-style text button, no underline. Sits inside
  *     the engine card (round 7 user request) so the affordance is
@@ -76,7 +76,7 @@ interface Props {
    *  codex_account on the Codex Runtime card), the parent passes a
    *  short sentence rendered inside the dialog header note slot. */
   readonly providerNote?: string;
-  /** Round 7 user request â?trigger lives inside the picker card.
+  /** Round 7 user request — trigger lives inside the picker card.
    *  Clicking it must NOT bubble into the picker's "switch default
    *  runtime" handler. */
   readonly stopPropagationOnTrigger?: boolean;
@@ -100,7 +100,7 @@ function userExtensionsStatusIcon(status: UserExtensionsStatus) {
     case 'executable':
       return <CheckCircle size={14} weight="fill" className="text-status-success-foreground" />;
     case 'partial':
-      // Same warning tone as perception_only â?"some pieces work, some
+      // Same warning tone as perception_only — "some pieces work, some
       // don't" still means the user shouldn't expect every kind to be
       // callable here.
       return <Circle size={14} className="text-status-warning-foreground" />;
@@ -113,11 +113,11 @@ function userExtensionsBadge(status: UserExtensionsStatus, isZh: boolean): { lab
   if (isZh) {
     switch (status) {
       case 'executable':
-        return { label: 'å¨é¨å¯ç¨', cls: 'bg-status-success-muted text-status-success-foreground' };
+        return { label: '全部可用', cls: 'bg-status-success-muted text-status-success-foreground' };
       case 'partial':
-        return { label: 'é¨åå¯ç¨', cls: 'bg-status-warning-muted text-status-warning-foreground' };
+        return { label: '部分可用', cls: 'bg-status-warning-muted text-status-warning-foreground' };
       case 'perception_only':
-        return { label: 'ä¸å¯è°ç¨', cls: 'bg-status-warning-muted text-status-warning-foreground' };
+        return { label: '不可调用', cls: 'bg-status-warning-muted text-status-warning-foreground' };
     }
   }
   switch (status) {
@@ -134,13 +134,13 @@ function statusLabel(status: CapabilityMatrixCell['status'], isZh: boolean): str
   if (isZh) {
     switch (status) {
       case 'executable':
-        return 'å¯è°ç?;
+        return '可调用';
       case 'perception_only':
-        return 'ä¸å¯è°ç¨';
+        return '不可调用';
       case 'unavailable':
-        return 'ä¸æ¯æ?;
+        return '不支持';
       case 'undetermined':
-        return 'æªç¡®å®?;
+        return '未确定';
     }
   }
   switch (status) {
@@ -162,13 +162,13 @@ function trustBoundaryLabel(
   if (isZh) {
     switch (boundary) {
       case 'auto_safe':
-        return 'èªå¨æ§è¡';
+        return '自动执行';
       case 'requires_approval':
-        return 'éæ¹å';
+        return '需批准';
       case 'side_effect':
-        return 'ä¼è§¦åéç¥';
+        return '会触发通知';
       case 'mixed':
-        return 'é¨åéæ¹å';
+        return '部分需批准';
     }
   }
   switch (boundary) {
@@ -216,7 +216,7 @@ export function RuntimeCapabilityList({
 
   const handleTriggerClick = (e: MouseEvent<HTMLButtonElement>) => {
     if (stopPropagationOnTrigger) {
-      // Round 7 â?trigger is hosted inside the EnginePickerCard
+      // Round 7 — trigger is hosted inside the EnginePickerCard
       // click surface; without stopPropagation a click would both
       // open the dialog AND switch the default runtime.
       e.stopPropagation();
@@ -237,7 +237,7 @@ export function RuntimeCapabilityList({
           )}
         >
           {isZh
-            ? `æ¥çè½åæ¸åï¼?{executableCount} / ${totalCount}ï¼`
+            ? `查看能力清单（${executableCount} / ${totalCount}）`
             : `View capabilities (${executableCount} / ${totalCount})`}
         </button>
       </DialogTrigger>
@@ -247,12 +247,12 @@ export function RuntimeCapabilityList({
       >
         <DialogHeader className="shrink-0">
           <DialogTitle>
-            {isZh ? 'è½åæ¯ææ¸å' : 'Capability support'} â?{runtimeLabel(runtimeId, isZh)}
+            {isZh ? '能力支持清单' : 'Capability support'} — {runtimeLabel(runtimeId, isZh)}
           </DialogTitle>
           <DialogDescription>
             {isZh
-              ? `è¿éåªå±ç¤?buckyball.ai æä¾çåç½?Harness è½åãå¼æèªèº«çåçå·¥å·ï¼ä¾å¦?Codex ç?plugins / shellãClaudeCode ç?hooksï¼ç±å¯¹åºå¼æç®¡çï¼ä¸å¨æ­¤åã`
-              : `This list only covers CodePilotâs built-in Harness capabilities. Each engineâs own native tools (Codex plugins / shell, ClaudeCode hooks, etc.) are managed by that engine and not shown here.`}
+              ? `这里只展示 CodePilot 提供的内置 Harness 能力。引擎自身的原生工具（例如 Codex 的 plugins / shell、ClaudeCode 的 hooks）由对应引擎管理，不在此列。`
+              : `This list only covers CodePilot’s built-in Harness capabilities. Each engine’s own native tools (Codex plugins / shell, ClaudeCode hooks, etc.) are managed by that engine and not shown here.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -267,7 +267,7 @@ export function RuntimeCapabilityList({
           )}
 
           <h4 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mt-1">
-            {isZh ? 'buckyball.ai åç½®è½å' : 'Built-in capabilities'}
+            {isZh ? 'CodePilot 内置能力' : 'Built-in capabilities'}
           </h4>
           <ul className="flex flex-col gap-2">
             {cells.map((cell) => {
@@ -349,8 +349,8 @@ export function RuntimeCapabilityList({
             })}
           </ul>
 
-          {/* Phase 5e round 8 (2026-05-18) â?user-extensions section.
-              Built-in capabilities above describe buckyball.ai's first-
+          {/* Phase 5e round 8 (2026-05-18) — user-extensions section.
+              Built-in capabilities above describe CodePilot's first-
               party tools; this section describes whether user-defined
               MCP servers / Skills / slash commands / workspace rules
               are honored on the current Runtime. Kept as a separate
@@ -363,7 +363,7 @@ export function RuntimeCapabilityList({
             return (
               <div className="mt-4 pt-3 border-t border-border/40">
                 <h4 className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  {isZh ? 'ç¨æ·èªå®ä¹? : 'User extensions'}
+                  {isZh ? '用户自定义' : 'User extensions'}
                 </h4>
                 <div
                   data-testid={`user-extensions-row-${runtimeId}`}

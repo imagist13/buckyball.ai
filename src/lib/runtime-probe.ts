@@ -92,7 +92,7 @@ export function buildNativeRuntimeProbe(options: { cwd?: string; logLocation?: s
     // binary check that never ran.
     binary: { exists: true, version: process.version, probe: 'not_run' },
     cwd: defaultCwd(options.cwd),
-    appServer: { probe: 'passed', detail: 'In-process bb-agent Runtime' },
+    appServer: { probe: 'passed', detail: 'In-process CodePilot Runtime' },
     ...(options.logLocation ? { logLocation: options.logLocation } : {}),
   };
 }

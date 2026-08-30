@@ -1,5 +1,5 @@
 /**
- * Phase 5c (2026-05-16) â€?anti-pattern source-grep guards.
+ * Phase 5c (2026-05-16) â€” anti-pattern source-grep guards.
  *
  * The user's smoke evidence (2026-05-16) showed GLM/Kimi via Codex
  * Runtime fabricating recovery chains: `OPENAI_API_KEY` lookup,
@@ -11,7 +11,7 @@
  * These tests grep the Codex proxy source files for the four
  * anti-patterns. If a future commit reintroduces ANY of them as a
  * product code path (string literal in a path / fetch URL / shell
- * exec), the test fires. Source grep is the cheapest defence â€?we
+ * exec), the test fires. Source grep is the cheapest defence â€” we
  * don't have to mock the filesystem, and a regression shows up in
  * `npm run test` instantly.
  *
@@ -69,7 +69,7 @@ function nonCommentHitsOf(src: string, needle: string): string[] {
   return hits;
 }
 
-describe('codex/proxy/** source â€?anti-pattern guards', () => {
+describe('codex/proxy/** source â€” anti-pattern guards', () => {
   const files = walkTs(PROXY_DIR);
 
   it('NO product path reads ~/.codex/auth.json', () => {
@@ -83,7 +83,7 @@ describe('codex/proxy/** source â€?anti-pattern guards', () => {
   it('NO product path runs scripts/image_gen.py (or similar shell fallback)', () => {
     for (const f of files) {
       const src = fs.readFileSync(f, 'utf-8');
-      // Same exclusion logic as auth.json â€?comments allowed.
+      // Same exclusion logic as auth.json â€” comments allowed.
       const hits = nonCommentHitsOf(src, 'image_gen.py');
       assert.deepEqual(hits, [], `Found scripts/image_gen.py reference in code at ${f}: ${hits.join(' | ')}`);
     }
@@ -103,7 +103,7 @@ describe('codex/proxy/** source â€?anti-pattern guards', () => {
     // upstream model). The anti-pattern is treating its ABSENCE as
     // "try the CLI / install openai / read auth.json". We grep for
     // the substring "OPENAI_API_KEY" but the previous three guards
-    // catch the rescue-path strings â€?so we don't have to outlaw
+    // catch the rescue-path strings â€” so we don't have to outlaw
     // the env var name itself.
     for (const f of files) {
       const src = fs.readFileSync(f, 'utf-8');
@@ -118,7 +118,7 @@ describe('codex/proxy/** source â€?anti-pattern guards', () => {
   });
 });
 
-describe('codex/proxy/** source â€?positive bridge presence pins', () => {
+describe('codex/proxy/** source â€” positive bridge presence pins', () => {
   it('builtin-bridge.ts exports createCodePilotBuiltinTools', () => {
     const src = fs.readFileSync(BRIDGE_FILE, 'utf-8');
     assert.match(src, /export function createCodePilotBuiltinTools/);
@@ -126,7 +126,7 @@ describe('codex/proxy/** source â€?positive bridge presence pins', () => {
 
   it('builtin-bridge.ts mounts codepilot_generate_image AND emits MediaBlock', () => {
     // The image tool's execute MUST construct an array of MediaBlock
-    // objects (type/mimeType/localPath/mediaId fields) â€?the smoke
+    // objects (type/mimeType/localPath/mediaId fields) â€” the smoke
     // matrix's "image card live in current chat" pass-criterion
     // depends on this.
     const src = fs.readFileSync(BRIDGE_FILE, 'utf-8');

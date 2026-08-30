@@ -1,5 +1,5 @@
 /**
- * types.ts â€?Anthropic Messages API types for the ClaudeCodeCompat adapter.
+ * types.ts â€” Anthropic Messages API types for the ClaudeCodeCompat adapter.
  *
  * These match the wire format that Claude Code sends to proxy APIs.
  * Ref: Claude Code services/api/claude.ts

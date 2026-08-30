@@ -1,5 +1,5 @@
 /**
- * Telegram Media â€?download and process images from Telegram messages.
+ * Telegram Media â€” download and process images from Telegram messages.
  *
  * Handles photo[] size selection, file download via Bot API, base64 conversion,
  * and document-type image validation. Produces FileAttachment objects that plug
@@ -53,7 +53,7 @@ export type MediaRejectCode = 'too_large' | 'unsupported_type' | 'download_faile
 /** Unified result for all media download attempts. */
 export interface MediaDownloadResult {
   attachment: FileAttachment | null;
-  /** Rejection code â€?set when attachment is null and failure is user-actionable. */
+  /** Rejection code â€” set when attachment is null and failure is user-actionable. */
   rejected?: MediaRejectCode;
   /** Human-readable rejection message for display in Telegram. */
   rejectedMessage?: string;
@@ -135,7 +135,7 @@ export function selectOptimalPhoto(photos: TelegramPhotoSize[]): TelegramPhotoSi
     }
   }
 
-  // None large enough â€?take the largest
+  // None large enough â€” take the largest
   return sorted[sorted.length - 1];
 }
 
@@ -187,7 +187,7 @@ export async function downloadDocumentImage(
 
 /**
  * Download a file by its Telegram file_id.
- * Calls getFile â†?download URL â†?binary â†?base64 FileAttachment.
+ * Calls getFile â†’ download URL â†’ binary â†’ base64 FileAttachment.
  * Retries up to MAX_RETRIES with exponential backoff.
  */
 async function downloadFileById(

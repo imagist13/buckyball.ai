@@ -4,7 +4,7 @@
  *
  * Surface: one function `exportHtmlAsLongShot({ html, filename, width })`.
  * Callers (PreviewPanel header button, DiffSummary row action) hand it the
- * HTML source they want turned into a PNG, plus a suggested filename â€?we
+ * HTML source they want turned into a PNG, plus a suggested filename â€” we
  * do the plumbing. Errors surface as thrown Error with machine-readable
  * `code` so UI can branch on "busy / timeout / canvas_limit / unavailable".
  *
@@ -58,7 +58,7 @@ export interface ExportHtmlOptions {
  *
  * Throws ArtifactExportError with a discriminated code on failure. The
  * caller is responsible for translating the code to an i18n string and
- * surfacing it via toast / inline alert â€?we don't assume any particular
+ * surfacing it via toast / inline alert â€” we don't assume any particular
  * UI shell.
  */
 export async function exportHtmlAsLongShot(opts: ExportHtmlOptions): Promise<void> {
@@ -91,7 +91,7 @@ export async function exportHtmlAsLongShot(opts: ExportHtmlOptions): Promise<voi
 
   // Turn base64 PNG into a Blob + trigger download. Using a temporary
   // anchor with URL.createObjectURL is the standard "save file" pattern
-  // in a web context and keeps the data inside the renderer â€?we don't
+  // in a web context and keeps the data inside the renderer â€” we don't
   // need to round-trip through another IPC just to save.
   const binary = atob(result.base64);
   const bytes = new Uint8Array(binary.length);

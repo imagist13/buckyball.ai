@@ -1,21 +1,21 @@
 /**
- * #629 â€?stale/bad resume returns as an is_error RESULT (not a throw).
+ * #629 â€” stale/bad resume returns as an is_error RESULT (not a throw).
  *
  * POC-B (2026-06-26, docs/research/issue-629-resume-error-shape-poc/): four
  * third-party Anthropic-compatible proxies (GLM / MiMo / DeepSeek / Aliyun) all
- * returned the same shape â€?first message is a `result`, `is_error=true`,
+ * returned the same shape â€” first message is a `result`, `is_error=true`,
  * `subtype='error_during_execution'`, `errors[0]="No conversation found with
  * session ID: <sid>"`. The bad sdk_session_id was left in the DB, so the next
  * message retried the broken resume.
  *
  * Two layers pinned here:
- *   1. classifier â€?the real wording now maps to RESUME_FAILED (it was UNKNOWN;
+ *   1. classifier â€” the real wording now maps to RESUME_FAILED (it was UNKNOWN;
  *      existing 'conversation not found' has the wrong word order, and the
  *      session-id regex needs "not found" AFTER the id) and the clear-decision
  *      helper fires ONLY for resume/session-state, never for transient
  *      rate-limit/auth/budget (the regression a naive "clear on any is_error"
  *      would cause).
- *   2. claude-client wiring â€?source pins (the SDK conversation iterator can't be
+ *   2. claude-client wiring â€” source pins (the SDK conversation iterator can't be
  *      unit-driven without mocking the whole Agent SDK; same constraint as
  *      stream-result-error-guard.test.ts).
  */
@@ -27,7 +27,7 @@ import { classifyError, isSessionStateResultError } from '../../lib/error-classi
 
 const REAL = 'No conversation found with session ID: 00000000-0000-4000-8000-000000000629';
 
-describe('#629 â€?classifier maps the real proxy wording to RESUME_FAILED', () => {
+describe('#629 â€” classifier maps the real proxy wording to RESUME_FAILED', () => {
   it('classifies "No conversation found with session ID: <sid>" as RESUME_FAILED', () => {
     assert.equal(classifyError({ error: REAL }).category, 'RESUME_FAILED');
   });
@@ -43,7 +43,7 @@ describe('#629 â€?classifier maps the real proxy wording to RESUME_FAILED', () =
   });
 });
 
-describe('#629 â€?isSessionStateResultError gates the sdk_session_id clear', () => {
+describe('#629 â€” isSessionStateResultError gates the sdk_session_id clear', () => {
   it('clears for the real proxy wording', () => {
     assert.equal(isSessionStateResultError([REAL]), true);
   });
@@ -53,7 +53,7 @@ describe('#629 â€?isSessionStateResultError gates the sdk_session_id clear', () 
     assert.equal(isSessionStateResultError(['stale session state detected']), true);
   });
 
-  it('does NOT clear for transient errors â€?rate-limit / auth / budget (regression guard)', () => {
+  it('does NOT clear for transient errors â€” rate-limit / auth / budget (regression guard)', () => {
     assert.equal(isSessionStateResultError(['429 rate_limit_error: too many requests']), false);
     assert.equal(isSessionStateResultError(['401 Unauthorized: invalid api key']), false);
     assert.equal(isSessionStateResultError(['error_max_budget_usd exceeded']), false);
@@ -70,7 +70,7 @@ describe('#629 â€?isSessionStateResultError gates the sdk_session_id clear', () 
   });
 });
 
-describe('#629 â€?claude-client wiring (source pins)', () => {
+describe('#629 â€” claude-client wiring (source pins)', () => {
   const src = readFileSync(path.resolve(__dirname, '../../lib/claude-client.ts'), 'utf8');
 
   it('imports isSessionStateResultError from error-classifier', () => {
@@ -90,9 +90,9 @@ describe('#629 â€?claude-client wiring (source pins)', () => {
   it('clears sdk_session_id in the is_error branch ONLY via isSessionStateResultError (owner-gated in Phase 3 B)', () => {
     // Session ownership: the clear now goes through `clearSdkSessionIfOwner`
     // (which internally does updateSdkSessionId(sessionId, '') only when this
-    // turn still owns the lock). The #629 semantic â€?clear ONLY for
-    // session-state is_error results â€?is unchanged: the outer
-    // `isSessionStateResultError(resultErrors â€?` guard still gates it.
+    // turn still owns the lock). The #629 semantic â€” clear ONLY for
+    // session-state is_error results â€” is unchanged: the outer
+    // `isSessionStateResultError(resultErrors â€¦)` guard still gates it.
     assert.match(
       src,
       /if \(resultMsg\.is_error\)[\s\S]{0,900}if \(sessionId && isSessionStateResultError\(resultErrors[\s\S]{0,300}clearSdkSessionIfOwner\(sessionId, options\.lockId\)/,
@@ -107,12 +107,12 @@ describe('#629 â€?claude-client wiring (source pins)', () => {
 
   it('keeps #577 result-authoritative ordering intact (resultEmitted right after result)', () => {
     // errors / stop_reason were inserted BEFORE terminal_reason, so the
-    // terminal_reason â†?resultEmitted distance is unchanged.
+    // terminal_reason â†’ resultEmitted distance is unchanged.
     assert.match(src, /terminal_reason: terminalReason \} : \{\}\),[\s\S]{0,80}resultEmitted = true;/);
   });
 });
 
-describe('#629 â€?collect-stream-response persistence wiring (source pins)', () => {
+describe('#629 â€” collect-stream-response persistence wiring (source pins)', () => {
   // The clear in claude-client is not enough: the result SSE was emitted with
   // session_id, and the server-side collect path (/api/chat persistence) must
   // NOT write that bad id back (P1). It must also surface the error so a failed
@@ -128,7 +128,7 @@ describe('#629 â€?collect-stream-response persistence wiring (source pins)', () 
     assert.match(collectSrc, /import \{ isSessionStateResultError \} from '@\/lib\/error-classifier'/);
   });
 
-  it('P1 â€?clears (not writes back) the bad session_id for a stale-resume is_error result', () => {
+  it('P1 â€” clears (not writes back) the bad session_id for a stale-resume is_error result', () => {
     assert.match(
       collectSrc,
       /if \(resultData\.is_error && isSessionStateResultError\(resultData\.errors\)\) \{[\s\S]{0,160}updateSdkSessionId\(sessionId, ''\);[\s\S]{0,160}\} else if \(resultData\.session_id\) \{[\s\S]{0,160}updateSdkSessionId\(sessionId, resultData\.session_id\)/,
@@ -136,7 +136,7 @@ describe('#629 â€?collect-stream-response persistence wiring (source pins)', () 
     );
   });
 
-  it('P2 â€?populates errorMessage from result errors/subtype for the empty-assistant fallback', () => {
+  it('P2 â€” populates errorMessage from result errors/subtype for the empty-assistant fallback', () => {
     assert.match(
       collectSrc,
       /if \(resultData\.is_error\) \{[\s\S]{0,420}errorMessage =[\s\S]{0,200}resultData\.errors[\s\S]{0,80}resultData\.subtype/,

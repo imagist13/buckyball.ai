@@ -1,5 +1,5 @@
 /**
- * Agent SDK Agents Registry â?manages built-in agent definitions that can be
+ * Agent SDK Agents Registry — manages built-in agent definitions that can be
  * injected into SDK query options.
  *
  * Claude Code has two different model-selection surfaces:
@@ -23,8 +23,8 @@ export const CLAUDE_SUBAGENT_MODEL_OVERRIDES = ['sonnet', 'opus', 'haiku'] as co
 
 const MODEL_BRAND_NAME = 'Grok|xAI|Kimi|Moonshot|GLM|Zhipu|DeepSeek|Qwen|MiniMax|MiMo|GPT|Codex';
 const MODEL_ROLE_PATTERNS = [
-  new RegExp(`(?:ä½ æ¯|ä½ å°ä½ä¸º|æ®æ¼)\\s*(?:ä¸ä¸ª|ä¸å??\\s*(${MODEL_BRAND_NAME})(?:\\s*(?:æ¨¡å|ä¸å®¶|Agent|æºè½ä½?)?`, 'i'),
-  new RegExp(`(?:å¯å¨|è°ç¨|åå»º)\\s*(?:ä¸ä¸ª|ä¸å??[^ã\\n]{0,30}?(${MODEL_BRAND_NAME})[^ã\\n]{0,20}?(?:æ¨¡å|Agent|æºè½ä½|å­\\s*Agent)`, 'i'),
+  new RegExp(`(?:你是|你将作为|扮演)\\s*(?:一个|一名)?\\s*(${MODEL_BRAND_NAME})(?:\\s*(?:模型|专家|Agent|智能体))?`, 'i'),
+  new RegExp(`(?:启动|调用|创建)\\s*(?:一个|一名)?[^。\\n]{0,30}?(${MODEL_BRAND_NAME})[^。\\n]{0,20}?(?:模型|Agent|智能体|子\\s*Agent)`, 'i'),
   new RegExp(`(?:you are|act as)\\s+(?:an?\\s+)?(${MODEL_BRAND_NAME})(?:[^.\\n]{0,20}?(?:model|expert|agent))?`, 'i'),
   new RegExp(`(?:launch|spawn|run)\\s+(?:an?\\s+)?[^.\\n]{0,30}?(${MODEL_BRAND_NAME})[^.\\n]{0,20}?(?:model|agent|sub-agent)`, 'i'),
 ];
@@ -71,7 +71,7 @@ export function validateClaudeSubagentToolInput(
 
   // The direct tool field is intentionally narrower than AgentDefinition.model.
   // Reject invented full IDs here even if a similarly named model exists; exact
-  // Provider + Model routes must travel through buckyball.ai's managed sub-agent
+  // Provider + Model routes must travel through CodePilot's managed sub-agent
   // MCP tool, which owns the separate child subprocess.
   if (directModel && !(CLAUDE_SUBAGENT_MODEL_OVERRIDES as readonly string[]).includes(directModel)) {
     return unavailableClaudeSubagentModel(directModel);

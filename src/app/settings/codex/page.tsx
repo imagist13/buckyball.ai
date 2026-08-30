@@ -1,15 +1,15 @@
 /**
- * /settings/codex â€?transitional redirect.
+ * /settings/codex â€” transitional redirect.
  *
  * Phase 5 Phase 6 IA correction (2026-05-14). Codex used to have its
  * own top-level Settings tab here; that placement turned out to
  * conflate two distinct concerns:
  *
- *   - "Is Codex Runtime available / what's the default engine" â†?belongs
- *      under Settings â†?Runtime (now three-engine: claude_code,
+ *   - "Is Codex Runtime available / what's the default engine" â†’ belongs
+ *      under Settings â†’ Runtime (now three-engine: claude_code,
  *      codepilot_runtime, codex_runtime).
- *   - "Codex Account login, plan, quota, models"               â†?belongs
- *      under Settings â†?Providers / Models as a virtual provider, same
+ *   - "Codex Account login, plan, quota, models"               â†’ belongs
+ *      under Settings â†’ Providers / Models as a virtual provider, same
  *      pattern as OpenAI OAuth.
  *
  * Keeping the URL routable but redirecting preserves bookmarks /

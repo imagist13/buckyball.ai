@@ -3,7 +3,7 @@
  *
  * Pins the v8 fix (2026-05-20): mini-bar (cellCount=10, minCellsPerKind=0)
  * must NOT inflate non-zero categories to 1 cell each. User reported "50%
- * ‰∏ä‰∏ãÊñáÂç†Áî®Êó∂ÁÇπÈòµÂ∞±Â∑≤ÁªèÂÖ®Êª? ‚Ä?root cause was Math.max(1, ceil) forcing
+ * ‰∏ä‰∏ãÊñáÂç†Áî®Êó∂ÁÇπÈòµÂ∞±Â∑≤ÁªèÂÖ®Êª°" ‚Äî root cause was Math.max(1, ceil) forcing
  * every small category to take 1 cell out of only 10.
  */
 
@@ -11,7 +11,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { computeAllocations } from '../../components/chat/context-breakdown/ContextDotMatrix';
 import type { ContextUsageBreakdown } from '../../lib/context-breakdown';
-// Suppress unused import warning ‚Ä?ContextUsageBreakdown is referenced in
+// Suppress unused import warning ‚Äî ContextUsageBreakdown is referenced in
 // tests via `as ContextUsageBreakdown['parts']` casts.
 
 function makeBreakdown(parts: Array<{ kind: string; tokens: number }>, contextWindow = 200000): ContextUsageBreakdown {
@@ -22,11 +22,11 @@ function makeBreakdown(parts: Array<{ kind: string; tokens: number }>, contextWi
   } as ContextUsageBreakdown;
 }
 
-describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)', () => {
-  it('5 tiny categories at ~2% each on 10-cell bar ‚Ü?most disappear (no force-1), bar reflects ~10% real fill', () => {
+describe('ContextDotMatrix.computeAllocations ‚Äî minCellsPerKind: 0 (mini-bar)', () => {
+  it('5 tiny categories at ~2% each on 10-cell bar ‚Üí most disappear (no force-1), bar reflects ~10% real fill', () => {
     // 5 categories √ó 2% = 10% total used. With minCellsPerKind=1 (old behavior),
     // this would assign 5 cells (50% fill). With minCellsPerKind=0, each rounds
-    // to round(0.2) = 0 cell, so they vanish; total fill = 0‚Ä? cells.
+    // to round(0.2) = 0 cell, so they vanish; total fill = 0‚Äì1 cells.
     const breakdown = makeBreakdown(
       [
         { kind: 'tools', tokens: 4000 },
@@ -43,7 +43,7 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
     assert.equal(filled + emptyCells, 10);
   });
 
-  it('1 category at 50% on 10-cell bar ‚Ü?exactly 5 filled cells', () => {
+  it('1 category at 50% on 10-cell bar ‚Üí exactly 5 filled cells', () => {
     const breakdown = makeBreakdown(
       [{ kind: 'conversation', tokens: 100_000 }],
       200_000,
@@ -54,10 +54,10 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
     assert.equal(emptyCells, 5);
   });
 
-  it('1 category at 0.4% on 10-cell bar ‚Ü?boosted to 1 cell (any usage visible, user feedback 2026-05-20)', () => {
+  it('1 category at 0.4% on 10-cell bar ‚Üí boosted to 1 cell (any usage visible, user feedback 2026-05-20)', () => {
     // Updated 2026-05-20: previously this returned 0 cells because round(0.04) = 0.
     // User reported Codex at ~1% real usage on 10-cell mini-bar showed "0 dots"
-    // ‚Ä?confusing because they JUST sent a message but mini-bar looks empty.
+    // ‚Äî confusing because they JUST sent a message but mini-bar looks empty.
     // New behavior: when used > 0 but everything rounds below 0.5, boost the
     // largest non-pending category to 1 cell as a "some usage exists" marker.
     const breakdown = makeBreakdown(
@@ -71,7 +71,7 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
     assert.equal(emptyCells, 9);
   });
 
-  it('Codex 1% scenario regression: 3 categories at < 1% on 10-cell bar ‚Ü?boosted, exactly 1 cell on largest', () => {
+  it('Codex 1% scenario regression: 3 categories at < 1% on 10-cell bar ‚Üí boosted, exactly 1 cell on largest', () => {
     // Real-world: Codex used 2.8K / 258K (1.1%) split tools 2.1K / conversation 601 / rules 93.
     // Without boost: all round to 0, mini-bar fully empty (user complaint).
     // With boost: largest (tools) gets 1 cell.
@@ -90,10 +90,10 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
     assert.equal(emptyCells, 9);
   });
 
-  it('unknown contextWindow on 10-cell mini-bar ‚Ü?composition (used-as-denominator), NOT a fabricated 200K capacity (#632 follow-up)', () => {
+  it('unknown contextWindow on 10-cell mini-bar ‚Üí composition (used-as-denominator), NOT a fabricated 200K capacity (#632 follow-up)', () => {
     // v0.56.x #632 follow-up (2026-06-19): the old mini-bar fell back to a
     // 200K FALLBACK_CONTEXT_WINDOW so it could draw a "believable rough %"
-    // when upstream omitted the window ‚Ä?but that fabricated a capacity the
+    // when upstream omitted the window ‚Äî but that fabricated a capacity the
     // user never had, implying "used / remaining" against a guess. Removed.
     // Now an unknown window distributes by used+pending (composition), same as
     // the popover. In practice RunCockpit HIDES the mini-bar entirely when the
@@ -106,11 +106,11 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
         { kind: 'conversation', tokens: 2552, label: 'conversation', source: 'test' },
       ] as ContextUsageBreakdown['parts'],
       usedTokens: 813 + 93 + 2552,
-      contextWindow: undefined,  // ‚Ü?unknown
+      contextWindow: undefined,  // ‚Üê unknown
     } as ContextUsageBreakdown;
     const { cells, emptyCells } = computeAllocations(breakdown, 10, 0);
     const filled = cells.reduce((s, c) => s + c.cells, 0);
-    // Composition fills most of the bar (proportional by used) ‚Ä?the OPPOSITE
+    // Composition fills most of the bar (proportional by used) ‚Äî the OPPOSITE
     // of the old 200K behavior (which left it ~1-2 cells = a fake low "%").
     assert.ok(filled >= 8, `unknown-window mini-bar must show a used-relative composition, not a 200K rough %; got ${filled} cells`);
     assert.equal(filled + emptyCells, 10);
@@ -135,8 +135,8 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 0 (mini-bar)',
   });
 });
 
-describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 1 (popover default, unchanged)', () => {
-  it('5 tiny categories at ~2% on 100-cell popover ‚Ü?each surfaces 1 cell minimum', () => {
+describe('ContextDotMatrix.computeAllocations ‚Äî minCellsPerKind: 1 (popover default, unchanged)', () => {
+  it('5 tiny categories at ~2% on 100-cell popover ‚Üí each surfaces 1 cell minimum', () => {
     const breakdown = makeBreakdown(
       [
         { kind: 'tools', tokens: 4000 },
@@ -150,14 +150,14 @@ describe('ContextDotMatrix.computeAllocations ‚Ä?minCellsPerKind: 1 (popover def
     const { cells } = computeAllocations(breakdown, 100, 1);
     // Each category should have at least 1 cell (legend match)
     for (const cell of cells) {
-      assert.ok(cell.cells >= 1, `${cell.kind} got ${cell.cells} cells, expected ‚â?1 with minCellsPerKind=1`);
+      assert.ok(cell.cells >= 1, `${cell.kind} got ${cell.cells} cells, expected ‚â• 1 with minCellsPerKind=1`);
     }
-    // 4000 / 200000 * 100 = 2 ‚Ü?ceil = 2 cells each
+    // 4000 / 200000 * 100 = 2 ‚Üí ceil = 2 cells each
     const filled = cells.reduce((s, c) => s + c.cells, 0);
     assert.equal(filled, 10); // 5 √ó 2 = 10 cells out of 100
   });
 
-  it('1 category at 0.4% on 100-cell popover ‚Ü?1 cell (Math.max(1, ceil) kicks in)', () => {
+  it('1 category at 0.4% on 100-cell popover ‚Üí 1 cell (Math.max(1, ceil) kicks in)', () => {
     const breakdown = makeBreakdown(
       [{ kind: 'rules', tokens: 800 }],
       200_000,

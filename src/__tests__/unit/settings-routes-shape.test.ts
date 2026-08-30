@@ -1,5 +1,5 @@
 /**
- * Settings route-level split â€?memory guardrail.
+ * Settings route-level split â€” memory guardrail.
  *
  * The hash-tab Settings shell pulled every section (Models, Runtime, Bridge,
  * Usage/Recharts, Appearance/Shiki) into a single dev compile graph and
@@ -7,7 +7,7 @@
  * route-level split: each /settings/<section>/page.tsx imports exactly the
  * section it owns, and the shared layout imports zero sections.
  *
- * These tests are static contract checks â€?they don't mount React, they just
+ * These tests are static contract checks â€” they don't mount React, they just
  * grep the route source files. If a future change adds a static or dynamic
  * section import to the shared shell, these fail loudly.
  */
@@ -85,7 +85,7 @@ describe('Settings route-level split', () => {
         `/settings/layout.tsx must not import ${section} (defeats the route split)`,
       );
     }
-    // No dynamic() calls either â€?the shell must stay a pure shell.
+    // No dynamic() calls either â€” the shell must stay a pure shell.
     assert.doesNotMatch(
       layout,
       /\bdynamic\s*\(/,
@@ -93,7 +93,7 @@ describe('Settings route-level split', () => {
     );
   });
 
-  it('the /settings root page is a pure redirect â€?imports ZERO sections', () => {
+  it('the /settings root page is a pure redirect â€” imports ZERO sections', () => {
     const root = read('page.tsx');
     // Memory contract: /settings is the landing for legacy /settings#hash
     // deep links, so it must not pull in any section component (not even
@@ -103,10 +103,10 @@ describe('Settings route-level split', () => {
       assert.doesNotMatch(
         root,
         sectionImport,
-        `/settings/page.tsx must not import ${section} â€?it is a redirect-only page`,
+        `/settings/page.tsx must not import ${section} â€” it is a redirect-only page`,
       );
     }
-    // The hash â†?route redirect must exist for legacy /settings#providers etc.
+    // The hash â†’ route redirect must exist for legacy /settings#providers etc.
     assert.match(root, /useRouter\(\)/);
     assert.match(root, /window\.location\.hash/);
     assert.match(root, /router\.replace/);

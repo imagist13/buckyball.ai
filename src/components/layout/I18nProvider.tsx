@@ -33,7 +33,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         }
       } catch { /* ignore */ }
 
-      // No persisted locale â€?detect system language
+      // No persisted locale â€” detect system language
       // Works across: Electron (Chromium OS locale), browser, SSR (skipped)
       if (typeof navigator !== 'undefined') {
         const candidates = [

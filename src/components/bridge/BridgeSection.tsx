@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SpinnerGap, CheckCircle, Warning, TelegramLogo, ChatTeardrop, GameController, ChatsCircle } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useBridgeStatus } from "@/hooks/useBridgeStatus";
 import { showToast } from "@/hooks/useToast";
@@ -56,7 +56,7 @@ export function BridgeSection() {
   const [model, setModel] = useState("");
   const [providerGroups, setProviderGroups] = useState<ProviderModelGroup[]>([]);
   // Recent project paths (distinct working_directory across chat
-  // sessions, latest activity first) â?same data source the Assistant
+  // sessions, latest activity first) — same data source the Assistant
   // workspace picker uses. Lets users pick a known project for the
   // bridge default without retyping the path.
   const [recentPaths, setRecentPaths] = useState<string[]>([]);
@@ -176,13 +176,13 @@ export function BridgeSection() {
 
   // Defaults card is auto-save with debounce + latest-wins. Both
   // dimensions need protection:
-  //   1. Sequencing â?quick workDir-then-model edits could race so the
+  //   1. Sequencing — quick workDir-then-model edits could race so the
   //      older PUT lands second and overwrites the newer model. We
   //      coalesce via a single pending {workDir, model} ref so only
   //      the latest pair ever fires.
-  //   2. Half-typed fallback â?when `providerGroups` is empty the
+  //   2. Half-typed fallback — when `providerGroups` is empty the
   //      model field is a plain Input; without debounce every
-  //      keystroke would PUT (`g` â?`gl` â?`glm`), persisting
+  //      keystroke would PUT (`g` → `gl` → `glm`), persisting
   //      half-typed model names. 400ms debounce collapses those into
   //      one save of the final value.
   const pendingDefaultsRef = useRef<{ workDir: string; model: string } | null>(null);
@@ -193,7 +193,7 @@ export function BridgeSection() {
   // when this fires from an unmount cleanup that's part of a
   // page-navigation (without it, the in-flight fetch is cancelled and
   // the user's last edit silently disappears). We don't await it for
-  // the same reason â?the calling context may be tearing down.
+  // the same reason — the calling context may be tearing down.
   const flushPendingDefaults = () => {
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -247,7 +247,7 @@ export function BridgeSection() {
     flushPendingDefaults();
     // flushPendingDefaults is a stable closure over refs/setters; the
     // empty dep array intentionally captures the mount-time function.
-    // (flushPendingDefaults is stable â?eslint needs no suppression here.)
+    // (flushPendingDefaults is stable — eslint needs no suppression here.)
   }, []);
 
   const handleWorkDirChange = (next: string) => {
@@ -395,7 +395,7 @@ export function BridgeSection() {
                   {starting ? (
                     <SpinnerGap size={14} className="animate-spin" />
                   ) : (
-                    <BuckyballIcon name="play" size="sm" aria-hidden />
+                    <CodePilotIcon name="play" size="sm" aria-hidden />
                   )}
                   {starting ? t("bridge.starting") : t("bridge.start")}
                 </Button>
@@ -412,8 +412,8 @@ export function BridgeSection() {
           description={t("bridge.channelsDesc")}
         >
           {/* All 6 toggles use the inset-divider sub-card pattern from
-              `docs/design.md` Â§ Sub-card so the rows share a single
-              container with built-in dividers â?replaces 5 hand-rolled
+              `docs/design.md` § Sub-card so the rows share a single
+              container with built-in dividers — replaces 5 hand-rolled
               `flex justify-between` rows that had inconsistent
               `pt-3`-based spacing. */}
           <div className="rounded-md bg-muted/40 -mx-1">
@@ -519,10 +519,10 @@ export function BridgeSection() {
         </SettingsCard>
       )}
 
-      {/* Default Settings â?auto-save: changes to workDir / model
+      {/* Default Settings — auto-save: changes to workDir / model
           immediately PUT /api/bridge/settings, so no Save button. The
           workDir Select pulls from recent project paths (distinct
-          working_directory across chat sessions); "éæ©æä»¶å¤? stays
+          working_directory across chat sessions); "选择文件夹" stays
           for paths that aren't in the recent list yet. */}
       {isEnabled && (
         <SettingsCard
@@ -621,8 +621,8 @@ export function BridgeSection() {
 
 /**
  * Single channel/auto-start toggle row inside the channels card. Matches
- * the inset-divider sub-card row pattern from `docs/design.md` Â§ Sub-card
- * â?`py-2.5 flex items-center justify-between`. Icon is optional (the
+ * the inset-divider sub-card row pattern from `docs/design.md` § Sub-card
+ * — `py-2.5 flex items-center justify-between`. Icon is optional (the
  * auto-start row at the bottom doesn't have one).
  */
 function ChannelToggleRow({

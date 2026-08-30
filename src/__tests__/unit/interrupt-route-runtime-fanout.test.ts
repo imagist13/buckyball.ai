@@ -1,9 +1,9 @@
 /**
- * codex-stop-recovery Phase 1 â€?`/api/chat/interrupt` runtime fan-out.
+ * codex-stop-recovery Phase 1 â€” `/api/chat/interrupt` runtime fan-out.
  *
  * The Stop button posts here. Before this fix the route only tried Native +
  * the SDK conversation, so a Stop under Codex Runtime never reached the Codex
- * app-server turn â€?the turn kept running, the stream never closed, and the
+ * app-server turn â€” the turn kept running, the stream never closed, and the
  * session lock renewed forever. The route now fans out to codex_runtime too.
  *
  * Source-level pins (the route uses `await import(...)` for the registry, which

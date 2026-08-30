@@ -9,7 +9,7 @@
  * surfaces the error on 0.48.x, the two call sites still fail silently for
  * users (menu click does nothing, no toast, no dialog).
  *
- * These are structural tests â€?we can't render React in node:test, so we
+ * These are structural tests â€” we can't render React in node:test, so we
  * verify the source files no longer contain the old prompt() call and do
  * import PromptDialog. Paired with the component-level tests in
  * prompt-dialog.tsx itself (when/if we add them via a smoke harness) this
@@ -28,7 +28,7 @@ function readSource(relativePath: string): string {
   return fs.readFileSync(path.join(process.cwd(), relativePath), 'utf-8');
 }
 
-describe('window.prompt() replacement â€?regression guard', () => {
+describe('window.prompt() replacement â€” regression guard', () => {
   describe('PromptDialog component', () => {
     it('src/components/ui/prompt-dialog.tsx exists and exports PromptDialog', () => {
       const source = readSource('src/components/ui/prompt-dialog.tsx');
@@ -84,11 +84,11 @@ describe('window.prompt() replacement â€?regression guard', () => {
       // mention the old prompt() call in explanatory text.
       assert.ok(
         !source.includes('prompt("Rename conversation:"'),
-        'should not call prompt("Rename conversation:") â€?replaced by PromptDialog',
+        'should not call prompt("Rename conversation:") â€” replaced by PromptDialog',
       );
       assert.ok(
         !source.match(/=\s*prompt\s*\(/),
-        'no remaining `= prompt(` assignment â€?all prompts should use PromptDialog',
+        'no remaining `= prompt(` assignment â€” all prompts should use PromptDialog',
       );
     });
 
@@ -135,11 +135,11 @@ describe('window.prompt() replacement â€?regression guard', () => {
     it('does not invoke window.prompt() in the fallback branch', () => {
       assert.ok(
         !source.includes('prompt("Enter workspace directory path:")'),
-        'should not call prompt("Enter workspace directory path:") â€?replaced by PromptDialog',
+        'should not call prompt("Enter workspace directory path:") â€” replaced by PromptDialog',
       );
       assert.ok(
         !source.match(/=\s*prompt\s*\(/),
-        'no remaining `= prompt(` assignment â€?all prompts should use PromptDialog',
+        'no remaining `= prompt(` assignment â€” all prompts should use PromptDialog',
       );
     });
 
@@ -155,7 +155,7 @@ describe('window.prompt() replacement â€?regression guard', () => {
     });
 
     it('still prefers the native Electron dialog when available', () => {
-      // Don't regress the primary path â€?Electron users should continue
+      // Don't regress the primary path â€” Electron users should continue
       // hitting window.electronAPI.dialog.openFolder.
       assert.ok(
         source.includes('window.electronAPI?.dialog?.openFolder'),

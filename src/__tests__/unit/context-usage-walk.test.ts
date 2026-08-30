@@ -1,16 +1,16 @@
 /**
- * context-usage-walk.test.ts â€?behavioral coverage for the pure walk
+ * context-usage-walk.test.ts â€” behavioral coverage for the pure walk
  * helper that powers `useContextUsage`.
  *
  * The two non-obvious rules under test (both with regression history,
  * see commit messages 2026-05-08):
  *
  *   1. Output-only / all-zero records must NOT zero the `used`
- *      baseline â€?the prior turn's input + cache is still the
+ *      baseline â€” the prior turn's input + cache is still the
  *      authoritative session-context number.
  *
  *   2. The `context_window` on those skipped records must STILL be
- *      preserved â€?the SDK populates it on every result, including
+ *      preserved â€” the SDK populates it on every result, including
  *      output-only tails, and dropping it on the floor sends GLM /
  *      Bailian / MiniMax / Kimi / Volcengine / DeepSeek (catalog
  *      misses) back to "capacity unknown" in RunCockpit.
@@ -24,7 +24,7 @@ function asstUsage(usage: Record<string, number>): MinimalMessageForUsage {
   return { role: 'assistant', token_usage: JSON.stringify(usage) };
 }
 
-describe('walkContextUsage â€?baseline + capacity capture', () => {
+describe('walkContextUsage â€” baseline + capacity capture', () => {
   it('returns null baseline for an empty / no-usage list', () => {
     const r = walkContextUsage([]);
     assert.equal(r.baseline, null);
@@ -58,16 +58,16 @@ describe('walkContextUsage â€?baseline + capacity capture', () => {
   });
 
   it('the user-reported regression: latest output-only carries context_window, prior meaningful record lacks it', () => {
-    // Reproduces the exact bf031â€?session symptom:
-    //   â€?Newest message: { input:0, cache:0, output:812, context_window:200000 }
-    //   â€?Prior message:  { input:18119, cache:0, output:47 } â€?NO context_window
+    // Reproduces the exact bf031â€¦ session symptom:
+    //   â€¢ Newest message: { input:0, cache:0, output:812, context_window:200000 }
+    //   â€¢ Prior message:  { input:18119, cache:0, output:47 } â€” NO context_window
     // Pre-fix behavior:
-    //   â€?Used to read the output-only first â†?used=0 â†?context bar zeroed.
-    //   â€?After 2026-05-08 fix #1: output-only skipped, but context_window
+    //   â€¢ Used to read the output-only first â†’ used=0 â†’ context bar zeroed.
+    //   â€¢ After 2026-05-08 fix #1: output-only skipped, but context_window
     //     dropped on the floor, so capacity fell to "unknown" (GLM etc.).
     // Expected behavior NOW:
-    //   â€?baseline.used = 18119 (from the prior meaningful record).
-    //   â€?contextWindow surfaced via latestSdkContextWindow = 200000.
+    //   â€¢ baseline.used = 18119 (from the prior meaningful record).
+    //   â€¢ contextWindow surfaced via latestSdkContextWindow = 200000.
     const r = walkContextUsage([
       asstUsage({ input_tokens: 18119, output_tokens: 47 }),
       asstUsage({ input_tokens: 0, output_tokens: 812, context_window: 200000 }),
@@ -110,7 +110,7 @@ describe('walkContextUsage â€?baseline + capacity capture', () => {
   it('output-only-only session: surfaces weak baseline (used=0) so popover still renders', () => {
     // Updated 2026-05-20: previously this returned baseline=null. But
     // Native+Codex via provider proxies (Codex+GLM, agent-loop+OpenRouter)
-    // consistently report input_tokens=0 on every turn â€?the old null
+    // consistently report input_tokens=0 on every turn â€” the old null
     // baseline meant their popovers were completely empty (user report:
     // "Native + Codex è¿žä½¿ç”¨äº†å¤šå°‘éƒ½ä¸æ˜¾ç¤º"). New behavior: if every
     // record is output-only, return the newest as a weak baseline with
@@ -139,7 +139,7 @@ describe('walkContextUsage â€?baseline + capacity capture', () => {
           context_accounting: {
             entries: { rules: { tokens: 93, source: 'workspace/CLAUDE.md' } },
             unsupported: ['system_prompt', 'memory', 'files_attachments'],
-            producedBy: 'bbagent',
+            producedBy: 'codepilot_runtime',
           },
         }),
       },
@@ -148,10 +148,10 @@ describe('walkContextUsage â€?baseline + capacity capture', () => {
     assert.equal(r.baseline!.used, 0);
     assert.equal(r.baseline!.outputTokens, 2552);
     assert.ok(r.contextAccounting, 'context_accounting must be captured from weak baseline');
-    assert.equal(r.contextAccounting!.producedBy, 'bbagent');
+    assert.equal(r.contextAccounting!.producedBy, 'codepilot_runtime');
   });
 
-  it('positive context_window only â€?zero / missing context_window must NOT overwrite a previously captured positive value', () => {
+  it('positive context_window only â€” zero / missing context_window must NOT overwrite a previously captured positive value', () => {
     // Walking from the end: we set latestSdkContextWindow on the FIRST
     // positive value. Older records' missing / zero context_window
     // must not blank it out.

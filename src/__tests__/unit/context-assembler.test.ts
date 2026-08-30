@@ -101,7 +101,7 @@ describe('assembleContext', () => {
       userPrompt: 'hello',
     });
 
-    // Should not throw â€?prompt may be undefined or contain only CLI context
+    // Should not throw â€” prompt may be undefined or contain only CLI context
     assert.ok(true);
   });
 

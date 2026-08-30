@@ -1,5 +1,5 @@
 /**
- * tools/agent.ts â?AgentTool: spawn a sub-agent with isolated context.
+ * tools/agent.ts — AgentTool: spawn a sub-agent with isolated context.
  *
  * The sub-agent runs an independent agent-loop with restricted tools
  * and a separate message history. Results are returned as text to the parent.
@@ -78,29 +78,29 @@ export function createAgentTool(ctx: {
   /** Inherit permission mode from parent */
   permissionMode?: string;
   bypassPermissions?: boolean;
-  /** Parent session ID â?sub-agent inherits permission context */
+  /** Parent session ID — sub-agent inherits permission context */
   parentSessionId?: string;
   /** Callback to forward SSE events (permission_request) to the parent stream */
   emitSSE?: (event: { type: string; data: string }) => void;
   /** Abort signal from parent */
   abortSignal?: AbortSignal;
-  /** Parent call scene â?delegation is allowed only from a foreground chat. */
+  /** Parent call scene — delegation is allowed only from a foreground chat. */
   parentCallScene?: ProviderCallScene;
 }) {
   const subAgentIds = getSubAgents().map(a => a.id);
-  const routes = listSubagentRoutes('bbagent');
+  const routes = listSubagentRoutes('codepilot_runtime');
   const parentProviderId = ctx.providerId || ctx.sessionProviderId || 'env';
-  const routingGuidance = getSubagentRoutingGuidance('bbagent', routes);
+  const routingGuidance = getSubagentRoutingGuidance('codepilot_runtime', routes);
 
   return tool({
     description:
-      'Launch a blocking one-shot Sub Agent in the current bb-agent Runtime on an explicit CodePilot Provider + Model route. ' +
+      'Launch a blocking one-shot Sub Agent in the current CodePilot Runtime on an explicit CodePilot Provider + Model route. ' +
       'The Sub Agent has isolated context, inherits the parent tool/permission surface, and never inherits the parent Provider when a named route is requested. ' +
       'The call returns only after the child reaches a terminal status; no background child remains running afterward. Consume terminal=true plus the returned result immediately and never describe it as merely submitted or still processing. ' +
       'For dependent children, assign one workflow_id, a unique task_key per child, and depends_on task keys; emit upstream task calls before their dependents. CodePilot waits durably and injects upstream terminal results before starting the downstream Runtime. ' +
       'Never launch a wait-only/stand-by placeholder; an undeclared placeholder is rejected before Provider execution. ' +
       'Omit logical_run_id on a first attempt; reuse the returned logicalRunId only when retrying that same logical task so retries stay in one capsule. ' +
-      'buckyball.ai rejects reuse while the prior attempt is active or after it completed successfully; omit logical_run_id for genuinely new work. ' +
+      'CodePilot rejects reuse while the prior attempt is active or after it completed successfully; omit logical_run_id for genuinely new work. ' +
       `Available agents: ${subAgentIds.join(', ')}. ` +
       'Use "explore" for quick codebase searches, "general" for multi-step tasks.\n' +
       routingGuidance,
@@ -127,7 +127,7 @@ export function createAgentTool(ctx: {
       if (ctx.parentCallScene !== 'interactive_chat') {
         return encodeSubagentStatusResult({
           status: 'failed',
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: { code: 'RUNTIME_ERROR', retryable: false },
         }, 'DELEGATION_SCENE_BLOCKED: Sub Agents can only be started from an active user chat turn.');
       }
@@ -136,7 +136,7 @@ export function createAgentTool(ctx: {
       if (!agentDef) {
         return encodeSubagentStatusResult({
           status: 'failed',
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: { code: 'RUNTIME_ERROR', retryable: false },
         }, `Error: Unknown agent "${agentId}". Available: ${subAgentIds.join(', ')}`);
       }
@@ -150,7 +150,7 @@ export function createAgentTool(ctx: {
         return encodeSubagentStatusResult({
           status: 'failed',
           agentName: agentDef.displayName,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: dispatchValidation.error,
         }, dispatchValidation.message);
       }
@@ -168,7 +168,7 @@ export function createAgentTool(ctx: {
           status: 'failed',
           agentName: agentDef.displayName,
           model: targetModel,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: { code: 'MODEL_UNAVAILABLE', retryable: false },
         }, 'SUBAGENT_ROUTE_REQUIRED: a named-model Sub Agent requires both provider_id and model from the available route list. Do not substitute the parent route.');
       }
@@ -178,9 +178,9 @@ export function createAgentTool(ctx: {
           status: 'failed',
           agentName: agentDef.displayName,
           model: targetModel,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: { code: 'MODEL_UNAVAILABLE', retryable: false },
-        }, `SUBAGENT_MODEL_UNAVAILABLE: bb-agent Runtime cannot route provider "${targetProviderId}" model "${targetModel}". Do not continue as if this Sub Agent ran. Ask the user whether to choose an available route or change Runtime.`);
+        }, `SUBAGENT_MODEL_UNAVAILABLE: CodePilot Runtime cannot route provider "${targetProviderId}" model "${targetModel}". Do not continue as if this Sub Agent ran. Ask the user whether to choose an available route or change Runtime.`);
       }
 
       const toolCallId = (execOptions as { toolCallId?: string } | undefined)?.toolCallId;
@@ -192,7 +192,7 @@ export function createAgentTool(ctx: {
           taskId: agentRunId,
           agentName: agentDef.displayName,
           model: route.displayName,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: { code: 'RUNTIME_ERROR', retryable: true },
         }, 'SUBAGENT_RUN_PERSISTENCE_UNAVAILABLE: the parent chat session is missing, so an auditable Sub Agent run cannot be created. The child was not started.');
       }
@@ -202,7 +202,7 @@ export function createAgentTool(ctx: {
           id: agentRunId,
           logicalRunId: requestedLogicalRunId,
           parentSessionId: ctx.parentSessionId,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           toolName: 'Agent',
           agentName: agentDef.displayName,
           providerId: route.providerId,
@@ -222,7 +222,7 @@ export function createAgentTool(ctx: {
           taskId: agentRunId,
           agentName: agentDef.displayName,
           model: route.displayName,
-          runtime: 'bbagent',
+          runtime: 'codepilot_runtime',
           error: rejection?.error || { code: 'RUNTIME_ERROR', retryable: true },
         }, rejection?.message
           || `SUBAGENT_RUN_PERSISTENCE_UNAVAILABLE: CodePilot could not create an auditable run before launch (${detail}). The child was not started.`);
@@ -273,7 +273,7 @@ export function createAgentTool(ctx: {
             effectiveProviderId: factEffectiveProvider,
             effectiveModel: factEffectiveModel,
             model: route.displayName,
-            runtime: 'bbagent',
+            runtime: 'codepilot_runtime',
             error: factStatus === status ? error : undefined,
           }, factText);
         } catch (persistenceError) {
@@ -291,7 +291,7 @@ export function createAgentTool(ctx: {
             requestedProviderId: route.providerId,
             requestedModel: route.id,
             model: route.displayName,
-            runtime: 'bbagent',
+            runtime: 'codepilot_runtime',
             error: { code: 'RUNTIME_ERROR', retryable: false },
           }, `SUBAGENT_RUN_PERSISTENCE_FAILED: child reached ${status}, but CodePilot could not persist the terminal fact (${detail}). Do not claim completion or background progress.\n\n${text}`);
         }
@@ -329,14 +329,14 @@ export function createAgentTool(ctx: {
 
       try {
       const currentRoute = findSubagentRoute(
-        listSubagentRoutes('bbagent'),
+        listSubagentRoutes('codepilot_runtime'),
         route.providerId,
         subagentRouteSelector(route),
       );
       if (!currentRoute) {
         return terminalResult(
           'failed',
-          `SUBAGENT_MODEL_UNAVAILABLE: ${route.displayName} is no longer enabled for bb-agent Runtime.`,
+          `SUBAGENT_MODEL_UNAVAILABLE: ${route.displayName} is no longer enabled for CodePilot Runtime.`,
           { code: 'MODEL_UNAVAILABLE', retryable: false },
         );
       }
@@ -560,7 +560,7 @@ export function createAgentTool(ctx: {
         });
         return terminalResult(
           'failed',
-          `SUBAGENT_ROUTE_MISMATCH: requested ${route.providerId}/${route.id}, but bb-agent Runtime reported model "${runtimeReportedModel}". CodePilot stopped this attempt instead of silently accepting a fallback.`,
+          `SUBAGENT_ROUTE_MISMATCH: requested ${route.providerId}/${route.id}, but CodePilot Runtime reported model "${runtimeReportedModel}". CodePilot stopped this attempt instead of silently accepting a fallback.`,
           { code: 'ROUTE_MISMATCH', retryable: false },
           usage,
         );
@@ -652,7 +652,7 @@ export function classifyNativeSubagentError(message: string, category?: string):
   };
 }
 
-// ââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ── Helpers ─────────────────────────────────────────────────────
 
 /** Build a one-line summary of a tool invocation for subagent progress output. */
 function getToolSummary(name: string, input: unknown): string {

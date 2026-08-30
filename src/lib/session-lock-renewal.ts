@@ -1,21 +1,22 @@
 /**
- * session-lock-renewal.ts â€?pure per-tick decision for the lock-renewal interval.
+ * session-lock-renewal.ts â€” pure per-tick decision for the lock-renewal interval.
  *
  * Session lock renewal (I3 / DP3). `POST /api/chat` renews its
  * session lock every 60s while a turn runs. Two failure modes must be bounded:
  *
  *   - DP3 (both turn types): if `renewSessionLock` returns false the lockId no
  *     longer owns the row (a newer same-session send took over, or the lock was
- *     already released). Continuing to spin the interval is pointless and racy â€? *     STOP renewing.
+ *     already released). Continuing to spin the interval is pointless and racy â€”
+ *     STOP renewing.
  *   - I3 (autoTrigger only): a background/heartbeat turn that never emits a
  *     terminal event would otherwise renew forever and beat the TTL, so the
  *     session can never be reclaimed. Cap the number of renewals; at the cap,
  *     settle the lock to a terminal state instead of renewing again. Foreground
- *     (non-autoTrigger) turns are intentionally uncapped here â€?they are bounded
+ *     (non-autoTrigger) turns are intentionally uncapped here â€” they are bounded
  *     by the Stop/abort watchdog instead (see route.ts), which a background turn
  *     deliberately has no watchdog for.
  *
- * Extracted as a pure function so route.ts (not unit-importable â€?Electron ABI
+ * Extracted as a pure function so route.ts (not unit-importable â€” Electron ABI
  * deps via db.ts/better-sqlite3) can delegate the decision and the invariants
  * stay driveable by real inputs in a unit test. Mirrors createSessionLockSettler.
  *
@@ -24,11 +25,11 @@
  */
 
 export type RenewalDecision =
-  /** Lock still owned and under any applicable cap â€?wait for the next tick. */
+  /** Lock still owned and under any applicable cap â€” wait for the next tick. */
   | 'continue'
-  /** renewSessionLock returned false â€?lockId no longer owns the row (DP3). */
+  /** renewSessionLock returned false â€” lockId no longer owns the row (DP3). */
   | 'stop-renew-false'
-  /** autoTrigger renewal count reached the cap â€?settle to terminal (I3). */
+  /** autoTrigger renewal count reached the cap â€” settle to terminal (I3). */
   | 'settle-cap';
 
 export interface EvaluateRenewalParams {
@@ -48,10 +49,10 @@ export interface EvaluateRenewalParams {
 
 /**
  * Decide what the renewal interval should do after one tick's renew attempt.
- * Pure â€?no side effects, no timers, no DB. route.ts maps the returned decision
+ * Pure â€” no side effects, no timers, no DB. route.ts maps the returned decision
  * onto clearInterval / settleLock; the unit test drives it with real inputs.
  *
- * Priority: renew-false (ownership lost) takes precedence over the cap â€?if we
+ * Priority: renew-false (ownership lost) takes precedence over the cap â€” if we
  * no longer own the lock there is nothing to settle, just stop.
  */
 export function evaluateRenewal(params: EvaluateRenewalParams): RenewalDecision {

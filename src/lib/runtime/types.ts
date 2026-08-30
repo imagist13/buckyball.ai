@@ -1,5 +1,5 @@
 /**
- * runtime/types.ts �?Agent Runtime interface.
+ * runtime/types.ts — Agent Runtime interface.
  *
  * Every runtime (Native, Claude Code SDK, future Codex/Gemini CLI/ACP)
  * implements this interface. The frontend consumes SSE events and is
@@ -13,7 +13,7 @@ import type { ProviderCallScene } from '../provider-call-policy';
  * The single contract all Agent Runtimes must fulfil.
  *
  * Design principles:
- * - stream() is the only core method: options in �?SSE ReadableStream out
+ * - stream() is the only core method: options in → SSE ReadableStream out
  * - The 17 SSE event types (SSEEventType) are the output contract
  * - Keep the interface thin: don't abstract tools, messages, or permissions
  */
@@ -42,7 +42,8 @@ export interface AgentRuntime {
 }
 
 /**
- * Universal stream input. Extracted from ClaudeStreamOptions �? * fields every runtime needs. Runtime-specific fields go in runtimeOptions.
+ * Universal stream input. Extracted from ClaudeStreamOptions —
+ * fields every runtime needs. Runtime-specific fields go in runtimeOptions.
  */
 export interface RuntimeStreamOptions {
   // ── Core (all runtimes) ──
@@ -67,7 +68,7 @@ export interface RuntimeStreamOptions {
    * Sampling params. Universal concept, mapped per runtime: both Anthropic
    * runtimes route them through `sanitizeClaudeModelOptions` (the adaptive
    * family 400s on non-default values) and announce anything that ends up
-   * unsent �?SAMPLING_PARAMS_IGNORED (Codex review P2, 2026-07-18).
+   * unsent — SAMPLING_PARAMS_IGNORED (Codex review P2, 2026-07-18).
    */
   temperature?: number;
   topP?: number;

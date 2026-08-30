@@ -1,5 +1,5 @@
 /**
- * Runtime Log â€?ring buffer that intercepts console.error and console.warn.
+ * Runtime Log â€” ring buffer that intercepts console.error and console.warn.
  *
  * Uses globalThis pattern to survive HMR reloads in development.
  */
@@ -80,7 +80,7 @@ function pushEntry(level: 'error' | 'warn', args: unknown[]): void {
 
 /**
  * Install console.error and console.warn intercepts.
- * Safe to call multiple times â€?only installs once per globalThis lifetime.
+ * Safe to call multiple times â€” only installs once per globalThis lifetime.
  */
 export function initRuntimeLog(): void {
   const state = getState();

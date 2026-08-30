@@ -1,7 +1,7 @@
 /**
  * POST /api/codex/proxy/v1/responses
  *
- * Phase 5b â?CodePilot provider proxy entry point.
+ * Phase 5b — CodePilot provider proxy entry point.
  *
  * Codex's HTTP client routes here when a thread's `model_provider`
  * is the injected `codepilot_proxy` (see
@@ -18,12 +18,12 @@
  * application/upstream failure is returned as HTTP 200 SSE with a structured
  * `response.failed` event. Non-stream requests keep HTTP status + JSON. This
  * distinction prevents a Provider 502 from becoming indistinguishable from a
- * system proxy intercepting buckyball.ai's loopback transport.
+ * system proxy intercepting CodePilot's loopback transport.
  *
  * Phase 5b adapter status: SHIPPED. The unified translator at
  * `src/lib/codex/proxy/unified-adapter.ts` handles all three families
  * (OpenAI-compatible, Anthropic-compatible / ClaudeCode-compatible,
- * CodePlan / å¥é¤å? via ai-sdk's `createModel()` + `streamText`.
+ * CodePlan / 套餐型) via ai-sdk's `createModel()` + `streamText`.
  * Only the `unknown` provider tier still hits `adapter_not_implemented`
  * because the proxy can't fingerprint the wire format without more
  * info; everything else flows through.
@@ -40,7 +40,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   const targetProviderId = request.headers.get('x-codepilot-target-provider') ?? '';
-  // Phase 5c (2026-05-16) â?`x-codepilot-session-id` +
+  // Phase 5c (2026-05-16) — `x-codepilot-session-id` +
   // `x-codepilot-workspace-path` come from the runtime injection
   // (`provider-proxy.ts buildCodexProviderProxyInjection`). They're
   // not load-bearing for the chat-only path; when absent the proxy
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
   const sessionId = request.headers.get('x-codepilot-session-id') ?? '';
   const workspacePath = request.headers.get('x-codepilot-workspace-path') ?? '';
 
-  // Parse body â?fail fast with a JSON 400 if it's not valid JSON or
+  // Parse body — fail fast with a JSON 400 if it's not valid JSON or
   // doesn't satisfy the Responses shape. The error body is the same
   // shape every error returns so Codex's HTTP client only has one
   // error envelope to recognise.
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Dispatch to the adapter. The adapter contract guarantees it
-  // never throws â?but the route wraps defensively so an unexpected
+  // never throws — but the route wraps defensively so an unexpected
   // bug doesn't crash Codex's HTTP read loop.
   let proxyResult;
   try {

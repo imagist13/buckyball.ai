@@ -147,7 +147,7 @@ export function parseInboundMessage(
       };
     }
 
-    // Unhandled message type â€?skip silently
+    // Unhandled message type â€” skip silently
     return null;
   } catch (err) {
     console.error(LOG_TAG, 'Failed to parse inbound message:', err);

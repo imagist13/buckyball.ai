@@ -1,15 +1,16 @@
 /**
- * tech-debt #37 (2026-06-03) â€?sessions silently displayed/sent the WRONG model.
+ * tech-debt #37 (2026-06-03) â€” sessions silently displayed/sent the WRONG model.
  *
  * Root cause: many persisted sessions store a *canonical* upstream model id while
  * the provider's picker rows are *aliases* (`value: 'opus' | 'sonnet' | 'haiku'`)
  * whose canonical id lives on `upstreamModelId`. There are TWO real canonical
  * forms, both verified against the live app:
  *   - OpenRouter (provider_type=openrouter): `anthropic/claude-opus-4.7`
- *     (the OpenRouter model slug) â€?confirmed via /api/providers/models 2026-06-04.
- *   - Direct Anthropic-skin / preset providers: `claude-opus-4-7` (dashes) â€? *     the preset merge in `src/app/api/providers/models/route.ts`.
+ *     (the OpenRouter model slug) â€” confirmed via /api/providers/models 2026-06-04.
+ *   - Direct Anthropic-skin / preset providers: `claude-opus-4-7` (dashes) â€”
+ *     the preset merge in `src/app/api/providers/models/route.ts`.
  * Old `value`-only matches couldn't match EITHER, so they fell through to
- * `modelOptions[0]` (Sonnet, sort_order 0) â€?wrong display + silent Opusâ†’Sonnet
+ * `modelOptions[0]` (Sonnet, sort_order 0) â€” wrong display + silent Opusâ†’Sonnet
  * send. Real session `de19e576` (OpenRouter, model=`anthropic/claude-opus-4.7`)
  * is exactly this shape; before the fix its composer read "Sonnet 4.6", after it
  * reads "Opus 4.7".
@@ -17,7 +18,7 @@
  * Fix: one shared canonical-aware matcher, `findModelOption`, matches by alias
  * `value` OR canonical `upstreamModelId`. Commit b6d2e43 rewired only
  * `useProviderModels.resolvedModel`/`currentModelOption`; Codex review then
- * caught that the composer still had value-only matches that defeated it â€?most
+ * caught that the composer still had value-only matches that defeated it â€” most
  * importantly `MessageInput`'s auto-correct effect, which rewrote `currentModel`
  * to the first model (Sonnet) for any canonical id and (since it feeds
  * `useProviderModels`) made the send path send Sonnet. This file pins BOTH the
@@ -31,7 +32,7 @@ import { findModelOption, resolveComposerModelAutoCorrect } from '@/lib/model-op
 
 // Mirrors the CONFIRMED live OpenRouter picker rows (/api/providers/models,
 // 2026-06-04): alias `value`, OpenRouter-slug `upstreamModelId`. `sonnet` is
-// FIRST â€?the wrong fallback the bug produced for a canonical-Opus session.
+// FIRST â€” the wrong fallback the bug produced for a canonical-Opus session.
 const OPENROUTER_ROWS = [
   { value: 'sonnet', upstreamModelId: 'anthropic/claude-sonnet-4.6' },
   { value: 'opus', upstreamModelId: 'anthropic/claude-opus-4.7' },
@@ -46,12 +47,12 @@ const ANTHROPIC_SKIN_ROWS = [
   { value: 'haiku', upstreamModelId: 'claude-haiku-4-5-20251001' },
 ];
 
-describe('findModelOption â€?alias â†?canonical round-trip (tech-debt #37)', () => {
+describe('findModelOption â€” alias â†” canonical round-trip (tech-debt #37)', () => {
   it('matches by alias value', () => {
     assert.equal(findModelOption(OPENROUTER_ROWS, 'opus')?.value, 'opus');
   });
 
-  it('resolves the OpenRouter canonical Opus slug to the opus row â€?NOT the first (Sonnet) row (the de19e576 repro)', () => {
+  it('resolves the OpenRouter canonical Opus slug to the opus row â€” NOT the first (Sonnet) row (the de19e576 repro)', () => {
     const row = findModelOption(OPENROUTER_ROWS, 'anthropic/claude-opus-4.7');
     assert.equal(row?.value, 'opus', 'a saved anthropic/claude-opus-4.7 must resolve to opus, not fall through to sonnet');
     assert.notEqual(row?.value, 'sonnet');
@@ -78,8 +79,8 @@ describe('findModelOption â€?alias â†?canonical round-trip (tech-debt #37)', () 
   });
 });
 
-describe('resolveComposerModelAutoCorrect â€?canonical ids do NOT trigger auto-correct (#37 P1, behavioral)', () => {
-  it('returns null for a resolvable canonical id â€?the regression: must NOT rewrite currentModel to Sonnet', () => {
+describe('resolveComposerModelAutoCorrect â€” canonical ids do NOT trigger auto-correct (#37 P1, behavioral)', () => {
+  it('returns null for a resolvable canonical id â€” the regression: must NOT rewrite currentModel to Sonnet', () => {
     assert.equal(resolveComposerModelAutoCorrect('anthropic/claude-opus-4.7', OPENROUTER_ROWS), null);
     assert.equal(resolveComposerModelAutoCorrect('claude-opus-4-7', ANTHROPIC_SKIN_ROWS), null);
   });
@@ -101,7 +102,7 @@ describe('resolveComposerModelAutoCorrect â€?canonical ids do NOT trigger auto-c
 // "display + send contract must not fork" invariant that Codex review flagged.
 const read = (rel: string) => readFileSync(path.resolve(__dirname, '../..', rel), 'utf8');
 
-describe('useProviderModels â€?resolved model uses the round-trip matcher (#37)', () => {
+describe('useProviderModels â€” resolved model uses the round-trip matcher (#37)', () => {
   const src = read('hooks/useProviderModels.ts');
   it('resolvedModel resolves via findModelOption(...).value', () => {
     assert.match(src, /const resolvedModel = findModelOption\(modelOptions, modelName\)\?\.value/);
@@ -111,7 +112,7 @@ describe('useProviderModels â€?resolved model uses the round-trip matcher (#37)'
   });
 });
 
-describe('MessageInput â€?auto-correct routes through the canonical-aware helper (#37 P1)', () => {
+describe('MessageInput â€” auto-correct routes through the canonical-aware helper (#37 P1)', () => {
   const src = read('components/chat/MessageInput.tsx');
   it('uses resolveComposerModelAutoCorrect', () => {
     assert.match(src, /resolveComposerModelAutoCorrect\(modelName, modelOptions\)/);
@@ -121,12 +122,12 @@ describe('MessageInput â€?auto-correct routes through the canonical-aware helper
   });
 });
 
-describe('ModelSelectorDropdown â€?display + active-row are canonical-aware (#37 P2)', () => {
+describe('ModelSelectorDropdown â€” display + active-row are canonical-aware (#37 P2)', () => {
   const src = read('components/chat/ModelSelectorDropdown.tsx');
   it('trigger label resolves via findModelOption', () => {
     assert.match(src, /findModelOption\(modelOptions, currentModelValue\)/);
   });
-  it('active-row highlight resolves via findModelOption(group.models, â€?', () => {
+  it('active-row highlight resolves via findModelOption(group.models, â€¦)', () => {
     assert.match(src, /findModelOption\(group\.models, currentModelValue\)\?\.value/);
   });
   it('no longer uses value-only currentModelOption / isActive matches', () => {
@@ -135,7 +136,7 @@ describe('ModelSelectorDropdown â€?display + active-row are canonical-aware (#37
   });
 });
 
-describe('ChatView â€?currentModelUpstream lookup is canonical-aware (#37)', () => {
+describe('ChatView â€” currentModelUpstream lookup is canonical-aware (#37)', () => {
   const src = read('components/chat/ChatView.tsx');
   it('upstream lookup uses findModelOption', () => {
     assert.match(src, /findModelOption\(models, currentModel\)/);
@@ -145,7 +146,7 @@ describe('ChatView â€?currentModelUpstream lookup is canonical-aware (#37)', () 
   });
 });
 
-describe('RunCockpitPopoverContent â€?run-status model label is canonical-aware (#37)', () => {
+describe('RunCockpitPopoverContent â€” run-status model label is canonical-aware (#37)', () => {
   const src = read('components/chat/RunCockpitPopoverContent.tsx');
   it('session model entry resolves via findModelOption', () => {
     assert.match(src, /findModelOption\(sessionProviderGroup\.models, modelName\)/);

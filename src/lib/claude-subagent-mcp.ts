@@ -4,7 +4,7 @@
  * Claude's built-in Agent tool can change a model role (sonnet/opus/haiku),
  * but it cannot change the Provider endpoint owned by the parent subprocess.
  * This MCP tool starts a separate Claude Agent SDK subprocess so an explicit
- * provider + model pair from buckyball.ai's Claude Code model catalog is real,
+ * provider + model pair from CodePilot's Claude Code model catalog is real,
  * rather than a prompt label that silently falls back to the parent model.
  */
 
@@ -36,6 +36,7 @@ import { resolveForClaudeCode, type ResolvedProvider } from './provider-resolver
 import { getModelCompat, getProviderCompat } from './runtime-compat';
 import { prepareSdkSubprocessEnv } from './sdk-subprocess-env';
 import { findClaudeBinary } from './platform';
+import { assertCliProviderLaunchAllowed } from './cli-maintenance-lease';
 import {
   encodeSubagentStatusResult,
   type SubagentExecutionStatus,
@@ -289,13 +290,13 @@ export function getClaudeSubagentRoutingGuidance(
     `  - provider_id=${JSON.stringify(route.providerId)}, model=${JSON.stringify(route.modelId)}: ${route.displayName} (${route.providerName})`,
   );
   return [
-    'buckyball.ai model-specific sub-agent contract:',
+    'CodePilot model-specific sub-agent contract:',
     `- To run a child on a named model, call ${CLAUDE_SUBAGENT_TOOL_NAME}. It starts a separate Claude Code Runtime subprocess on the exact provider_id + model pair; do not use Claude\'s built-in Agent/Task tool for a named-model request.`,
     '- Each call is a blocking one-shot foreground run. It cannot be resumed, steered, or used as a placeholder. The tool returns only after the child reaches a terminal status; no background child remains running.',
     '- Treat terminal=true plus the returned status and body as the child result immediately. Never describe a returned call as merely submitted, launched, queued, still processing, or waiting for later monitoring.',
     '- Never spawn a child just to confirm, stand by, or wait for later input. CodePilot rejects undeclared placeholder prompts before Provider execution.',
     '- For dependent work in one plan, assign one workflow_id, a unique task_key per child, and depends_on upstream task keys; emit upstream task calls before their dependents. CodePilot waits on durable terminal facts and injects the upstream results when the downstream Runtime actually starts. You may also wait for the prior tool return yourself and include its result directly, but never pre-generate a wait-only prompt.',
-    '- Omit logical_run_id on the first attempt. When retrying the same logical task, reuse the exact logicalRunId returned by the failed attempt; never reuse it for different work. buckyball.ai keeps the attempts in one capsule.',
+    '- Omit logical_run_id on the first attempt. When retrying the same logical task, reuse the exact logicalRunId returned by the failed attempt; never reuse it for different work. CodePilot keeps the attempts in one capsule.',
     '- CodePilot rejects logical_run_id reuse while its prior attempt is running/settling or after it completed successfully. Wait for active work; read completed work; omit the ID for a genuinely new logical task.',
     '- For factual or research handoffs, pass source URLs beside the claims they support. Exact dates, statistics, rankings, and quotations without a cited source are unverified input; do not ask another child to present them as fact.',
     '- Declare required_capabilities truthfully. The child inherits the parent turn\'s available Claude Code built-ins, MCP servers, permission profile, and approval callback. WebSearch/WebFetch, file edits, and shell are allowed when the parent exposes them.',
@@ -520,7 +521,7 @@ export function createClaudeSubagentMcpServer(options: ClaudeSubagentMcpOptions)
           'Declare required_capabilities. The child inherits the parent turn\'s Claude Code tools, MCP servers, permission mode, and approval handler; unavailable capabilities fail closed.',
           'Calls declaring write_workspace are serialized per working directory. Do not expect two writing Sub Agents to edit the same working tree concurrently.',
           'Omit logical_run_id on the first attempt. Reuse the returned logicalRunId only when retrying that same task, so physical attempts remain separately auditable under one logical capsule.',
-          'buckyball.ai rejects logical_run_id reuse while the prior attempt is active or after it completed successfully. Wait/read the existing run, or omit the ID for genuinely new work.',
+          'CodePilot rejects logical_run_id reuse while the prior attempt is active or after it completed successfully. Wait/read the existing run, or omit the ID for genuinely new work.',
           `SDK activity renews a ${Math.round(SUBAGENT_IDLE_TIMEOUT_MS / 60_000)}-minute idle timer; a ${Math.round(SUBAGENT_HARD_TIMEOUT_MS / 60_000)}-minute hard cap still applies. Partial child text is checkpointed while the run is active.`,
           'For factual or research work, include source URLs beside claims. Do not turn unsourced upstream text into exact dates, statistics, rankings, or quotations.',
           'Catalog presence does not prove account entitlement. SDK authentication/access errors are terminal failures, never successful completion.',
@@ -903,6 +904,7 @@ async function runClaudeSubagent(input: {
     };
     applyClaudeExecutable(queryOptions);
 
+    assertCliProviderLaunchAllowed('claude');
     const conversation = query({ prompt: input.prompt, options: queryOptions });
     for await (const message of conversation) {
       activityTimeout.markActivity();

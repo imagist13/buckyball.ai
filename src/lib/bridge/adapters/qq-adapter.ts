@@ -1,14 +1,14 @@
 /**
- * QQ Adapter â€?implements BaseChannelAdapter for QQ Bot API.
+ * QQ Adapter â€” implements BaseChannelAdapter for QQ Bot API.
  *
  * Uses WebSocket Gateway for real-time event subscription.
  * First version: private chat (C2C) only, text + image inbound,
  * text-only outbound (passive reply).
  *
- * No streaming preview â€?QQ passive reply window is tight and
+ * No streaming preview â€” QQ passive reply window is tight and
  * each reply consumes quota.
  *
- * No inline buttons â€?permission handled via /perm text command.
+ * No inline buttons â€” permission handled via /perm text command.
  */
 
 import WebSocket from 'ws';
@@ -154,13 +154,13 @@ export class QQAdapter extends BaseChannelAdapter {
       // QQ requires msg_id for passive reply. Use replyToMessageId from outbound message.
       const msgId = message.replyToMessageId || '';
       if (!msgId) {
-        console.warn('[qq-adapter] No replyToMessageId â€?QQ requires msg_id for passive reply');
+        console.warn('[qq-adapter] No replyToMessageId â€” QQ requires msg_id for passive reply');
         return { ok: false, error: 'Missing replyToMessageId for QQ passive reply' };
       }
 
       const msgSeq = nextMsgSeq(msgId);
 
-      // QQ only supports plain text in v1 â€?strip any HTML tags
+      // QQ only supports plain text in v1 â€” strip any HTML tags
       let content = message.text;
       if (message.parseMode === 'HTML') {
         content = content.replace(/<[^>]+>/g, '');
@@ -281,7 +281,7 @@ export class QQAdapter extends BaseChannelAdapter {
       }
 
       case OP.HEARTBEAT_ACK:
-        // Heartbeat acknowledged â€?nothing to do
+        // Heartbeat acknowledged â€” nothing to do
         break;
 
       case OP.RECONNECT:
@@ -352,7 +352,7 @@ export class QQAdapter extends BaseChannelAdapter {
         if (msg.text || imageAttachments.length === 0) {
           this.enqueue(msg);
         } else {
-          // Image-only message with download failure â€?notify user
+          // Image-only message with download failure â€” notify user
           this.sendImageError(userId, data.id, err instanceof Error ? err.message : 'Download failed');
         }
       });

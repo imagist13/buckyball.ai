@@ -3,9 +3,9 @@
 import type { ReactNode } from 'react';
 
 interface ChatComposerActionBarProps {
-  /** User-adjustable selects (mode / permission / model override) â€?left half. */
+  /** User-adjustable selects (mode / permission / model override) â€” left half. */
   left?: ReactNode;
-  /** Read-only run status (Runtime / Auto-Pinned / Context / Health) â€?right half. */
+  /** Read-only run status (Runtime / Auto-Pinned / Context / Health) â€” right half. */
   right?: ReactNode;
 }
 

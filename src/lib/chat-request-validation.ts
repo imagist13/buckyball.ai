@@ -1,10 +1,10 @@
 /**
- * chat-request-validation.ts â€?required-field validation for POST /api/chat.
+ * chat-request-validation.ts â€” required-field validation for POST /api/chat.
  *
- * Stability audit 2026-07-04 item â‘? The pre-fix route ran an unguarded
+ * Stability audit 2026-07-04 item â‘¢. The pre-fix route ran an unguarded
  * `content.length` inside a `console.log` BEFORE it validated the body, so a
  * request whose `content` was missing or not a string threw synchronously and
- * surfaced to the client as a generic 500 â€?when the honest answer is a 400
+ * surfaced to the client as a generic 500 â€” when the honest answer is a 400
  * (malformed request), retryable without server state.
  *
  * Extracted as a pure helper because route.ts can't be imported in a unit test

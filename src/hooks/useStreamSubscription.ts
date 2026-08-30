@@ -39,7 +39,7 @@ export function useStreamSubscription({
       // If stream finished while this ChatView was unmounted, consume finalMessageContent now.
       if (existing.phase !== 'active' && existing.finalMessageContent) {
         if (existing.phase === 'completed') {
-          // Normal completion â€?both messages are persisted. Re-fetch from DB
+          // Normal completion â€” both messages are persisted. Re-fetch from DB
           // to get canonical state and avoid duplicating the temp assistant message.
           fetch(`/api/chat/sessions/${sessionId}/messages?limit=50`)
             .then(res => res.ok ? res.json() : null)
@@ -62,7 +62,7 @@ export function useStreamSubscription({
               setMessages((prev) => [...prev, assistantMessage]);
             });
         } else {
-          // Error/stopped/idle-timeout â€?partial output may not be persisted yet.
+          // Error/stopped/idle-timeout â€” partial output may not be persisted yet.
           // Append locally to preserve the content the user saw before unmount.
           const assistantMessage: Message = {
             id: 'temp-assistant-' + Date.now(),
@@ -86,7 +86,7 @@ export function useStreamSubscription({
 
       // NOTE: clearing the single-value pendingApprovalSessionId on a resolved/
       // timed-out permission lives in AppShell's global stream-session-event
-      // handler (A5 Step 2 follow-up #2), NOT here â€?that handler runs even
+      // handler (A5 Step 2 follow-up #2), NOT here â€” that handler runs even
       // after this ChatView unmounts (user switched sessions), and clears
       // precisely (only when the event's session left the approvals set), so a
       // per-session unconditional clear here would be both redundant and less
@@ -135,7 +135,7 @@ export function useStreamSubscription({
 
     return () => {
       unsubscribe();
-      // Do NOT abort â€?stream continues in the manager
+      // Do NOT abort â€” stream continues in the manager
     };
   }, [sessionId, setStreamingSessionId, setPendingApprovalSessionId, setStreamSnapshot, setMessages, onStreamCompleted]);
 }

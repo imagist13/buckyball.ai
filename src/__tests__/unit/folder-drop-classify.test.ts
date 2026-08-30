@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { classifyDroppedItems } from '../../components/ai-elements/prompt-input';
 
 function makeItem(file: File, kind: 'file' | 'string', isDir: boolean): DataTransferItem {
-  // Minimal DataTransferItem stub â€?only the methods the classifier calls.
+  // Minimal DataTransferItem stub â€” only the methods the classifier calls.
   return {
     kind,
     type: file.type,

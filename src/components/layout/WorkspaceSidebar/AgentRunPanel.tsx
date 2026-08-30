@@ -108,7 +108,7 @@ export function AgentRunPanel({ tab }: { tab: AgentRunTab }) {
               source.title,
               source.uri,
               source.trust,
-            ].filter(Boolean).join(' Â· '))}
+            ].filter(Boolean).join(' · '))}
           />
         )}
         {result?.artifacts && result.artifacts.length > 0 && (
@@ -129,7 +129,7 @@ export function AgentRunPanel({ tab }: { tab: AgentRunTab }) {
         {run.attempts && run.attempts.length > 0 && (
           <section>
             <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {t('subagent.details.attempts' as TranslationKey)} Â· {run.attempts.length}
+              {t('subagent.details.attempts' as TranslationKey)} · {run.attempts.length}
             </h3>
             <div className="space-y-2">
               {run.attempts.map(attempt => (
@@ -180,7 +180,7 @@ export function AgentRunPanel({ tab }: { tab: AgentRunTab }) {
                   </div>
                   {(event.activity || event.toolName) && (
                     <p className="mt-0.5 text-muted-foreground">
-                      {[event.activity, event.toolName].filter(Boolean).join(' Â· ')}
+                      {[event.activity, event.toolName].filter(Boolean).join(' · ')}
                     </p>
                   )}
                 </li>
@@ -208,11 +208,11 @@ function formatError(error: { code: string; httpStatus?: number; retryable?: boo
     error.code,
     typeof error.httpStatus === 'number' ? `HTTP ${error.httpStatus}` : undefined,
     typeof error.retryable === 'boolean' ? `retryable=${String(error.retryable)}` : undefined,
-  ].filter(Boolean).join(' Â· ');
+  ].filter(Boolean).join(' · ');
 }
 
 function runtimeLabel(runtime: NonNullable<AgentRunTab['run']['runtime']>): string {
-  if (runtime === 'bbagent') return 'bb-agent Runtime';
+  if (runtime === 'codepilot_runtime') return 'CodePilot Runtime';
   if (runtime === 'claude_code') return 'Claude Code Runtime';
   return 'Codex Runtime';
 }
@@ -222,7 +222,7 @@ function ListSection({ title, items }: { title: string; items: string[] }) {
     <section>
       <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</h3>
       <ul className="space-y-1 rounded-lg border border-border/60 bg-card p-3 text-xs text-foreground">
-        {items.map((item, index) => <li key={`${index}:${item}`} className="break-words">â?{item}</li>)}
+        {items.map((item, index) => <li key={`${index}:${item}`} className="break-words">• {item}</li>)}
       </ul>
     </section>
   );

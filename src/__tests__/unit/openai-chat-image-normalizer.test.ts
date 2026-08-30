@@ -1,15 +1,15 @@
 /**
- * openai-chat-image-normalizer.test.ts �?regression for the OpenAI Chat
+ * openai-chat-image-normalizer.test.ts — regression for the OpenAI Chat
  * Completions image data URL normalization (Phase 2 发现 3 收口).
  *
  * Pins the contract of src/lib/openai-chat-image-normalizer.ts:
- * - bare base64 image payloads become data:<sniffed mime>;base64,�?URLs
+ * - bare base64 image payloads become data:<sniffed mime>;base64,… URLs
  * - already-schemed URLs (data:/http:/https:) are preserved verbatim
  *   (double-prefix guard for when upstream fixes the bug)
  * - MIME sniffing is deterministic magic-byte detection for
  *   png/jpeg/webp/gif/svg; unrecognized bytes are left untouched
  * - the fetch wrapper only rewrites string JSON bodies POSTed to a
- *   `�?chat/completions` path
+ *   `…/chat/completions` path
  */
 
 import { describe, it } from 'node:test';
@@ -62,7 +62,7 @@ function normalizedUrl(body: unknown): string | undefined {
 
 // ── MIME sniffing ───────────────────────────────────────────────
 
-describe('openai-chat image normalizer �?MIME sniffing', () => {
+describe('openai-chat image normalizer — MIME sniffing', () => {
   it('detects png / jpeg / gif / webp / svg from magic bytes', () => {
     assert.equal(sniffImageMimeFromBase64(PNG_1PX), 'image/png');
     assert.equal(sniffImageMimeFromBase64(JPEG_HEAD), 'image/jpeg');
@@ -72,7 +72,7 @@ describe('openai-chat image normalizer �?MIME sniffing', () => {
     assert.equal(sniffImageMimeFromBase64(SVG_XML_DECL), 'image/svg+xml');
   });
 
-  it('returns undefined for unrecognized bytes �?never blind-guesses a MIME', () => {
+  it('returns undefined for unrecognized bytes — never blind-guesses a MIME', () => {
     assert.equal(sniffImageMimeFromBase64(UNKNOWN_BYTES), undefined);
     assert.equal(sniffImageMimeFromBase64(''), undefined);
     assert.equal(sniffImageMimeFromBase64('AAAA'), undefined);
@@ -81,8 +81,8 @@ describe('openai-chat image normalizer �?MIME sniffing', () => {
 
 // ── Body normalization ──────────────────────────────────────────
 
-describe('openai-chat image normalizer �?body normalization', () => {
-  it('bare base64 PNG becomes data:image/png;base64,�?, () => {
+describe('openai-chat image normalizer — body normalization', () => {
+  it('bare base64 PNG becomes data:image/png;base64,…', () => {
     assert.equal(normalizedUrl(chatBody(PNG_1PX)), `data:image/png;base64,${PNG_1PX}`);
   });
 
@@ -142,7 +142,7 @@ function makeCapture(): { calls: CapturedInit[]; fetch: typeof fetch } {
   return { calls, fetch: impl };
 }
 
-describe('openai-chat image normalizer �?fetch wrapper', () => {
+describe('openai-chat image normalizer — fetch wrapper', () => {
   it('rewrites bare base64 in a /chat/completions JSON body', async () => {
     const { calls, fetch: inner } = makeCapture();
     const wrapped = withChatImageDataUrlFetch(inner);

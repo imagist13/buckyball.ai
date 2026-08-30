@@ -1,5 +1,5 @@
 /**
- * tools/read.ts â€?Read file contents with line numbers.
+ * tools/read.ts â€” Read file contents with line numbers.
  */
 
 import { tool } from 'ai';

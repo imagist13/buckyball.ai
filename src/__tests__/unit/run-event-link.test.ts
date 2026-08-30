@@ -4,8 +4,8 @@
  * details.
  *
  * Pre-fix: `sendTaskNotification` returned void; `executeDueTask` had
- * no event_id to write back. /runs joined on a NULL column â†?returned
- * `event=null` for every run â†?UI never saw the per-channel
+ * no event_id to write back. /runs joined on a NULL column â†’ returned
+ * `event=null` for every run â†’ UI never saw the per-channel
  * delivery log.
  *
  * Post-fix:
@@ -17,7 +17,7 @@
  * This test runs a reminder fire end-to-end and asserts:
  *   - The task_run_logs row carries a non-null notification_event_id.
  *   - The /api/tasks/[id]/runs response has `event` populated for the
- *     run (we don't actually invoke the route â€?we replay its join
+ *     run (we don't actually invoke the route â€” we replay its join
  *     logic against the same DB, since route execution would require
  *     a Next.js server context).
  */
@@ -100,7 +100,7 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
       'task_run_logs.notification_event_id MUST be populated after a successful notify (v6 P1 fix)',
     );
 
-    // Replay the /runs join logic: notification_event_id â†?events row â†?deliveries list.
+    // Replay the /runs join logic: notification_event_id â†’ events row â†’ deliveries list.
     const event = db.getNotificationEvent(matching[0].notification_event_id!);
     assert.ok(event, 'getNotificationEvent must resolve the linked event row');
     assert.equal(event!.task_id, task.id);
@@ -119,7 +119,7 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
     const past = new Date(Date.now() - 1000).toISOString();
     const task = db.createScheduledTask({
       name: 'Failing AI task',
-      prompt: 'Ignored â€?session points at a deleted provider',
+      prompt: 'Ignored â€” session points at a deleted provider',
       kind: 'ai_task',
       schedule_type: 'once',
       schedule_value: past,
@@ -130,7 +130,7 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
       notify_on_complete: 1,
       permanent: 0,
     });
-    // Codex P2 Phase 2 immunity gate â€?pre-create the task-bound
+    // Codex P2 Phase 2 immunity gate â€” pre-create the task-bound
     // session pointing at a non-existent provider id so the runner's
     // `resolveProviderForSession` returns `invalidReason:
     // 'provider-missing'` and short-circuits to 'failed' BEFORE any
@@ -159,8 +159,8 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
     const runId = result.runId;
 
     // Provider-gate fail is fast (<50ms), but the scheduler then has
-    // to dispatch sendTaskNotification â†?write notification_events
-    // and notification_deliveries rows â†?updateTaskRunLog with the
+    // to dispatch sendTaskNotification â†’ write notification_events
+    // and notification_deliveries rows â†’ updateTaskRunLog with the
     // event_id. Under DB contention from the parallel test workers
     // the multi-step linkback can stretch past a tight 400ms window,
     // so give it a comfortable margin. The path is still
@@ -172,10 +172,10 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
       row = db.listTaskRunLogs(task.id).find((candidate) => candidate.id === runId);
     }
     assert.ok(row);
-    // Phase 3 Step 4 â€?new 5-state enum writes 'failed'. Legacy
+    // Phase 3 Step 4 â€” new 5-state enum writes 'failed'. Legacy
     // 'error' is still accepted on read but new code paths produce
     // 'failed'. The test accepts either to stay tolerant during the
-    // legacy-â†?new transition (e.g. for code paths that still go
+    // legacy-â†’-new transition (e.g. for code paths that still go
     // through the v6 fallback).
     assert.ok(
       row!.status === 'failed' || row!.status === 'error',
@@ -183,7 +183,7 @@ describe('task_run_logs.notification_event_id link (Phase 3 Step 3 v6 fix)', () 
     );
     assert.ok(
       row!.notification_event_id,
-      'failure path also fires a notification â€?its event_id must link back to the run row so /runs surfaces the failure delivery log',
+      'failure path also fires a notification â€” its event_id must link back to the run row so /runs surfaces the failure delivery log',
     );
   });
 });

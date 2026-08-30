@@ -1,5 +1,5 @@
 /**
- * codex-turn-input.test.ts â€?#632 / Phase 2 #3 guardrail.
+ * codex-turn-input.test.ts â€” #632 / Phase 2 #3 guardrail.
  *
  * Codex Runtime used to send `turn/start` input as text-only, silently dropping
  * image attachments (codex/runtime.ts). buildCodexTurnInput now maps image/*
@@ -33,12 +33,12 @@ describe('buildCodexTurnInput (#632 / Phase 2 #3)', () => {
     assert.equal(out.length, 2);
   });
 
-  it('a persisted image (filePath) â†?localImage block with the path', () => {
+  it('a persisted image (filePath) â†’ localImage block with the path', () => {
     const out = buildCodexTurnInput('x', [file({ type: 'image/png', filePath: '/work/.codepilot-uploads/a.png', data: '' })]);
     assert.deepEqual(out[1], { type: 'localImage', path: '/work/.codepilot-uploads/a.png' });
   });
 
-  it('an in-memory image (base64 data, no path) â†?image block with a data URL', () => {
+  it('an in-memory image (base64 data, no path) â†’ image block with a data URL', () => {
     const out = buildCodexTurnInput('x', [file({ type: 'image/jpeg', data: 'QUJD', filePath: undefined })]);
     assert.deepEqual(out[1], { type: 'image', url: 'data:image/jpeg;base64,QUJD' });
   });

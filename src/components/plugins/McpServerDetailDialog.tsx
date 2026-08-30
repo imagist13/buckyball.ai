@@ -4,16 +4,16 @@
  * Detail / edit dialog for a user-installed MCP server.
  *
  * Same dialog, two views (no stacked dialogs):
- *   - 'detail' â?name + transport pill + status pill + tool count,
+ *   - 'detail' — name + transport pill + status pill + tool count,
  *                command / URL, full tools list (when connected),
- *                footer with ç¼è¾ / å é¤ buttons.
- *   - 'edit'   â?`<McpServerEditorForm>` body, footer with åæ¶ /
- *                ä¿å­ä¿®æ¹. The dialog header stays so the user can see
+ *                footer with 编辑 / 删除 buttons.
+ *   - 'edit'   — `<McpServerEditorForm>` body, footer with 取消 /
+ *                保存修改. The dialog header stays so the user can see
  *                they're still in the same context.
  *
- * Mirrors the marketplace inline-detail pattern: clicking ç¼è¾ swaps
+ * Mirrors the marketplace inline-detail pattern: clicking 编辑 swaps
  * the body without closing or stacking another dialog. Delete
- * confirmation uses `<AlertDialog>` (radix) â?that briefly stacks but
+ * confirmation uses `<AlertDialog>` (radix) — that briefly stacks but
  * is the standard pattern for destructive confirms and matches the
  * rest of the app.
  */
@@ -39,7 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { WifiHigh } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useTranslation } from "@/hooks/useTranslation";
 import { cn } from "@/lib/utils";
 import type { TranslationKey } from "@/i18n";
@@ -142,8 +142,8 @@ export function McpServerDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Canonical click-card detail dialog (`docs/design.md` Â§
-          "Card â?Detail dialog"): sm:max-w-2xl, max-h-[85vh], flex
+      {/* Canonical click-card detail dialog (`docs/design.md` §
+          "Card → Detail dialog"): sm:max-w-2xl, max-h-[85vh], flex
           flex-col gap-0 overflow-hidden, default DialogContent padding,
           shrink-0 header / flex-1 body / shrink-0 footer with border-t. */}
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col gap-0 overflow-hidden">
@@ -156,9 +156,9 @@ export function McpServerDetailDialog({
               {transport.iconKind === 'wifi' ? (
                 <WifiHigh size={10} className={transport.color} />
               ) : transport.iconKind === 'web' ? (
-                <BuckyballIcon name="web_simple" size={10} className={transport.color} aria-hidden />
+                <CodePilotIcon name="web_simple" size={10} className={transport.color} aria-hidden />
               ) : (
-                <BuckyballIcon name="disk" size={10} className={transport.color} aria-hidden />
+                <CodePilotIcon name="disk" size={10} className={transport.color} aria-hidden />
               )}
               {transport.label}
             </span>
@@ -206,7 +206,7 @@ export function McpServerDetailDialog({
             <section>
               <h5 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1.5">
                 {t("mcp.detail.toolsHeading" as TranslationKey)}
-                {toolCount > 0 && ` Â· ${toolCount}`}
+                {toolCount > 0 && ` · ${toolCount}`}
               </h5>
               {toolCount > 0 ? (
                 <div className="rounded-md bg-muted/40">
@@ -253,11 +253,11 @@ export function McpServerDetailDialog({
                 className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => setConfirmDeleteOpen(true)}
               >
-                <BuckyballIcon name="delete" size="sm" aria-hidden />
+                <CodePilotIcon name="delete" size="sm" aria-hidden />
                 {t("common.delete")}
               </Button>
               <Button size="sm" className="gap-1.5" onClick={() => setMode("edit")}>
-                <BuckyballIcon name="edit" size="sm" aria-hidden />
+                <CodePilotIcon name="edit" size="sm" aria-hidden />
                 {t("common.edit")}
               </Button>
             </>

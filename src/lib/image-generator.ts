@@ -9,15 +9,16 @@ import {
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
 import { isXaiOAuthUsable } from '@/lib/xai-oauth-manager';
 import {
   readGrokReferenceImages,
   requestGrokImagineImage,
   XAI_IMAGINE_IMAGE_MODEL,
 } from '@/lib/xai-imagine';
+import { MediaUserActionError } from '@/lib/media-error';
 
-const dataDir = process.env.CLAUDE_GUI_DATA_DIR || path.join(os.homedir(), '.codepilot');
+const dataDir = resolveCodePilotDataDir();
 const MEDIA_DIR = path.join(dataDir, '.codepilot-media');
 
 export interface GenerateSingleImageParams {
@@ -31,7 +32,7 @@ export interface GenerateSingleImageParams {
   referenceImagePaths?: string[];
   sessionId?: string;
   abortSignal?: AbortSignal;
-  /** When true, skip disk write / project copy / DB insert â€?caller (MCP pipeline) handles persistence */
+  /** When true, skip disk write / project copy / DB insert â€” caller (MCP pipeline) handles persistence */
   skipSave?: boolean;
   /** Working directory for resolving relative referenceImagePaths */
   cwd?: string;
@@ -69,7 +70,7 @@ export function shouldUseXaiOAuthImageProvider(selection: XaiImageProviderSelect
   return selection.activeProviderId === 'xai-oauth';
 }
 
-/** Infer which image family a model id belongs to. gpt-image-* / chatgpt-image-* â†?OpenAI; otherwise Gemini. */
+/** Infer which image family a model id belongs to. gpt-image-* / chatgpt-image-* â†’ OpenAI; otherwise Gemini. */
 function detectFamily(modelId: string | undefined): ImageFamily | undefined {
   if (!modelId) return undefined;
   if (/^grok-imagine-image/i.test(modelId)) return 'xai';
@@ -87,7 +88,7 @@ const GPT_IMAGE_2_EDGE_STEP = 16;
 
 // Per-tier anchors matching the "popular sizes" table in the Image generation
 // guide. Non-square uses LONG edge (so "2K landscape" keeps long=2048, short
-// derives from the selected ratio â€?e.g. 2048x1152 for 16:9, 2048x1536 for
+// derives from the selected ratio â€” e.g. 2048x1152 for 16:9, 2048x1536 for
 // 4:3). Square uses a separate anchor because the popular sizes diverge
 // there (1024/2048 at 1K/2K but 2880 at 4K to stay inside the pixel budget).
 const TIER_LONG_EDGE: Record<string, number> = {
@@ -98,7 +99,7 @@ const TIER_LONG_EDGE: Record<string, number> = {
 const TIER_SQUARE_EDGE: Record<string, number> = {
   '1K': 1024,
   '2K': 2048,
-  '4K': 2880, // 2880Â² = 8,294,400 â€?exactly the pixel-budget ceiling.
+  '4K': 2880, // 2880Â² = 8,294,400 â€” exactly the pixel-budget ceiling.
 };
 
 function parseRatio(aspectRatio: string): { w: number; h: number } | null {
@@ -107,7 +108,7 @@ function parseRatio(aspectRatio: string): { w: number; h: number } | null {
   const w = Number(m[1]);
   const h = Number(m[2]);
   if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
-  // GPT Image 2 rejects anything wider than 3:1 â€?same threshold the UI
+  // GPT Image 2 rejects anything wider than 3:1 â€” same threshold the UI
   // ratios stay within (max is 21:9 = 2.33). If a future UI value violates
   // this, we fall through to the square default rather than send a size the
   // API will reject.
@@ -121,9 +122,9 @@ const snap = (v: number) => Math.round(v / GPT_IMAGE_2_EDGE_STEP) * GPT_IMAGE_2_
 /**
  * Compute a valid GPT Image 2 size as close to the requested ratio + tier as
  * the constraints allow. Guarantees the returned pair is:
- *  â€?each edge a multiple of 16
- *  â€?each edge â‰?3840
- *  â€?total pixels within [655,360, 8,294,400]
+ *  â€¢ each edge a multiple of 16
+ *  â€¢ each edge â‰¤ 3840
+ *  â€¢ total pixels within [655,360, 8,294,400]
  *
  * Returns null if no valid size exists (shouldn't happen for UI inputs).
  */
@@ -132,9 +133,9 @@ function computeGptImage2Size(
   tier: string,
 ): { width: number; height: number } | null {
   const r = ratio.w / ratio.h;
-  const aspect = Math.max(r, 1 / r); // long:short, always â‰?1
+  const aspect = Math.max(r, 1 / r); // long:short, always â‰¥ 1
 
-  // Square fast path â€?uses a separate tier table because the popular
+  // Square fast path â€” uses a separate tier table because the popular
   // square sizes don't follow the non-square anchors.
   if (aspect === 1) {
     const s = TIER_SQUARE_EDGE[tier] ?? TIER_SQUARE_EDGE['1K'];
@@ -146,7 +147,7 @@ function computeGptImage2Size(
   let longEdge = TIER_LONG_EDGE[tier] ?? TIER_LONG_EDGE['1K'];
   let shortEdge = longEdge / aspect;
 
-  // Pixel-budget cap before snapping â€?at 4K, aspects close to 1:1 (e.g.
+  // Pixel-budget cap before snapping â€” at 4K, aspects close to 1:1 (e.g.
   // 4:3 / 4:5) drive long*short above 8,294,400. Scale both down
   // proportionally so the ratio is preserved.
   if (longEdge * shortEdge > GPT_IMAGE_2_MAX_PIXELS) {
@@ -160,7 +161,7 @@ function computeGptImage2Size(
   if (long > GPT_IMAGE_2_MAX_EDGE) long = GPT_IMAGE_2_MAX_EDGE;
   if (short > GPT_IMAGE_2_MAX_EDGE) short = GPT_IMAGE_2_MAX_EDGE;
 
-  // Claw back if snap-up overshot the pixel budget â€?shrink whichever edge
+  // Claw back if snap-up overshot the pixel budget â€” shrink whichever edge
   // is further above its ideal (keeps output ratio close to the request).
   while (long * short > GPT_IMAGE_2_MAX_PIXELS) {
     if (long > short) long -= GPT_IMAGE_2_EDGE_STEP;
@@ -183,7 +184,8 @@ function computeGptImage2Size(
 /**
  * Map UI aspectRatio + imageSize to a GPT Image size string "WxH".
  *
- * GPT Image 2 computes a ratio-faithful size per the constraints above â€? * 3:2 / 4:5 / 5:4 / 21:9 each get a distinct, valid output rather than
+ * GPT Image 2 computes a ratio-faithful size per the constraints above â€”
+ * 3:2 / 4:5 / 5:4 / 21:9 each get a distinct, valid output rather than
  * collapsing to landscape/portrait/square buckets.
  *
  * GPT Image 1 / 1-mini / 1.5 only accept the legacy trio
@@ -205,15 +207,15 @@ export function mapAspectToOpenAISize(
   if (isLegacy) {
     if (!parsed) return '1024x1024';
     const r = parsed.w / parsed.h;
-    // Use 1.1 / 0.91 as a soft deadband around square â€?4:3 / 3:4 still
-    // round to the rectangular trio entries (4/3 â‰?1.33, 3/4 â‰?0.75).
+    // Use 1.1 / 0.91 as a soft deadband around square â€” 4:3 / 3:4 still
+    // round to the rectangular trio entries (4/3 â‰ˆ 1.33, 3/4 â‰ˆ 0.75).
     if (r > 1.1) return '1536x1024';
     if (r < 0.91) return '1024x1536';
     return '1024x1024';
   }
 
   if (!parsed) {
-    // Unrecognized ratio string â€?fall through to a safe square at tier.
+    // Unrecognized ratio string â€” fall through to a safe square at tier.
     if (imageSize === '4K') return '2880x2880';
     if (imageSize === '2K') return '2048x2048';
     return '1024x1024';
@@ -257,7 +259,10 @@ function pickImageProvider(
   ) as ProviderRow[];
 
   if (rows.length === 0) {
-    throw new Error('No image provider configured. Please add a Gemini Image or OpenAI Image provider in Settings.');
+    throw new MediaUserActionError(
+      'MEDIA_PROVIDER_NOT_CONFIGURED',
+      'No image provider configured. Please add a Gemini Image or OpenAI Image provider in Settings.',
+    );
   }
 
   const toFamily = (pt: string): ImageFamily => (pt === 'openai-image' ? 'openai' : 'gemini');
@@ -267,7 +272,10 @@ function pickImageProvider(
   if (providerId) {
     const match = rows.find(r => r.id === providerId);
     if (!match) {
-      throw new Error(`Image provider '${providerId}' is not configured or has no API key. Check Settings â†?Media Providers.`);
+      throw new MediaUserActionError(
+        'MEDIA_PROVIDER_UNAVAILABLE',
+        `Image provider '${providerId}' is not configured or has no API key. Check Settings â†’ Media Providers.`,
+      );
     }
     return { row: match, family: toFamily(match.provider_type) };
   }
@@ -276,7 +284,10 @@ function pickImageProvider(
   if (family) {
     const match = byFamily(family);
     if (match) return { row: match, family };
-    throw new Error(`No ${family === 'openai' ? 'OpenAI Image' : 'Gemini Image'} provider configured. Please add one in Settings.`);
+    throw new MediaUserActionError(
+      'MEDIA_PROVIDER_UNAVAILABLE',
+      `No ${family === 'openai' ? 'OpenAI Image' : 'Gemini Image'} provider configured. Please add one in Settings.`,
+    );
   }
 
   // 3) User-chosen active provider from settings.
@@ -284,7 +295,7 @@ function pickImageProvider(
   if (activeId) {
     const match = rows.find(r => r.id === activeId);
     if (match) return { row: match, family: toFamily(match.provider_type) };
-    // Stored id no longer valid (provider deleted / key cleared) â€?fall through
+    // Stored id no longer valid (provider deleted / key cleared) â€” fall through
     // to the implicit picker rather than throwing, so callers aren't broken.
   }
 
@@ -299,7 +310,7 @@ function pickImageProvider(
 
 /**
  * Shared image generation function.
- * Handles: Provider lookup â†?Gemini / OpenAI API call â†?file save â†?project dir copy â†?DB record.
+ * Handles: Provider lookup â†’ Gemini / OpenAI API call â†’ file save â†’ project dir copy â†’ DB record.
  */
 export async function generateSingleImage(params: GenerateSingleImageParams): Promise<GenerateSingleImageResult> {
   const startTime = Date.now();
@@ -312,7 +323,10 @@ export async function generateSingleImage(params: GenerateSingleImageParams): Pr
     activeProviderId,
   });
   if (useXaiOAuth && !isXaiOAuthUsable()) {
-    throw new Error('Grok Imagine requires an active Grok Build OAuth login. Reconnect in Settings.');
+    throw new MediaUserActionError(
+      'MEDIA_AUTH_REQUIRED',
+      'Grok Imagine requires an active Grok Build OAuth login. Reconnect in Settings.',
+    );
   }
   const selected = useXaiOAuth
     ? undefined
@@ -338,7 +352,10 @@ export async function generateSingleImage(params: GenerateSingleImageParams): Pr
   const aspectRatio = (params.aspectRatio || '1:1') as `${number}:${number}`;
   const imageSize = params.imageSize || '1K';
   if (family === 'xai' && imageSize !== '1K' && imageSize !== '2K') {
-    throw new Error('Grok Imagine Image 2.0 supports 1K or 2K resolution.');
+    throw new MediaUserActionError(
+      'MEDIA_INPUT_UNSUPPORTED',
+      'Grok Imagine Image 2.0 supports 1K or 2K resolution.',
+    );
   }
 
   // Collect reference images (base64 strings). Both referenceImagePaths and
@@ -384,7 +401,7 @@ export async function generateSingleImage(params: GenerateSingleImageParams): Pr
       baseURL: provider!.base_url || undefined,
     });
     const size = mapAspectToOpenAISize(aspectRatio, imageSize, requestedModel);
-    // When reference images are present, pass them as `prompt.images` â€?the
+    // When reference images are present, pass them as `prompt.images` â€” the
     // ai SDK routes this to /images/edits for OpenAI (see @ai-sdk/openai
     // image doGenerate) and supplies them as `input_image` for Gemini.
     const prompt = refImageData.length > 0
@@ -424,7 +441,7 @@ export async function generateSingleImage(params: GenerateSingleImageParams): Pr
   console.log(`[image-generator] ${family}:${requestedModel} ${imageSize} completed in ${elapsed}ms`);
 
   // skipSave mode: return raw image data without writing to disk or DB.
-  // The MCP media pipeline (collectStreamResponse â†?saveMediaToLibrary) handles persistence.
+  // The MCP media pipeline (collectStreamResponse â†’ saveMediaToLibrary) handles persistence.
   if (params.skipSave) {
     const rawImages = images.map(img => ({
       mimeType: img.mediaType,

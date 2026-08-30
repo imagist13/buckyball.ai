@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
@@ -64,7 +64,7 @@ export function QuickActions({
             onClick={() => onAction(sendText)}
             className="rounded-full border-border/50 bg-background text-muted-foreground hover:border-primary/30 hover:bg-primary/5 hover:text-foreground"
           >
-            <BuckyballIcon name="skill" size={12} className="text-primary/60" aria-hidden />
+            <CodePilotIcon name="skill" size={12} className="text-primary/60" aria-hidden />
             {displayText}
           </Button>
         );

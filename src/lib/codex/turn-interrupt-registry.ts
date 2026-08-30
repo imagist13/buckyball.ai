@@ -51,7 +51,7 @@ export function abortCodexTurnController(sessionId: string): boolean {
   const owner = getCodexTurnAbortRegistry().get(sessionId);
   if (!owner) return false;
   if (!owner.controller.signal.aborted) {
-    owner.controller.abort(new Error('buckyball.ai parent turn interrupted'));
+    owner.controller.abort(new Error('CodePilot parent turn interrupted'));
   }
   return true;
 }

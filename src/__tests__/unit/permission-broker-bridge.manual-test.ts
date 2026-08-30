@@ -16,7 +16,7 @@ import assert from 'node:assert/strict';
 
 import { isBridgeUnsupportedInteractiveTool } from '../../lib/bridge/permission-broker';
 
-describe('permission-broker â€?bridge interactive-tool guard', () => {
+describe('permission-broker â€” bridge interactive-tool guard', () => {
   it('blocks AskUserQuestion', () => {
     assert.equal(isBridgeUnsupportedInteractiveTool('AskUserQuestion'), true);
   });

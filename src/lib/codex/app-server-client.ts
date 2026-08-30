@@ -45,7 +45,7 @@ export interface CodexTransport {
    * process dies, instead of letting each wait out the 30s RPC timeout.
    *
    * Contract: if the transport is ALREADY closed when `onClose` is
-   * called, it MUST invoke `handler` immediately (synchronously) â€?this
+   * called, it MUST invoke `handler` immediately (synchronously) â€” this
    * closes the race where the process exits before the client attaches.
    */
   onClose?(handler: (reason?: Error) => void): () => void;
@@ -57,7 +57,7 @@ export interface CodexTransport {
 }
 
 export interface CodexClientOptions {
-  /** Client display version â€?surfaced to Codex for compliance logs. */
+  /** Client display version â€” surfaced to Codex for compliance logs. */
   version: string;
   /** Optional human-readable title. */
   title?: string;
@@ -128,7 +128,7 @@ export class CodexAppServerClient {
   private readonly pending = new Map<number | string, PendingRequest>();
   private readonly notificationHandlers = new Map<string, Set<(params: unknown) => void>>();
   /**
-   * Wildcard notification handlers â€?receive `(method, params)` for
+   * Wildcard notification handlers â€” receive `(method, params)` for
    * EVERY incoming notification. Phase 5 review round 2 fix (2026-05-13):
    * the runtime previously subscribed to ~9 specific methods, so any
    * notification outside that list was silently dropped despite the
@@ -170,8 +170,8 @@ export class CodexAppServerClient {
     // every pending request immediately instead of letting each wait out
     // the 30s RPC timeout. Without this, a Codex app-server that exits
     // during `initialize` (e.g. an older binary that fatally rejects the
-    // user's ~/.codex/config.toml) hangs the model-list fetch â€?and the
-    // chat composer + Settings pages that depend on it â€?for a full 30s.
+    // user's ~/.codex/config.toml) hangs the model-list fetch â€” and the
+    // chat composer + Settings pages that depend on it â€” for a full 30s.
     // The transport invokes this synchronously if it is already closed,
     // which also covers a process that exits before we attach.
     // See docs/research/packaged-preview-runtime-diagnosis-2026-05-31.md.
@@ -181,7 +181,7 @@ export class CodexAppServerClient {
   }
 
   /**
-   * Transport died â€?fail fast. Mark the client closed so new requests
+   * Transport died â€” fail fast. Mark the client closed so new requests
    * reject immediately, and reject everything currently in flight.
    */
   private handleClose(reason?: Error): void {
@@ -215,7 +215,7 @@ export class CodexAppServerClient {
       capabilities: this.opts.capabilities ?? null,
     });
     this.initializeResult = result;
-    // Acknowledge â€?server expects this notification before any
+    // Acknowledge â€” server expects this notification before any
     // further request beyond `initialize`.
     await this.notify('initialized', {});
     return result;
@@ -240,7 +240,7 @@ export class CodexAppServerClient {
       } catch (err) {
         if (err instanceof CodexRpcError && err.retryable && attempt < this.maxOverloadRetries) {
           attempt++;
-          // Exponential backoff with jitter (50â€?50ms Ã— 2^attempt).
+          // Exponential backoff with jitter (50â€“250ms Ã— 2^attempt).
           const base = 50 + Math.random() * 200;
           await new Promise((r) => setTimeout(r, base * 2 ** (attempt - 1)));
           continue;
@@ -348,7 +348,7 @@ export class CodexAppServerClient {
 
   /**
    * Subscribe to every incoming notification. Phase 5 review round 2
-   * fix â€?gives the runtime a chance to route ALL notifications
+   * fix â€” gives the runtime a chance to route ALL notifications
    * through the canonical mapper (including unknown methods that
    * the mapper turns into `unknown_item`), instead of dropping
    * anything that wasn't named in a per-method subscription.
@@ -366,7 +366,7 @@ export class CodexAppServerClient {
 
   /**
    * Register a server-originated request handler. Phase 5 review fix
-   * (2026-05-13) â€?Codex's approval flow (item/commandExecution/
+   * (2026-05-13) â€” Codex's approval flow (item/commandExecution/
    * requestApproval, item/fileChange/requestApproval, etc.) is a
    * server REQUEST, not a notification: the client MUST respond or
    * the turn hangs. Only one handler per method; subsequent
@@ -458,7 +458,7 @@ export class CodexAppServerClient {
       this.routeNotification(parsed as JsonRpcNotification);
       return;
     }
-    // Doesn't match any known shape â€?JSON-RPC spec lets servers send
+    // Doesn't match any known shape â€” JSON-RPC spec lets servers send
     // batches or other variants we haven't seen yet. Log and ignore so
     // a future protocol extension doesn't crash us.
     console.warn('[codex] unsupported message shape', { method: 'method' in parsed ? parsed.method : '<unknown>' });
@@ -467,7 +467,7 @@ export class CodexAppServerClient {
   private routeServerRequest(message: JsonRpcRequest): void {
     const handler = this.serverRequestHandlers.get(message.method);
     if (!handler) {
-      // No handler registered â†?respond with method-not-found so the
+      // No handler registered â†’ respond with method-not-found so the
       // server doesn't hang. Codex's approval flow surfaces this as
       // an immediate "declined" outcome at the server side; runtime
       // adapter is expected to register a real handler before starting
@@ -508,7 +508,7 @@ export class CodexAppServerClient {
     const idKey = message.id as number | string;
     const pending = this.pending.get(idKey);
     if (!pending) {
-      // Late response after timeout / dispose. Drop silently â€?already
+      // Late response after timeout / dispose. Drop silently â€” already
       // rejected by the timer path.
       return;
     }
@@ -548,7 +548,7 @@ export class CodexAppServerClient {
         }
       }
     }
-    // Wildcard handlers run for every notification â€?runtime uses
+    // Wildcard handlers run for every notification â€” runtime uses
     // this to put unknown methods through the canonical mapper.
     if (this.anyNotificationHandlers.size > 0) {
       for (const h of this.anyNotificationHandlers) {

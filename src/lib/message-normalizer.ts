@@ -1,9 +1,9 @@
 /**
- * Message Normalizer â€?shared message content cleaning for fallback and compression.
+ * Message Normalizer â€” shared message content cleaning for fallback and compression.
  *
  * Two layers of processing:
- * 1. normalizeMessageContent â€?strips metadata, summarizes tool blocks (always applied)
- * 2. microCompactMessage â€?age-based token truncation for old messages (fallback path only)
+ * 1. normalizeMessageContent â€” strips metadata, summarizes tool blocks (always applied)
+ * 2. microCompactMessage â€” age-based token truncation for old messages (fallback path only)
  *
  * Used by buildFallbackContext (claude-client.ts) and compressConversation (context-compressor.ts).
  */
@@ -54,7 +54,7 @@ export function normalizeMessageContent(role: string, raw: string): string {
           const truncated = inputStr.length > 80 ? inputStr.slice(0, 80) + '...' : inputStr;
           parts.push(`<prior-tool-call name="${escapeXmlAttr(name)}" input="${escapeXmlAttr(truncated)}"/>`);
         }
-        // tool_result blocks are skipped â€?the summary above captures intent
+        // tool_result blocks are skipped â€” the summary above captures intent
       }
       content = parts.length > 0 ? parts.join('\n') : '<prior-assistant-turn tools-only="true"/>';
     } catch {
@@ -99,7 +99,7 @@ function headTailTruncate(text: string, limit: number): string {
 export function microCompactMessage(role: string, content: string, ageFromEnd: number): string {
   const limit = ageFromEnd > OLD_MESSAGE_THRESHOLD ? OLD_CONTENT_LIMIT : RECENT_CONTENT_LIMIT;
 
-  // Short content â€?no truncation needed
+  // Short content â€” no truncation needed
   if (content.length <= limit) return content;
 
   return headTailTruncate(content, limit);

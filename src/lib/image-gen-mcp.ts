@@ -1,8 +1,8 @@
 /**
- * codepilot-image-gen MCP â€?in-process MCP server for image/video generation.
+ * codepilot-image-gen MCP â€” in-process MCP server for image/video generation.
  *
  * The MCP tool calls generateSingleImage() which saves images to disk and DB.
- * It returns a text result with localPaths â€?the frontend renders them via
+ * It returns a text result with localPaths â€” the frontend renders them via
  * the tool_result media field that claude-client.ts injects from the paths.
  *
  * Keyword-gated: co-registered with codepilot-media when the conversation

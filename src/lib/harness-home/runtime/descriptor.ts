@@ -38,7 +38,7 @@ function canonicalCapability(
         reason:
           capability.deferredReason
           ?? referenceExposure.notes
-          ?? 'The buckyball.ai reference implementation is not executable.',
+          ?? 'The CodePilot reference implementation is not executable.',
       }),
   };
   validateCanonicalCapability(canonical);
@@ -121,10 +121,10 @@ export function listRuntimeDescriptors(): readonly RuntimeDescriptor[] {
  * entries may be pending and remain visible to diagnostics, but cannot enter
  * stable coverage until the reference implementation is real.
  */
-export function assertBuckyballFullReference(): void {
-  const descriptor = requireRuntimeDescriptor('bbagent');
+export function assertCodePilotFullReference(): void {
+  const descriptor = requireRuntimeDescriptor('codepilot_runtime');
   if (descriptor.integrationLevel !== 'full') {
-    throw new Error('bb-agent Runtime must be the Full Reference Runtime.');
+    throw new Error('CodePilot Runtime must be the Full Reference Runtime.');
   }
   for (const capability of descriptor.capabilities) {
     if (
@@ -142,4 +142,4 @@ export function assertBuckyballFullReference(): void {
   }
 }
 
-assertBuckyballFullReference();
+assertCodePilotFullReference();

@@ -131,11 +131,11 @@ describe('parseCompletionPayload', () => {
   });
 
   it('should handle Chinese text in values', () => {
-    const payload = '{"q1":"小明","q2":"助手","q3":"简洁直�?}';
+    const payload = '{"q1":"小明","q2":"助手","q3":"简洁直接"}';
     const result = parseCompletionPayload(payload);
     assert.ok(result);
     assert.equal(result!.q1, '小明');
-    assert.equal(result!.q3, '简洁直�?);
+    assert.equal(result!.q3, '简洁直接');
   });
 
   it('should extract via regex as last resort for heavily malformed JSON', () => {
@@ -158,12 +158,12 @@ describe('parseCompletionPayload', () => {
   });
 
   it('should handle full 13-question payload with free-text answers', () => {
-    const payload = '{"q1":"小明","q2":"助手","q3":"简洁直�?,"q4":"主动建议","q5":"不要删除文件、不要发送邮件、不要修改系统设�?,"q6":"学Rust、发布产品、多读书","q7":"列表","q8":"偏好和目�?,"q9":"密码和私�?,"q10":"读README、看issues、了解结�?,"q11":"按项�?,"q12":"Inbox","q13":"移到archive文件�?}';
+    const payload = '{"q1":"小明","q2":"助手","q3":"简洁直接","q4":"主动建议","q5":"不要删除文件、不要发送邮件、不要修改系统设置","q6":"学Rust、发布产品、多读书","q7":"列表","q8":"偏好和目标","q9":"密码和私钥","q10":"读README、看issues、了解结构","q11":"按项目","q12":"Inbox","q13":"移到archive文件夹"}';
     const result = parseCompletionPayload(payload);
     assert.ok(result);
     assert.equal(Object.keys(result!).length, 13);
     assert.equal(result!.q1, '小明');
-    assert.equal(result!.q13, '移到archive文件�?);
+    assert.equal(result!.q13, '移到archive文件夹');
   });
 });
 

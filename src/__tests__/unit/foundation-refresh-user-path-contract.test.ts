@@ -42,6 +42,7 @@ import { POST as searchModelsPOST } from '@/app/api/providers/[id]/search-models
 import {
   buildSearchCandidateMutation,
   filterSearchCandidates,
+  isModelIdentityConflictResponse,
   type SearchCandidate,
 } from '@/components/settings/OpenRouterSearchDialog';
 
@@ -122,7 +123,7 @@ afterEach(() => {
   invalidateCodexModelsCache();
 });
 
-describe('U1 â€?GPT-5.6 effort survives into the final composer feed', () => {
+describe('U1 â€” GPT-5.6 effort survives into the final composer feed', () => {
   it('lifts Codex model/list effort metadata to the top-level fields MessageInput reads', async () => {
     await listCodexModels(
       { force: true },
@@ -160,7 +161,7 @@ describe('U1 â€?GPT-5.6 effort survives into the final composer feed', () => {
   });
 });
 
-describe('U2 â€?the real Kimi for Coding DB shape is enriched, not shadowed', () => {
+describe('U2 â€” the real Kimi for Coding DB shape is enriched, not shadowed', () => {
   it('keeps the channel name and exposes Auto / Low / High / Max for a manual user-edited row', async () => {
     const provider = createProvider({
       name: `${TEST_PROVIDER_PREFIX}${Date.now()}`,
@@ -231,7 +232,7 @@ describe('U2 â€?the real Kimi for Coding DB shape is enriched, not shadowed', ()
   });
 });
 
-describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream index', () => {
+describe('U3 â€” CodePlan add-model is not held hostage by an optional upstream index', () => {
   it('filters by the displayed upstream id and turns hidden candidates into PATCH', () => {
     const candidate: SearchCandidate = {
       modelId: 'sonnet',
@@ -259,6 +260,75 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
         display_name: 'GLM-5.3',
       },
     });
+    assert.equal(isModelIdentityConflictResponse(409, {
+      code: 'MODEL_IDENTITY_CONFLICT',
+      conflictModelIds: ['sonnet'],
+    }), true);
+    assert.equal(isModelIdentityConflictResponse(500, {
+      code: 'MODEL_IDENTITY_CONFLICT',
+    }), false);
+  });
+
+  it('renders conflict row ids with an action instead of a dead warning badge', () => {
+    const dialogSource = fs.readFileSync(
+      path.join(SRC, 'components/settings/OpenRouterSearchDialog.tsx'),
+      'utf8',
+    );
+    assert.match(dialogSource, /candidate\.conflictModelIds\?\.join/);
+    assert.match(dialogSource, /provider\.search\.openrouter\.identityConflictDetail/);
+    assert.match(dialogSource, /provider\.search\.openrouter\.reviewModels/);
+    assert.match(dialogSource, /await fetchCandidates\(\)/,
+      'mutation success must be followed by the server-owned classifier, not an optimistic badge flip');
+    assert.match(dialogSource, /isModelIdentityConflictResponse\(res\.status, body\)[\s\S]*await fetchCandidates\(\)/,
+      'a conflict response must also reload the server-owned candidate list');
+    assert.match(dialogSource, /provider\.search\.openrouter\.mutationIdentityConflict/,
+      'the renderer must translate the typed 409 instead of showing the route fallback string');
+  });
+
+  it('returns a typed 409 without overwriting a user-owned GLM identity', async () => {
+    const provider = createProvider({
+      name: `${TEST_PROVIDER_PREFIX}glm_conflict_${Date.now()}`,
+      provider_type: 'anthropic',
+      protocol: 'anthropic',
+      base_url: 'https://open.bigmodel.cn/api/anthropic',
+      api_key: 'sk-test',
+      extra_env: '{}',
+    });
+    upsertProviderModel({
+      provider_id: provider.id,
+      model_id: 'sonnet',
+      upstream_model_id: 'user-owned-glm-route',
+      display_name: 'My GLM route',
+      capabilities_json: JSON.stringify({ private: true }),
+      sort_order: 7,
+      enabled: 1,
+      source: 'manual',
+      user_edited: 1,
+      enable_source: 'manual_enabled',
+    });
+
+    const response = await providerModelsPOST(
+      new NextRequest(`http://localhost/api/providers/${provider.id}/models`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model_id: 'sonnet',
+          upstream_model_id: 'glm-5.3[1m]',
+          display_name: 'GLM-5.3',
+        }),
+      }),
+      { params: Promise.resolve({ id: provider.id }) },
+    );
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      error: 'Model identity conflict requires review in Settings > Models',
+      code: 'MODEL_IDENTITY_CONFLICT',
+      conflictModelIds: ['sonnet'],
+    });
+    const preserved = getAllModelsForProvider(provider.id).find(model => model.model_id === 'sonnet');
+    assert.equal(preserved?.upstream_model_id, 'user-owned-glm-route');
+    assert.equal(preserved?.display_name, 'My GLM route');
+    assert.deepEqual(JSON.parse(preserved!.capabilities_json), { private: true });
   });
 
   it('falls back to the built-in GLM plan catalog when /models is unreachable', async () => {
@@ -381,8 +451,13 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
     assert.deepEqual(persistedCapabilities.supportedEffortLevels, ['low', 'high', 'max']);
     assert.equal(persistedCapabilities.defaultEffortLevel, 'max');
     assert.equal(persistedCapabilities.effortNoteKey, 'messageInput.effort.note.glmCodePlan');
-    assert.equal(byId.get('glm-5-turbo')?.display_name, 'GLM-5-Turbo', 'new catalog ids must materialize');
-    assert.equal(byId.get('haiku')?.display_name, 'GLM-4.7');
+    assert.equal(byId.get('haiku')?.display_name, 'GLM-5.3-Flash');
+    assert.equal(byId.get('haiku')?.upstream_model_id, 'glm-5.3-flash[1m]');
+    const flashCapabilities = JSON.parse(
+      getAllModelsForProvider(provider.id).find(model => model.model_id === 'haiku')!.capabilities_json,
+    );
+    assert.equal(flashCapabilities.vision, true);
+    assert.deepEqual(flashCapabilities.supportedEffortLevels, ['low', 'high', 'max']);
     assert.equal(byId.get('user/custom-model')?.display_name, 'My custom GLM');
     assert.equal(byId.get('user/custom-model')?.enabled, 0, 'manual hidden choice must survive catalog merge');
     assert.equal(byId.get('user/custom-model')?.user_edited, 1);
@@ -410,6 +485,7 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
       displayName: 'GLM-5.3',
       alreadyAdded: true,
       existingHidden: false,
+      presenceState: 'current_enabled',
       existingModelId: 'sonnet',
     });
 
@@ -429,6 +505,91 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
       changesBeforeRepeat,
       'a second Models GET against current catalog metadata must perform zero writes',
     );
+  });
+
+  it('classifies and repairs the pre-source-migration GLM-5-Turbo row across all consumer surfaces', async () => {
+    const provider = createProvider({
+      name: `${TEST_PROVIDER_PREFIX}glm_legacy_manual_${Date.now()}`,
+      provider_type: 'anthropic',
+      protocol: 'anthropic',
+      base_url: 'https://open.bigmodel.cn/api/anthropic',
+      api_key: 'sk-test',
+      extra_env: '{}',
+    });
+    upsertProviderModel({
+      provider_id: provider.id,
+      model_id: 'sonnet',
+      upstream_model_id: 'sonnet',
+      display_name: 'GLM-5-Turbo',
+      capabilities_json: '{}',
+      sort_order: 0,
+      enabled: 1,
+      source: 'manual',
+      user_edited: 0,
+      enable_source: 'recommended',
+    });
+
+    const beforeSearch = await searchModelsPOST(
+      new NextRequest(`http://localhost/api/providers/${provider.id}/search-models`, { method: 'POST' }),
+      { params: Promise.resolve({ id: provider.id }) },
+    );
+    assert.equal(beforeSearch.status, 200);
+    const beforeBody = await beforeSearch.json() as {
+      candidates: Array<{
+        modelId: string;
+        alreadyAdded: boolean;
+        presenceState: string;
+      }>;
+    };
+    const beforeFlagship = beforeBody.candidates.find(candidate => candidate.modelId === 'sonnet')!;
+    assert.equal(beforeFlagship.alreadyAdded, false,
+      'a stable slot carrying an old wire must not be presented as the current SKU');
+    assert.equal(beforeFlagship.presenceState, 'legacy_upgrade_available');
+
+    const upgrade = await providerModelsPOST(
+      new NextRequest(`http://localhost/api/providers/${provider.id}/models`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          model_id: 'sonnet',
+          upstream_model_id: 'glm-5.3[1m]',
+          display_name: 'GLM-5.3',
+        }),
+      }),
+      { params: Promise.resolve({ id: provider.id }) },
+    );
+    assert.equal(upgrade.status, 200);
+
+    const settingsResponse = await providerModelsGET(
+      new NextRequest(`http://localhost/api/providers/${provider.id}/models?all=1`),
+      { params: Promise.resolve({ id: provider.id }) },
+    );
+    const settingsBody = await settingsResponse.json() as {
+      models: Array<{ model_id: string; upstream_model_id: string; display_name: string }>;
+    };
+    const settingsFlagship = settingsBody.models.find(model => model.model_id === 'sonnet')!;
+    assert.equal(settingsFlagship.upstream_model_id, 'glm-5.3[1m]');
+    assert.equal(settingsFlagship.display_name, 'GLM-5.3');
+    assert.ok(settingsBody.models.some(model =>
+      model.model_id === 'haiku'
+      && model.upstream_model_id === 'glm-5.3-flash[1m]'
+      && model.display_name === 'GLM-5.3-Flash'));
+
+    const groups = await getGroups();
+    const composerGroup = groups.find(group => group.provider_id === provider.id)!;
+    const composerFlagship = composerGroup.models.find(model => model.value === 'sonnet')!;
+    assert.equal(composerFlagship.label, 'GLM-5.3');
+
+    const afterSearch = await searchModelsPOST(
+      new NextRequest(`http://localhost/api/providers/${provider.id}/search-models`, { method: 'POST' }),
+      { params: Promise.resolve({ id: provider.id }) },
+    );
+    const afterBody = await afterSearch.json() as {
+      candidates: Array<{ modelId: string; alreadyAdded: boolean; presenceState: string }>;
+    };
+    const afterFlagship = afterBody.candidates.find(candidate => candidate.modelId === 'sonnet')!;
+    assert.equal(afterFlagship.alreadyAdded, true);
+    assert.equal(afterFlagship.presenceState, 'current_enabled');
   });
 
   it('keeps a hidden upstream-id row actionable instead of claiming it is simply added', async () => {
@@ -475,6 +636,7 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
       displayName: 'GLM-5.3',
       alreadyAdded: true,
       existingHidden: true,
+      presenceState: 'current_hidden',
       existingModelId: 'glm-5.3[1m]',
     });
 
@@ -533,7 +695,7 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
     assert.equal(restored.enable_source, 'catalog');
     assert.equal(restored.upstream_model_id, 'glm-5.3[1m]');
     const caps = JSON.parse(restored.capabilities_json);
-    assert.equal(caps.contextWindow, 1_048_576);
+    assert.equal(caps.contextWindow, 1_000_000);
     assert.equal(caps.supportsEffort, true);
     assert.deepEqual(caps.supportedEffortLevels, ['low', 'high', 'max']);
   });
@@ -573,7 +735,7 @@ describe('U3 â€?CodePlan add-model is not held hostage by an optional upstream i
   });
 });
 
-describe('U3b â€?new catalog-only K3 entries reach existing provider rows', () => {
+describe('U3b â€” new catalog-only K3 entries reach existing provider rows', () => {
   const cases = [
     {
       name: 'ClinePass',
@@ -631,7 +793,7 @@ describe('U3b â€?new catalog-only K3 entries reach existing provider rows', () =
   }
 });
 
-describe('U2b â€?untouched catalog rows follow current Kimi capability', () => {
+describe('U2b â€” untouched catalog rows follow current Kimi capability', () => {
   it('upgrades a stale max-only catalog cache on the final read path without a DB reseed', async () => {
     const provider = createProvider({
       name: `${TEST_PROVIDER_PREFIX}KimiStaleCatalog_${Date.now()}`,
@@ -704,10 +866,10 @@ describe('U2b â€?untouched catalog rows follow current Kimi capability', () => {
   });
 });
 
-describe('U4 â€?effort selector uses the model selector visual contract', () => {
-  it('shares optical typography, item spacing, popover radius and motion', () => {
-    const effortSource = fs.readFileSync(
-      path.join(SRC, 'components/chat/EffortSelectorDropdown.tsx'),
+describe('U4 â€” consolidated model controls share the compact composer contract', () => {
+  it('keeps route and capability selectors compact, collision-aware, and sans-serif', () => {
+    const capabilitySource = fs.readFileSync(
+      path.join(SRC, 'components/chat/ModelCapabilityDropdown.tsx'),
       'utf8',
     );
     const modelSource = fs.readFileSync(
@@ -716,51 +878,41 @@ describe('U4 â€?effort selector uses the model selector visual contract', () => 
     );
 
     assert.match(
-      effortSource,
+      capabilitySource,
       /<span className="text-xs font-normal">/,
-      'effort trigger must use the shared compact toolbar typography',
+      'the combined effort/context trigger must use compact toolbar typography',
     );
     assert.match(
       modelSource,
-      /<span className="text-xs font-normal">\{currentModelOption\?\.label\}<\/span>/,
+      /<span className="[^"]*text-xs font-normal">\{currentModelOption\?\.label\}<\/span>/,
       'selected model must not use an oversized system-monospace fallback',
-    );
-    assert.match(
-      modelSource,
-      /<span className="text-xs font-normal truncate">\{option\.label\}<\/span>/,
-      'recent model rows must use the same compact sans typography as the trigger',
-    );
-    assert.match(
-      modelSource,
-      /<span className="text-xs font-normal truncate">\{opt\.label\}<\/span>/,
-      'provider model rows must use the same compact sans typography as the trigger',
     );
     assert.doesNotMatch(
       modelSource,
-      /font-mono text-xs truncate">\{(?:option|opt)\.label\}/,
+      /font-mono[^\n]*\{(?:currentModelOption\?\.label|route\.modelName)\}/,
       'human-readable model names must never inherit the offline monospace fallback',
     );
     assert.match(
-      effortSource,
+      capabilitySource,
       /\bCommandListItems\b/,
-      'effort rows must use the same shared p-1 item container as the model menu',
+      'capability rows must use the shared command-list item container',
     );
-    assert.doesNotMatch(
-      effortSource,
-      /rounded-lg/,
-      'CommandList already owns the model menu rounded-2xl radius; effort must not override it',
+    assert.match(
+      modelSource,
+      /w-\[42rem\] max-w-\[calc\(100vw-2rem\)\]/,
+      'the provider/model route menu must preserve the two-lane layout while shrinking in narrow windows',
     );
-    for (const [name, source] of [['effort', effortSource], ['model', modelSource]] as const) {
+    for (const [name, source] of [['capability', capabilitySource], ['model', modelSource]] as const) {
       assert.match(
         source,
-        /w-80 max-w-\[calc\(100vw-2rem\)\]/,
+        /max-w-\[calc\(100vw-2rem\)\]/,
         `${name} popover must shrink inside a narrow window instead of overflowing`,
       );
       assert.match(source, /<PopoverContent[\s\S]{0,220}collisionPadding=\{16\}/,
         `${name} popover must use collision-aware viewport placement, not only a max-width`);
-      assert.match(source, /<CommandList positioning="inline"/,
-        `${name} command list must let the Radix popover own placement`);
     }
+    assert.match(capabilitySource, /<CommandList positioning="inline"/,
+      'the combined capability list must let the Radix popover own placement');
   });
 
   it('keeps auto-review in the same muted toolbar tier as mode and runtime', () => {
@@ -813,7 +965,7 @@ describe('U4 â€?effort selector uses the model selector visual contract', () => 
   });
 });
 
-describe('U5 â€?product fonts are bundled and keep their semantic roles', () => {
+describe('U5 â€” product fonts are bundled and keep their semantic roles', () => {
   it('loads Geist Sans and Geist Mono locally instead of depending on Google Fonts', () => {
     const layoutSource = fs.readFileSync(path.join(SRC, 'app/layout.tsx'), 'utf8');
     const globalsSource = fs.readFileSync(path.join(SRC, 'app/globals.css'), 'utf8');

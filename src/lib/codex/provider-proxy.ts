@@ -11,7 +11,7 @@
  *
  *   config.model_providers = {
  *     codepilot_proxy: {
- *       name: 'buckyball.ai via Codex',
+ *       name: 'CodePilot via Codex',
  *       base_url: 'http://127.0.0.1:<port>/api/codex/proxy/v1',
  *       wire_api: 'responses',
  *       http_headers: { 'x-codepilot-target-provider': '<provider-id>' },
@@ -55,19 +55,19 @@ export interface CodexProxyInjection {
  * Build the Codex thread/start config override that routes a target
  * CodePilot provider through the local Responses proxy.
  *
- * @param targetProviderId â?CodePilot provider DB id (used by the
+ * @param targetProviderId — CodePilot provider DB id (used by the
  *   proxy route via x-codepilot-target-provider header to look up
  *   the provider record and decide compat / forwarding).
- * @param baseUrl â?absolute URL CodePilot is reachable at from
+ * @param baseUrl — absolute URL CodePilot is reachable at from
  *   wherever Codex runs (usually `http://127.0.0.1:<port>` in dev,
  *   localhost in packaged Electron).
- * @param opts.sessionId â?Phase 5c (2026-05-16). Chat session id so the
+ * @param opts.sessionId — Phase 5c (2026-05-16). Chat session id so the
  *   proxy can mount CodePilot built-in tools (`codepilot_generate_image`
  *   etc.) and address the side-channel event bus that pipes tool
  *   results back to the running ChatView. Empty (default) leaves the
- *   bridge off â?old chat-only behaviour preserved for back-compat
+ *   bridge off — old chat-only behaviour preserved for back-compat
  *   smoke runs.
- * @param opts.workspacePath â?Phase 5c. Working directory the chat
+ * @param opts.workspacePath — Phase 5c. Working directory the chat
  *   was launched in; bridge tools that need a cwd (image gen
  *   reference paths, memory workspace lookup, scheduled-task origin
  *   record) receive it through this header.
@@ -81,7 +81,7 @@ export function buildCodexProviderProxyInjection(
   const headers: Record<string, string> = {
     'x-codepilot-target-provider': targetProviderId,
   };
-  // Only emit the header when we actually have a value â?Codex
+  // Only emit the header when we actually have a value — Codex
   // copies http_headers verbatim onto every request, and an empty
   // string would confuse the proxy's "did the runtime tell us?"
   // check (which then re-mounts the bridge for a chat-less smoke).
@@ -96,7 +96,7 @@ export function buildCodexProviderProxyInjection(
     config: {
       model_providers: {
         [PROVIDER_KEY]: {
-          name: 'buckyball.ai via Codex',
+          name: 'CodePilot via Codex',
           base_url: `${trimmed}/api/codex/proxy/v1`,
           wire_api: 'responses',
           http_headers: headers,
@@ -112,10 +112,10 @@ export function buildCodexProviderProxyInjection(
  * `ThreadResumeParams` schema (codex-rs/.../v2/ThreadResumeParams.ts)
  * accepts `modelProvider`, `config`, and `cwd` exactly like
  * `ThreadStartParams`. Phase 5b previously passed these only on start
- * â?the resume path inherited whatever the Codex server still had in
+ * — the resume path inherited whatever the Codex server still had in
  * memory for the thread. That breaks when:
  *
- *   1. buckyball.ai's dev port changed between turns (proxy base_url is
+ *   1. CodePilot's dev port changed between turns (proxy base_url is
  *      no longer valid in the cached config).
  *   2. The Codex app-server restarted between turns (in-memory thread
  *      metadata cleared; resume reload from disk may or may not
@@ -128,12 +128,12 @@ export function buildCodexProviderProxyInjection(
  * resumed thread per the schema's "Configuration overrides for the
  * resumed thread" docstring.
  *
- *   - `'codex_account'` (virtual provider) â?no injection. The thread
+ *   - `'codex_account'` (virtual provider) → no injection. The thread
  *     uses Codex's own model_providers map keyed under its native
  *     OAuth account.
- *   - any non-empty non-`'env'` providerId â?proxy injection so Codex
+ *   - any non-empty non-`'env'` providerId → proxy injection so Codex
  *     routes upstream calls through `/api/codex/proxy/v1/responses`.
- *   - empty / `'env'` â?caller MUST reject before reaching this fn;
+ *   - empty / `'env'` → caller MUST reject before reaching this fn;
  *     this is an unreachable contract violation that we surface as
  *     a thrown error rather than silently constructing a no-op.
  *
@@ -143,7 +143,7 @@ export function buildCodexProviderProxyInjection(
  */
 /**
  * The `config` override blob for a Codex thread. Both keys are optional
- * and merged independently â?proxy routing lives under `model_providers`,
+ * and merged independently — proxy routing lives under `model_providers`,
  * MCP injection under `mcp_servers` (Phase 8 Phase 2). They never
  * overwrite each other; a codex_account thread carries only `mcp_servers`.
  */
@@ -174,13 +174,13 @@ export function buildCodexThreadParams(opts: {
    *  thread/start + thread/resume so the proxy injection resolves to
    *  the right model id before the turn runs. */
   model?: string;
-  /** Phase 5c (2026-05-16) â?CodePilot chat session id. Threaded into
+  /** Phase 5c (2026-05-16) — CodePilot chat session id. Threaded into
    *  the proxy injection's `x-codepilot-session-id` header so the
    *  proxy can mount the CodePilot built-in tool bridge for this
    *  chat. Codex Account paths skip the injection entirely (see
    *  branch below); the field is silently ignored there. */
   sessionId?: string;
-  /** Phase 8 Phase 2 (2026-05-27) â?Codex-native MCP servers to inject
+  /** Phase 8 Phase 2 (2026-05-27) — Codex-native MCP servers to inject
    *  under `config.mcp_servers`. Applied to BOTH provider branches
    *  (codex_account and codepilot_proxy) so Memory / user MCP is
    *  available regardless of how the upstream model is reached. The
@@ -191,7 +191,7 @@ export function buildCodexThreadParams(opts: {
   const providerId = opts.providerId.trim();
   if (!providerId || providerId === 'env') {
     throw new Error(
-      'buildCodexThreadParams called with env / empty providerId â?caller must reject the request before building thread params.',
+      'buildCodexThreadParams called with env / empty providerId — caller must reject the request before building thread params.',
     );
   }
   const hasMcp = opts.mcpServers && Object.keys(opts.mcpServers).length > 0;
@@ -200,7 +200,7 @@ export function buildCodexThreadParams(opts: {
   if (opts.model) base.model = opts.model;
 
   if (providerId === 'codex_account') {
-    // No proxy injection â?Codex uses its own OAuth account. MCP servers
+    // No proxy injection — Codex uses its own OAuth account. MCP servers
     // (if any) are the only `config` entry on this branch.
     return hasMcp ? { ...base, config: { mcp_servers: opts.mcpServers } } : base;
   }
@@ -212,7 +212,7 @@ export function buildCodexThreadParams(opts: {
   return {
     ...base,
     modelProvider: injection.modelProvider,
-    // Merge â?proxy routing AND MCP injection coexist; neither overwrites
+    // Merge — proxy routing AND MCP injection coexist; neither overwrites
     // the other.
     config: {
       ...injection.config,
@@ -222,7 +222,7 @@ export function buildCodexThreadParams(opts: {
 }
 
 /**
- * @deprecated Phase 5b P1 follow-up â?prefer `buildCodexThreadParams`.
+ * @deprecated Phase 5b P1 follow-up — prefer `buildCodexThreadParams`.
  * Kept as an alias so existing callers (and the regression test that
  * pins the start-only contract) compile. The shape and semantics are
  * identical; only the name changed to reflect that the helper now
@@ -231,7 +231,7 @@ export function buildCodexThreadParams(opts: {
 export const buildCodexThreadStartParams = buildCodexThreadParams;
 
 /**
- * Resolve the base URL buckyball.ai's Next server is reachable at from
+ * Resolve the base URL CodePilot's Next server is reachable at from
  * the Codex app-server's perspective. In dev + Electron the
  * app-server is a child process on the same host, so 127.0.0.1
  * + the dev port works. The env var override is for unusual

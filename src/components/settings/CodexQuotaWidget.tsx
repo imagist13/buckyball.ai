@@ -1,16 +1,24 @@
 "use client";
 
 /**
- * Codex Account quota widget �?Phase 5 Phase 6 IA correction (2026-05-14).
+ * Codex Account quota widget — Phase 5 Phase 6 IA correction (2026-05-14).
  *
  * Renders the rate-limit snapshot from /api/codex/rate-limits inside the
  * Providers' virtual Codex Account card. Codex's `account/rateLimits/read`
  * gives `usedPercent + resetsAt` per window (no absolute remaining tokens),
  * so the widget text must read "已用 X%" / "rolls over in Y", never
- * "remaining N tokens" �?the latter doesn't exist upstream.
+ * "remaining N tokens" — the latter doesn't exist upstream.
  *
  * Layout:
- *   ┌─────────────────────────────────�? *   �? 使用配额                       �? *   �? 5 小时窗口        已用 1%     �? *   �? ▓░░░░░░░░░░░░░�? 4 小时后重�? �? *   �? 7 天窗�?         已用 7%     �? *   �? ▓░░░░░░░░░░░░░�? 6 天后重置    �? *   �? 余额: $0.42  (only if credits present) �? *   └─────────────────────────────────�? */
+ *   ┌─────────────────────────────────┐
+ *   │  使用配额                       │
+ *   │  5 小时窗口        已用 1%     │
+ *   │  ▓░░░░░░░░░░░░░░  4 小时后重置  │
+ *   │  7 天窗口          已用 7%     │
+ *   │  ▓░░░░░░░░░░░░░░  6 天后重置    │
+ *   │  余额: $0.42  (only if credits present) │
+ *   └─────────────────────────────────┘
+ */
 
 import type { CodexRateLimitSnapshot, CodexRateLimitWindow } from "@/lib/codex/types";
 import { cn } from "@/lib/utils";
@@ -31,7 +39,7 @@ function formatResetsAt(epochSec: number | undefined, isZh: boolean): string {
   if (!epochSec) return "";
   const nowMs = Date.now();
   const diffMs = epochSec * 1000 - nowMs;
-  if (diffMs <= 0) return isZh ? "已重�? : "Rolled over";
+  if (diffMs <= 0) return isZh ? "已重置" : "Rolled over";
   const mins = Math.round(diffMs / 60_000);
   if (mins < 60) return isZh ? `${mins} 分钟后重置` : `Resets in ${mins}m`;
   const hrs = Math.round(mins / 60);
@@ -119,7 +127,7 @@ export function CodexQuotaWidget({ snapshot, isZh }: CodexQuotaWidgetProps) {
           <span className="font-mono">
             {snapshot.credits.unlimited
               ? (isZh ? "不限" : "Unlimited")
-              : snapshot.credits.balance ?? "�?}
+              : snapshot.credits.balance ?? "—"}
           </span>
         </div>
       )}

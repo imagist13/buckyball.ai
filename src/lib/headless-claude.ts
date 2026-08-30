@@ -1,5 +1,5 @@
 /**
- * Phase 3 Step 4b �?headless `streamClaude` consumer.
+ * Phase 3 Step 4b — headless `streamClaude` consumer.
  *
  * Wraps `streamClaude(options)` (which returns a `ReadableStream<string>`
  * of SSE-formatted lines intended for an HTTP response) and consumes
@@ -8,31 +8,31 @@
  * execution chain as interactive chat, but **without** an SSE consumer
  * downstream:
  *
- *   - `text` events �?accumulated into `assistantText`.
- *   - `tool_use` events �?counted (`toolUseCount`). Body is NOT appended
+ *   - `text` events → accumulated into `assistantText`.
+ *   - `tool_use` events → counted (`toolUseCount`). Body is NOT appended
  *     to assistantText (the SDK round produces a separate text event
  *     with the actual narrative around tool calls). The count lets the
  *     pseudo-XML detector below decide whether real tools fired.
- *   - `tool_result` events �?counted (`toolResultCount`). Same rationale.
- *   - `tool_output` events �?observed (the SDK uses these for streaming
+ *   - `tool_result` events → counted (`toolResultCount`). Same rationale.
+ *   - `tool_output` events → observed (the SDK uses these for streaming
  *     tool stderr / progress). Not part of the final transcript.
- *   - `permission_request` event �?cleanly cancel the underlying agent
+ *   - `permission_request` event → cleanly cancel the underlying agent
  *     via `abortController.abort()` (the SDK's pending permission
  *     await respects the signal and rejects), capture the partial
  *     `assistantText` + the requested `toolName / toolInput`, and
  *     return `status: 'waiting_for_permission'`.
- *   - `error` event �?abort + return `status: 'failed'` with the
+ *   - `error` event → abort + return `status: 'failed'` with the
  *     error message.
- *   - `done` event (or stream end) �?return `status: 'succeeded'`,
+ *   - `done` event (or stream end) → return `status: 'succeeded'`,
  *     UNLESS the pseudo-XML detector trips (see below).
- *   - `thinking` / `status` / `result` / etc. �?observed; result+status
+ *   - `thinking` / `status` / `result` / etc. → observed; result+status
  *     pull out `session_id` for SDK resume on the next run.
  *
  * **Pseudo tool-call XML detection** (Codex P2 follow-up):
  *
  * Some non-Claude models behind Anthropic-compat proxies (notably GLM
  * via certain providers) emit tool calls as XML inside the `text`
- * event payload �?the proxy fails to translate the model's native
+ * event payload — the proxy fails to translate the model's native
  * tool-call format into the SDK's structured `tool_use` event. The
  * SDK then never recognises a real tool call, never executes a tool,
  * never produces a `tool_result`, and the run still terminates with
@@ -49,7 +49,7 @@
  * the recurring-task scheduler doesn't keep firing into a broken
  * config.
  *
- * **No durable resume** �?the v2 plan's hard line. When the runner
+ * **No durable resume** — the v2 plan's hard line. When the runner
  * sees `permission_request` it cancels the stream completely. The
  * partial assistant text is persisted with `task_run_id` metadata so
  * the user can see what the agent was thinking; choosing "Re-run"
@@ -91,13 +91,13 @@ interface ParsedSSEEvent {
 }
 
 /**
- * Codex P2 fix �?`formatSSE` in claude-client wraps an SSEEvent
+ * Codex P2 fix — `formatSSE` in claude-client wraps an SSEEvent
  * `{type, data: string}` into `data: <JSON>\n\n`, where the inner
  * `data` is itself a JSON-stringified payload (see e.g. claude-client
  * line ~1011 for permission_request, ~1515 for result, ~1735 for
  * status). After `JSON.parse` the SSE block, our `evt.data` is a
  * STRING containing the real JSON, not the parsed object. Earlier rev
- * checked `typeof evt.data === 'object'` �?permanently false �?tool
+ * checked `typeof evt.data === 'object'` → permanently false → tool
  * name / input / sdk_session_id were silently lost.
  *
  * normalizeEventData attempts a single `JSON.parse` on string inputs
@@ -154,7 +154,7 @@ export function parseSSEBuffer(buffer: string): {
 }
 
 /**
- * Codex P2 follow-up �?pseudo tool-call XML detector.
+ * Codex P2 follow-up — pseudo tool-call XML detector.
  *
  * Pattern targets the two shapes proxied non-Claude models (GLM in
  * particular) emit when their native tool-call format isn't
@@ -174,7 +174,7 @@ export function detectPseudoToolCallXml(text: string): boolean {
 }
 
 /**
- * Codex P1 �?timeout fuses on top of the consume loop.
+ * Codex P1 — timeout fuses on top of the consume loop.
  *
  * `maxTotalMs` (default 5 min) caps the total wall-clock for ONE
  * headless run. Catches "tool-call loops on a runtime that doesn't
@@ -275,7 +275,7 @@ export async function consumeHeadlessStream(
         if (evt.type === 'text') {
           // `text` data is the raw text delta (claude-client enqueues
           // `data: <delta>` directly, not stringified JSON). Skip the
-          // normalize step �?JSON.parse on `"true"` / `"42"` / `null`
+          // normalize step — JSON.parse on `"true"` / `"42"` / `null`
           // would silently turn a legitimate text fragment into a
           // boolean/number/null and drop it.
           if (typeof evt.data === 'string') {
@@ -284,7 +284,7 @@ export async function consumeHeadlessStream(
           continue;
         }
 
-        // Codex P2 �?every non-text event carries a JSON-stringified
+        // Codex P2 — every non-text event carries a JSON-stringified
         // payload (formatSSE wraps `{type, data: <stringified>}`),
         // so we must JSON.parse `evt.data` before reading fields.
         // Without this normalize step, permission_request loses
@@ -292,7 +292,7 @@ export async function consumeHeadlessStream(
         const data = normalizeEventData(evt.data);
 
         if (evt.type === 'tool_use') {
-          // Count only �?the SDK's surrounding `text` events carry
+          // Count only — the SDK's surrounding `text` events carry
           // the model's narrative; the tool_use block itself is the
           // structured call (name + input). For headless task
           // sessions the user wants the FINAL prose answer, not the
@@ -355,14 +355,14 @@ export async function consumeHeadlessStream(
           break;
         }
         // thinking / mode_changed / task_update / keep_alive / etc.
-        // �?observed but not added to the message body in v1.
+        // — observed but not added to the message body in v1.
       }
     }
   } finally {
     try { reader.releaseLock(); } catch { /* ignore */ }
   }
 
-  // Codex P1 �?timeout fuses tripped: tear down the underlying stream
+  // Codex P1 — timeout fuses tripped: tear down the underlying stream
   // and mark the run failed with a reason the user can act on. The
   // pseudo-XML / integrity branch below is skipped: a timeout is the
   // most specific diagnosis we have, no need to second-guess.
@@ -371,7 +371,7 @@ export async function consumeHeadlessStream(
     status = 'failed';
     errorMsg = errorMsg
       || (timedOutReason === 'total'
-        ? `Headless run exceeded the maximum wall-clock window (${Math.round(maxTotalMs / 1000)}s). The agent likely got stuck in a tool-call loop without emitting a final \`done\`. This is a fuse, not a normal failure mode �?investigate the prompt / runtime if you see it routinely.`
+        ? `Headless run exceeded the maximum wall-clock window (${Math.round(maxTotalMs / 1000)}s). The agent likely got stuck in a tool-call loop without emitting a final \`done\`. This is a fuse, not a normal failure mode — investigate the prompt / runtime if you see it routinely.`
         : `Headless run idle for too long (${Math.round(maxIdleMs / 1000)}s without any SSE event). The agent is stalled mid-step.`);
   }
 
@@ -381,24 +381,24 @@ export async function consumeHeadlessStream(
   // these.
   if (status === 'succeeded') {
     if (toolUseCount > toolResultCount) {
-      // Codex P2 follow-up �?tool-execution integrity. The SDK
+      // Codex P2 follow-up — tool-execution integrity. The SDK
       // emitted N tool_use events but only K (< N) tool_result
       // events made it back. Possible causes: tool runtime crashed
       // mid-call, aborted handler, SDK bug, network drop. The
       // model's final text says it's "done", but at least one tool
       // call silently lost its result. Mark failed so the recurring
-      // scheduler doesn't trust the partial outcome �?and the user
-      // sees a clear "工具调用未返回结�? instead of a fake
+      // scheduler doesn't trust the partial outcome — and the user
+      // sees a clear "工具调用未返回结果" instead of a fake
       // "completed".
       //
       // This branch wins over pseudo-XML because if any tool_use
-      // fired, the SDK *did* recognise tools �?the failure mode is
+      // fired, the SDK *did* recognise tools — the failure mode is
       // mid-execution loss, not a non-translating proxy.
       status = 'failed';
       errorMsg = errorMsg
-        || `工具调用未返回结果：SDK 发出�?${toolUseCount} �?tool_use 事件，但只收�?${toolResultCount} �?tool_result。工具调用可能在执行中失败或被中断，模型最终的回答不可信。`;
+        || `工具调用未返回结果：SDK 发出了 ${toolUseCount} 个 tool_use 事件，但只收到 ${toolResultCount} 个 tool_result。工具调用可能在执行中失败或被中断，模型最终的回答不可信。`;
     } else if (toolUseCount === 0 && toolResultCount === 0 && detectPseudoToolCallXml(assistantText)) {
-      // Pseudo-tool-call XML �?a separate failure mode from above.
+      // Pseudo-tool-call XML — a separate failure mode from above.
       // Here the SDK saw NO tool events at all, which means the
       // model's tool-call format never reached the SDK as
       // structured `tool_use`. The proxy isn't translating, the
@@ -407,7 +407,7 @@ export async function consumeHeadlessStream(
       // Recurring scheduler must stop firing into this config.
       status = 'failed';
       errorMsg = errorMsg
-        || '工具未执行：模型输出�?<tool_call> 形式的伪工具调用 XML，但 SDK / 代理没有把它翻译成真正的 tool_use 事件，没有任何工具被实际调用。请检查当�?provider/runtime 是否正确暴露了工具（MCP 服务器、内置工具是否启用）�?;
+        || '工具未执行：模型输出了 <tool_call> 形式的伪工具调用 XML，但 SDK / 代理没有把它翻译成真正的 tool_use 事件，没有任何工具被实际调用。请检查当前 provider/runtime 是否正确暴露了工具（MCP 服务器、内置工具是否启用）。';
     }
   }
 
@@ -428,7 +428,7 @@ export async function consumeHeadlessStream(
  * failures like the underlying streamClaude itself throwing).
  *
  * `headlessOptions` lets the caller dial the consumer-side timeout
- * fuses (defaults are deliberately conservative �?see
+ * fuses (defaults are deliberately conservative — see
  * `DEFAULT_HEADLESS_MAX_TOTAL_MS` / `DEFAULT_HEADLESS_MAX_IDLE_MS`).
  * Heartbeat callers tighten these because heartbeat work is by
  * design short; normal ai_task callers can leave them at default.

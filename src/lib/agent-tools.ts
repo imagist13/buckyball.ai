@@ -1,5 +1,5 @@
 /**
- * agent-tools.ts â€?Tool assembly layer for the native Agent Loop.
+ * agent-tools.ts â€” Tool assembly layer for the native Agent Loop.
  *
  * Selects which tools to pass to streamText() based on session mode,
  * keyword-gating, and MCP server availability.
@@ -12,7 +12,7 @@ import { z } from 'zod';
 /** Tool names that are safe in read-only (plan) mode */
 export const READ_ONLY_TOOLS = ['Read', 'Glob', 'Grep'] as const;
 
-// Phase 5e Phase 5 (2026-05-17) â€?promote the Phase 0.5 P0 hand-
+// Phase 5e Phase 5 (2026-05-17) â€” promote the Phase 0.5 P0 hand-
 // written `PERMISSION_SAFE_TOOLS` allowlist to a derived value
 // driven by per-tool `mutationLevel` classification. Same fail-safe
 // semantics: unknown tools route to `ask`; only `safe_read` skips
@@ -34,7 +34,7 @@ import {
  * `agent-tools-permission-allowlist.test.ts` regression suite keep
  * working unchanged. Membership rule:
  *
- *   - Core read-only tools (Read / Glob / Grep / Skill â€?declared in
+ *   - Core read-only tools (Read / Glob / Grep / Skill â€” declared in
  *     `CORE_SAFE_READ_TOOLS`)
  *   - CodePilot built-in tools declared as `safe_read` in
  *     `CODEPILOT_TOOL_MUTATION_LEVELS`
@@ -90,7 +90,7 @@ export interface AssembleToolsOptions {
   /** Parent session already resolved the full-access profile. Child tools may
    * inherit the unwrapped surface only when this explicit fact is present. */
   bypassPermissions?: boolean;
-  /** Permission context â€?when set, tools are wrapped with permission checks */
+  /** Permission context â€” when set, tools are wrapped with permission checks */
   permissionContext?: {
     sessionId: string;
     permissionMode: PermissionMode;
@@ -116,7 +116,7 @@ export interface AssembleToolsResult {
 export function assembleTools(options: AssembleToolsOptions = {}): AssembleToolsResult {
   const cwd = options.workingDirectory || process.cwd();
 
-  // Built-in coding tools â€?pass permission context through so sub-agents
+  // Built-in coding tools â€” pass permission context through so sub-agents
   // (Agent tool) can inherit the parent's permission mode and SSE emitter.
   const builtinTools = createBuiltinTools({
     workingDirectory: cwd,
@@ -131,9 +131,9 @@ export function assembleTools(options: AssembleToolsOptions = {}): AssembleTools
     parentCallScene: options.callScene,
   });
 
-  // In 'plan' mode, restrict to read-only tools â€?but #26: keep the
+  // In 'plan' mode, restrict to read-only tools â€” but #26: keep the
   // safe_read Harness capabilities (codepilot_load_widget_guidelines,
-  // memory reads, â€? and their compiler prompts (widget wire-format spec),
+  // memory reads, â€¦) and their compiler prompts (widget wire-format spec),
   // not just Read/Glob/Grep. Mutating tools (Write/Edit/Bash + image gen /
   // dashboard / schedule / notify / media import) stay out. Restores Native
   // Plan mode's ability to produce Widgets without granting side effects.
@@ -204,7 +204,7 @@ export function wrapWithPermissions(
   for (const [name, t] of Object.entries(tools)) {
     // Skip permission checks for tools known to be safe / read-only.
     //
-    // Phase 5e Phase 0.5 review fix (P0 æ­¢è¡€, 2026-05-17) â€?pre-fix the
+    // Phase 5e Phase 0.5 review fix (P0 æ­¢è¡€, 2026-05-17) â€” pre-fix the
     // allowlist used `name.startsWith('codepilot_')` to wave through
     // every CodePilot built-in tool as "trusted internal". That was
     // wrong: `codepilot_cli_tools_install / update / remove` shell out
@@ -222,7 +222,8 @@ export function wrapWithPermissions(
     //   - returns the data inline (no side effects on user surfaces)
     //   - does NOT execute shell commands or install/uninstall software
     //
-    // Anything not on this list â€?including future codepilot_* tools â€?    // falls through to the permission wrapper below. fail-safe default.
+    // Anything not on this list â€” including future codepilot_* tools â€”
+    // falls through to the permission wrapper below. fail-safe default.
     //
     // The matching regression test in
     // `src/__tests__/unit/agent-tools-permission-allowlist.test.ts`
@@ -264,8 +265,8 @@ export function wrapWithPermissions(
 
           emitEvent('permission:request', { sessionId: ctx.sessionId, toolName: name, permissionId: permId });
 
-          // Emit SSE. approvalToken: HMAC over (id, expiresAt) â€?the route
-          // rejects approvals that don't echo it (Phase 4 â‘?hardening).
+          // Emit SSE. approvalToken: HMAC over (id, expiresAt) â€” the route
+          // rejects approvals that don't echo it (Phase 4 â‘¡ hardening).
           ctx.emitSSE({
             type: 'permission_request',
             data: JSON.stringify({
@@ -298,7 +299,7 @@ export function wrapWithPermissions(
               try {
                 ctx.emitSSE(buildPermissionResolvedEvent(permId, ctx));
               } catch {
-                // stream already closed â€?deny still applies
+                // stream already closed â€” deny still applies
               }
             },
           );

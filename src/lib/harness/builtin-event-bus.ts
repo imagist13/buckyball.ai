@@ -1,5 +1,5 @@
 /**
- * Harness built-in tool side-channel event bus â?cross-runtime.
+ * Harness built-in tool side-channel event bus — cross-runtime.
  *
  * Originally introduced in Phase 5c (2026-05-16) under
  * `src/lib/codex/proxy/builtin-event-bus.ts` solely for the Codex
@@ -7,8 +7,8 @@
  * no Responses-API slot for "the proxy already handled this tool,
  * here's the MediaBlock CodePilot UI should render".
  *
- * Phase 5e Phase 0.5 P1 (2026-05-17, Native MediaBlockè£é½) promotes
- * the bus to a cross-runtime harness primitive. The buckyball.ai Native
+ * Phase 5e Phase 0.5 P1 (2026-05-17, Native MediaBlock補齐) promotes
+ * the bus to a cross-runtime harness primitive. The CodePilot Native
  * Runtime hits the same wall: `builtin-tools/media.ts` returns plain
  * text from `execute()` (ai-sdk feeds the literal return value back to
  * the model), but the chat UI needs a MediaBlock with a
@@ -21,8 +21,8 @@
  * Wire:
  *   1. Each runtime subscribes with its `sessionId` BEFORE issuing the
  *      first tool call so events from early steps don't get dropped.
- *      - Codex Runtime: `CodexRuntime.stream()` â?`subscribeBuiltinEvents`
- *      - Native Runtime: `agent-loop.ts` â?`subscribeBuiltinEvents`
+ *      - Codex Runtime: `CodexRuntime.stream()` → `subscribeBuiltinEvents`
+ *      - Native Runtime: `agent-loop.ts` → `subscribeBuiltinEvents`
  *   2. Built-in tool `execute()` emits a `tool_completed`
  *      `RuntimeRunEvent` (and optionally `tool_started` for long-
  *      running ops) carrying any `MediaBlock[]` via this bus.
@@ -50,7 +50,7 @@ interface Bus {
   subscribers: Map<string, Set<(event: RuntimeRunEvent) => void>>;
 }
 
-// Phase 5e (2026-05-17) â?global key kept stable across the rename
+// Phase 5e (2026-05-17) — global key kept stable across the rename
 // from `src/lib/codex/proxy/builtin-event-bus.ts`. Bumping it would
 // orphan in-flight listeners during a hot-reload; keep as-is.
 const GLOBAL_KEY = '__codepilotCodexBuiltinEventBus__' as const;
@@ -80,7 +80,7 @@ export function subscribeBuiltinEvents(
     // Defensive: an empty sessionId would conflate runtime traffic
     // across chats. Surface as an immediate no-op + warn so the
     // caller fixes the wiring rather than getting silent cross-talk.
-    console.warn('[harness.builtin-bus] subscribe called with empty sessionId â?listener will never fire');
+    console.warn('[harness.builtin-bus] subscribe called with empty sessionId — listener will never fire');
     return () => {};
   }
   const bus = getBus();
@@ -100,7 +100,7 @@ export function subscribeBuiltinEvents(
 
 /**
  * Emit an event to every listener attached to `sessionId`. If no
- * listener is attached, the event is dropped silently â?DO NOT
+ * listener is attached, the event is dropped silently — DO NOT
  * buffer; see file-level contract note about cross-turn leakage.
  *
  * Listener exceptions are caught individually so one bad subscriber
@@ -116,7 +116,7 @@ export function emitBuiltinEvent(sessionId: string, event: RuntimeRunEvent): voi
     try {
       listener(event);
     } catch (err) {
-      console.error('[harness.builtin-bus] listener threw â?dropping for this dispatch only:', err);
+      console.error('[harness.builtin-bus] listener threw — dropping for this dispatch only:', err);
     }
   }
 }

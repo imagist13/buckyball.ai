@@ -7,7 +7,7 @@
  * that Codex flagged post-merge:
  *
  *  1. The "smart auth-style switch" helper link in PresetConnectDialog
- *     still called `setAuthStyle(inferred)` directly �?it didn't migrate
+ *     still called `setAuthStyle(inferred)` directly — it didn't migrate
  *     `hasStoredKey` / `apiKey` state, so editing a third-party provider
  *     and clicking the helper left the old stored key leaking into
  *     subsequent test/save calls.
@@ -16,10 +16,10 @@
  *     taught `resolveProvider()`'s default-branch to honor
  *     `default_provider_id` regardless of `is_active`.
  *  3. Once `hasStoredKey` was introduced, there was no way for users to
- *     actually *delete* a stored key �?leaving an empty input always
+ *     actually *delete* a stored key — leaving an empty input always
  *     meant "keep the existing value".
  *
- * These are structural tests (node:test can't render React) �?we assert
+ * These are structural tests (node:test can't render React) — we assert
  * against the source files directly, mirroring the pattern used in
  * prompt-dialog-replacement.test.ts and stale-default-provider.test.ts.
  */
@@ -33,7 +33,7 @@ function readSource(relativePath: string): string {
   return fs.readFileSync(path.join(process.cwd(), relativePath), 'utf-8');
 }
 
-describe('Provider key lifecycle �?Codex follow-ups', () => {
+describe('Provider key lifecycle — Codex follow-ups', () => {
   // ── P1: unified auth-style migration ────────────────────────────
   describe('PresetConnectDialog: unified auth-style migration', () => {
     const source = readSource('src/components/settings/PresetConnectDialog.tsx');
@@ -103,7 +103,7 @@ describe('Provider key lifecycle �?Codex follow-ups', () => {
       // in comments) about inactive explicit providers.
       assert.ok(
         !source.match(/console\.warn\([^)]*inactive,\s*re-resolving/),
-        'should not warn about inactive explicit providers �?that undoes the #456 fix',
+        'should not warn about inactive explicit providers — that undoes the #456 fix',
       );
     });
 
@@ -177,10 +177,10 @@ describe('Provider key lifecycle �?Codex follow-ups', () => {
         it('save logic distinguishes keep / clear / new-value / create', () => {
           // The three-branch apiKeyForSave IIFE must be present. The
           // structural shape we guard against regression:
-          //   - "new value"    �?apiKey
-          //   - "clear intent" �?""
-          //   - "keep existing"�?undefined
-          //   - fallback       �?apiKey
+          //   - "new value"    → apiKey
+          //   - "clear intent" → ""
+          //   - "keep existing"→ undefined
+          //   - fallback       → apiKey
           assert.ok(
             source.match(/apiKeyForSave[\s\S]*if\s*\(apiKey\)\s*return apiKey/),
             'apiKeyForSave should return apiKey first when non-empty',
@@ -199,7 +199,8 @@ describe('Provider key lifecycle �?Codex follow-ups', () => {
           // Step 4 copy round (2026-05-06): the visible strings now flow
           // through i18n (`provider.form.clearKeyAction` /
           // `provider.form.undo`), so this static check matches either
-          // the i18n key reference OR the legacy hardcoded literal �?          // PresetConnectDialog still ships the bilingual literal pair
+          // the i18n key reference OR the legacy hardcoded literal —
+          // PresetConnectDialog still ships the bilingual literal pair
           // because it has its own `isZh` branch, while ProviderForm
           // routes the same affordance through `t(...)`. Both forms are
           // valid evidence the action is present.

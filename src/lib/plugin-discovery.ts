@@ -1,5 +1,5 @@
 /**
- * Plugin Discovery Layer â?scans marketplace and external plugin directories,
+ * Plugin Discovery Layer — scans marketplace and external plugin directories,
  * reads plugin manifests, and provides enable/disable state that reads and writes
  * the official Claude `enabledPlugins` config.
  *
@@ -13,7 +13,8 @@
  *     local layer (.claude/settings.local.json in cwd) which has highest priority and
  *     is gitignored. This requires a cwd parameter.
  *
- * Plugin loading into SDK sessions is handled by the SDK itself â? * buckyball.ai does NOT explicitly inject plugins via queryOptions.plugins.
+ * Plugin loading into SDK sessions is handled by the SDK itself —
+ * CodePilot does NOT explicitly inject plugins via queryOptions.plugins.
  */
 
 import fs from 'fs';
@@ -108,7 +109,7 @@ function writeJsonFile(filePath: string, data: Record<string, unknown>): void {
 }
 
 // ==========================================
-// enabledPlugins â?multi-layer resolution
+// enabledPlugins — multi-layer resolution
 // ==========================================
 
 function getUserSettingsPath(): string {
@@ -136,7 +137,7 @@ function extractEnabledPlugins(settings: Record<string, unknown>): EnabledPlugin
 
 /**
  * Merge enabledPlugins across all setting layers.
- * Resolution order (later wins): user â?project â?local.
+ * Resolution order (later wins): user → project → local.
  * This mirrors the SDK's own settingSources cascade.
  */
 export function readMergedEnabledPlugins(cwd?: string): EnabledPluginsMap {
@@ -159,7 +160,7 @@ export function readMergedEnabledPlugins(cwd?: string): EnabledPluginsMap {
 
 /**
  * Write a single enabledPlugins entry to a specific settings file.
- * Only touches the target key â?preserves all other settings and other plugin entries.
+ * Only touches the target key — preserves all other settings and other plugin entries.
  */
 function writeEnabledPluginEntry(
   settingsPath: string,
@@ -214,14 +215,14 @@ export function readBlocklist(): Set<string> {
 
 /**
  * Check if a value from enabledPlugins represents "enabled".
- * - `true` â?enabled
- * - `string[]` (version constraints) â?enabled (with constraints)
- * - `false` / absent â?disabled
+ * - `true` → enabled
+ * - `string[]` (version constraints) → enabled (with constraints)
+ * - `false` / absent → disabled
  */
 function isEnabledValue(value: boolean | string[] | undefined): boolean {
   if (value === undefined || value === false) return false;
   if (value === true) return true;
-  // string[] (version constraints) â?treat as enabled
+  // string[] (version constraints) — treat as enabled
   if (Array.isArray(value)) return true;
   return false;
 }
@@ -379,7 +380,7 @@ export function getPluginInfoList(cwd?: string): PluginInfo[] {
 
 /**
  * Determine the value to write for an enable/disable operation.
- * Preserves string[] (version constraints) when enabling â?only writes `true`
+ * Preserves string[] (version constraints) when enabling — only writes `true`
  * if there's no existing constraint across any layer. Always writes `false` for disable.
  *
  * @param allLayers - all settings layers to search for existing constraints,
@@ -442,7 +443,7 @@ export function setPluginEnabled(
   const simulatedEffective = isEnabledValue(simulatedMerged[pluginKey]);
 
   if (simulatedEffective === enabled) {
-    // User-level write is sufficient â?no higher layer overrides it
+    // User-level write is sufficient — no higher layer overrides it
     writeEnabledPluginEntry(getUserSettingsPath(), pluginKey, simulatedUser[pluginKey]);
     invalidateCache();
     return { success: true, layer: 'user', escalated: false };

@@ -1,11 +1,11 @@
 'use client';
 
 /**
- * Dashboard Export â€?render widget to PNG.
+ * Dashboard Export â€” render widget to PNG.
  *
  * Electron only: builds standalone HTML, sends to main process which renders
  * in an isolated BrowserWindow and captures via Chromium screenshot.
- * No security compromise â€?the export window is sandboxed with its own partition.
+ * No security compromise â€” the export window is sandboxed with its own partition.
  * Non-Electron environments throw (export is a desktop-only feature).
  */
 

@@ -66,13 +66,13 @@ function transformApiResponse(raw: Record<string, unknown>, isZh: boolean): Diag
 
   const rawProbes = (raw as { probes?: Array<Record<string, unknown>> }).probes || [];
   const PROBE_NAMES: Record<string, { en: string; zh: string }> = {
-    runtime: { en: "Runtime execution chain", zh: "Runtime 执行�? },
+    runtime: { en: "Runtime execution chain", zh: "Runtime 执行链" },
     cli: { en: "CLI Health", zh: "CLI 健康" },
     auth: { en: "Auth Source", zh: "鉴权来源" },
-    provider: { en: "Provider/Model", zh: "服务�?模型" },
-    features: { en: "Feature Compatibility", zh: "功能兼容�? },
+    provider: { en: "Provider/Model", zh: "服务商/模型" },
+    features: { en: "Feature Compatibility", zh: "功能兼容性" },
     network: { en: "Network/Endpoint", zh: "网络/端点" },
-    live: { en: "Live Test", zh: "实际连通测�? },
+    live: { en: "Live Test", zh: "实际连通测试" },
   };
 
   const probes: Probe[] = rawProbes.map((p) => {
@@ -116,7 +116,8 @@ function transformApiResponse(raw: Record<string, unknown>, isZh: boolean): Diag
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Status pill / icon use the canonical design.md tokens �?// `bg-status-{success|warning|error}-muted` + matching `-foreground`,
+// Status pill / icon use the canonical design.md tokens —
+// `bg-status-{success|warning|error}-muted` + matching `-foreground`,
 // not raw Tailwind palette. Pill shape is `rounded-full px-2 py-0.5
 // text-[10px]` with optional dot, matching the rest of the app.
 const STATUS_CONFIG = {
@@ -187,7 +188,7 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
     setExpandedProbes(new Set());
     setLiveProbeRunning(false);
     try {
-      // Fast probes first (~1s) �?renders immediately
+      // Fast probes first (~1s) — renders immediately
       const res = await fetch("/api/doctor");
       if (!res.ok) throw new Error("Diagnostic request failed");
       if (runId !== diagnosticRunRef.current) return; // stale
@@ -203,7 +204,7 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
       setExpandedProbes(toExpand);
       const fastProbeCount = data.probes.length;
 
-      // Live probe runs separately (up to 15s) �?appends when done
+      // Live probe runs separately (up to 15s) — appends when done
       setLiveProbeRunning(true);
       fetch("/api/doctor?live=true")
         .then((r) => r.ok ? r.json() : null)
@@ -313,7 +314,7 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
           </DialogTitle>
           <DialogDescription>
             {isZh
-              ? "检�?CLI、认证、模型兼容性和网络连接状�?
+              ? "检查 CLI、认证、模型兼容性和网络连接状态"
               : "Check CLI health, auth, model compatibility, and network connectivity"}
           </DialogDescription>
         </DialogHeader>
@@ -339,7 +340,7 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
             {/* Overall summary */}
             <div className="rounded-md border border-border/50 p-3">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm font-medium">{isZh ? "总体状�? : "Overall"}</span>
+                <span className="text-sm font-medium">{isZh ? "总体状态" : "Overall"}</span>
                 <StatusBadge status={result.overall} />
               </div>
               <p className="text-xs text-muted-foreground">{result.conclusion}</p>
@@ -404,20 +405,20 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
               {liveProbeRunning && (
                 <div className="rounded-md border border-border/30 px-3 py-2 flex items-center gap-2 text-xs text-muted-foreground">
                   <SpinnerGap size={12} className="animate-spin shrink-0" />
-                  {isZh ? "正在运行实际连通性测�?.." : "Running live connectivity test..."}
+                  {isZh ? "正在运行实际连通性测试..." : "Running live connectivity test..."}
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* GitHub issue guidance �?shown after diagnosis completes */}
+        {/* GitHub issue guidance — shown after diagnosis completes */}
         {result && !loading && (
           <div className="rounded-md border border-border/30 bg-muted/30 px-3 py-2.5 text-xs text-muted-foreground">
             {isZh ? (
               <>
                 {result.overall !== "pass"
-                  ? "如果上述修复建议未能解决问题�?
+                  ? "如果上述修复建议未能解决问题，"
                   : "如果您仍然遇到问题，"}
                 请先点击「导出日志」，然后前往{" "}
                 <a
@@ -428,7 +429,8 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
                 >
                   GitHub Issues
                 </a>
-                {" "}提交问题报告，并附上导出的日志文件�?                <br />
+                {" "}提交问题报告，并附上导出的日志文件。
+                <br />
                 📖 查看{" "}
                 <a
                   href="https://www.codepilot.sh/zh/docs/providers"
@@ -436,7 +438,8 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
                   rel="noopener noreferrer"
                   className="underline text-foreground hover:no-underline"
                 >
-                  服务商配置指�?                </a>
+                  服务商配置指南
+                </a>
               </>
             ) : (
               <>
@@ -471,7 +474,7 @@ export function ProviderDoctorDialog({ open, onOpenChange }: ProviderDoctorDialo
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={fetchDiagnostics} disabled={loading}>
             <ArrowClockwise size={14} className={loading ? "animate-spin" : ""} />
-            {isZh ? "重新检�? : "Re-run"}
+            {isZh ? "重新检测" : "Re-run"}
           </Button>
           <Button variant="outline" size="sm" onClick={handleExport} disabled={loading || !result}>
             {isZh ? "导出日志" : "Export Logs"}

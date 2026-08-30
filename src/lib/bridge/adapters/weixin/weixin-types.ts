@@ -1,5 +1,5 @@
 /**
- * WeChat protocol types â€?derived from OpenClaw weixin plugin reference.
+ * WeChat protocol types â€” derived from OpenClaw weixin plugin reference.
  * Used as protocol specification only, not runtime dependency.
  */
 

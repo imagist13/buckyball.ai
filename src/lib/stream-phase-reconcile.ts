@@ -1,12 +1,12 @@
 /**
- * stream-phase-reconcile.ts â€?pure runtime_status â†?client phase mapping.
+ * stream-phase-reconcile.ts â€” pure runtime_status â†’ client phase mapping.
  *
  * Interrupt/phase reconcile. The client stream state machine
  * (`stream-session-manager.ts` snapshot `phase`) and the authoritative backend
  * runtime_status (`chat_sessions.runtime_status`, written by the chat route /
- * settler) are two independent stores. When they drift â€?a client snapshot
+ * settler) are two independent stores. When they drift â€” a client snapshot
  * stuck `'active'` after the backend already went terminal, or a fresh context
- * that never saw the turn â€?the composer's `isStreaming` gate (â‰?phase ===
+ * that never saw the turn â€” the composer's `isStreaming` gate (â‰¡ phase ===
  * 'active', GitHub #578) can lock the user out or mislead them.
  *
  * This is the single shared mapping used by BOTH reconcile sites:
@@ -17,7 +17,7 @@
  *     the freshly-loaded session's runtime_status (I2).
  *
  * Pure + total so the truth table is unit-testable with no DB / stream. The
- * caller decides how to APPLY a returned phase â€?notably, neither site
+ * caller decides how to APPLY a returned phase â€” notably, neither site
  * fabricates a reader-less `'active'` snapshot (that is exactly the #578
  * strand), so both act only on terminal results.
  */
@@ -32,10 +32,10 @@ export type ClientPhase = 'active' | 'completed' | 'stopped' | 'error';
  * Values are the ones actually written to `chat_sessions.runtime_status`
  * (see setSessionRuntimeStatus call sites in chat/route.ts, claude-client.ts
  * and conversation-engine.ts):
- *   - 'running' / 'waiting_permission' â†?'active'   (backend still busy)
- *   - 'idle'                          â†?'completed' (terminal â€?turn finished)
- *   - 'interrupted'                   â†?'stopped'   (terminal â€?Stop/abort settled)
- *   - 'error'                         â†?'error'     (terminal â€?failure)
+ *   - 'running' / 'waiting_permission' â†’ 'active'   (backend still busy)
+ *   - 'idle'                          â†’ 'completed' (terminal â€” turn finished)
+ *   - 'interrupted'                   â†’ 'stopped'   (terminal â€” Stop/abort settled)
+ *   - 'error'                         â†’ 'error'     (terminal â€” failure)
  *
  * Returns null for any unrecognized status so callers never "correct" toward a
  * phase we can't justify from a real backend value.
@@ -62,13 +62,13 @@ export function runtimeStatusToPhase(
  * Reconcile a client phase against the authoritative backend runtime_status.
  * Returns the phase the client SHOULD be in, or null when no correction is
  * warranted:
- *   - unrecognized runtime_status â†?null (nothing authoritative to act on);
- *   - already consistent (target === current) â†?null (leave it alone).
+ *   - unrecognized runtime_status â†’ null (nothing authoritative to act on);
+ *   - already consistent (target === current) â†’ null (leave it alone).
  *
  * A non-null result is a genuine drift correction. It MAY be 'active' (backend
  * running while the client shows a terminal/absent phase); callers that cannot
  * attach a live reader must NOT apply that as a fabricated 'active' snapshot
- * (GitHub #578) â€?they act on terminal results only.
+ * (GitHub #578) â€” they act on terminal results only.
  */
 export function reconcilePhase(
   runtimeStatus: string | null | undefined,

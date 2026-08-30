@@ -1,16 +1,17 @@
 /**
- * Settings link migration â€?memory + UX guardrail.
+ * Settings link migration â€” memory + UX guardrail.
  *
  * The route-level split moved every section into its own page (`/settings/
- * providers`, `/settings/models`, â€?. For the split to actually save dev
+ * providers`, `/settings/models`, â€¦). For the split to actually save dev
  * memory AND for cross-section CTAs to actually switch pages, internal
  * navigation must stop using ANY hash form:
  *
- *   1. `/settings#providers` markdown / anchor links â€?they land on the
+ *   1. `/settings#providers` markdown / anchor links â€” they land on the
  *      redirect-only root page first, costing an extra compile pass.
- *   2. `navTo("#providers")` helpers writing to `window.location.hash` â€? *      under route-level split, mutating the hash on `/settings/<section>`
+ *   2. `navTo("#providers")` helpers writing to `window.location.hash` â€”
+ *      under route-level split, mutating the hash on `/settings/<section>`
  *      no longer switches pages, so the click silently does nothing.
- *   3. `window.location.hash = "#models"` direct writes â€?same failure as
+ *   3. `window.location.hash = "#models"` direct writes â€” same failure as
  *      (2). Bare `router.push("#models")` would have the same flaw.
  *
  * This test scans every active source file under src/ (skipping tests),
@@ -68,29 +69,29 @@ interface Pattern {
 
 const PATTERNS: Pattern[] = [
   {
-    name: 'markdown / anchor href "/settings#â€?',
+    name: 'markdown / anchor href "/settings#â€¦"',
     re: /\/settings#\w+/,
   },
   {
-    name: 'navTo("#â€?) helper call (must use router.push("/settings/â€?))',
+    name: 'navTo("#â€¦") helper call (must use router.push("/settings/â€¦"))',
     re: /\bnavTo\s*\(\s*["']#\w+["']/,
   },
   {
-    name: 'window.location.hash = "#â€? write (must use router.push("/settings/â€?))',
+    name: 'window.location.hash = "#â€¦" write (must use router.push("/settings/â€¦"))',
     re: /window\.location\.hash\s*=\s*["']#\w+["']/,
     // The /settings root page READS window.location.hash and translates
     // legacy `#section` deep links into a router.replace to /settings/<section>.
     // It never writes the hash itself, but the regex above is a write-pattern
-    // â€?keeping the allowlist for symmetry / future safety.
+    // â€” keeping the allowlist for symmetry / future safety.
     allowFiles: [],
   },
   {
-    name: 'router.push("#â€?) / router.replace("#â€?) (must point at "/settings/â€?)',
+    name: 'router.push("#â€¦") / router.replace("#â€¦") (must point at "/settings/â€¦")',
     re: /\brouter\s*\.\s*(?:push|replace)\s*\(\s*["']#\w+["']/,
   },
 ];
 
-describe('Settings link migration â€?no bare hash navigation in active code', () => {
+describe('Settings link migration â€” no bare hash navigation in active code', () => {
   it('flags every active hash-based Settings nav (anchor / navTo / location.hash / router)', () => {
     const offenders: { file: string; line: number; match: string; pattern: string }[] = [];
     for (const file of walk(SRC)) {
@@ -117,13 +118,13 @@ describe('Settings link migration â€?no bare hash navigation in active code', ()
     }
     if (offenders.length > 0) {
       const detail = offenders
-        .map((o) => `  [${o.pattern}]\n    ${o.file}:${o.line} â†?${o.match}`)
+        .map((o) => `  [${o.pattern}]\n    ${o.file}:${o.line} â†’ ${o.match}`)
         .join('\n');
       assert.fail(
         `Found ${offenders.length} bare-hash navigation site(s) under src/. ` +
           `Migrate to route-level paths via router.push("/settings/<section>"). ` +
           `Hash mentions in JSDoc / comments are tolerated; READ-only listeners ` +
-          `(window.location.hash === "#â€?) are NOT flagged because they react to ` +
+          `(window.location.hash === "#â€¦") are NOT flagged because they react to ` +
           `legacy entries arriving from outside.\nActive offenders:\n${detail}`,
       );
     }
@@ -131,7 +132,7 @@ describe('Settings link migration â€?no bare hash navigation in active code', ()
 
   it('the /settings root page still preserves hash compat for external deep links', () => {
     // External docs / past chat sessions still hand out /settings#providers.
-    // The redirect must keep handling that â€?but only at the root page,
+    // The redirect must keep handling that â€” but only at the root page,
     // never at internal callers.
     const root = readFileSync(
       path.resolve(__dirname, '../../app/settings/page.tsx'),
@@ -139,13 +140,13 @@ describe('Settings link migration â€?no bare hash navigation in active code', ()
     );
     assert.match(root, /window\.location\.hash/);
     assert.match(root, /router\.replace/);
-    // The hash â†?route table must include at least the four high-traffic
+    // The hash â†’ route table must include at least the four high-traffic
     // sections so no important external link 404s.
     for (const section of ['providers', 'models', 'runtime', 'assistant']) {
       assert.match(
         root,
         new RegExp(`\\b${section}\\b[\\s\\S]{0,80}/settings/${section}`),
-        `hash-redirect table must map "${section}" â†?/settings/${section}`,
+        `hash-redirect table must map "${section}" â†’ /settings/${section}`,
       );
     }
   });

@@ -56,7 +56,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ArrowElbowDownLeft, Square, X } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { nanoid } from "nanoid";
 import {
   Children,
@@ -353,7 +353,7 @@ export const PromptInputActionAddAttachments = ({
 
   return (
     <DropdownMenuItem {...props} onSelect={handleSelect}>
-      <BuckyballIcon name="image" size="md" className="mr-2" aria-hidden /> {label}
+      <CodePilotIcon name="image" size="md" className="mr-2" aria-hidden /> {label}
     </DropdownMenuItem>
   );
 };
@@ -386,7 +386,7 @@ export type PromptInputProps = Omit<
    * Called when directories are dragged onto the prompt input. Caller is
    * responsible for turning each File into a usable path (e.g. via
    * `window.electronAPI?.fs?.getPathForFile`). When unset, directories are
-   * silently dropped â?this keeps the component generic while letting the
+   * silently dropped — this keeps the component generic while letting the
    * @mention-aware composer route them to a "@path/" insertion.
    */
   onDirectoriesDropped?: (dirs: File[]) => void;
@@ -449,7 +449,7 @@ export const PromptInput = ({
   const formRef = useRef<HTMLFormElement | null>(null);
 
   // ----- Local attachments (only used when no provider)
-  // Same `size` extension as the provider-scoped state above â?the
+  // Same `size` extension as the provider-scoped state above — the
   // chat composer's PromptInput is unwrapped (not nested in a
   // PromptInputProvider) and therefore goes through this *local*
   // attachments path. Without preserving size here, FileAttachmentsCapsules
@@ -487,7 +487,7 @@ export const PromptInput = ({
 
       return patterns.some((pattern) => {
         if (pattern.startsWith(".")) {
-          // Extension pattern (e.g. ".ts", ".json") â?match against filename
+          // Extension pattern (e.g. ".ts", ".json") — match against filename
           return f.name.toLowerCase().endsWith(pattern.toLowerCase());
         }
         if (pattern.endsWith("/*")) {
@@ -972,7 +972,7 @@ export const PromptInputTextarea = ({
   // Honor an explicit `value` prop (caller-controlled) over the internal
   // controller state. Without this, `{...controlledProps}` (spread AFTER
   // `{...props}` below) clobbers the caller's `value`, so a caller that
-  // controls the textarea via its own state (MessageInput â?`inputValue`)
+  // controls the textarea via its own state (MessageInput → `inputValue`)
   // has its value silently ignored: its optimistic clear updates its state
   // but never reaches the DOM, leaving sent text lingering in the box and
   // the Stop/queue button showing over stale text (tech-debt #52 P1). We
@@ -1118,7 +1118,7 @@ export const PromptInputActionMenuTrigger = ({
 }: PromptInputActionMenuTriggerProps) => (
   <DropdownMenuTrigger asChild>
     <PromptInputButton className={className} {...props}>
-      {children ?? <BuckyballIcon name="plus" size="md" aria-hidden />}
+      {children ?? <CodePilotIcon name="plus" size="md" aria-hidden />}
     </PromptInputButton>
   </DropdownMenuTrigger>
 );

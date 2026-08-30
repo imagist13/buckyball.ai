@@ -1,7 +1,7 @@
 /**
  * GET /api/codex/models
  *
- * Phase 5 Phase 2 (2026-05-13) â€?list Codex Account models for UI
+ * Phase 5 Phase 2 (2026-05-13) â€” list Codex Account models for UI
  * pickers. Returns the same `ProviderModelGroup` shape used by the
  * unified `/api/providers/models` endpoint, so the chat picker can
  * render Codex Account alongside other providers.

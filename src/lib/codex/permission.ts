@@ -1,5 +1,5 @@
 /**
- * Canonical CodePilot permission profile â†?Codex app-server wire mapping.
+ * Canonical CodePilot permission profile â†’ Codex app-server wire mapping.
  *
  * Source: codex-cli 0.145.0-alpha.18 generated app-server schema:
  * - thread/start + thread/resume: approvalPolicy, approvalsReviewer, sandbox

@@ -1,5 +1,5 @@
 /**
- * Hooks POC â€?verifies whether Claude Agent SDK 0.2.111 fixed the CLI
+ * Hooks POC â€” verifies whether Claude Agent SDK 0.2.111 fixed the CLI
  * control-frame pollution bug that forced us to disable queryOptions.hooks
  * (see claude-client.ts comment near hook block).
  *
@@ -32,7 +32,7 @@ import { recordPocResult } from './poc-record';
 const POC_ENABLED = process.env.CLAUDE_SDK_POC === '1';
 const HAS_CREDS = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN);
 
-test('hooks POC â€?real queryOptions combination does not trigger CLI control-frame bug', { skip: !POC_ENABLED || !HAS_CREDS }, async () => {
+test('hooks POC â€” real queryOptions combination does not trigger CLI control-frame bug', { skip: !POC_ENABLED || !HAS_CREDS }, async () => {
   if (!POC_ENABLED) {
     console.log('[hooks-poc] Skipped: set CLAUDE_SDK_POC=1 to enable');
     return;
@@ -46,7 +46,7 @@ test('hooks POC â€?real queryOptions combination does not trigger CLI control-fr
   const stderrChunks: string[] = [];
 
   // Ask the model to call two tools: ping (should be allowed) and
-  // fail_always (will be denied by canUseTool â†?triggers PermissionDenied
+  // fail_always (will be denied by canUseTool â†’ triggers PermissionDenied
   // hook). This exercises all three hook surfaces the plan promises.
   const q = query({
     prompt: 'Call the fixture-poc ping tool, then call the fixture-poc fail_always tool. Report what happens with each.',

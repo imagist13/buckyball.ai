@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Foundation refresh production-route contracts @smoke', () => {
-  test('U5 â€?compiled Claude capability route recognizes the installed Agent SDK @smoke', async ({ request }) => {
+  test('U5 â€” compiled Claude capability route recognizes the installed Agent SDK @smoke', async ({ request }) => {
     const response = await request.get('/api/chat/permission-capability?runtime=claude_code');
     expect(response.ok()).toBe(true);
     const body = await response.json() as {
@@ -19,7 +19,7 @@ test.describe('Foundation refresh production-route contracts @smoke', () => {
     ).not.toBe('sdk_version');
   });
 
-  test('U6 â€?Codex capability route exposes its native auto reviewer @smoke', async ({ request }) => {
+  test('U6 â€” Codex capability route exposes its native auto reviewer @smoke', async ({ request }) => {
     const response = await request.get('/api/chat/permission-capability?runtime=codex_runtime');
     expect(response.ok()).toBe(true);
     const body = await response.json() as {

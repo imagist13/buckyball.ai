@@ -1,5 +1,5 @@
 /**
- * status-notice-i18n.ts â€?map an SSE status notification's (code, reason) pair
+ * status-notice-i18n.ts â€” map an SSE status notification's (code, reason) pair
  * to the i18n keys that render it.
  *
  * Why this exists (Codex review P2, 2026-07-18; Opus 5 follow-up,
@@ -10,8 +10,8 @@
  * client, where the locale lives.
  *
  * Kept as its own dependency-free module (same convention as
- * anthropic-sampling-notice.ts) so BOTH chat entry points â€?useSSEStream's
- * handler and the inline SSE parser in app/chat/page.tsx â€?provably resolve the
+ * anthropic-sampling-notice.ts) so BOTH chat entry points â€” useSSEStream's
+ * handler and the inline SSE parser in app/chat/page.tsx â€” provably resolve the
  * SAME key: they both call `maybeShowStatusToast`, which calls this. A second
  * mapping table would be exactly the drift this module prevents.
  *
@@ -35,7 +35,7 @@ export interface StatusNoticeKeys {
 
 /**
  * Resolve the i18n keys for a code/reason pair, or null when the notice isn't
- * localizable (no reason, or an unrecognized one â€?e.g. a newer server talking
+ * localizable (no reason, or an unrecognized one â€” e.g. a newer server talking
  * to an older client). Callers fall back to the payload's `message`, so an
  * unmapped notice degrades to "shown in the server's language" rather than
  * "silently dropped".
@@ -47,7 +47,7 @@ export function resolveStatusNoticeKeys(
   if (!code || !reason) return null;
 
   // English pluralizes "was/were not sent"; the count rides in params so the
-  // key â€?not the server â€?picks the form.
+  // key â€” not the server â€” picks the form.
   const plural = typeof params?.count === 'number' && params.count > 1 ? 'other' : 'one';
 
   switch (`${code}:${reason}`) {

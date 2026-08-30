@@ -1,5 +1,5 @@
 /**
- * Session ownership regression â€?bridge conversation-engine owner gate.
+ * Session ownership regression â€” bridge conversation-engine owner gate.
  *
  * Behavioral (real-driven) test, NOT a source-pin. Bridge is the SECOND entry
  * point that shares `session_runtime_locks`; the P1 race finding was that it
@@ -13,7 +13,8 @@
  * getTasksBySession). They also drive the REAL bridge-wired settler
  * (createSessionLockSettler) to prove the finally-settle path is ownership-gated.
  *
- * The I1/DP1 invariant: every session-level write inside consume â€? * sdk_session_id, model, SDK tasks, and the assistant `addMessage` â€?plus the
+ * The I1/DP1 invariant: every session-level write inside consume â€”
+ * sdk_session_id, model, SDK tasks, and the assistant `addMessage` â€” plus the
  * finally's runtime_status write, must be gated on `isLockOwner(sessionId,
  * lockId)`. A superseded turn reaches consume LATE carrying its OLD lockId and
  * must write NOTHING to shared session state.
@@ -75,7 +76,7 @@ describe('bridge consumeStream session-level write owner gate (Phase 3 E)', () =
 
     const res = await consumeStream(stream, sid, lockA);
 
-    // Assistant message DID land (reverse example â€?gate must not drop the owner).
+    // Assistant message DID land (reverse example â€” gate must not drop the owner).
     const msgs = assistantMessages(sid);
     assert.equal(msgs.length, 1, 'owner assistant message must be persisted');
     assert.equal(msgs[0].content, 'Hello from the true bridge owner', 'persisted content matches');
@@ -127,12 +128,12 @@ describe('bridge consumeStream session-level write owner gate (Phase 3 E)', () =
     // DP1: the stale assistant content must NOT be persisted into `messages`.
     assert.equal(assistantMessages(sid).length, 0, 'stale assistant message must be dropped (DP1)');
 
-    // Session-level writes dropped â€?B's state is untouched.
+    // Session-level writes dropped â€” B's state is untouched.
     const row = getSession(sid)!;
     assert.equal(row.sdk_session_id, 'B-OWNED-SID', 'stale turn must not overwrite sdk_session_id');
     assert.equal(row.model, 'B-OWNED-MODEL', 'stale turn must not overwrite model');
 
-    // consumeStream never writes runtime_status directly â€?prove it stays B's 'running'.
+    // consumeStream never writes runtime_status directly â€” prove it stays B's 'running'.
     assert.equal(row.runtime_status, 'running', 'stale consume must not touch runtime_status');
 
     // SDK task sync dropped for the stale turn.
@@ -150,7 +151,7 @@ describe('bridge consumeStream session-level write owner gate (Phase 3 E)', () =
     assert.equal(isLockOwner(sid, lockA), false, 'A superseded');
 
     // A stream that yields text then aborts mid-flight, driving the catch branch's
-    // best-effort addMessage â€?which must also be owner-gated.
+    // best-effort addMessage â€” which must also be owner-gated.
     const stream = new ReadableStream<string>({
       start(controller) {
         controller.enqueue(sse('text', 'partial stale answer before error'));
@@ -220,17 +221,17 @@ describe('bridge finally-settle ownership gate (Phase 3 E)', () => {
 describe('bridge renewal renew-false stop (Phase 3 E)', () => {
   it('bridge params (autoTrigger:false, max:Infinity): renew-false stops, renew-true continues, never caps', () => {
     // The exact params conversation-engine passes to evaluateRenewal. Bridge is
-    // not an autoTrigger turn, so it must never hit the cap â€?only DP3 renew-false
+    // not an autoTrigger turn, so it must never hit the cap â€” only DP3 renew-false
     // can stop it.
     assert.equal(
       evaluateRenewal({ autoTrigger: false, renewalCount: 0, renewed: false, max: Infinity }),
       'stop-renew-false',
-      'lost ownership â†?stop renewing',
+      'lost ownership â†’ stop renewing',
     );
     assert.equal(
       evaluateRenewal({ autoTrigger: false, renewalCount: 999999, renewed: true, max: Infinity }),
       'continue',
-      'still owned + no cap for bridge â†?keep renewing',
+      'still owned + no cap for bridge â†’ keep renewing',
     );
   });
 });

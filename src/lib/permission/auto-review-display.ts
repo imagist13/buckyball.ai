@@ -4,12 +4,12 @@
  *
  * ## Why this is a module and not four ternaries in the component
  *
- * The option has four distinct unavailable-ish states ‚Ä?probing, probe failed,
- * SDK too old, external MCP present ‚Ä?and each is a DIFFERENT fact about the
+ * The option has four distinct unavailable-ish states ‚Äî probing, probe failed,
+ * SDK too old, external MCP present ‚Äî and each is a DIFFERENT fact about the
  * user's machine with a different remedy. The first cut collapsed them by
- * rendering the SDK-version sentence with `minVersion ?? '‚Ä?`, so a probe that
- * had not answered yet (or had failed) told the user "requires SDK ‚Ä?(installed:
- * ‚Ä?": a made-up version claim standing in for "we don't know", permanently, if
+ * rendering the SDK-version sentence with `minVersion ?? '‚Äî'`, so a probe that
+ * had not answered yet (or had failed) told the user "requires SDK ‚Äî (installed:
+ * ‚Äî)": a made-up version claim standing in for "we don't know", permanently, if
  * the fetch failed. That is precisely the placeholder-as-fact pattern CLAUDE.md's
  * ÂèçÂÅáÊï∞ÊçÆ section forbids.
  *
@@ -48,7 +48,7 @@ export type AutoReviewProbeState =
   | { readonly status: 'failed' }
   | { readonly status: 'ready'; readonly capability: AutoReviewCapability };
 
-/** An i18n key plus its interpolation params ‚Ä?never pre-rendered text. */
+/** An i18n key plus its interpolation params ‚Äî never pre-rendered text. */
 export interface AutoReviewNotice {
   readonly key: string;
   readonly params?: Readonly<Record<string, string>>;
@@ -61,7 +61,7 @@ export interface AutoReviewDisplay {
   readonly notice: AutoReviewNotice | null;
   /**
    * True when the session is SAVED as auto_review but is not running as it.
-   * Only ever true once the probe has answered ‚Ä?we don't announce a
+   * Only ever true once the probe has answered ‚Äî we don't announce a
    * degradation we haven't confirmed.
    */
   readonly degraded: boolean;
@@ -80,14 +80,14 @@ export const AUTO_REVIEW_NOTICE_KEYS = {
 } as const;
 
 function unavailableNotice(capability: AutoReviewCapability): AutoReviewNotice {
-  // Non-Claude runtime ‚Ä?the option is off because THIS runtime has no auto
+  // Non-Claude runtime ‚Äî the option is off because THIS runtime has no auto
   // reviewer (review round #6, P1), not because of an SDK version or MCP config.
   if (capability.unavailableReason === 'runtime') {
     return { key: AUTO_REVIEW_NOTICE_KEYS.runtime };
   }
 
   if (capability.unavailableReason === 'external_mcp') {
-    // 'undetectable' means a config file was unreadable ‚Ä?say that, rather
+    // 'undetectable' means a config file was unreadable ‚Äî say that, rather
     // than asserting the user has servers configured. Different fact.
     return capability.externalMcp?.certainty === 'undetectable'
       ? { key: AUTO_REVIEW_NOTICE_KEYS.externalMcpUnknown }
@@ -111,12 +111,12 @@ function unavailableNotice(capability: AutoReviewCapability): AutoReviewNotice {
   const minVersion = capability.minVersion;
   const installedVersion = capability.installedVersion;
 
-  // No minVersion to quote ‚á?we cannot make the version claim at all. This is
-  // the branch that used to print '‚Ä?.
+  // No minVersion to quote ‚áí we cannot make the version claim at all. This is
+  // the branch that used to print '‚Äî'.
   if (!minVersion) return { key: AUTO_REVIEW_NOTICE_KEYS.probeFailed };
 
   // The SDK version was unreadable (sdk-capability returns null for that).
-  // "installed: unknown" is honest; "installed: ‚Ä? is a shrug pretending to be
+  // "installed: unknown" is honest; "installed: ‚Äî" is a shrug pretending to be
   // a version.
   if (!installedVersion) {
     return { key: AUTO_REVIEW_NOTICE_KEYS.sdkVersionUnknown, params: { minVersion } };

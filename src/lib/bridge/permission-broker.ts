@@ -1,5 +1,5 @@
 /**
- * Permission Broker â€?forwards Claude permission requests to IM channels
+ * Permission Broker â€” forwards Claude permission requests to IM channels
  * and handles user responses via inline buttons.
  *
  * When Claude needs tool approval, the broker:
@@ -36,7 +36,7 @@ const recentPermissionForwards = new Map<string, number>();
  * AskUserQuestion is now specifically supported via buildAskUserQuestionCard()
  * and handleAskUserQuestionCallback() below (#282).
  *
- * Exported for unit testing â€?the check itself is pure (no IO).
+ * Exported for unit testing â€” the check itself is pure (no IO).
  */
 const BRIDGE_UNSUPPORTED_INTERACTIVE_TOOLS = new Set<string>();
 
@@ -104,7 +104,7 @@ function buildAskUserQuestionCard(
     lines.push('');
     for (const opt of question.options) {
       if (opt.description) {
-        lines.push(`â€?<b>${escapeHtml(opt.label)}</b>: ${escapeHtml(opt.description)}`);
+        lines.push(`â€¢ <b>${escapeHtml(opt.label)}</b>: ${escapeHtml(opt.description)}`);
       }
     }
   }
@@ -143,7 +143,7 @@ export async function forwardPermissionRequest(
   replyToMessageId?: string,
 ): Promise<void> {
   if (isBridgeUnsupportedInteractiveTool(toolName)) {
-    console.log(`[bridge] Denied ${toolName} (${permissionRequestId}) â€?interactive tools not supported in bridge sessions`);
+    console.log(`[bridge] Denied ${toolName} (${permissionRequestId}) â€” interactive tools not supported in bridge sessions`);
     resolvePendingPermission(permissionRequestId, {
       behavior: 'deny',
       message: `${toolName} is not supported in IM/bridge sessions because the chat interface cannot render interactive option selection. Please ask your question as plain text instead.`,
@@ -154,15 +154,15 @@ export async function forwardPermissionRequest(
   // full_access auto-approves without an IM round-trip. Two profiles do NOT
   // land here:
   //
-  //   - `default` â€?forwards to the human, as always.
-  //   - `auto_review` â€?anything that reaches this broker has ALREADY been
+  //   - `default` â€” forwards to the human, as always.
+  //   - `auto_review` â€” anything that reaches this broker has ALREADY been
   //     escalated past the Runtime's own reviewer, so "the reviewer will
   //     handle it" is exactly wrong. It forwards to the human too. Treating
   //     auto_review as an elevated bucket here would silently turn "review
   //     on my behalf" into "allow on my behalf".
   //
   // Human-only tools (AskUserQuestion, credential, billing, publish,
-  // shell-level impact) are never auto-approved under ANY profile â€?the
+  // shell-level impact) are never auto-approved under ANY profile â€” the
   // user's choice carries semantic meaning, not just consent.
   if (sessionId) {
     const humanOnly = getHumanOnlyCategory(toolName);
@@ -173,7 +173,7 @@ export async function forwardPermissionRequest(
       return;
     }
     if (profile === 'full_access' && humanOnly) {
-      console.log(`[bridge] Forwarding ${permissionRequestId} (tool=${toolName}) to the user despite full_access â€?human-only category: ${humanOnly}`);
+      console.log(`[bridge] Forwarding ${permissionRequestId} (tool=${toolName}) to the user despite full_access â€” human-only category: ${humanOnly}`);
     }
   }
 
@@ -200,7 +200,7 @@ export async function forwardPermissionRequest(
   // would execute the tool with empty answers), deny with a clear reason and
   // let the model fall back to plain-text questions.
   if (toolName === 'AskUserQuestion' && !supportsButtons) {
-    console.log(`[bridge] Denied AskUserQuestion (${permissionRequestId}) on ${adapter.channelType} â€?option buttons not supported on this channel`);
+    console.log(`[bridge] Denied AskUserQuestion (${permissionRequestId}) on ${adapter.channelType} â€” option buttons not supported on this channel`);
     resolvePendingPermission(permissionRequestId, {
       behavior: 'deny',
       message: `AskUserQuestion is not supported on ${adapter.channelType} because the chat interface cannot render option buttons. Please ask your question as plain text instead.`,
@@ -208,12 +208,12 @@ export async function forwardPermissionRequest(
     return;
   }
 
-  // Validate AskUserQuestion shape â€?refuse multi-question / multi-select /
+  // Validate AskUserQuestion shape â€” refuse multi-question / multi-select /
   // empty forms rather than silently truncating to a partial answer.
   if (toolName === 'AskUserQuestion') {
     const validation = validateAskUserQuestion(toolInput);
     if (!validation.ok) {
-      console.log(`[bridge] Denied AskUserQuestion (${permissionRequestId}) â€?${validation.reason}`);
+      console.log(`[bridge] Denied AskUserQuestion (${permissionRequestId}) â€” ${validation.reason}`);
       resolvePendingPermission(permissionRequestId, {
         behavior: 'deny',
         message: ASK_REJECT_MESSAGES[validation.reason],
@@ -251,7 +251,7 @@ export async function forwardPermissionRequest(
         chatId: address.chatId,
         messageId: '', // will be updated after delivery
         toolName,
-        suggestions: JSON.stringify(toolInput), // reuse field â€?carries AUQ input
+        suggestions: JSON.stringify(toolInput), // reuse field â€” carries AUQ input
       });
     } catch { /* best effort */ }
   } else {
@@ -343,7 +343,7 @@ export function handleAskUserQuestionCallback(
   const parts = callbackData.split(':');
   if (parts.length < 3 || parts[0] !== 'ask') return false;
 
-  // permId may contain colons â€?everything except prefix and last index.
+  // permId may contain colons â€” everything except prefix and last index.
   const optionIndex = parseInt(parts[parts.length - 1], 10);
   if (!Number.isFinite(optionIndex) || optionIndex < 0) return false;
   const permissionRequestId = parts.slice(1, -1).join(':');
@@ -500,10 +500,10 @@ export function autoApprovePendingForSession(sessionId: string): number {
   let resolved = 0;
   for (const row of pendingRows) {
     // Elevating to full_access does not retroactively answer a human-only
-    // prompt â€?those keep waiting for the user.
+    // prompt â€” those keep waiting for the user.
     const humanOnly = getHumanOnlyCategory(row.tool_name);
     if (humanOnly) {
-      console.log(`[bridge] Left pending permission ${row.id} (tool=${row.tool_name}) for the user â€?human-only category: ${humanOnly}`);
+      console.log(`[bridge] Left pending permission ${row.id} (tool=${row.tool_name}) for the user â€” human-only category: ${humanOnly}`);
       continue;
     }
     const ok = resolvePendingPermission(row.id, { behavior: 'allow' });

@@ -1,5 +1,5 @@
 /**
- * Multi-Defer POC â€?verifies whether Claude Agent SDK 0.2.111 allows a single
+ * Multi-Defer POC â€” verifies whether Claude Agent SDK 0.2.111 allows a single
  * result round to produce multiple concurrent `deferred_tool_use` entries.
  *
  * Typings declare `SDKResultSuccess.deferred_tool_use?: SDKDeferredToolUse`
@@ -15,10 +15,10 @@
  *      tool invocation.
  *   2. Ask the model to call two tools in one turn.
  *   3. Observe whether:
- *        a) Only one defer surfaces, second tool never issued â†?singular
- *        b) Both surface as separate deferred_tool_use entries â†?SDK actually
+ *        a) Only one defer surfaces, second tool never issued â†’ singular
+ *        b) Both surface as separate deferred_tool_use entries â†’ SDK actually
  *           supports concurrent (typings lag)
- *        c) SDK crashes â†?bug, report upstream
+ *        c) SDK crashes â†’ bug, report upstream
  *
  * Output: result classification written to
  *   docs/research/agent-sdk-0-2-111-capabilities.md.json
@@ -33,9 +33,9 @@ import { recordPocResult } from './poc-record';
 const POC_ENABLED = process.env.CLAUDE_SDK_POC === '1';
 const HAS_CREDS = !!(process.env.ANTHROPIC_API_KEY || process.env.CLAUDE_CODE_OAUTH_TOKEN);
 
-test('multi-defer POC â€?classify SDK behavior on concurrent defer attempts', { skip: !POC_ENABLED || !HAS_CREDS }, async () => {
+test('multi-defer POC â€” classify SDK behavior on concurrent defer attempts', { skip: !POC_ENABLED || !HAS_CREDS }, async () => {
   if (!POC_ENABLED || !HAS_CREDS) {
-    console.log('[multi-defer-poc] Skipped â€?see runbook in file header');
+    console.log('[multi-defer-poc] Skipped â€” see runbook in file header');
     return;
   }
 
@@ -89,6 +89,6 @@ test('multi-defer POC â€?classify SDK behavior on concurrent defer attempts', { 
     concurrentSupported: classification === 'concurrent_supported',
   });
 
-  // Intentionally no assert â€?this POC is a classifier, not a pass/fail gate.
+  // Intentionally no assert â€” this POC is a classifier, not a pass/fail gate.
   // Phase 7b-future unlocks iff classification === 'concurrent_supported'.
 });

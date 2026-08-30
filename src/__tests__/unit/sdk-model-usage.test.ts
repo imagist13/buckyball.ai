@@ -1,12 +1,13 @@
 /**
- * sdk-model-usage.test.ts â€?coverage for `pickModelUsage`, the helper
+ * sdk-model-usage.test.ts â€” coverage for `pickModelUsage`, the helper
  * that picks the right ModelUsage entry when extracting contextWindow
  * from `SDKResultMessage.modelUsage`.
  *
  * The point of having this tested directly: GLM / Bailian /
  * Volcengine / MiniMax / Kimi / DeepSeek and other ClaudeCode-compat
  * brands aren't in `model-context.ts`. Instead of maintaining a
- * whitelist, we trust the SDK to tell us the window via modelUsage â€? * which means we MUST pick the correct entry, even when the proxy
+ * whitelist, we trust the SDK to tell us the window via modelUsage â€”
+ * which means we MUST pick the correct entry, even when the proxy
  * keys it under upstream id rather than the alias the user picked.
  * This regression test locks the priority chain so a future "always
  * match by alias" refactor can't quietly regress non-catalog brands
@@ -31,7 +32,7 @@ function mkUsage(overrides: Partial<SdkModelUsage> = {}): SdkModelUsage {
   };
 }
 
-describe('pickModelUsage â€?priority chain', () => {
+describe('pickModelUsage â€” priority chain', () => {
   it('returns null for undefined modelUsage (older SDK / adapter without map)', () => {
     assert.equal(pickModelUsage(undefined, { requested: 'sonnet' }), null);
   });
@@ -63,11 +64,11 @@ describe('pickModelUsage â€?priority chain', () => {
     assert.equal(picked![1].contextWindow, 1000000);
   });
 
-  it('priority 3: single entry wins when no hint matches â€?the GLM / Bailian / Kimi case', () => {
+  it('priority 3: single entry wins when no hint matches â€” the GLM / Bailian / Kimi case', () => {
     // Catalog doesn't enumerate `glm-5-turbo`, so neither requested
     // nor upstream is in the map. SDK round-trips one entry. We must
     // still surface its contextWindow rather than fall through to "no
-    // match â†?caller treats as capacity unknown."
+    // match â†’ caller treats as capacity unknown."
     const map = { 'glm-5-turbo-200k': mkUsage({ contextWindow: 200000 }) };
     const picked = pickModelUsage(map, { requested: 'glm-5-turbo' });
     assert.ok(picked);
@@ -87,7 +88,7 @@ describe('pickModelUsage â€?priority chain', () => {
     assert.equal(picked![1].contextWindow, 128000);
   });
 
-  it('priority 4 fallback: when no entry has a positive window, return the first entry â€?caller still sees usage_model_id even if window is 0', () => {
+  it('priority 4 fallback: when no entry has a positive window, return the first entry â€” caller still sees usage_model_id even if window is 0', () => {
     const map = {
       'a': mkUsage({ contextWindow: 0 }),
       'b': mkUsage({ contextWindow: 0 }),

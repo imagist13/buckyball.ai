@@ -114,6 +114,16 @@ export async function getMessageRoles(page: Page): Promise<string[]> {
   return labels.allInnerTexts();
 }
 
+/** Delete a session created by an E2E case without masking an already-clean row. */
+export async function deleteTestSession(page: Page, sessionId: string | undefined) {
+  if (!sessionId) return;
+  const response = await page.request.delete(
+    `/api/chat/sessions/${encodeURIComponent(sessionId)}`,
+    { timeout: 5_000 },
+  );
+  expect([200, 404]).toContain(response.status());
+}
+
 // ---------------------------------------------------------------------------
 // Common locators
 // ---------------------------------------------------------------------------
@@ -124,8 +134,8 @@ export async function getMessageRoles(page: Page): Promise<string[]> {
  * The composer is the ai-elements `PromptInputTextarea`, which renders a
  * `<textarea name="message">` regardless of badge/CLI state. Using the
  * `name` attribute instead of placeholder text also insulates these helpers
- * from i18n / copy tweaks �?the placeholder now rotates between
- * "Message Claude�?, "Describe what you want to do�? and "Add details�?
+ * from i18n / copy tweaks — the placeholder now rotates between
+ * "Message Claude…", "Describe what you want to do…" and "Add details…"
  * depending on composer state.
  */
 export function chatInput(page: Page): Locator {
@@ -149,20 +159,20 @@ export function stopButton(page: Page): Locator {
 /**
  * The "New Chat" link or button in the sidebar.
  *
- * Copy rotates between "New Chat" / "新对�? / "+ 新对�? depending on
+ * Copy rotates between "New Chat" / "新对话" / "+ 新对话" depending on
  * locale. The current sidebar renders it as a <button>, not an <a>, so
  * the helper accepts either and matches both zh and en copy.
  */
 export function newChatButton(page: Page): Locator {
   return page
     .locator('aside button, aside a')
-    .filter({ hasText: /^(New Chat|新对�?$/ })
+    .filter({ hasText: /^(New Chat|新对话)$/ })
     .first();
 }
 
 /**
  * Assistant message container. Replaces the stale `[data-role="assistant"]`
- * selector �?the current ai-elements `<Message from="assistant">` renders
+ * selector — the current ai-elements `<Message from="assistant">` renders
  * with `.is-assistant` on the wrapper and no data-role attribute.
  */
 export function assistantMessage(page: Page): Locator {
@@ -230,7 +240,7 @@ export function settingsJsonTab(page: Page): Locator {
 }
 
 // ---------------------------------------------------------------------------
-// PanelZone locators (V3 �?panels live in top PanelZone, not a right aside)
+// PanelZone locators (V3 — panels live in top PanelZone, not a right aside)
 // ---------------------------------------------------------------------------
 
 /** The PanelZone container (top panel area between UnifiedTopBar and main). */
@@ -282,7 +292,7 @@ export function rightPanel(page: Page): Locator {
 export function panelOpenButton(page: Page): Locator {
   return fileTreeToggleButton(page);
 }
-/** @deprecated Tabs no longer exist �?FileTree panel always shows files */
+/** @deprecated Tabs no longer exist — FileTree panel always shows files */
 export function panelFilesTab(page: Page): Locator {
   return fileTreeToggleButton(page);
 }
@@ -290,7 +300,7 @@ export function panelFilesTab(page: Page): Locator {
 export function panelTasksTab(page: Page): Locator {
   return fileTreeToggleButton(page);
 }
-/** @deprecated No separate collapsed state �?use fileTreeToggleButton() */
+/** @deprecated No separate collapsed state — use fileTreeToggleButton() */
 export function rightPanelCollapsed(page: Page): Locator {
   return fileTreeToggleButton(page);
 }

@@ -216,7 +216,7 @@ describe('DeepSeek runtime transport selection', () => {
     assert.equal(flashCodex.responsesApiAuth, 'api_key');
     assert.deepEqual(flashCodex.verifiedResponsesEffortLevels, ['low', 'high', 'max']);
 
-    const flashNative = toAiSdkConfig(resolvedDeepSeek(), FLASH, { runtime: 'bbagent' });
+    const flashNative = toAiSdkConfig(resolvedDeepSeek(), FLASH, { runtime: 'codepilot_runtime' });
     assert.equal(flashNative.sdkType, 'claude-code-compat');
     assert.equal(flashNative.baseUrl, DEEPSEEK_BASE);
 
@@ -230,7 +230,7 @@ describe('DeepSeek runtime transport selection', () => {
     assert.equal(proCodex.useResponsesApi, true);
     assert.deepEqual(proCodex.verifiedResponsesEffortLevels, ['low', 'high', 'max']);
 
-    const proNative = toAiSdkConfig(resolvedDeepSeek(PRO), PRO, { runtime: 'bbagent' });
+    const proNative = toAiSdkConfig(resolvedDeepSeek(PRO), PRO, { runtime: 'codepilot_runtime' });
     assert.equal(proNative.sdkType, 'claude-code-compat');
 
     const proClaudeAlias = toAiSdkConfig(

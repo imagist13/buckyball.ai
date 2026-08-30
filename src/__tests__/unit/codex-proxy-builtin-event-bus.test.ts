@@ -1,5 +1,5 @@
 /**
- * Phase 5c (2026-05-16) â€?side-channel event bus contract.
+ * Phase 5c (2026-05-16) â€” side-channel event bus contract.
  *
  * The bus is the only path through which CodePilot built-in tool
  * execution results reach the ChatView when Codex Runtime is the
@@ -31,7 +31,7 @@ beforeEach(() => {
   __resetBuiltinEventBusForTests();
 });
 
-describe('subscribeBuiltinEvents â€?registration + cleanup', () => {
+describe('subscribeBuiltinEvents â€” registration + cleanup', () => {
   it('registers and fires on emit for the same sessionId', () => {
     const received: RuntimeRunEvent[] = [];
     subscribeBuiltinEvents('s-1', (e) => received.push(e));
@@ -71,7 +71,7 @@ describe('subscribeBuiltinEvents â€?registration + cleanup', () => {
     assert.equal(b.length, 1);
   });
 
-  it('empty sessionId on subscribe â†?no-op + warn', () => {
+  it('empty sessionId on subscribe â†’ no-op + warn', () => {
     // We don't pin the warn (console output is incidental) but we
     // DO pin the "returns a no-op unsubscribe + listener never
     // fires" behaviour so an empty id can't accidentally subscribe
@@ -85,7 +85,7 @@ describe('subscribeBuiltinEvents â€?registration + cleanup', () => {
   });
 });
 
-describe('emitBuiltinEvent â€?drop semantics + listener safety', () => {
+describe('emitBuiltinEvent â€” drop semantics + listener safety', () => {
   it('emit-before-subscribe is dropped (no buffering, no cross-turn leak)', () => {
     emitBuiltinEvent('s-1', ev('s-1', 'pre-sub'));
     const received: RuntimeRunEvent[] = [];
@@ -111,7 +111,7 @@ describe('emitBuiltinEvent â€?drop semantics + listener safety', () => {
   });
 });
 
-describe('__resetBuiltinEventBusForTests + __subscriberCountForTests â€?hermetic test helpers', () => {
+describe('__resetBuiltinEventBusForTests + __subscriberCountForTests â€” hermetic test helpers', () => {
   it('reset removes every subscriber across sessions', () => {
     subscribeBuiltinEvents('s-1', () => {});
     subscribeBuiltinEvents('s-2', () => {});

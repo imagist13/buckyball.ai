@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock, Trash } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -25,7 +25,7 @@ export interface SkillItem {
   filePath: string;
   /**
    * Whether this skill row is editable in the manager UI. Driven entirely
-   * by `/api/skills` (Phase 2D.1) â?the client must not re-derive.
+   * by `/api/skills` (Phase 2D.1) — the client must not re-derive.
    */
   editable?: boolean;
   /**
@@ -94,7 +94,7 @@ export function SkillListItem({
         setConfirmDelete(false);
       }}
     >
-      <BuckyballIcon name="skill" size="md" className="shrink-0 text-muted-foreground" />
+      <CodePilotIcon name="skill" size="md" className="shrink-0 text-muted-foreground" />
       <div className="flex-1 min-w-0">
         <span className="text-sm font-medium truncate block">/{skill.name}</span>
         <p className="text-xs text-muted-foreground truncate">

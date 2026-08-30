@@ -1,5 +1,5 @@
 /**
- * Codex turn/interrupt contract â€?source-level pins.
+ * Codex turn/interrupt contract â€” source-level pins.
  *
  * `turn/interrupt` in Codex requires `{ threadId, turnId }` per
  * `èµ„æ–™/codex/.../v2/TurnInterruptParams.ts`. Slice 3 (Phase 5 Phase 4)
@@ -9,9 +9,9 @@
  * codex-stop-recovery (Phase 1/2) refactored the interrupt implementation
  * into a shared module-level helper `issueCodexTurnInterrupt(sessionId)` so
  * BOTH interrupt paths converge on one implementation:
- *   - the public `interrupt(sessionId)` method â€?HTTP `/api/chat/interrupt`
+ *   - the public `interrupt(sessionId)` method â€” HTTP `/api/chat/interrupt`
  *     fan-out (Stop button);
- *   - the in-stream abort-signal handler â€?honors the `abortController` the
+ *   - the in-stream abort-signal handler â€” honors the `abortController` the
  *     chat route already passes (force-abort / disconnect path).
  *
  * The transient registry and wire payload are behavior-tested without a live
@@ -36,7 +36,7 @@ const runtimeSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('Codex turn registry â€?Slice 3 contract', () => {
+describe('Codex turn registry â€” Slice 3 contract', () => {
   it('owns active turn identity and refuses interrupt after terminal cleanup', () => {
     const registry = new CodexTurnInterruptRegistry();
     const turn = { threadId: 'thread-1', turnId: 'turn-1' };
@@ -63,7 +63,7 @@ describe('Codex turn registry â€?Slice 3 contract', () => {
     );
   });
 
-  it('turn/start response â†?activeCodexTurns.set with (threadId, turnId)', () => {
+  it('turn/start response â†’ activeCodexTurns.set with (threadId, turnId)', () => {
     // Anchored on the real JSON-RPC call (not the word "turn/start", which now
     // also appears in Phase 2 comments) so the pin stays precise.
     assert.match(
@@ -86,7 +86,7 @@ describe('Codex turn registry â€?Slice 3 contract', () => {
 
   it('terminal run_completed | run_failed routes cleanup through closeStream() (no inline delete)', () => {
     // Terminal event must call closeStream() (which owns the cleanup); it must
-    // NOT carry its own activeCodexTurns.delete anymore â€?that would re-fork
+    // NOT carry its own activeCodexTurns.delete anymore â€” that would re-fork
     // the cleanup the way A4 just consolidated.
     const terminalBranch = runtimeSrc.match(
       /event\?\.type\s*===\s*'run_completed'\s*\|\|\s*event\?\.type\s*===\s*'run_failed'\)\s*\{[\s\S]{0,500}?\n\s*\}/,
@@ -101,7 +101,8 @@ describe('Codex turn registry â€?Slice 3 contract', () => {
   });
 
   it('error catch path closes via closeStream so a throw after turn/start cleans up the entry', () => {
-    // turn registered (activeCodexTurns.set) â†?throw before a terminal event â†?    // catch â†?closeStream({ error }) â†?entry deleted. This is the exact
+    // turn registered (activeCodexTurns.set) â†’ throw before a terminal event â†’
+    // catch â†’ closeStream({ error }) â†’ entry deleted. This is the exact
     // residual A4 set out to close.
     assert.match(
       runtimeSrc,
@@ -110,7 +111,7 @@ describe('Codex turn registry â€?Slice 3 contract', () => {
   });
 });
 
-describe('Codex interrupt â€?shared helper (single implementation)', () => {
+describe('Codex interrupt â€” shared helper (single implementation)', () => {
   it('aborts the HMR-safe parent controller and protects a newer owner from stale cleanup', () => {
     const oldController = new AbortController();
     const cleanupOld = registerCodexTurnAbortController('session-abort', oldController);

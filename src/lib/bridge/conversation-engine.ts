@@ -1,5 +1,5 @@
 /**
- * Conversation Engine ‚Ä?processes inbound IM messages through Claude.
+ * Conversation Engine ‚Äî processes inbound IM messages through Claude.
  *
  * Takes a ChannelBinding + inbound message, calls streamClaude(),
  * consumes the SSE stream server-side, saves messages to DB,
@@ -59,7 +59,7 @@ export type OnPermissionRequest = (perm: PermissionRequestInfo) => Promise<void>
 
 /**
  * Callback invoked on each `text` SSE event with the full accumulated text so far.
- * Must return synchronously ‚Ä?the bridge-manager handles throttling and fire-and-forget.
+ * Must return synchronously ‚Äî the bridge-manager handles throttling and fire-and-forget.
  */
 export type OnPartialText = (fullText: string) => void;
 
@@ -113,9 +113,9 @@ export async function processMessage(
 
   // Lock renewal interval. Session ownership (DP3): if renewSessionLock returns
   // false the lockId no longer owns the row (a newer web/bridge send took over,
-  // or the lock was already released) ‚Ä?stop renewing a lock we don't hold.
+  // or the lock was already released) ‚Äî stop renewing a lock we don't hold.
   // Bridge turns are NOT autoTrigger, so there is no renewal cap (autoTrigger:
-  // false + max: Infinity ‚á?evaluateRenewal only ever returns 'continue' or
+  // false + max: Infinity ‚áí evaluateRenewal only ever returns 'continue' or
   // 'stop-renew-false'); the shared decision keeps the semantics consistent
   // with the /api/chat route.
   const renewalInterval = setInterval(() => {
@@ -123,17 +123,17 @@ export async function processMessage(
     try {
       renewed = renewSessionLock(sessionId, lockId, 600);
     } catch {
-      // Transient DB error ‚Ä?keep the interval alive and retry next tick.
+      // Transient DB error ‚Äî keep the interval alive and retry next tick.
       return;
     }
     const decision = evaluateRenewal({ autoTrigger: false, renewalCount: 0, renewed, max: Infinity });
     if (decision === 'stop-renew-false') {
-      console.warn(`[conversation-engine] lockId Â∑≤‰∏ç ownÔºàË¢´Êé•ÁÆ°/Â∑≤ÈáäÊîæÔºâÔºåÂÅúÊ≠¢Áª≠Áß?session ${sessionId}`);
+      console.warn(`[conversation-engine] lockId Â∑≤‰∏ç ownÔºàË¢´Êé•ÁÆ°/Â∑≤ÈáäÊîæÔºâÔºåÂÅúÊ≠¢Áª≠Áßü session ${sessionId}`);
       clearInterval(renewalInterval);
     }
   }, 60_000);
 
-  // Session ownership ‚Ä?lockId-scoped settler shared with the finally below.
+  // Session ownership ‚Äî lockId-scoped settler shared with the finally below.
   // Idempotent; only writes runtime_status when releaseSessionLock confirms we
   // still own the lock (lockId-scoped release vs session-scoped status), so a
   // superseded bridge turn cannot clobber the new owner's 'running' with 'idle'.
@@ -144,10 +144,10 @@ export async function processMessage(
   });
 
   try {
-    // Resolve session early ‚Ä?needed for workingDirectory and provider resolution
+    // Resolve session early ‚Äî needed for workingDirectory and provider resolution
     const session = getSession(sessionId);
 
-    // Save user message ‚Ä?persist file attachments to disk using the same
+    // Save user message ‚Äî persist file attachments to disk using the same
     // <!--files:JSON--> format as the desktop chat route, so the UI can render them.
     // Also attach filePath to the file objects so streamClaude() can reuse
     // on-disk copies (matching the desktop route behavior, preventing duplicate writes).
@@ -195,7 +195,7 @@ export async function processMessage(
     // 4. 'env' mode fallback
     const effectiveProviderId = binding.providerId || session?.provider_id || getDefaultProviderId() || undefined;
 
-    // Same runtime gate as the main /api/chat route ‚Ä?bridge sessions go
+    // Same runtime gate as the main /api/chat route ‚Äî bridge sessions go
     // through the same SDK / ai-sdk paths, so the default-model fallback
     // must respect the active runtime's compat constraints.
     const activeRuntime = getActiveChatRuntime();
@@ -210,7 +210,7 @@ export async function processMessage(
     // Use upstream model from unified resolver (same chain as chat route)
     const effectiveModel = resolved.upstreamModel || resolved.model || binding.model || session?.model || getSetting('default_model') || undefined;
 
-    // Guard: protocol/model mismatch ‚Ä?e.g. google protocol with model 'sonnet'
+    // Guard: protocol/model mismatch ‚Äî e.g. google protocol with model 'sonnet'
     // would silently send a wrong request. Fail fast with a clear error.
     if (resolvedProvider && resolved.protocol) {
       const modelLower = (effectiveModel || '').toLowerCase();
@@ -225,7 +225,7 @@ export async function processMessage(
 
     // Permission mode from binding mode
     // Profile decides the floor (plan > bypass > auto reviewer > acceptEdits)
-    // through the same resolver the main chat route uses ‚Ä?bridge sessions
+    // through the same resolver the main chat route uses ‚Äî bridge sessions
     // must not grow their own interpretation of the three profiles.
     const wire = resolveClaudeWireOptions({
       profile: normalizePermissionProfile(session?.permission_profile),
@@ -239,7 +239,7 @@ export async function processMessage(
     // The binding's 'ask' mode is a separate axis: it asks for MORE
     // confirmation than the profile's floor. It can tighten acceptEdits into
     // 'default', but it never loosens a bypass and never overrides the
-    // reviewer ‚Ä?those are the profile's call.
+    // reviewer ‚Äî those are the profile's call.
     const permissionMode: string =
       binding.mode === 'ask' && wire.permissionMode === 'acceptEdits' ? 'default' : wire.permissionMode;
     const bypassPermissions = wire.bypassPermissions;
@@ -261,13 +261,13 @@ export async function processMessage(
     }
 
     // Load MCP servers using shared runtime prediction (same logic as chat route).
-    // Was lazy `require('../runtime')`; converted to static import ‚Ä?Turbopack's
+    // Was lazy `require('../runtime')`; converted to static import ‚Äî Turbopack's
     // CJS‚ÜîESM interop returns `{ default: ... }` shape that broke destructuring.
     const mcpServers = predictNativeRuntime(effectiveProviderId)
       ? loadAllMcpServers()
       : loadCodePilotMcpServers();
 
-    // Unified context assembly ‚Ä?adds CLI tools context (and workspace prompt if applicable)
+    // Unified context assembly ‚Äî adds CLI tools context (and workspace prompt if applicable)
     const assembled = await assembleContext({
       session: session!,
       entryPoint: 'bridge',
@@ -300,7 +300,7 @@ export async function processMessage(
     }
 
     // If the effective cwd differs from what the binding/session had, the
-    // original directory is gone ‚Ä?clear sdkSessionId to prevent stale resume.
+    // original directory is gone ‚Äî clear sdkSessionId to prevent stale resume.
     const originalCwd = binding.workingDirectory || session?.working_directory;
     const cwdChanged = originalCwd && effectiveCwd !== originalCwd;
     const effectiveSdkSessionId = cwdChanged ? undefined : (binding.sdkSessionId || undefined);
@@ -313,7 +313,7 @@ export async function processMessage(
       prompt: text,
       callScene: 'bridge',
       sessionId,
-      // Session ownership ‚Ä?plumb the ownership token so this bridge turn's Query
+      // Session ownership ‚Äî plumb the ownership token so this bridge turn's Query
       // registers/unregisters and clearSdkSessionIfOwner run under A's owner-gate
       // (options.lockId). A superseded bridge turn then can't clear a new owner's
       // SDK session on cleanup.
@@ -340,7 +340,7 @@ export async function processMessage(
       onRuntimeStatusChange: (status: string) => {
         // I1 owner gate: a superseded bridge turn (its session lock taken over
         // by a newer web/bridge turn) must not write session-level runtime_status
-        // ‚Ä?it would clobber the new owner's 'running'.
+        // ‚Äî it would clobber the new owner's 'running'.
         try {
           if (isLockOwner(sessionId, lockId)) {
             setSessionRuntimeStatus(sessionId, status);
@@ -353,10 +353,10 @@ export async function processMessage(
 
     // Consume the stream server-side (replicate collectStreamResponse pattern).
     // Permission requests are forwarded immediately via the callback during streaming
-    // because the stream blocks until permission is resolved ‚Ä?we can't wait until after.
+    // because the stream blocks until permission is resolved ‚Äî we can't wait until after.
     return await consumeStream(stream, sessionId, lockId, onPermissionRequest, onPartialText, onToolEvent);
   } finally {
-    // Session ownership ‚Ä?lockId-scoped settle: clears the renewal interval,
+    // Session ownership ‚Äî lockId-scoped settle: clears the renewal interval,
     // releases only THIS lockId's row, and writes runtime_status='idle' ONLY when
     // the release confirms we still owned the lock. A superseded bridge turn thus
     // no longer overwrites the new owner's 'running' with 'idle'.
@@ -369,8 +369,8 @@ export async function processMessage(
  * Mirrors the collectStreamResponse() logic from chat/route.ts.
  *
  * Session ownership (I1/DP1 owner gate): `lockId` is this bridge turn's ownership
- * token. Every session-level write below ‚Ä?sdk_session_id / model / SDK tasks /
- * the assistant `addMessage` ‚Ä?is gated on `isLockOwner(sessionId, lockId)`. A
+ * token. Every session-level write below ‚Äî sdk_session_id / model / SDK tasks /
+ * the assistant `addMessage` ‚Äî is gated on `isLockOwner(sessionId, lockId)`. A
  * superseded bridge turn (its lock taken over by a newer web/bridge send) reaches
  * consume LATE carrying its OLD lockId and must write NOTHING to shared session
  * state. Exported (it is a lib function, no Next route export contract) so the
@@ -387,7 +387,7 @@ export async function consumeStream(
   const reader = stream.getReader();
   const contentBlocks: MessageContentBlock[] = [];
   let currentText = '';
-  /** Monotonically accumulated text for streaming preview ‚Ä?never resets on tool_use. */
+  /** Monotonically accumulated text for streaming preview ‚Äî never resets on tool_use. */
   let previewText = '';
   let tokenUsage: TokenUsage | null = null;
   let hasError = false;
@@ -488,7 +488,7 @@ export async function consumeStream(
                 suggestions: permData.suggestions,
               };
               permissionRequests.push(perm);
-              // Forward immediately ‚Ä?the stream blocks until the permission is
+              // Forward immediately ‚Äî the stream blocks until the permission is
               // resolved, so we must send the IM prompt *now*, not after the stream ends.
               if (onPermissionRequest) {
                 onPermissionRequest(perm).catch((err) => {
@@ -503,7 +503,7 @@ export async function consumeStream(
             try {
               const statusData = JSON.parse(event.data);
               // capturedSdkSessionId is in-memory (returned to this binding for
-              // its own resume) ‚Ä?harmless. Only the shared session-level DB
+              // its own resume) ‚Äî harmless. Only the shared session-level DB
               // writes are owner-gated (I1/DP1): a superseded turn must not
               // overwrite the new owner's sdk_session_id / model.
               if (statusData.session_id) {
@@ -592,7 +592,7 @@ export async function consumeStream(
             break;
           }
 
-          // tool_output, tool_timeout, mode_changed, done ‚Ä?ignored for bridge
+          // tool_output, tool_timeout, mode_changed, done ‚Äî ignored for bridge
         }
       }
     }
@@ -620,14 +620,14 @@ export async function consumeStream(
         // assistant answer into the new owner's timeline. The response is still
         // returned to this binding for IM delivery; only the DB persist is dropped.
         if (!isLockOwner(sessionId, lockId)) {
-          console.warn(`[conversation-engine] stale owner (lockId superseded) ‚Ä?DP1: dropping assistant message persist for session ${sessionId} (${content.length} chars not written)`);
+          console.warn(`[conversation-engine] stale owner (lockId superseded) ‚Äî DP1: dropping assistant message persist for session ${sessionId} (${content.length} chars not written)`);
         } else {
           addMessage(sessionId, 'assistant', content, tokenUsage ? JSON.stringify(tokenUsage) : null);
         }
       }
     }
 
-    // Extract response for IM delivery ‚Ä?include text blocks, and if none exist
+    // Extract response for IM delivery ‚Äî include text blocks, and if none exist
     // but thinking blocks are present, include a summary so thinking-only turns
     // are not silently dropped.
     const textParts = contentBlocks
@@ -666,11 +666,11 @@ export async function consumeStream(
             .join('\n\n')
             .trim();
       if (content) {
-        // DP1 owner gate (error path): same invariant as the happy path ‚Ä?a
+        // DP1 owner gate (error path): same invariant as the happy path ‚Äî a
         // superseded bridge turn must not insert its partial answer into the new
         // owner's timeline.
         if (!isLockOwner(sessionId, lockId)) {
-          console.warn(`[conversation-engine] stale owner (lockId superseded) ‚Ä?DP1: dropping error-path assistant message persist for session ${sessionId}`);
+          console.warn(`[conversation-engine] stale owner (lockId superseded) ‚Äî DP1: dropping error-path assistant message persist for session ${sessionId}`);
         } else {
           addMessage(sessionId, 'assistant', content);
         }
@@ -680,7 +680,7 @@ export async function consumeStream(
     const isAbort = e instanceof DOMException && e.name === 'AbortError'
       || e instanceof Error && e.name === 'AbortError';
 
-    // Build error responseText ‚Ä?include indicator if thinking blocks were present
+    // Build error responseText ‚Äî include indicator if thinking blocks were present
     const errorTextParts = contentBlocks
       .filter((b): b is Extract<MessageContentBlock, { type: 'text' }> => b.type === 'text')
       .map((b) => b.text);

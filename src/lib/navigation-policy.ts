@@ -1,5 +1,5 @@
 /**
- * Pure navigation policy for Electron's `will-navigate` â€?decides what to do
+ * Pure navigation policy for Electron's `will-navigate` â€” decides what to do
  * with a navigation target given the window's current URL.
  *
  * Lives in src/lib (no Electron imports) so it can be behavior-tested in the
@@ -15,12 +15,12 @@ function isWeb(u: URL): boolean {
 
 /**
  * - `allow-in-app`  same-origin http/https navigation (normal in-app routing)
- * - `open-external` a real web (http/https) link â†?hand to the OS browser
+ * - `open-external` a real web (http/https) link â†’ hand to the OS browser
  * - `block`         everything else: malformed URL, or a non-web scheme
- *                   (data:/file:/javascript:/blob:/vscode:/â€?
+ *                   (data:/file:/javascript:/blob:/vscode:/â€¦)
  *
  * Why the explicit http/https gate on BOTH sides for `allow-in-app`: opaque
- * origins (e.g. the `data:` startup splash â€?electron/main.ts LOADING_HTML)
+ * origins (e.g. the `data:` startup splash â€” electron/main.ts LOADING_HTML)
  * serialize to the string `"null"`, so `data:` current + `data:` / `file:` /
  * `javascript:` target would compare equal under an origin-only check and be
  * treated as "same-origin", bypassing the external-link whitelist. Requiring

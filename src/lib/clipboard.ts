@@ -1,13 +1,13 @@
 /**
  * Clipboard helper with toast feedback. Centralises the await + catch
- * pattern that every "Copy �? entry in the app needs.
+ * pattern that every "Copy …" entry in the app needs.
  *
  * Pre-fix (v11): three fire-and-forget call sites (UnifiedTopBar
  * `handleCopyId`, SessionListItem dropdown "复制对话 ID",
  * ProjectGroupHeader "Copy folder path") called
  * `navigator.clipboard.writeText(value)` and dropped the promise. In
  * Electron renderers the call rejects with `NotAllowedError` whenever
- * the document isn't focused (very common �?DropdownMenu blurs the
+ * the document isn't focused (very common — DropdownMenu blurs the
  * page on click), and an unhandled promise rejection bubbles up as a
  * console error / Sentry report.
  *
@@ -47,7 +47,7 @@ export async function copyWithToast(opts: CopyWithToastOptions): Promise<void> {
   } catch {
     // The reject types we see in practice (`NotAllowedError`,
     // `SecurityError`) all share the same user-fix: select-and-copy
-    // by hand. Don't differentiate in the message �?surface the raw
+    // by hand. Don't differentiate in the message — surface the raw
     // text so the user can grab it from the toast directly.
     showToast({ type: 'warning', message: `${t(failureKey)} ${text}` });
   }

@@ -1,11 +1,11 @@
 /**
- * 2026-06-10 â€?post-stream display loss after idle/remount.
+ * 2026-06-10 â€” post-stream display loss after idle/remount.
  *
  * Root cause: clearSnapshot() reset `startedAt: 0`, and getSnapshot()
  * treats `startedAt === 0` as a stale placeholder and returns null. So the
  * moment useStreamSubscription consumed finalMessageContent, the WHOLE
  * snapshot (terminal reason, token usage, context usage) became invisible
- * to any later mount â€?the "output display bug after long idle".
+ * to any later mount â€” the "output display bug after long idle".
  *
  * The fix narrows clearSnapshot to its real job: mark finalMessageContent
  * as consumed (it must never be appended twice) and leave the rest of the
@@ -26,7 +26,7 @@ beforeEach(() => {
   (globalThis as Record<string, unknown>)[STREAMS_KEY] = new Map();
 });
 
-describe('clearSnapshot â€?consumes finalMessageContent without hiding the snapshot', () => {
+describe('clearSnapshot â€” consumes finalMessageContent without hiding the snapshot', () => {
   it('keeps the snapshot readable after clear (the regression: getSnapshot returned null)', () => {
     seedSnapshotPatch('s1', {
       finalMessageContent: 'hello world',

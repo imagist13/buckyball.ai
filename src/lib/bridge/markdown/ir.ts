@@ -183,7 +183,7 @@ function appendListPrefix(state: RenderState) {
   }
   top.index += 1;
   const indent = '  '.repeat(Math.max(0, stack.length - 1));
-  const prefix = top.type === 'ordered' ? `${top.index}. ` : 'â€?';
+  const prefix = top.type === 'ordered' ? `${top.index}. ` : 'â€¢ ';
   state.text += `${indent}${prefix}`;
 }
 
@@ -337,7 +337,7 @@ function renderTableAsBullets(state: RenderState) {
         if (!value?.text) {
           continue;
         }
-        state.text += 'â€?';
+        state.text += 'â€¢ ';
         if (header?.text) {
           appendCell(state, header);
           state.text += ': ';
@@ -357,7 +357,7 @@ function renderTableAsBullets(state: RenderState) {
         if (!value?.text) {
           continue;
         }
-        state.text += 'â€?';
+        state.text += 'â€¢ ';
         if (header?.text) {
           appendCell(state, header);
           state.text += ': ';
@@ -375,7 +375,7 @@ function appendCellTextOnly(state: RenderState, cell: TableCell) {
     return;
   }
   state.text += cell.text;
-  // Do not append styles â€?used for code blocks where inner styles would overlap
+  // Do not append styles â€” used for code blocks where inner styles would overlap
 }
 
 function renderTableAsCode(state: RenderState) {

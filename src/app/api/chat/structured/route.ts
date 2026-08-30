@@ -1,5 +1,5 @@
 /**
- * Structured output route â€?generates JSON conforming to a schema.
+ * Structured output route â€” generates JSON conforming to a schema.
  *
  * Uses Vercel AI SDK generateText with output option.
  * No Claude Code SDK dependency.

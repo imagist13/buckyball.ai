@@ -3,15 +3,15 @@
 /**
  * Form fields + validation for adding/editing an external MCP server.
  *
- * Headless wrapper â?renders only the form body (name + form/JSON
+ * Headless wrapper — renders only the form body (name + form/JSON
  * toggle + per-transport fields + env/headers + error line). The
  * parent supplies its own Save / Cancel buttons and calls
  * `formRef.current?.submit()` to trigger validation; the form invokes
  * `onSave(name, server)` only when validation passes.
  *
  * Used by:
- *   - <McpServerEditor>          â?add-server Dialog (toolbar entry)
- *   - <McpServerDetailDialog>    â?in-place edit view (card click)
+ *   - <McpServerEditor>          — add-server Dialog (toolbar entry)
+ *   - <McpServerDetailDialog>    — in-place edit view (card click)
  *
  * Both wrappers want different button placement / labels, so the
  * footer is intentionally NOT part of this component.
@@ -30,7 +30,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WifiHigh } from '@/components/ui/icon';
-import { BuckyballIcon } from '@/components/ui/semantic-icon';
+import { CodePilotIcon } from '@/components/ui/semantic-icon';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TranslationKey } from '@/i18n';
 import type { MCPServer } from '@/types';
@@ -46,7 +46,7 @@ export interface McpServerEditorFormProps {
   initialName?: string;
   initialServer?: MCPServer;
   onSave: (name: string, server: MCPServer) => void;
-  /** When true the name input is read-only â?name is the persistence key when editing. */
+  /** When true the name input is read-only — name is the persistence key when editing. */
   isEditing?: boolean;
   /** Bump to force a state reset (e.g., re-opening with new initial data). */
   resetKey?: number | string;
@@ -247,7 +247,7 @@ export const McpServerEditorForm = forwardRef<McpServerEditorFormHandle, McpServ
               setError(null);
             }}
           >
-            <BuckyballIcon name="code" size="sm" aria-hidden />
+            <CodePilotIcon name="code" size="sm" aria-hidden />
             {t('mcp.jsonEditTab')}
           </Button>
         </div>
@@ -278,7 +278,7 @@ export const McpServerEditorForm = forwardRef<McpServerEditorFormHandle, McpServ
               >
                 <TabsList className="w-full">
                   <TabsTrigger value="stdio" className="flex-1 gap-1.5">
-                    <BuckyballIcon name="disk" size="sm" aria-hidden />
+                    <CodePilotIcon name="disk" size="sm" aria-hidden />
                     stdio
                   </TabsTrigger>
                   <TabsTrigger value="sse" className="flex-1 gap-1.5">
@@ -286,7 +286,7 @@ export const McpServerEditorForm = forwardRef<McpServerEditorFormHandle, McpServ
                     SSE
                   </TabsTrigger>
                   <TabsTrigger value="http" className="flex-1 gap-1.5">
-                    <BuckyballIcon name="web_simple" size="sm" aria-hidden />
+                    <CodePilotIcon name="web_simple" size="sm" aria-hidden />
                     HTTP
                   </TabsTrigger>
                 </TabsList>

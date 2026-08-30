@@ -18,12 +18,12 @@ import {
  * report that usage. Omitted entirely when no snapshot could be produced, which
  * keeps the legacy `{ category, userMessage }` shape for the common case.
  *
- * `timeout` (Phase 4 â‘? is present iff a native timeout budget fired:
+ * `timeout` (Phase 4 â‘ ) is present iff a native timeout budget fired:
  * `category` is then the matching `TIMEOUT_*` code and `timeout` carries the
  * machine-readable reason + budget + source breadcrumb. The chat route
  * persists this exact JSON (inside the `**Error:** â€¦` fallback message), so
  * the reason code in the DB and the one the live UI displayed are the same
- * value by construction â€?see native-timeout.ts "Persistence / display path".
+ * value by construction â€” see native-timeout.ts "Persistence / display path".
  */
 export type NativeErrorCategory =
   | 'AGENT_ERROR'
@@ -42,10 +42,10 @@ export interface NativeErrorEventData {
 
 /**
  * Build the Native runtime error-event data. Pure (no I/O) so it is unit
- * testable without driving the agent-loop stream â€?which depends on
+ * testable without driving the agent-loop stream â€” which depends on
  * DB/streaming infrastructure and can't run in a pure unit context. (audit A3)
  *
- * @param err        the thrown value (Error â†?its message; otherwise String()).
+ * @param err        the thrown value (Error â†’ its message; otherwise String()).
  * @param accounting optional context-accounting snapshot; attached only when
  *                   present so a normal (no-snapshot) error keeps the legacy
  *                   `{ category, userMessage }` shape.

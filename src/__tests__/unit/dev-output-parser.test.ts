@@ -1,5 +1,5 @@
 /**
- * Phase 4.D â€?dev-output tokenizer for chat assistant text.
+ * Phase 4.D â€” dev-output tokenizer for chat assistant text.
  *
  * Coverage:
  *  - bare file references (abs / relative)
@@ -163,13 +163,13 @@ describe('tokenizeDevOutput', () => {
         continue;
       }
       assert.ok(ref.filePath.startsWith('README') || ref.filePath.startsWith('CHANGELOG'),
-        `${sample} â†?${ref.filePath}`);
+        `${sample} â†’ ${ref.filePath}`);
       assert.equal(ref.previewable, true);
     }
   });
 
   it('does NOT tokenize bare words ending in non-previewable extensions', () => {
-    // "version1.0" or "thanks.thanks" must not get chip-ified â€?the
+    // "version1.0" or "thanks.thanks" must not get chip-ified â€” the
     // previewable-extensions whitelist guards against that.
     const samples = ['version1.0', 'okay.okay', 'no.exe', 'foo.zip'];
     for (const s of samples) {

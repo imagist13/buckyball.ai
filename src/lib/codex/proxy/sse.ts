@@ -1,5 +1,5 @@
 /**
- * Phase 5b â€?SSE encoder for the Codex Responses proxy.
+ * Phase 5b â€” SSE encoder for the Codex Responses proxy.
  *
  * Codex's HTTP client (and the official `@openai/codex-sdk`'s
  * `responsesProxy.ts` test fixture, which is the canonical contract
@@ -25,7 +25,7 @@
  * fixture explicitly tags every event, so we now match the fixture
  * to avoid quirks downstream.
  *
- * The encoder is intentionally bare â€?one `encodeEvent` for the JSON
+ * The encoder is intentionally bare â€” one `encodeEvent` for the JSON
  * frame, one `encodeDone` for the terminator. The adapter pushes
  * `ResponsesEvent` objects into a `ReadableStream<Uint8Array>` via
  * these helpers; the route file returns that stream as the response
@@ -49,7 +49,7 @@ export function encodeDone(): Uint8Array {
  * adapter ever made it to the upstream" path. Codex's app-server
  * parser (`codex-rs/codex-api/src/sse/responses.rs`
  * `process_responses_event`) only consumes `response.failed` for
- * stream errors â€?the SDK fixture's `{type: 'error'}` form falls
+ * stream errors â€” the SDK fixture's `{type: 'error'}` form falls
  * through unhandled. We use `response.failed` here so the failure
  * surfaces as a structured ApiError on the Codex side instead of
  * "stream closed before response.completed".

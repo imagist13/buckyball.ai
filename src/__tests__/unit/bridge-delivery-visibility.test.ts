@@ -1,23 +1,23 @@
 /**
- * Phase 3 Step 3 â€?Bridge Ã— priority delivery visibility.
+ * Phase 3 Step 3 â€” Bridge Ã— priority delivery visibility.
  *
  * v3 / v4 plan locks two rules:
- *   â€?events:deliveries is 1:N. `sendNotification` writes ONE row in
+ *   â€¢ events:deliveries is 1:N. `sendNotification` writes ONE row in
  *     `notification_events` per logical fire. The `notification_deliveries`
  *     table gets one row per candidate channel (renderer-toast,
  *     electron-native, bridge-*).
- *   â€?Bridge is a candidate channel ONLY for `priority='urgent'`.
- *     - urgent â†?exactly one `bridge-telegram` row, status one of
+ *   â€¢ Bridge is a candidate channel ONLY for `priority='urgent'`.
+ *     - urgent â†’ exactly one `bridge-telegram` row, status one of
  *       {not_configured, skipped, delivered, error}.
- *     - low / normal â†?NO `bridge-*` row at all (Bridge wasn't a
+ *     - low / normal â†’ NO `bridge-*` row at all (Bridge wasn't a
  *       candidate; the absence expresses "we never tried" without
  *       writing a misleading `skipped_by_priority` placeholder).
  *
- * Asserts (no live Telegram â€?we toggle settings to drive each state):
- *   1. urgent + Bridge unconfigured â†?bridge-telegram: not_configured
- *   2. urgent + Bridge configured but disabled â†?bridge-telegram: skipped
- *   3. normal priority â†?no bridge-* row (negative test)
- *   4. low priority â†?no bridge-* row (negative test)
+ * Asserts (no live Telegram â€” we toggle settings to drive each state):
+ *   1. urgent + Bridge unconfigured â†’ bridge-telegram: not_configured
+ *   2. urgent + Bridge configured but disabled â†’ bridge-telegram: skipped
+ *   3. normal priority â†’ no bridge-* row (negative test)
+ *   4. low priority â†’ no bridge-* row (negative test)
  *   5. event:delivery row count is 1 event row regardless of N channels
  */
 
@@ -57,12 +57,12 @@ afterEach(async () => {
   } catch { /* ignore */ }
 });
 
-describe('bridge Ã— priority â€?Phase 3 Step 3', () => {
+describe('bridge Ã— priority â€” Phase 3 Step 3', () => {
   it('urgent + Bridge unconfigured writes bridge-telegram: not_configured', async () => {
     const { sendNotification } = await import('../../lib/notification-manager');
     const { listNotificationDeliveries, getDb } = await import('../../lib/db');
 
-    // No telegram_* settings written â†?unconfigured.
+    // No telegram_* settings written â†’ unconfigured.
     const result = await sendNotification({
       title: 'Urgent test',
       body: 'something is on fire',
@@ -75,14 +75,14 @@ describe('bridge Ã— priority â€?Phase 3 Step 3', () => {
     assert.equal(
       bridgeRow!.status,
       'not_configured',
-      'no telegram_bot_token / chat_id â†?not_configured (visible "we considered but no creds")',
+      'no telegram_bot_token / chat_id â†’ not_configured (visible "we considered but no creds")',
     );
 
     // 1 events row regardless of N deliveries.
     const events = (getDb() as unknown as { prepare: (s: string) => { all: (...args: unknown[]) => unknown[] } })
       .prepare('SELECT event_id FROM notification_events WHERE event_id = ?')
       .all(result.event_id) as Array<{ event_id: string }>;
-    assert.equal(events.length, 1, '1:N event:delivery â€?exactly one events row per logical fire (v4 fix #2)');
+    assert.equal(events.length, 1, '1:N event:delivery â€” exactly one events row per logical fire (v4 fix #2)');
   });
 
   it('urgent + Bridge configured-but-disabled writes bridge-telegram: skipped', async () => {
@@ -105,7 +105,7 @@ describe('bridge Ã— priority â€?Phase 3 Step 3', () => {
     assert.equal(
       bridgeRow!.status,
       'skipped',
-      'configured + telegram_enabled=false â†?skipped (distinct from not_configured)',
+      'configured + telegram_enabled=false â†’ skipped (distinct from not_configured)',
     );
   });
 
@@ -114,7 +114,7 @@ describe('bridge Ã— priority â€?Phase 3 Step 3', () => {
     const { listNotificationDeliveries, setSetting } = await import('../../lib/db');
 
     // Even with Bridge fully configured, normal/low priority must
-    // not produce a bridge row â€?Bridge is urgent-only candidate.
+    // not produce a bridge row â€” Bridge is urgent-only candidate.
     setSetting('telegram_bot_token', 'fake-token');
     setSetting('telegram_chat_id', '12345');
     setSetting('telegram_enabled', 'true');
@@ -130,13 +130,13 @@ describe('bridge Ã— priority â€?Phase 3 Step 3', () => {
       assert.equal(
         bridgeRows.length,
         0,
-        `priority=${priority} must produce zero bridge-* rows â€?Bridge isn't a candidate at this priority (v4 fix #3)`,
+        `priority=${priority} must produce zero bridge-* rows â€” Bridge isn't a candidate at this priority (v4 fix #3)`,
       );
-      if (priority === 'low') {
-        assert.deepEqual(deliveries.map((d) => d.channel), ['renderer-toast']);
-      } else {
-        assert.deepEqual(deliveries.map((d) => d.channel), ['electron-native']);
-      }
+      assert.deepEqual(
+        deliveries.map((d) => d.channel),
+        ['electron-native'],
+        `priority=${priority} must use the Main-owned system notification channel`,
+      );
     }
   });
 });

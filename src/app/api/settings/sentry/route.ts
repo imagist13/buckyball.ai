@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
+import { resolveCodePilotDataDir } from '@/lib/codepilot-data-dir';
 
 /** Path to the Sentry opt-out marker file, read by Electron main process at startup */
 function getSentryMarkerPath() {
-  return path.join(os.homedir(), '.codepilot', 'sentry-disabled');
+  return path.join(resolveCodePilotDataDir(), 'sentry-disabled');
 }
 
-/** GET /api/settings/sentry â€?read opt-out state */
+/** GET /api/settings/sentry â€” read opt-out state */
 export async function GET() {
   try {
     const markerPath = getSentryMarkerPath();
@@ -19,7 +19,7 @@ export async function GET() {
   }
 }
 
-/** POST /api/settings/sentry â€?write opt-out state */
+/** POST /api/settings/sentry â€” write opt-out state */
 export async function POST(request: NextRequest) {
   try {
     const { disabled } = await request.json();

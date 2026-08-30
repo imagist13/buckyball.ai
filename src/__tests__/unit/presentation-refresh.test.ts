@@ -1,13 +1,13 @@
 /**
- * Phase 4 P2.2 â€?presentation refresh URL builder.
+ * Phase 4 P2.2 â€” presentation refresh URL builder.
  *
  * Codex review finding: refreshing a presentation built from an
  * external user-selected Markdown went through the CURRENT
  * workingDirectory baseDir and 403'd. The fix is to honour the
  * trust tier captured at generation time:
- *  - workspace      â†?use captured sourceBaseDir
- *  - user-selected  â†?no baseDir (homeDir scope, like original load)
- *  - missing tier   â†?back-compat fallback to current workingDirectory
+ *  - workspace      â†’ use captured sourceBaseDir
+ *  - user-selected  â†’ no baseDir (homeDir scope, like original load)
+ *  - missing tier   â†’ back-compat fallback to current workingDirectory
  */
 
 import { describe, it } from 'node:test';
@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { buildPresentationRefreshUrl } from '../../lib/markdown/presentation-refresh';
 
 describe('buildPresentationRefreshUrl', () => {
-  it('workspace source â†?URL carries the stored baseDir, not the chat\'s', () => {
+  it('workspace source â†’ URL carries the stored baseDir, not the chat\'s', () => {
     const url = buildPresentationRefreshUrl(
       {
         sourcePath: '/proj-a/docs/spec.md',
@@ -29,7 +29,7 @@ describe('buildPresentationRefreshUrl', () => {
     assert.equal(parsed.searchParams.get('baseDir'), '/proj-a');
   });
 
-  it('user-selected source â†?URL omits baseDir (home scope)', () => {
+  it('user-selected source â†’ URL omits baseDir (home scope)', () => {
     // This is the bug: previously the URL got baseDir=<chat cwd> and
     // 403'd for external files. Now it carries no baseDir so the
     // route falls back to homeDir, same as the original external load.
@@ -48,7 +48,7 @@ describe('buildPresentationRefreshUrl', () => {
   it('legacy backlink without sourceTrust falls back to workingDirectory', () => {
     // Back-compat: presentations generated before this fix landed had
     // only { sourcePath, templateId }. Treat them as workspace-ish
-    // and use the current chat cwd as baseDir â€?same behaviour as
+    // and use the current chat cwd as baseDir â€” same behaviour as
     // before the fix, just with the new helper.
     const url = buildPresentationRefreshUrl(
       { sourcePath: '/proj-a/x.md' },
@@ -58,7 +58,7 @@ describe('buildPresentationRefreshUrl', () => {
     assert.equal(parsed.searchParams.get('baseDir'), '/proj-a');
   });
 
-  it('legacy backlink with no trust + no cwd â†?URL has no baseDir', () => {
+  it('legacy backlink with no trust + no cwd â†’ URL has no baseDir', () => {
     const url = buildPresentationRefreshUrl(
       { sourcePath: '/somewhere/x.md' },
       null,

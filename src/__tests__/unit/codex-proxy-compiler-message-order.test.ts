@@ -1,5 +1,5 @@
 /**
- * Phase 5d Phase 2 P0 (2026-05-17) �?Codex proxy adapter MUST send
+ * Phase 5d Phase 2 P0 (2026-05-17) — Codex proxy adapter MUST send
  * the compiler-produced prompt through the `messages[]` channel,
  * not only through `providerOptions.openai.instructions`.
  *
@@ -64,20 +64,22 @@ function stripComments(src: string): string {
 
 const ADAPTER_SRC = stripComments(ADAPTER_SRC_RAW);
 
-describe('unified-adapter �?compiler prompt reaches the model (P0 regression)', () => {
-  // ai@7 迁移�?026-07-03）：投递载具从 "messages[] 里的 role:system" 换成
-  // streamText/generateText �?`instructions` 选项 —�?ai@7 直接拒绝 messages
-  // 里的 system role�?Use the instructions option instead"）；SDK core 会在
-  // �?Responses 家族�?wire 上把 instructions 还原�?system message
-  // （node_modules/ai/dist/index.js convertToLanguageModelPrompt），所�?  // P0 �?所�?provider 家族都能收到编译�?prompt"不变量依然由本组 pin 保护�?  it('source MUST NOT call buildPrompt(input.body) anywhere', () => {
+describe('unified-adapter — compiler prompt reaches the model (P0 regression)', () => {
+  // ai@7 迁移（2026-07-03）：投递载具从 "messages[] 里的 role:system" 换成
+  // streamText/generateText 的 `instructions` 选项 —— ai@7 直接拒绝 messages
+  // 里的 system role（"Use the instructions option instead"）；SDK core 会在
+  // 非 Responses 家族的 wire 上把 instructions 还原为 system message
+  // （node_modules/ai/dist/index.js convertToLanguageModelPrompt），所以
+  // P0 的"所有 provider 家族都能收到编译器 prompt"不变量依然由本组 pin 保护。
+  it('source MUST NOT call buildPrompt(input.body) anywhere', () => {
     assert.equal(
       /buildPrompt\(\s*input\.body\s*\)/.test(ADAPTER_SRC),
       false,
-      'buildPrompt(input.body) is the pre-P0 shape �?re-introducing it loses the compiler prompt for every provider path',
+      'buildPrompt(input.body) is the pre-P0 shape — re-introducing it loses the compiler prompt for every provider path',
     );
   });
 
-  it('source MUST call buildPrompt(bodyWithBridgePrompt) �?the spliced body', () => {
+  it('source MUST call buildPrompt(bodyWithBridgePrompt) — the spliced body', () => {
     assert.match(
       ADAPTER_SRC,
       /buildPrompt\(\s*bodyWithBridgePrompt\s*\)/,
@@ -86,7 +88,7 @@ describe('unified-adapter �?compiler prompt reaches the model (P0 regression)',
   });
 
   it('source MUST run adaptForCodexProxy BEFORE buildPrompt', () => {
-    // Phase 5d Phase 3 (2026-05-17) �?the compile call moved into
+    // Phase 5d Phase 3 (2026-05-17) — the compile call moved into
     // the Runtime Capability Adapter facade (`adaptForCodexProxy`).
     // The ordering invariant is the same: the facade call (which
     // internally runs `compileContext`) must finish before
@@ -117,12 +119,12 @@ describe('unified-adapter �?compiler prompt reaches the model (P0 regression)',
   });
 });
 
-describe('unified-adapter �?instructions travel via the ai@7 `instructions` OPTION (downstream contract)', () => {
+describe('unified-adapter — instructions travel via the ai@7 `instructions` OPTION (downstream contract)', () => {
   it('buildPrompt must NOT prepend role:system into messages (ai@7 rejects it)', () => {
     assert.equal(
       /role:\s*['"]system['"]\s*,\s*content:\s*body\.instructions/.test(ADAPTER_SRC),
       false,
-      'prepending body.instructions as role:system is the pre-ai@7 shape �?ai@7 throws "System messages are not allowed in the prompt or messages fields"',
+      'prepending body.instructions as role:system is the pre-ai@7 shape — ai@7 throws "System messages are not allowed in the prompt or messages fields"',
     );
   });
 
@@ -130,7 +132,7 @@ describe('unified-adapter �?instructions travel via the ai@7 `instructions` OPT
     const spreads = ADAPTER_SRC.match(/\.\.\.\(instructions \? \{ instructions \} : \{\}\)/g) ?? [];
     assert.ok(
       spreads.length >= 2,
-      `both send paths must spread the instructions option (found ${spreads.length}) �?dropping it silently loses the compiled prompt for ALL providers`,
+      `both send paths must spread the instructions option (found ${spreads.length}) — dropping it silently loses the compiled prompt for ALL providers`,
     );
   });
 });

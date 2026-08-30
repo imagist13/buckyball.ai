@@ -1,9 +1,9 @@
 /**
- * #49 (stability audit ⑦→�? �?native loop must NOT swallow `tool-error`.
+ * #49 (stability audit ⑦→①) — native loop must NOT swallow `tool-error`.
  *
  * Reproduction/contrast: when a tool's execute() throws, the AI SDK emits a
  * `tool-error` fullStream part. Pre-fix, agent-loop.ts's switch had no case for
- * it �?it fell to `default: break` and was silently dropped, so the UI's
+ * it → it fell to `default: break` and was silently dropped, so the UI's
  * tool_use bubble hung with no result.
  *
  * This file has two layers of evidence:
@@ -12,7 +12,8 @@
  *      inject a tool whose execute() throws via `toolsOverride`, drive BOTH the
  *      production `runAgentLoop` and the `runToolLoopAgentPoc` with a scripted
  *      Anthropic fetch, and assert the errored tool_use gets a paired
- *      `tool_result(is_error:true)` �?which pre-fix did not exist (swallowed) �? *      then feed the real SSE into useSSEStream's parse layer and assert
+ *      `tool_result(is_error:true)` — which pre-fix did not exist (swallowed) —
+ *      then feed the real SSE into useSSEStream's parse layer and assert
  *      onToolResult receives the is_error error bubble.
  */
 import { describe, it, before, after } from 'node:test';
@@ -30,7 +31,7 @@ import { consumeSSEStream, type SSECallbacks } from '@/hooks/useSSEStream';
 import type { SSEEvent } from '@/types';
 
 // Env-mode Anthropic provider (no DB provider rows needed, isolated temp DB via
-// db-isolation.setup). The key never leaves the process �?the scripted fetch
+// db-isolation.setup). The key never leaves the process — the scripted fetch
 // intercepts every request. Same setup as toolloop-poc-parity.test.ts.
 process.env.ANTHROPIC_API_KEY = 'test-key-not-real';
 
@@ -38,7 +39,7 @@ const MODEL = 'claude-sonnet-4-6';
 const THROW_MSG = 'tool execute() threw on purpose (#49 boom)';
 
 describe('buildToolErrorResultData (#49)', () => {
-  it('Error �?is_error:true tool_result carrying the message', () => {
+  it('Error → is_error:true tool_result carrying the message', () => {
     const data = buildToolErrorResultData({ toolCallId: 'call_1', error: new Error('exec boom') });
     assert.equal(data.tool_use_id, 'call_1');
     assert.equal(data.content, 'exec boom');
@@ -65,15 +66,15 @@ describe('buildToolErrorResultData (#49)', () => {
   });
 });
 
-// ── 源码钉：tool-error 不再�?default 吞掉 ──
+// ── 源码钉：tool-error 不再被 default 吞掉 ──
 const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), 'utf-8');
 
-describe('agent-loop fullStream switch �?case tool-error�?49 源码钉，对照吞掉前）', () => {
+describe('agent-loop fullStream switch 补 case tool-error（#49 源码钉，对照吞掉前）', () => {
   for (const rel of ['../../lib/agent-loop.ts', '../../lib/experimental/agent-loop-toolloop-poc.ts']) {
     it(`${rel} forwards tool-error as an is_error tool_result (not swallowed by default)`, () => {
       const src = read(rel);
-      assert.ok(src.includes("case 'tool-error'"), `${rel} 必须�?case 'tool-error'（否则落�?default 被吞）`);
-      assert.ok(src.includes('buildToolErrorResultData'), `${rel} 必须�?buildToolErrorResultData 构造错误气泡`);
+      assert.ok(src.includes("case 'tool-error'"), `${rel} 必须有 case 'tool-error'（否则落到 default 被吞）`);
+      assert.ok(src.includes('buildToolErrorResultData'), `${rel} 必须用 buildToolErrorResultData 构造错误气泡`);
       // The tool-error block must enqueue a tool_result event.
       const block = src.slice(src.indexOf("case 'tool-error'"));
       assert.ok(/type:\s*'tool_result'/.test(block), `${rel} tool-error 分支必须 enqueue tool_result`);
@@ -151,7 +152,7 @@ function hasToolResultInBody(body: unknown): boolean {
   });
 }
 
-/** First request (no tool_result yet) �?tool step; follow-up �?final text. */
+/** First request (no tool_result yet) → tool step; follow-up → final text. */
 function toolTurnScript(toolName: string, toolInput: Record<string, unknown>, finalText: string): FetchScript {
   return (body) => (hasToolResultInBody(body) ? textStepResponse(finalText) : toolStepResponse(toolName, toolInput));
 }
@@ -256,7 +257,7 @@ async function runToolTurn(
 
 // ── Integration counter-example (the reviewer-required block) ────
 
-describe('#49 反例：工�?execute() 抛错 �?is_error 错误气泡（真实链路，对照吞掉前）', () => {
+describe('#49 反例：工具 execute() 抛错 → is_error 错误气泡（真实链路，对照吞掉前）', () => {
   let wd: string;
   before(() => { wd = fs.mkdtempSync(path.join(os.tmpdir(), 'tool-error-repro-')); });
   after(() => { fs.rmSync(wd, { recursive: true, force: true }); });
@@ -271,7 +272,7 @@ describe('#49 反例：工�?execute() 抛错 �?is_error 错误气泡（真实�
       const { events, raw } = await runToolTurn(loopFn, throwingTool(), wd);
 
       const toolUse = events.find((e) => e.type === 'tool_use');
-      assert.ok(toolUse, `${label}: tool_use 必须�?emit`);
+      assert.ok(toolUse, `${label}: tool_use 必须被 emit`);
       const tu = JSON.parse(toolUse!.data) as { id: string };
 
       const toolResults = events
@@ -279,12 +280,14 @@ describe('#49 反例：工�?execute() 抛错 �?is_error 错误气泡（真实�
         .map((e) => JSON.parse(e.data) as { tool_use_id: string; content: string; is_error?: boolean });
       const errored = toolResults.find((r) => r.tool_use_id === tu.id);
 
-      // 对照吞掉前：修复�?tool-error 落到 default 被丢弃，这个配对 tool_result 根本不存在，
-      // tool_use 气泡会一直空转。现在必须存在且 is_error:true�?      assert.ok(errored, `${label}: 抛错�?tool_use 必须有配�?tool_result（修复前�?default 吞掉→无 result）`);
-      assert.equal(errored!.is_error, true, `${label}: is_error 必须�?true（错误气泡而非成功）`);
-      assert.match(String(errored!.content), /boom/, `${label}: 抛出的错误消息必须透传�?content`);
+      // 对照吞掉前：修复前 tool-error 落到 default 被丢弃，这个配对 tool_result 根本不存在，
+      // tool_use 气泡会一直空转。现在必须存在且 is_error:true。
+      assert.ok(errored, `${label}: 抛错的 tool_use 必须有配对 tool_result（修复前被 default 吞掉→无 result）`);
+      assert.equal(errored!.is_error, true, `${label}: is_error 必须为 true（错误气泡而非成功）`);
+      assert.match(String(errored!.content), /boom/, `${label}: 抛出的错误消息必须透传到 content`);
 
-      // UI 链路：把真实 SSE 喂给 useSSEStream 的解析层，onToolResult 必须收到 is_error 错误气泡�?      let bubble: { is_error?: boolean; content: string } | null = null;
+      // UI 链路：把真实 SSE 喂给 useSSEStream 的解析层，onToolResult 必须收到 is_error 错误气泡。
+      let bubble: { is_error?: boolean; content: string } | null = null;
       await consumeSSEStream(makeReader([raw]), {
         ...noopCallbacks(),
         onToolResult: (r) => { if (r.is_error) bubble = r; },
@@ -295,13 +298,13 @@ describe('#49 反例：工�?execute() 抛错 �?is_error 错误气泡（真实�
     });
   }
 
-  it('对照控制组：不抛错的工具产出 is_error:false（证�?is_error 由抛错触发，而非恒真�?, async () => {
+  it('对照控制组：不抛错的工具产出 is_error:false（证明 is_error 由抛错触发，而非恒真）', async () => {
     const { events } = await runToolTurn(runAgentLoop, okTool(), wd);
     const toolResults = events
       .filter((e) => e.type === 'tool_result')
       .map((e) => JSON.parse(e.data) as { content: string; is_error?: boolean });
-    assert.ok(toolResults.length >= 1, '正常工具也必�?emit tool_result');
-    assert.equal(toolResults[0].is_error ?? false, false, '正常工具 is_error �?false');
+    assert.ok(toolResults.length >= 1, '正常工具也必须 emit tool_result');
+    assert.equal(toolResults[0].is_error ?? false, false, '正常工具 is_error 为 false');
     assert.match(toolResults[0].content, /probe ok output/);
   });
 });

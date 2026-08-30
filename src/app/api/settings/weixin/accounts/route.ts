@@ -1,6 +1,6 @@
 /**
  * WeChat accounts list API.
- * GET â€?returns all accounts (token masked)
+ * GET â€” returns all accounts (token masked)
  */
 
 import { NextResponse } from 'next/server';

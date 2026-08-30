@@ -1,5 +1,5 @@
 /**
- * Phase 5e Phase 1 (2026-05-18) â€?External Framework scanner safety
+ * Phase 5e Phase 1 (2026-05-18) â€” External Framework scanner safety
  * + behaviour tests.
  *
  * Critical pins:
@@ -29,7 +29,7 @@ import {
   __TEST_FORBIDDEN_PATTERNS,
 } from '@/lib/harness/external-framework-harness';
 
-describe('External scanner â€?auth token forbidden filenames', () => {
+describe('External scanner â€” auth token forbidden filenames', () => {
   it('rejects auth.json', () => {
     assert.equal(__TEST_isFilenameSafe('/home/user/.codex/auth.json'), false);
   });
@@ -64,7 +64,7 @@ describe('External scanner â€?auth token forbidden filenames', () => {
   });
 });
 
-describe('External scanner â€?empty homedir tolerance', () => {
+describe('External scanner â€” empty homedir tolerance', () => {
   it('returns [] when ~/.claude and ~/.codex do not exist', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-ext-test-'));
     try {
@@ -76,7 +76,7 @@ describe('External scanner â€?empty homedir tolerance', () => {
   });
 });
 
-describe('External scanner â€?ClaudeCode detection', () => {
+describe('External scanner â€” ClaudeCode detection', () => {
   it('detects user mcp.json + CLAUDE.md + skills + commands', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-claude-'));
     try {
@@ -105,7 +105,7 @@ describe('External scanner â€?ClaudeCode detection', () => {
   });
 });
 
-describe('External scanner â€?active-framework executable flag', () => {
+describe('External scanner â€” active-framework executable flag', () => {
   it('marks executable=true when activeFramework matches', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-active-'));
     try {
@@ -144,7 +144,7 @@ describe('External scanner â€?active-framework executable flag', () => {
   });
 });
 
-describe('External scanner â€?Codex detection', () => {
+describe('External scanner â€” Codex detection', () => {
   it('detects ~/.codex/config.toml + plugins/ + prompts/', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-codex-'));
     try {
@@ -170,7 +170,7 @@ describe('External scanner â€?Codex detection', () => {
   });
 
   it('SKIPS ~/.codex/auth.json (forbidden filename)', () => {
-    // Critical safety pin â€?even if user's Codex auth.json is in
+    // Critical safety pin â€” even if user's Codex auth.json is in
     // ~/.codex, the scanner must NEVER surface it. Adding an
     // auth.json to the tmpdir and confirming the scanner doesn't
     // emit anything from it.
@@ -202,7 +202,7 @@ describe('External scanner â€?Codex detection', () => {
   });
 });
 
-describe('External scanner â€?malformed config tolerance', () => {
+describe('External scanner â€” malformed config tolerance', () => {
   it('skips invalid JSON in ~/.claude/mcp.json without throwing', () => {
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'harness-malformed-'));
     try {

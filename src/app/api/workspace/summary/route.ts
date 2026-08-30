@@ -22,7 +22,7 @@ export async function GET() {
 
     // Extract assistant name from soul.md
     // Supports multiple formats:
-    //   - "My name is Toki" / "name is Toki" / "名字�?Toki" / "�?Toki"
+    //   - "My name is Toki" / "name is Toki" / "名字是 Toki" / "叫 Toki"
     //   - "- name: Toki" / "name: Toki" (YAML-like)
     //   - "# Toki" (first heading)
     let assistantName = '';
@@ -38,7 +38,7 @@ export async function GET() {
           break;
         }
         // Try "My name is XXX"
-        const sentenceMatch = content.match(/(?:My name is|name is|名字是|�?\s+([^.\n,]+)/i);
+        const sentenceMatch = content.match(/(?:My name is|name is|名字是|叫)\s+([^.\n,]+)/i);
         if (sentenceMatch) {
           assistantName = sentenceMatch[1].trim().replace(/[.。]$/, '');
           break;
@@ -69,7 +69,7 @@ export async function GET() {
       if (fs.existsSync(soulPath)) {
         const content = fs.readFileSync(soulPath, 'utf-8');
         const styleMatch = content.match(/^[-*]?\s*style\s*[:：]\s*(.+)$/im)
-          || content.match(/## (?:Communication Style|沟通风�?\n+(.+)/m);
+          || content.match(/## (?:Communication Style|沟通风格)\n+(.+)/m);
         if (styleMatch) {
           styleHint = styleMatch[1].trim().slice(0, 80);
         }

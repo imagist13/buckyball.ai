@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { CaretRight } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Input } from "@/components/ui/input";
 import {
   ContextMenu,
@@ -180,7 +180,7 @@ export const FileTreeFolder = ({
   const handleToggle = useCallback(() => {
     togglePath(path);
     // Clicking a folder row both toggles expand/collapse and marks it
-    // selected â?matches VS Code's Explorer behavior. Selection drives
+    // selected — matches VS Code's Explorer behavior. Selection drives
     // the "create inside this folder" default target in the panel's
     // new-item flow.
     onSelectFolder?.(path);
@@ -461,7 +461,7 @@ export const FileTreeFile = ({
             {children ?? (
               <>
                 <FileTreeIcon>
-                  {icon ?? <BuckyballIcon name="file" size="md" className="text-muted-foreground" aria-hidden />}
+                  {icon ?? <CodePilotIcon name="file" size="md" className="text-muted-foreground" aria-hidden />}
                 </FileTreeIcon>
                 {renaming ? (
                   <Input

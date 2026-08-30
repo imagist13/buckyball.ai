@@ -1,5 +1,5 @@
 /**
- * Unit tests for memory-extractor â€?per-session counters and write detection.
+ * Unit tests for memory-extractor â€” per-session counters and write detection.
  *
  * Run with: npx tsx --test src/__tests__/unit/memory-extractor.test.ts
  */
@@ -13,7 +13,7 @@ describe('memory-extractor', () => {
     resetExtractionCounter(); // clear all counters
   });
 
-  describe('shouldExtractMemory â€?per-session isolation', () => {
+  describe('shouldExtractMemory â€” per-session isolation', () => {
     it('fires every 3 turns for default rarity', async () => {
       const { shouldExtractMemory } = await import('../../lib/memory-extractor');
       const results: boolean[] = [];

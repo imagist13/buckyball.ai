@@ -1,5 +1,5 @@
 /**
- * Best-effort mirror of buckyball.ai's canonical session title to the matching
+ * Best-effort mirror of CodePilot's canonical session title to the matching
  * Codex app-server thread.
  *
  * Codex exposes `thread/name/set`, but it does not expose an API that generates

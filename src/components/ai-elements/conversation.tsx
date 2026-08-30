@@ -5,7 +5,7 @@ import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ArrowDown } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { useCallback } from "react";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 
@@ -14,7 +14,7 @@ export type ConversationProps = ComponentProps<typeof StickToBottom>;
 export const Conversation = ({ className, ...props }: ConversationProps) => (
   <StickToBottom
     className={cn("relative flex-1 overflow-y-hidden", className)}
-    // Phase 2 â?â?`initial` governs the FIRST scroll-to-bottom when the
+    // Phase 2 ① — `initial` governs the FIRST scroll-to-bottom when the
     // transcript mounts (use-stick-to-bottom uses `initial` on the first
     // ResizeObserver tick, `resize` on every later one). `smooth` made
     // opening a history session visibly animate-scroll from top to bottom
@@ -169,7 +169,7 @@ export const ConversationDownload = ({
       variant="outline"
       {...props}
     >
-      {children ?? <BuckyballIcon name="download" size="md" aria-hidden />}
+      {children ?? <CodePilotIcon name="download" size="md" aria-hidden />}
     </Button>
   );
 };

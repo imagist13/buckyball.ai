@@ -1,5 +1,5 @@
 /**
- * Unit tests for theme family loader â€?tests the real public functions.
+ * Unit tests for theme family loader â€” tests the real public functions.
  *
  * Run with: npx tsx --test src/__tests__/unit/theme-loader.test.ts
  *

@@ -63,7 +63,7 @@ test.describe('Chat Page', () => {
       await expect(input).toBeVisible();
       // Placeholder rotates with composer state; in the default idle state
       // (no badge, no CLI tool, no streaming) the PromptInputTextarea shows
-      // "Message Claude�?. Match leniently so slight copy tweaks don't nag.
+      // "Message Claude…". Match leniently so slight copy tweaks don't nag.
       const placeholder = await input.getAttribute('placeholder');
       expect(placeholder).toMatch(/message\s*claude/i);
     });
@@ -93,7 +93,7 @@ test.describe('Chat Page', () => {
 
     test.skip('send a message and see it in the conversation', async ({ page }) => {
       // Requires a live provider to accept the first message; under the
-      // default test env this races with the /chat �?/chat/[id] redirect
+      // default test env this races with the /chat → /chat/[id] redirect
       // and the assertion fires on the wrong page. Skipped until we mock
       // the send path (matches the mocked flow in mention-ui.spec.ts).
       await goToChat(page);
@@ -106,7 +106,7 @@ test.describe('Chat Page', () => {
       await sendMessage(page, 'Hello');
 
       // Post-PromptInput refactor the textarea is no longer disabled mid-
-      // stream �?users can queue a follow-up message. Instead, the submit
+      // stream — users can queue a follow-up message. Instead, the submit
       // button flips to aria-label="Stop".
       await expect(stopButton(page)).toBeVisible({ timeout: 10_000 });
     });
@@ -125,7 +125,7 @@ test.describe('Chat Page', () => {
       await goToChat(page);
       await sendMessage(page, 'Say hello');
 
-      // Wait for the first assistant message wrapper to appear �?the
+      // Wait for the first assistant message wrapper to appear — the
       // ai-elements Message component adds `is-assistant` to the wrapper
       // rather than the old data-role attribute.
       await expect(assistantMessage(page)).toBeVisible({ timeout: 10_000 });
@@ -142,8 +142,8 @@ test.describe('Chat Page', () => {
 
     test.skip('conversation appears in sidebar after response', async ({ page }) => {
       // Same live-provider dependency as "send a message and see it in the
-      // conversation" above �?needs a real stream to complete so the
-      // session row is persisted and the /chat �?/chat/[id] redirect fires.
+      // conversation" above — needs a real stream to complete so the
+      // session row is persisted and the /chat → /chat/[id] redirect fires.
       // Skipped with the other real-API tests pending a deterministic
       // mocked-stream fixture.
       await goToChat(page);
@@ -173,7 +173,7 @@ test.describe('Chat Page', () => {
   test.describe('Chat History', () => {
     test('sidebar has chat list section', async ({ page }) => {
       await goToChat(page);
-      // Label was "Recent Chats" �?now just "Chats" / "对话列表" depending
+      // Label was "Recent Chats" → now just "Chats" / "对话列表" depending
       // on locale. Assert the sidebar contains either variant.
       await expect(
         page.locator('aside').filter({ hasText: /(Chats|对话)/i }).first(),

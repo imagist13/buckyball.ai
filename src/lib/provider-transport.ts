@@ -1,16 +1,16 @@
 /**
- * provider-transport.ts â€?Provider transport capability detection.
+ * provider-transport.ts â€” Provider transport capability detection.
  *
  * Determines HOW to talk to a provider (what wire protocol / request format).
  * This is separate from Runtime (WHO runs the agent loop).
  *
  * Three transport capabilities:
  * - standard-messages: Official Anthropic Messages API (api.anthropic.com only)
- *   â†?Uses @ai-sdk/anthropic directly
+ *   â†’ Uses @ai-sdk/anthropic directly
  * - claude-code-compat: ALL third-party Anthropic proxies (any non-official base URL)
- *   â†?Uses ClaudeCodeCompatAdapter (superset of standard Messages API)
+ *   â†’ Uses ClaudeCodeCompatAdapter (superset of standard Messages API)
  * - cloud-managed: AWS Bedrock / Google Vertex (their own auth + wrapper)
- *   â†?Uses dedicated AI SDK providers
+ *   â†’ Uses dedicated AI SDK providers
  */
 
 import { resolveProvider, type ResolvedProvider } from './provider-resolver';
@@ -43,7 +43,7 @@ function inferTransport(resolved: ResolvedProvider): TransportCapability {
   if (protocol === 'bedrock') return 'cloud-managed';
   if (protocol === 'vertex') return 'cloud-managed';
 
-  // Non-anthropic protocols â†?standard
+  // Non-anthropic protocols â†’ standard
   if (protocol === 'openrouter' || protocol === 'openai-compatible') return 'standard-messages';
   if (protocol === 'xai') return 'standard-messages';
   if (protocol === 'google' || protocol === 'gemini-image') return 'standard-messages';
@@ -61,7 +61,7 @@ function inferTransport(resolved: ResolvedProvider): TransportCapability {
         return 'claude-code-compat';
       }
     }
-    // No base URL (env mode, official default) â†?standard
+    // No base URL (env mode, official default) â†’ standard
     return 'standard-messages';
   }
 

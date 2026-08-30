@@ -8,7 +8,7 @@ export type PanelContent = "files" | "tasks";
 export type PreviewViewMode = "source" | "rendered" | "edit";
 
 /**
- * Preview panel content source â€?discriminated union.
+ * Preview panel content source â€” discriminated union.
  *
  * - `file`             : filesystem path, API-loaded via /api/files/preview
  * - `inline-html`      : HTML string, rendered directly in iframe srcDoc (Phase 2)
@@ -31,7 +31,7 @@ export type PreviewViewMode = "source" | "rendered" | "edit";
  *                        transitions the source to user-selected).
  *
  * `trust` is optional for back-compat with callers and persisted state
- * pre-Phase-4 â€?consumers that read it should default a missing value
+ * pre-Phase-4 â€” consumers that read it should default a missing value
  * to 'workspace'. New code (this commit onward) sets it explicitly.
  *
  * Callers should use `setPreviewSource({ kind, ... })`. The legacy
@@ -50,11 +50,11 @@ export type PreviewSource =
       /** When true, edit / save / autosave are disabled in PreviewPanel. */
       readonly?: boolean;
       /**
-       * Phase 4 â€?optional anchor to scroll to after the file loads.
+       * Phase 4 â€” optional anchor to scroll to after the file loads.
        * Three accepted forms:
-       *   `#L12`         â†?line 12, source/edit view
-       *   `:12` / `:12:5`â†?same, Codex-style suffix
-       *   `#slug`        â†?heading slug, rendered view (Markdown only)
+       *   `#L12`         â†’ line 12, source/edit view
+       *   `:12` / `:12:5`â†’ same, Codex-style suffix
+       *   `#slug`        â†’ heading slug, rendered view (Markdown only)
        *
        * The panel parses this via `parseAnchor()` from
        * `src/lib/markdown/anchor.ts`. Invalid anchors are ignored.
@@ -63,13 +63,13 @@ export type PreviewSource =
     }
   | { kind: "inline-html"; html: string; virtualName?: string;
       /**
-       * Phase 4 â€?optional "source backlink" for HTML artifacts
+       * Phase 4 â€” optional "source backlink" for HTML artifacts
        * generated from a Markdown file. PreviewPanel renders this
        * as a chip in the header and a "Refresh from source" action.
        */
       sourceBacklink?: PreviewSourceBacklink;
       /**
-       * Phase 4 P1.2 â€?CSP mode for the injected meta. `strict`
+       * Phase 4 P1.2 â€” CSP mode for the injected meta. `strict`
        * (default) applies the Round 4 Static baseline: no scripts,
        * no egress, https only for img/style/font/media. `navigate`
        * is the special case for the localhost-artifact redirector
@@ -91,18 +91,18 @@ export type PreviewSource =
       virtualName?: string;
     }
   /**
-   * Phase 4.B â€?JSON tree viewer. Used by the code-block Preview action
+   * Phase 4.B â€” JSON tree viewer. Used by the code-block Preview action
    * for ```json fences. `text` is the raw JSON; the viewer parses it
    * and falls back to a syntax-highlighted text view on parse error.
    */
   | { kind: "inline-json"; text: string; virtualName?: string }
   /**
-   * Phase 4.B â€?unified diff viewer. Used by ```diff fences. The
+   * Phase 4.B â€” unified diff viewer. Used by ```diff fences. The
    * viewer parses hunks line-by-line and color-codes +/- prefixes.
    */
   | { kind: "inline-diff"; diff: string; virtualName?: string }
   /**
-   * Phase 4.B â€?Markdown content rendered inline without a file source.
+   * Phase 4.B â€” Markdown content rendered inline without a file source.
    * Used by ```md/```markdown fences and by the Markdownâ†’HTML
    * presentation pipeline when the user previews the source markdown.
    */
@@ -115,7 +115,7 @@ export type PreviewSource =
  * the user always knows the Markdown is the authoritative copy and
  * the HTML is a derived view.
  *
- * Phase 4 P2.2 â€?the backlink carries the original trust tier and
+ * Phase 4 P2.2 â€” the backlink carries the original trust tier and
  * baseDir of the source file so the refresh action can re-fetch
  * through the same scope the user originally authorized. Without
  * this, refreshing a presentation generated from an external
@@ -125,7 +125,7 @@ export type PreviewSource =
 export interface PreviewSourceBacklink {
   /** Absolute path to the source Markdown file */
   sourcePath: string;
-  /** Optional heading slug or `#L12` line marker â€?the chip surfaces
+  /** Optional heading slug or `#L12` line marker â€” the chip surfaces
    *  this so the user knows which section the artifact was rendered
    *  from. */
   sourceAnchor?: string;
@@ -134,7 +134,7 @@ export interface PreviewSourceBacklink {
   templateId?: string;
   /** Trust tier of the source file at generation time. The refresh
    *  action uses this to decide which scope to pass to /api/files/
-   *  preview â€?`workspace` re-uses `sourceBaseDir`; `user-selected`
+   *  preview â€” `workspace` re-uses `sourceBaseDir`; `user-selected`
    *  intentionally omits baseDir so the route falls back to homeDir
    *  (matching the original fetch). */
   sourceTrust?: PreviewTrust;
@@ -155,13 +155,8 @@ export interface PanelContextValue {
   setChatListOpen: (open: boolean) => void;
 
   // --- Right-side panel states ---
-  // Phase 2 (2026-04-30): gitPanelOpen / dashboardPanelOpen / previewOpen
-  // were removed â€?those surfaces moved into the Workspace Sidebar
-  // (Git + Widget fixed Tabs, Markdown / Artifact / file preview as
-  // dynamic Tabs). fileTreeOpen stays as the lightweight file tree's
-  // independent topbar entry; assistantPanelOpen is its own concern.
-  fileTreeOpen: boolean;
-  setFileTreeOpen: (open: boolean) => void;
+  // Workspace surfaces live in WorkspaceSidebar. AssistantPanel remains
+  // separate because it belongs only to assistant workspaces.
   terminalOpen: boolean;
   setTerminalOpen: (open: boolean) => void;
   assistantPanelOpen: boolean;
@@ -169,9 +164,10 @@ export interface PanelContextValue {
   isAssistantWorkspace: boolean;
   setIsAssistantWorkspace: (is: boolean) => void;
 
-  // --- Git summary (for top bar, derived â€?no setters) ---
+  // --- Git summary (for top bar, derived â€” no setters) ---
   currentBranch: string;
   gitDirtyCount: number;
+  gitRepositoryState: 'unknown' | 'repository' | 'directory';
   currentWorktreeLabel: string;
   setCurrentWorktreeLabel: (label: string) => void;
 
@@ -191,22 +187,23 @@ export interface PanelContextValue {
   /** All sessions with pending permission approval */
   pendingApprovalSessionIds: Set<string>;
   /**
-   * Primary preview source (new API). Use this for all new callers â€?   * especially Phase 2 (Artifact .jsx/.tsx preview) and Phase 5.4
+   * Primary preview source (new API). Use this for all new callers â€”
+   * especially Phase 2 (Artifact .jsx/.tsx preview) and Phase 5.4
    * (table Artifact) which need `inline-*` kinds.
    */
   previewSource: PreviewSource | null;
   setPreviewSource: (source: PreviewSource | null) => void;
 
   /**
-   * Legacy file-only API â€?preserved as a derived adapter.
+   * Legacy file-only API â€” preserved as a derived adapter.
    *
    * `previewFile` is non-null only when `previewSource.kind === 'file'`,
    * so reading it stays backward-compatible for existing callers like
-   * FileTreePanel's toggle logic.
+   * path-only preview callers.
    *
    * `setPreviewFile(path)` is a thin wrapper that produces
    * `setPreviewSource(path ? { kind: 'file', filePath: path } : null)`.
-   * Note: this adapter is one-way â€?you cannot set an inline-* source
+   * Note: this adapter is one-way â€” you cannot set an inline-* source
    * through setPreviewFile; use setPreviewSource directly.
    */
   previewFile: string | null;

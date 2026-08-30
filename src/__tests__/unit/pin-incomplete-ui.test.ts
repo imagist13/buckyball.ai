@@ -1,7 +1,12 @@
 /**
- * #27 �?pin-incomplete 不能被渲染成"模型在当前执行环境不可用 / 阻断"�? *
+ * #27 — pin-incomplete 不能被渲染成"模型在当前执行环境不可用 / 阻断"。
+ *
  * resolver 层（resolveNewChatDefault）已正确区分三种 reason，覆盖在
- * runtime-effective.test.ts（pin-incomplete / provider-missing / model-missing）�? * 本文�?source-pin �?**UI �?*：useOverviewData �?reason plumb �?state�? * HealthSection + RuntimePanel �?pin-incomplete 单独�?固定信息不完�?文案�? * 且不再用 error/"阻断"/"not executable" 误导（与 RuntimePanel 自动 fallback 口径一致）�? */
+ * runtime-effective.test.ts（pin-incomplete / provider-missing / model-missing）。
+ * 本文件 source-pin 守 **UI 层**：useOverviewData 把 reason plumb 进 state，
+ * HealthSection + RuntimePanel 对 pin-incomplete 单独出"固定信息不完整"文案，
+ * 且不再用 error/"阻断"/"not executable" 误导（与 RuntimePanel 自动 fallback 口径一致）。
+ */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +17,7 @@ const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const read = (f: string) => fs.readFileSync(path.join(SRC, f), 'utf8');
 
 describe('#27 pin-incomplete UI differentiation (source-pin)', () => {
-  it('useOverviewData �?resolved.reason plumb �?state.defaultInvalidReason', () => {
+  it('useOverviewData 把 resolved.reason plumb 成 state.defaultInvalidReason', () => {
     const src = read('components/settings/useOverviewData.ts');
     assert.match(src, /defaultInvalidReason\b/);
     assert.match(src, /next\.defaultInvalidReason\s*=\s*resolved\.reason/);
@@ -24,7 +29,7 @@ describe('#27 pin-incomplete UI differentiation (source-pin)', () => {
     assert.match(src, /固定信息不完整|incomplete \(missing provider/);
     // 旧的吓人/误导文案必须移除（invalid-default 分支不再用）
     assert.doesNotMatch(src, /not executable under current Runtime/);
-    assert.doesNotMatch(src, /新消息会被阻�?);
+    assert.doesNotMatch(src, /新消息会被阻断/);
   });
 
   it('RuntimePanel banner 分支 invalidDefault.reason === pin-incomplete', () => {

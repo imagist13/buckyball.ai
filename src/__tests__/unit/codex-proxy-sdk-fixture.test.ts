@@ -1,17 +1,17 @@
 /**
- * Phase 5b smoke round 5�? (2026-05-16) �?Codex Responses SSE
+ * Phase 5b smoke round 5–6 (2026-05-16) — Codex Responses SSE
  * contract round-trip.
  *
  * Pins the proxy's outbound SSE stream against two contract sources
  * with deliberately asymmetric coverage:
  *
- *   Success path �?SDK fixture
+ *   Success path → SDK fixture
  *     资料/codex/sdk/typescript/tests/responsesProxy.ts
  *     (assistantMessage / shell_call / responseCompleted)
  *
- *   Failure path �?Codex app-server parser
+ *   Failure path → Codex app-server parser
  *     资料/codex/codex-rs/codex-api/src/sse/responses.rs
- *     `process_responses_event` �?"response.failed" arm
+ *     `process_responses_event` → "response.failed" arm
  *
  * Why the split: the SDK fixture's `responseFailed()` emits
  * `{type: 'error', error: {code, message}}`, but Codex's actual
@@ -28,14 +28,15 @@
  *
  *   1. Wire framing is `event: <type>\ndata: <JSON>\n\n` (NOT bare
  *      `data:` like pre-fix).
- *   2. Assistant text lands as `output_item.done(message, [output_text])` �? *      matching `assistantMessage()` in the SDK fixture.
+ *   2. Assistant text lands as `output_item.done(message, [output_text])` —
+ *      matching `assistantMessage()` in the SDK fixture.
  *   3. Function-call lands as `output_item.done(function_call,
- *      call_id, name, arguments)` �?matching `shell_call()`.
+ *      call_id, name, arguments)` — matching `shell_call()`.
  *   4. `response.completed.response.usage` has `input_tokens_details`
- *      + `output_tokens_details` keys (nullable) �?matching
+ *      + `output_tokens_details` keys (nullable) — matching
  *      `responseCompleted()`'s shape.
  *   5. Error frames are `response.failed` with `response: {id, error:
- *      {code, message}}` �?matching Codex's `process_responses_event`
+ *      {code, message}}` — matching Codex's `process_responses_event`
  *      "response.failed" arm. The SDK fixture's `{type: 'error'}`
  *      form is the future @openai/codex-sdk execution-POC path; not
  *      what today's app-server route emits.
@@ -73,7 +74,7 @@ const baseBody: ResponsesRequestBody = {
 // SSE wire framing
 // ─────────────────────────────────────────────────────────────────────
 
-describe('Codex proxy SSE �?wire framing matches SDK fixture (event: <type>\\ndata: <JSON>\\n\\n)', () => {
+describe('Codex proxy SSE — wire framing matches SDK fixture (event: <type>\\ndata: <JSON>\\n\\n)', () => {
   it('each encoded event prefixes an `event:` line before the data line', () => {
     const decoder = new TextDecoder();
     const bytes = encodeEvent({
@@ -148,7 +149,7 @@ describe('Codex proxy SSE �?wire framing matches SDK fixture (event: <type>\\nd
 // ─────────────────────────────────────────────────────────────────────
 
 describe('translateStream produces an output_item.done(message) matching SDK assistantMessage() shape', () => {
-  it('text turn lands as: created �?output_item.added(message) �?output_text.delta* �?output_item.done(message) �?completed', async () => {
+  it('text turn lands as: created → output_item.added(message) → output_text.delta* → output_item.done(message) → completed', async () => {
     const events = await collect(
       translateStream({
         responseId: 'resp_mock',
@@ -168,7 +169,7 @@ describe('translateStream produces an output_item.done(message) matching SDK ass
       }),
     );
 
-    // Locate the output_item.done(message) �?this is what
+    // Locate the output_item.done(message) — this is what
     // assistantMessage() in the SDK fixture emits and what Codex's
     // handle_output_item_done lands.
     const done = events.find(e =>
@@ -179,7 +180,7 @@ describe('translateStream produces an output_item.done(message) matching SDK ass
           type: 'response.output_item.done';
           item: { type: 'message'; role: 'assistant'; id: string; content: Array<{ type: string; text: string }> };
         };
-    assert.ok(done, 'output_item.done(message) must be emitted �?its absence is the GLM/Kimi blank-completion bug');
+    assert.ok(done, 'output_item.done(message) must be emitted — its absence is the GLM/Kimi blank-completion bug');
     assert.equal(done.item.type, 'message');
     assert.equal(done.item.role, 'assistant');
     assert.equal(done.item.content[0].type, 'output_text');
@@ -233,7 +234,7 @@ describe('translateStream produces an output_item.done(message) matching SDK ass
 // ─────────────────────────────────────────────────────────────────────
 
 describe('translateStream produces an output_item.done(function_call) matching SDK shell_call() shape', () => {
-  it('tool turn lands as: created �?output_item.done(function_call) �?completed', async () => {
+  it('tool turn lands as: created → output_item.done(function_call) → completed', async () => {
     // Reference event from sdk/typescript/tests/responsesProxy.ts:shell_call():
     //   {
     //     type: "response.output_item.done",
@@ -271,7 +272,8 @@ describe('translateStream produces an output_item.done(function_call) matching S
     assert.equal(done.item.type, 'function_call');
     assert.equal(done.item.call_id, 'call_demo');
     assert.equal(done.item.name, 'shell');
-    // arguments must be a JSON-encoded STRING �?not a parsed object �?    // because Codex's handle_output_item_done expects the raw string.
+    // arguments must be a JSON-encoded STRING — not a parsed object —
+    // because Codex's handle_output_item_done expects the raw string.
     assert.equal(typeof done.item.arguments, 'string');
     const parsed = JSON.parse(done.item.arguments);
     assert.deepEqual(parsed.command, ['bash', '-lc', "echo 'Hello, world!'"]);
@@ -367,7 +369,7 @@ describe('response.completed payload matches SDK responseCompleted() shape', () 
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Error frame contract �?Codex app-server parser, not SDK fixture
+// Error frame contract — Codex app-server parser, not SDK fixture
 // ─────────────────────────────────────────────────────────────────────
 
 describe('error frames target Codex app-server parser shape: response.failed { response: { id, error: { code, message } } }', () => {
@@ -377,7 +379,7 @@ describe('error frames target Codex app-server parser shape: response.failed { r
   // `process_responses_event`) only matches `response.failed` and
   // reads `response.error.code` to classify. The `error` form falls
   // through unhandled there and Codex throws "stream closed before
-  // response.completed" �?silent failure for the user.
+  // response.completed" — silent failure for the user.
   //
   // Phase 5b smoke round 6 (2026-05-16) reverted from the SDK
   // fixture shape to Codex's parser shape so streaming failures
@@ -402,7 +404,7 @@ describe('error frames target Codex app-server parser shape: response.failed { r
     assert.equal(
       last.type,
       'response.failed',
-      'Phase 5b smoke round 6 �?terminal error MUST be response.failed; Codex app-server does not consume `error`',
+      'Phase 5b smoke round 6 — terminal error MUST be response.failed; Codex app-server does not consume `error`',
     );
     assert.equal(last.response.id, 'resp_mock', 'response.id required so Codex can correlate to the in-progress response');
     assert.ok(last.response.error.code, 'response.error.code required (Codex classifies failure by code)');

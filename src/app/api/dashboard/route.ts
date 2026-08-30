@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readDashboard, removeWidget, updateSettings, moveWidget, reorderWidgets } from '@/lib/dashboard-store';
 
-/** GET /api/dashboard?dir={workingDirectory} â€?read dashboard config */
+/** GET /api/dashboard?dir={workingDirectory} â€” read dashboard config */
 export async function GET(req: NextRequest) {
   try {
     const dir = req.nextUrl.searchParams.get('dir');
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/** PUT /api/dashboard â€?update settings or reorder widgets */
+/** PUT /api/dashboard â€” update settings or reorder widgets */
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
@@ -46,7 +46,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-/** DELETE /api/dashboard?dir={workingDirectory}&widgetId={id} â€?remove a widget */
+/** DELETE /api/dashboard?dir={workingDirectory}&widgetId={id} â€” remove a widget */
 export async function DELETE(req: NextRequest) {
   try {
     const dir = req.nextUrl.searchParams.get('dir');

@@ -1,20 +1,20 @@
 "use client";
 
 /**
- * Aggregate the data needed by Settings â†?Overview into one hook.
+ * Aggregate the data needed by Settings â†’ Overview into one hook.
  *
  * Three sources, fanned out in parallel on mount:
- *   - `/api/settings/app`              â†?agent_runtime + cli_enabled
- *   - `/api/providers/models?runtime=auto` â†?runtime-filtered groups
+ *   - `/api/settings/app`              â†’ agent_runtime + cli_enabled
+ *   - `/api/providers/models?runtime=auto` â†’ runtime-filtered groups
  *     (used to resolve "what does a new chat actually run?" via the
- *     same `resolveNewChatDefault` chain Settings â†?Runtime + chat init
+ *     same `resolveNewChatDefault` chain Settings â†’ Runtime + chat init
  *     also use, so the three surfaces never disagree)
- *   - `/api/providers/models`          â†?unfiltered group totals
+ *   - `/api/providers/models`          â†’ unfiltered group totals
  *     (so the Models card's enabled / total + manual_* counts reflect
  *     the *whole* inventory, not just the runtime-compatible slice)
  *
  * Plus per-provider `?all=1` fetches to pull `enable_source` rows and
- * count manual decisions â€?picker-feed groups don't carry that field.
+ * count manual decisions â€” picker-feed groups don't carry that field.
  *
  * Refetches when another section dispatches `provider-changed`, so the
  * dashboard reflects the user's edits when they bounce back here.
@@ -27,10 +27,10 @@ import {
 
 /**
  * Virtual / non-DB providers: no `api_providers` row and no `provider_models`
- * to count â€?their models come from the runtime, not the DB.
- *   - `env`           â€?environment-variable default
- *   - `openai-oauth`  â€?OpenAI subscription login
- *   - `codex_account` â€?Codex (ChatGPT) subscription login; routes through
+ * to count â€” their models come from the runtime, not the DB.
+ *   - `env`           â€” environment-variable default
+ *   - `openai-oauth`  â€” OpenAI subscription login
+ *   - `codex_account` â€” Codex (ChatGPT) subscription login; routes through
  *                       Codex's app-server, has no DB provider record
  * Fetching `/api/providers/{id}/models?all=1` for these returns 404
  * ("Provider not found") and reddens the Settings smoke. Add any future
@@ -67,9 +67,9 @@ export interface OverviewState {
   defaultModelLabel: string | null;
   /** Phase 2C: pinned default not reachable under effective Runtime.
    *  Surfaced on the Overview Runtime card so the dashboard names the
-   *  problem the same way Settings â†?Runtime does. */
+   *  problem the same way Settings â†’ Runtime does. */
   defaultInvalid: boolean;
-  /** When defaultInvalid, which kind â€?so the UI can distinguish a
+  /** When defaultInvalid, which kind â€” so the UI can distinguish a
    *  half-pinned config (`pin-incomplete`, model is fine, just missing the
    *  provider binding) from a genuinely unreachable pin (provider/model
    *  not in the runtime-filtered groups). #27. */
@@ -83,8 +83,9 @@ export interface OverviewState {
   workspaceConfigured: boolean;
   workspaceName: string | null;
   /**
-   * Unfiltered provider groups â€?kept around so per-session surfaces
-   * (RunCockpit's "æœ¬æ¬¡è¿è¡Œ" model row) can resolve `providerId` â†?   * `provider_name` and `modelValue` â†?friendly label without a second
+   * Unfiltered provider groups â€” kept around so per-session surfaces
+   * (RunCockpit's "æœ¬æ¬¡è¿è¡Œ" model row) can resolve `providerId` â†’
+   * `provider_name` and `modelValue` â†’ friendly label without a second
    * fetch. We already pull `/api/providers/models` for the inventory
    * counts; persisting the raw groups costs nothing extra.
    */
@@ -136,8 +137,8 @@ export function useOverviewData(): OverviewState {
         next.cliEnabled = appSettings.cli_enabled !== "false";
       }
 
-      // Runtime-filtered groups â†?resolve new-chat default via the same
-      // chain Settings â†?Runtime + chat init both use.
+      // Runtime-filtered groups â†’ resolve new-chat default via the same
+      // chain Settings â†’ Runtime + chat init both use.
       if (modelsAutoRes.ok) {
         const data = (await modelsAutoRes.json()) as {
           groups?: ProviderModelGroup[];
@@ -178,10 +179,10 @@ export function useOverviewData(): OverviewState {
         if (resolved.status === "no-compatible") {
           next.noCompatibleProvider = true;
         } else if (resolved.status === "invalid-default") {
-          // Pinned + unreachable. Don't fill in a fallback â€?that's the
+          // Pinned + unreachable. Don't fill in a fallback â€” that's the
           // contract. Surface what *was* pinned so downstream surfaces
           // (Overview Runtime card, Health page) can name the broken
-          // pin instead of showing "æœªé…ç½?. For 'provider-missing' /
+          // pin instead of showing "æœªé…ç½®". For 'provider-missing' /
           // 'pin-incomplete' the resolver only fills providerId /
           // modelValue (the friendly fields aren't populated when the
           // target isn't in the runtime-filtered group list). Mirror
@@ -199,11 +200,12 @@ export function useOverviewData(): OverviewState {
         }
       }
 
-      // Unfiltered group list â€?for the Models aggregate + provider count.
+      // Unfiltered group list â€” for the Models aggregate + provider count.
       // P0.4 (2026-06-01): the per-provider `?all=1` deep fetch below is the
       // only UNBOUNDED-N part of this hook (one request per configured
       // provider). Keep the aggregate totals (provider count, enabled/total)
-      // in this first paint â€?they come from the single modelsAll response â€?      // but DEFER the manual-count deep fetches to a follow-up patch so the
+      // in this first paint â€” they come from the single modelsAll response â€”
+      // but DEFER the manual-count deep fetches to a follow-up patch so the
       // dashboard's core + inventory cards render without waiting on a long
       // provider list. modelsManual* stay 0 until the patch lands.
       let dbGroupsToCount: ProviderModelGroup[] = [];
@@ -225,7 +227,7 @@ export function useOverviewData(): OverviewState {
         dbGroupsToCount = groups.filter((g) => isCountableDbProvider(g.provider_id));
       }
 
-      // Assistant Workspace status â€?boolean configured + optional name.
+      // Assistant Workspace status â€” boolean configured + optional name.
       if (workspaceRes.ok) {
         const wsData = await workspaceRes.json();
         if (wsData?.path) next.workspaceConfigured = true;
@@ -241,7 +243,7 @@ export function useOverviewData(): OverviewState {
 
       // Phase 2 (non-blocking): per-provider deep fetch for manual_enabled /
       // manual_hidden counts. A slow / large provider list can't hold up the
-      // dashboard's core + inventory cards anymore â€?they're already painted.
+      // dashboard's core + inventory cards anymore â€” they're already painted.
       if (dbGroupsToCount.length > 0) {
         let manualEnabled = 0;
         let manualHidden = 0;
@@ -269,7 +271,7 @@ export function useOverviewData(): OverviewState {
 
   useEffect(() => {
     // setState lands on a microtask after `await fetch(...)`, not
-    // synchronously â€?but the `react-hooks/set-state-in-effect` rule
+    // synchronously â€” but the `react-hooks/set-state-in-effect` rule
     // can't see through async closures and false-flags this fetch-on-
     // mount pattern. Disabling here is intentional; the canonical
     // alternatives (TanStack Query / React.use(Promise)) are too heavy

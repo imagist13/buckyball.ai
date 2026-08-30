@@ -61,7 +61,7 @@ export function buildFileManagerRevealCommand(
 
 /**
  * Build the only renderer-controlled filesystem probe Electron main accepts.
- * The renderer supplies a session id or the fixed home scope â€?never an
+ * The renderer supplies a session id or the fixed home scope â€” never an
  * arbitrary base directory. The Next route derives the actual root.
  */
 export function buildScopedPathInspectionUrl(

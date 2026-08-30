@@ -1,9 +1,9 @@
 /**
- * chat-runtime â€?server-side runtime resolver helpers (read DB
+ * chat-runtime â€” server-side runtime resolver helpers (read DB
  * setting, walk the runtime registry, etc.).
  *
- * The **pure** pieces â€?`ChatRuntime` type, `ChatRuntimeParam` type,
- * `isChatRuntimeParam`, `chatRuntimeParamForSession` â€?live in
+ * The **pure** pieces â€” `ChatRuntime` type, `ChatRuntimeParam` type,
+ * `isChatRuntimeParam`, `chatRuntimeParamForSession` â€” live in
  * `chat-runtime-shared.ts` so client components can import them
  * without dragging Node-only deps (`async_hooks`, Sentry, etc.) into
  * the browser bundle. This file re-exports them so server callers
@@ -18,10 +18,10 @@
  *   layer; everything else uses these labels.
  *
  * Consumers:
- *   - `/api/providers/models?runtime=auto`  â€?server resolves + filters
- *   - `provider-resolver.resolveProvider({ runtime })` â€?gates default-model
+ *   - `/api/providers/models?runtime=auto`  â€” server resolves + filters
+ *   - `provider-resolver.resolveProvider({ runtime })` â€” gates default-model
  *     selection alongside the existing hidden-id guard
- *   - `useProviderModels({ runtime: 'auto' })` â€?chat picker hook passes
+ *   - `useProviderModels({ runtime: 'auto' })` â€” chat picker hook passes
  *     'auto' through and lets the server decide
  */
 
@@ -56,12 +56,13 @@ export { isChatRuntimeParam, chatRuntimeParamForSession } from './chat-runtime-s
  */
 export function getActiveChatRuntime(): ChatRuntime {
   const concrete = resolveRuntime();
-  // Phase 5 Phase 3 (2026-05-13) â€?Codex Runtime registry id matches
+  // Phase 5 Phase 3 (2026-05-13) â€” Codex Runtime registry id matches
   // the canonical RuntimeId verbatim, so we can return it directly.
-  // The earlier two-runtime world mapped 'claude-code-sdk' â†?  // 'claude_code' and everything else â†?'bbagent'.
+  // The earlier two-runtime world mapped 'claude-code-sdk' â†’
+  // 'claude_code' and everything else â†’ 'codepilot_runtime'.
   if (concrete.id === 'codex_runtime') return 'codex_runtime';
   if (concrete.id === 'claude-code-sdk') return 'claude_code';
-  return 'bbagent';
+  return 'codepilot_runtime';
 }
 
 /**
@@ -76,12 +77,12 @@ export function resolveChatRuntimeParam(param: ChatRuntimeParam): ChatRuntime {
  * Phase 2 Step 2: session-aware variant of `getActiveChatRuntime`.
  *
  * If the session record carries a non-empty `runtime_pin`, that value
- * wins regardless of the current global `agent_runtime` setting â€?the
+ * wins regardless of the current global `agent_runtime` setting â€” the
  * user's per-session commitment is a stronger signal than a global
  * default the user may have changed for unrelated reasons (e.g. they
  * connected a new provider in another chat).
  *
- * Empty / undefined / unknown pin â†?fall through to the global path
+ * Empty / undefined / unknown pin â†’ fall through to the global path
  * (`getActiveChatRuntime()`). This preserves the today-default
  * behavior for any session created before the column existed (every
  * legacy row has `runtime_pin = ''`) and for new chats the user
@@ -89,13 +90,13 @@ export function resolveChatRuntimeParam(param: ChatRuntimeParam): ChatRuntime {
  *
  * Step 3+ will plumb `session` into the chat send route and the
  * picker hook so they call this wrapper instead of the global one.
- * Today nothing reads it except the immunity tests â€?this is the
+ * Today nothing reads it except the immunity tests â€” this is the
  * data-plane prerequisite that makes the migration possible.
  */
 export function resolveRuntimeForSession(session: { runtime_pin?: string }): ChatRuntime {
   const pin = session.runtime_pin;
-  // Phase 5 Phase 3 (2026-05-13) â€?codex_runtime is now a valid pin too.
-  if (pin === 'claude_code' || pin === 'bbagent' || pin === 'codex_runtime') {
+  // Phase 5 Phase 3 (2026-05-13) â€” codex_runtime is now a valid pin too.
+  if (pin === 'claude_code' || pin === 'codepilot_runtime' || pin === 'codex_runtime') {
     return pin;
   }
   return getActiveChatRuntime();

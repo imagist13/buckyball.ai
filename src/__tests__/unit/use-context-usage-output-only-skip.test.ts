@@ -1,18 +1,19 @@
 /**
- * use-context-usage-output-only-skip.test.ts â€?contract for
+ * use-context-usage-output-only-skip.test.ts â€” contract for
  * walkContextUsage's baseline + SDK context_window preservation rules.
  *
- * The behavioral piece â€?message walk, baseline picking,
- * latestSdkContextWindow capture â€?has its own behavioral test
+ * The behavioral piece â€” message walk, baseline picking,
+ * latestSdkContextWindow capture â€” has its own behavioral test
  * (`context-usage-walk.test.ts`). This file locks the *contracts*:
  *
- *   â€?The walk helper captures latestSdkContextWindow newest-wins.
- *   â€?All-zero records (used=0 && output=0) are skipped (no signal).
- *   â€?The hook actually consumes the helper (so a future "let's
+ *   â€¢ The walk helper captures latestSdkContextWindow newest-wins.
+ *   â€¢ All-zero records (used=0 && output=0) are skipped (no signal).
+ *   â€¢ The hook actually consumes the helper (so a future "let's
  *     inline this back" refactor doesn't silently drop the helper's
  *     guarantees while leaving the test passing).
- *   â€?The hook resolves contextWindow with the documented priority
- *     chain: baseline.context_window â†?latestSdkContextWindow â†? *     catalogContextWindow.
+ *   â€¢ The hook resolves contextWindow with the documented priority
+ *     chain: baseline.context_window â†’ latestSdkContextWindow â†’
+ *     catalogContextWindow.
  *
  * Background:
  *   2026-05-08 regression #1: output-only tail records zeroed `used`.
@@ -21,12 +22,12 @@
  *     back to "capacity unknown."
  *   2026-05-20 (Phase 7): the unconditional output-only skip from #1
  *     turned out to also break Native + Codex via provider proxies
- *     that report input_tokens=0 reliably â€?they had no baseline at
+ *     that report input_tokens=0 reliably â€” they had no baseline at
  *     all and popover was empty. New rule: output-only records become
  *     a WEAK baseline (used=0) when no STRONG baseline exists, so the
  *     popover at least surfaces capacity + breakdown. ClaudeCode's
  *     mid-stream output-only case is preserved by walking from the end
- *     â€?strong baseline always wins if present.
+ *     â€” strong baseline always wins if present.
  */
 
 import { describe, it } from 'node:test';
@@ -36,7 +37,7 @@ import * as path from 'node:path';
 
 const repoRoot = path.join(__dirname, '..', '..');
 
-describe('context-usage-walk â€?baseline + context_window preservation', () => {
+describe('context-usage-walk â€” baseline + context_window preservation', () => {
   const src = fs.readFileSync(
     path.join(repoRoot, 'lib/context-usage-walk.ts'),
     'utf8',
@@ -58,13 +59,13 @@ describe('context-usage-walk â€?baseline + context_window preservation', () => {
     assert.match(
       src,
       /used\s*===\s*0\s*&&\s*outputTokens\s*===\s*0[\s\S]{0,40}continue/,
-      'walkContextUsage must skip all-zero records â€?they have no context signal at all',
+      'walkContextUsage must skip all-zero records â€” they have no context signal at all',
     );
   });
 
   it('output-only records become weak baseline when no strong baseline exists (Phase 7 fix, 2026-05-20)', () => {
     // Provider proxies (Codex+GLM, Native+OpenRouter) report
-    // input_tokens=0 every turn â€?pre-Phase-7 this made baseline=null
+    // input_tokens=0 every turn â€” pre-Phase-7 this made baseline=null
     // and popover empty. Now we remember the FIRST output-only record
     // (newest, since we walk from end) and use it if no strong
     // baseline exists. Strong baseline still wins when present.
@@ -92,7 +93,7 @@ describe('context-usage-walk â€?baseline + context_window preservation', () => {
     // The bug we're guarding against: pre-fix, the loop did
     //   if (output-only) continue;
     //   captureContextWindow();
-    // â€?which meant tail output-only records with positive
+    // â€” which meant tail output-only records with positive
     // context_window dropped that capacity on the floor.
     // Post-fix shape: the capture (latestSdkContextWindow assignment)
     // must appear textually BEFORE the all-zero skip predicate AND
@@ -105,20 +106,20 @@ describe('context-usage-walk â€?baseline + context_window preservation', () => {
     assert.ok(returnIdx >= 0, 'expected the strong-baseline return');
     assert.ok(
       captureIdx < skipIdx,
-      `latestSdkContextWindow capture must precede the all-zero skip â€?captureIdx=${captureIdx}, skipIdx=${skipIdx}`,
+      `latestSdkContextWindow capture must precede the all-zero skip â€” captureIdx=${captureIdx}, skipIdx=${skipIdx}`,
     );
     assert.ok(
       captureIdx < returnIdx,
-      `latestSdkContextWindow capture must precede the strong-baseline return â€?captureIdx=${captureIdx}, returnIdx=${returnIdx}`,
+      `latestSdkContextWindow capture must precede the strong-baseline return â€” captureIdx=${captureIdx}, returnIdx=${returnIdx}`,
     );
   });
 
   it('only sets latestSdkContextWindow on the FIRST positive value (newest wins; older zero/missing must not overwrite)', () => {
     // Two requirements:
-    //   â€?`latestSdkContextWindow === null` guard (newest wins)
-    //   â€?`> 0` guard (stale zero must not capture)
+    //   â€¢ `latestSdkContextWindow === null` guard (newest wins)
+    //   â€¢ `> 0` guard (stale zero must not capture)
     // Both must appear inside the same capture block. We loosen the
-    // anchor to allow intermediate type checks (`typeof â€?=== 'number'`).
+    // anchor to allow intermediate type checks (`typeof â€¦ === 'number'`).
     assert.match(
       src,
       /latestSdkContextWindow\s*===\s*null/,
@@ -127,12 +128,12 @@ describe('context-usage-walk â€?baseline + context_window preservation', () => {
     assert.match(
       src,
       /context_window[\s\S]{0,200}>\s*0|>\s*0[\s\S]{0,200}latestSdkContextWindow\s*=/,
-      'walkContextUsage must require `context_window > 0` before capturing â€?a stale zero from a partial adapter must not blank out a captured value',
+      'walkContextUsage must require `context_window > 0` before capturing â€” a stale zero from a partial adapter must not blank out a captured value',
     );
   });
 });
 
-describe('useContextUsage â€?wiring contract', () => {
+describe('useContextUsage â€” wiring contract', () => {
   const src = fs.readFileSync(
     path.join(repoRoot, 'hooks/useContextUsage.ts'),
     'utf8',
@@ -148,7 +149,7 @@ describe('useContextUsage â€?wiring contract', () => {
 
   it('resolves contextWindow with the documented 3-way priority chain', () => {
     // Anchor the exact `??` order. Reordering would silently change
-    // semantics â€?e.g. `latestSdkContextWindow ?? sdkContextWindow`
+    // semantics â€” e.g. `latestSdkContextWindow ?? sdkContextWindow`
     // would prefer a transient tail value over the baseline turn's
     // own window in multi-model sessions.
     assert.match(

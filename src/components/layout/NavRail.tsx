@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BuckyballIcon, type BuckyballIconName } from "@/components/ui/semantic-icon";
+import { CodePilotIcon, type CodePilotIconName } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -26,10 +26,10 @@ interface NavRailProps {
 // single "Plugins" entry that routes to the unified ExtensionsPage.
 // Plug icon was the most generic of the three former icons and reads as
 // "extension" rather than any one tool.
-// Bridge moved into Settings as a sub-section (2026-05-02) â?channel
+// Bridge moved into Settings as a sub-section (2026-05-02) — channel
 // configs are configuration, not a primary destination, so they no
 // longer earn a top-level rail entry.
-const navItems: ReadonlyArray<{ href: string; label: string; icon: BuckyballIconName }> = [
+const navItems: ReadonlyArray<{ href: string; label: string; icon: CodePilotIconName }> = [
   { href: "/chat", label: "Chats", icon: "chat" },
   { href: "/plugins", label: "Plugins", icon: "plugin" },
   { href: "/gallery", label: "Gallery", icon: "image" },
@@ -78,7 +78,7 @@ export function NavRail({ onToggleChatList, hasUpdate, readyToInstall, skipPermi
                       }
                     }}
                   >
-                    <BuckyballIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
+                    <CodePilotIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
                     <span className="sr-only">{t(navLabelKeys[item.label] ?? item.label as TranslationKey)}</span>
                   </Button>
                 ) : (
@@ -93,7 +93,7 @@ export function NavRail({ onToggleChatList, hasUpdate, readyToInstall, skipPermi
                       )}
                     >
                       <Link href={item.href}>
-                        <BuckyballIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
+                        <CodePilotIcon name={item.icon} size="md" strokeWidth={isActive ? 2 : undefined} className="text-inherit" aria-hidden />
                         <span className="sr-only">{t(navLabelKeys[item.label] ?? item.label as TranslationKey)}</span>
                       </Link>
                     </Button>
@@ -134,7 +134,7 @@ export function NavRail({ onToggleChatList, hasUpdate, readyToInstall, skipPermi
                 )}
               >
                 <Link href="/settings">
-                  <BuckyballIcon name="settings" size="md" strokeWidth={isSettingsActive ? 2 : undefined} className="text-inherit" aria-hidden />
+                  <CodePilotIcon name="settings" size="md" strokeWidth={isSettingsActive ? 2 : undefined} className="text-inherit" aria-hidden />
                   <span className="sr-only">{t('nav.settings')}</span>
                 </Link>
               </Button>

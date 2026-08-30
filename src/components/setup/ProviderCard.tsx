@@ -15,7 +15,7 @@ interface ProviderCardProps {
    * its `persistAndClose` so clicking "Add Provider" / "Open provider
    * settings" closes the modal + marks setup_completed=true atomically,
    * avoiding the historical ping-pong where /settings re-opened SetupCenter
-   * on arrival. Must be awaited â€?the PUT round-trip has to complete before
+   * on arrival. Must be awaited â€” the PUT round-trip has to complete before
    * the page unloads or the setup_completed flag gets lost to fetch abort.
    */
   onBeforeNavigate?: () => Promise<void> | void;
@@ -37,7 +37,7 @@ export function ProviderCard({ status, onStatusChange, onBeforeNavigate }: Provi
     setLoading(true);
     try {
       // /api/setup is the single source of truth for "can CodePilot dispatch a
-      // chat?" â€?it delegates to hasCodePilotProvider() which includes the
+      // chat?" â€” it delegates to hasCodePilotProvider() which includes the
       // OpenAI OAuth virtual provider that /api/providers does not surface.
       // We still fetch /api/providers in parallel purely for display detail
       // (count, env-detected badge).
@@ -75,7 +75,7 @@ export function ProviderCard({ status, onStatusChange, onBeforeNavigate }: Provi
       setEnvDetected(hasEnv);
       // Promote to completed whenever ANY authoritative source agrees.
       // /api/setup covers OAuth (virtual provider), DB providers covers the
-      // configured list, hasEnv covers the env-detected path â€?we keep all
+      // configured list, hasEnv covers the env-detected path â€” we keep all
       // three so a stale/offline /api/setup can't regress the UX.
       const anyReady = providerReady || dbProviderList.length > 0 || hasEnv;
       if (anyReady) {
@@ -83,7 +83,7 @@ export function ProviderCard({ status, onStatusChange, onBeforeNavigate }: Provi
       } else if (statusRef.current === 'completed') {
         // Downgrade when the last provider source is gone (e.g. user was
         // OAuth-only and just logged out while SetupCenter was open). Never
-        // stomp 'skipped' â€?that's the user's explicit choice and fetching
+        // stomp 'skipped' â€” that's the user's explicit choice and fetching
         // provider state should not resurrect the card they dismissed.
         onStatusChange('not-configured');
       }
@@ -112,7 +112,7 @@ export function ProviderCard({ status, onStatusChange, onBeforeNavigate }: Provi
 
   const handleOpenProviders = useCallback(async () => {
     // Await persistAndClose so the /api/setup PUT has landed before we
-    // navigate â€?fire-and-forget used to race against the page unload when
+    // navigate â€” fire-and-forget used to race against the page unload when
     // ProviderCard was in `not-configured` (the path where backend
     // normalization CAN'T heal the state, since 3/3 isn't reached yet).
     await onBeforeNavigate?.();
@@ -154,7 +154,8 @@ export function ProviderCard({ status, onStatusChange, onBeforeNavigate }: Provi
             className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground"
             onClick={handleOpenProviders}
           >
-            {t('setup.provider.openSettings')} â†?          </Button>
+            {t('setup.provider.openSettings')} â†’
+          </Button>
         </div>
       ) : (
         <div className="space-y-2">

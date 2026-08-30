@@ -6,7 +6,7 @@ export type { CommandBadge, CliBadge } from '@/types';
 export interface UseCommandBadgeReturn {
   /** Active slash-command/skill badges. Empty array = no badge. Multi-element
    * array only happens when all entries are `agent_skill` kind (multi-skill
-   * selection); other kinds replace instead of appending â€?it makes no sense to
+   * selection); other kinds replace instead of appending â€” it makes no sense to
    * run /clear AND /help together. */
   badges: CommandBadge[];
   /** Add a badge. For `agent_skill` kind, appends (with de-dup by command);
@@ -30,7 +30,7 @@ export function useCommandBadge(
 
   const addBadge = useCallback((incoming: CommandBadge) => {
     setBadges((prev) => {
-      // Non-skill badges (slash/codepilot/sdk commands) replace â€?"run /clear
+      // Non-skill badges (slash/codepilot/sdk commands) replace â€” "run /clear
       // AND /help" isn't a meaningful action.
       if (incoming.kind !== 'agent_skill') {
         return [incoming];

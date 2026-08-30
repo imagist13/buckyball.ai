@@ -1,5 +1,5 @@
 /**
- * Phase 5b round-7 fix (2026-05-18) â€?`ai-provider.ts` case 'openai'
+ * Phase 5b round-7 fix (2026-05-18) â€” `ai-provider.ts` case 'openai'
  * useResponsesApi path must refresh the OAuth token PER fetch, not
  * capture it at model-construction time.
  *
@@ -16,13 +16,13 @@
  *   createOpenAI({ fetch: async () => { ...accessToken... } });
  *
  * Two failures: (1) the sync getter returns undefined for any
- * expired token, even when a refresh_token exists â€?so the user
+ * expired token, even when a refresh_token exists â€” so the user
  * sees "log in again" while refresh would have succeeded. (2) Even
  * with fresh creds at construction, the captured token went stale
  * over a long session.
  *
  * Post-fix: the fetch closure calls `await ensureTokenFresh()` on
- * every request â€?refreshes via refresh_token if past the 5-min
+ * every request â€” refreshes via refresh_token if past the 5-min
  * expiry buffer, persists, returns fresh creds. Only undefined when
  * there's no usable refresh path.
  *
@@ -46,11 +46,11 @@ const managerSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('OpenAI OAuth fetch â€?per-request refresh (round 7)', () => {
+describe('OpenAI OAuth fetch â€” per-request refresh (round 7)', () => {
   it('ai-provider.ts imports ensureTokenFresh (NOT getOAuthCredentialsSync) for the Responses path', () => {
     // Pin the import shape. The sync getter is fine for read-only
     // status checks (e.g. /api/openai-oauth/status), but the
-    // Responses-API fetch path must do per-request refresh â€?so the
+    // Responses-API fetch path must do per-request refresh â€” so the
     // module importing it should be ensureTokenFresh.
     assert.match(
       providerSrc,
@@ -59,7 +59,7 @@ describe('OpenAI OAuth fetch â€?per-request refresh (round 7)', () => {
     );
     assert.ok(
       !/import\s*\{[^}]*getOAuthCredentialsSync[^}]*\}\s*from\s*['"]\.\/openai-oauth-manager['"]/.test(providerSrc),
-      'ai-provider.ts must NOT import the sync getter for the Responses path â€?that captured tokens at construction time and went stale',
+      'ai-provider.ts must NOT import the sync getter for the Responses path â€” that captured tokens at construction time and went stale',
     );
   });
 
@@ -75,7 +75,7 @@ describe('OpenAI OAuth fetch â€?per-request refresh (round 7)', () => {
     assert.notEqual(
       ensureCallIdx,
       -1,
-      "case 'openai' must call ensureTokenFresh somewhere â€?pre-fix it captured the sync getter at construction time",
+      "case 'openai' must call ensureTokenFresh somewhere â€” pre-fix it captured the sync getter at construction time",
     );
     // Pin "await ensureTokenFresh()" (NOT just calling without await, which would
     // return a Promise and never resolve to creds).
@@ -108,7 +108,8 @@ describe('OpenAI OAuth fetch â€?per-request refresh (round 7)', () => {
   });
 
   it('ai-provider.ts no longer hard-fails at construction when the token is expired-but-refreshable', () => {
-    // Pin the absence of the construction-time `if (!creds) throw` â€?    // that synchronous early-exit was what made expired-but-
+    // Pin the absence of the construction-time `if (!creds) throw` â€”
+    // that synchronous early-exit was what made expired-but-
     // refreshable tokens fail outright. The error string ITSELF is
     // still allowed (it can fire inside the fetch closure when even
     // refresh fails), but the early-exit pattern is what we ban.
@@ -121,7 +122,7 @@ describe('OpenAI OAuth fetch â€?per-request refresh (round 7)', () => {
     assert.equal(
       constructionTimeSyncCheck,
       false,
-      "case 'openai' must NOT do construction-time sync OAuth presence check â€?round 7 moved that into the fetch closure",
+      "case 'openai' must NOT do construction-time sync OAuth presence check â€” round 7 moved that into the fetch closure",
     );
   });
 });

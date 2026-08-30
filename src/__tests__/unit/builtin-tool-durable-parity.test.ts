@@ -1,7 +1,7 @@
 /**
  * P2 fix (v6): `builtin-tools/notification.ts` declared a `durable`
  * parameter on `codepilot_schedule_task` but the executor body
- * unconditionally POSTed `/api/tasks/schedule` â€?`durable=false`
+ * unconditionally POSTed `/api/tasks/schedule` â€” `durable=false`
  * created a persistent task anyway. The MCP variant in
  * `notification-mcp.ts` already had a session-task branch; this
  * contract pins both files to the same shape so the AI SDK and MCP
@@ -13,7 +13,7 @@
  *   2. The executor branches on `durable === false` and reaches
  *      `addSessionTask` (i.e., uses the in-memory non-durable path).
  *   3. The session-task object literal in that branch carries the
- *      `kind` field â€?same v4 fix #1 enforcement as the MCP path.
+ *      `kind` field â€” same v4 fix #1 enforcement as the MCP path.
  */
 
 import { describe, it } from 'node:test';
@@ -47,24 +47,24 @@ describe('codepilot_schedule_task durable parity (v6 P2 fix)', () => {
     assert.match(
       BUILTIN,
       /\baddSessionTask\(/,
-      'durable=false branch must reach addSessionTask â€?the same session-only API the MCP variant uses',
+      'durable=false branch must reach addSessionTask â€” the same session-only API the MCP variant uses',
     );
   });
 
   it('builtin-tools session-task literal carries kind (v4 fix #1 parity)', () => {
-    // Find the `const task = { â€?};` literal and assert `kind` field
+    // Find the `const task = { â€¦ };` literal and assert `kind` field
     // is present. Same shape as `notification-mcp.ts:103`.
     const lit = BUILTIN.match(
       /const\s+task\s*=\s*\{[\s\S]*?\};\s*\n\s*addSessionTask\(\s*task\s*\)/,
     );
     assert.ok(
       lit,
-      'expected `const task = { â€?}; addSessionTask(task)` in builtin-tools/notification.ts durable=false branch',
+      'expected `const task = { â€¦ }; addSessionTask(task)` in builtin-tools/notification.ts durable=false branch',
     );
     assert.match(
       lit![0],
       /\bkind\s*[,:]/,
-      'session-task literal must include kind â€?durable=false bypasses /api/tasks/schedule\'s server-side kind validation, the in-memory dispatch needs it stamped here',
+      'session-task literal must include kind â€” durable=false bypasses /api/tasks/schedule\'s server-side kind validation, the in-memory dispatch needs it stamped here',
     );
   });
 });

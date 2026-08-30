@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Ansi from "ansi-to-react";
 import { Check } from "@phosphor-icons/react";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   createContext,
   useCallback,
@@ -111,7 +111,7 @@ export const TerminalTitle = ({
     className={cn("flex items-center gap-2 text-sm text-[var(--terminal-muted)]", className)}
     {...props}
   >
-    <BuckyballIcon name="terminal" size="md" aria-hidden />
+    <CodePilotIcon name="terminal" size="md" aria-hidden />
     {children ?? "Terminal"}
   </div>
 );
@@ -203,7 +203,7 @@ export const TerminalCopyButton = ({
       variant="ghost"
       {...props}
     >
-      {children ?? (isCopied ? <Check size={14} /> : <BuckyballIcon name="copy" size="sm" aria-hidden />)}
+      {children ?? (isCopied ? <Check size={14} /> : <CodePilotIcon name="copy" size="sm" aria-hidden />)}
     </Button>
   );
 };
@@ -232,7 +232,7 @@ export const TerminalClearButton = ({
       variant="ghost"
       {...props}
     >
-      {children ?? <BuckyballIcon name="delete" size="sm" aria-hidden />}
+      {children ?? <CodePilotIcon name="delete" size="sm" aria-hidden />}
     </Button>
   );
 };

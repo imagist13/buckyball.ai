@@ -60,8 +60,8 @@ export function DiscordBridgeSection() {
   } | null>(null);
   const { t } = useTranslation();
 
-  // Two save groups â†?two snapshots. botToken is server-masked as "***â€?
-  // (see handleSaveCredentials â€?only sent when the user types a real
+  // Two save groups â†’ two snapshots. botToken is server-masked as "***â€¦"
+  // (see handleSaveCredentials â€” only sent when the user types a real
   // value), so the credentials snapshot mirrors that mask.
   const [savedCredentials, setSavedCredentials] = useState({ botToken: "" });
   const [savedGroupSettings, setSavedGroupSettings] = useState({

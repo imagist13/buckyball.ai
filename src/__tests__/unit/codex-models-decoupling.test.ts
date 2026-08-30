@@ -1,5 +1,5 @@
 /**
- * P0.3 (2026-06-01) â€?Codex model discovery must NOT block the global
+ * P0.3 (2026-06-01) â€” Codex model discovery must NOT block the global
  * model feed. A broken/old Codex app-server was hanging
  * `/api/providers/models` ~30s, freezing Settings overview, the chat
  * composer ("æ­£åœ¨å‡†å¤‡è¿è¡ŒçŽ¯å¢ƒ"), and the runtime health card.
@@ -40,7 +40,7 @@ const MODELS_RESULT = {
   nextCursor: null,
 };
 
-/** Fake app-server provider â€?a DI seam standing in for getCodexAppServer. */
+/** Fake app-server provider â€” a DI seam standing in for getCodexAppServer. */
 function fakeAppServer(behavior: 'ok' | 'hang' | 'throw') {
   let calls = 0;
   return {
@@ -60,7 +60,7 @@ function fakeAppServer(behavior: 'ok' | 'hang' | 'throw') {
   };
 }
 
-describe('listCodexModels â€?P0.3 spawn decoupling', () => {
+describe('listCodexModels â€” P0.3 spawn decoupling', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   it('cacheOnly with empty cache returns [] and NEVER touches the app-server (no spawn)', async () => {
@@ -150,7 +150,7 @@ describe('listCodexModels â€?P0.3 spawn decoupling', () => {
   });
 });
 
-describe('buildCodexProviderModelGroup â€?P0.3', () => {
+describe('buildCodexProviderModelGroup â€” P0.3', () => {
   beforeEach(() => invalidateCodexModelsCache());
 
   it('cacheOnly with empty cache returns null without spawning', async () => {
@@ -168,20 +168,20 @@ describe('buildCodexProviderModelGroup â€?P0.3', () => {
     assert.equal(group!.models.length, 1);
   });
 
-  it('returns null (degraded) when model/list times out â€?no Codex group, no throw', async () => {
+  it('returns null (degraded) when model/list times out â€” no Codex group, no throw', async () => {
     const fake = fakeAppServer('hang');
     const group = await buildCodexProviderModelGroup({ timeoutMs: 150 }, fake.get);
     assert.equal(group, null);
   });
 });
 
-describe('providers/models route â€?P0.3 spawn-policy source pins', () => {
+describe('providers/models route â€” P0.3 spawn-policy source pins', () => {
   const routeSrc = fs.readFileSync(
     path.resolve(__dirname, '../../app/api/providers/models/route.ts'),
     'utf8',
   );
 
-  it('full-catalog (no runtime) path uses cacheOnly â€?never spawns Codex', () => {
+  it('full-catalog (no runtime) path uses cacheOnly â€” never spawns Codex', () => {
     assert.match(
       routeSrc,
       /else if \(!runtimeFilter\)[\s\S]{0,400}cacheOnly:\s*true/,
@@ -205,7 +205,7 @@ describe('providers/models route â€?P0.3 spawn-policy source pins', () => {
     assert.doesNotMatch(
       routeSrc,
       /buildCodexProviderModelGroup\(\)/,
-      'the bare no-arg call would spawn from the full-catalog path â€?must pass cacheOnly/timeoutMs',
+      'the bare no-arg call would spawn from the full-catalog path â€” must pass cacheOnly/timeoutMs',
     );
   });
 });

@@ -1,11 +1,11 @@
 /**
- * Phase 0.5 Slice A guardrail â€?Runtime compatibility contract shape.
+ * Phase 0.5 Slice A guardrail â€” Runtime compatibility contract shape.
  *
  * Locks `ModelRuntimeCompat` to the supportedRuntimes[] +
  * unsupportedReasonByRuntime contract introduced 2026-05-13. The two
  * legacy booleans (claude_code_compatible / codepilot_runtime_compatible)
  * are kept as `@deprecated` back-compat input; adding a third
- * `*_runtime_compatible` boolean is explicitly forbidden â€?new runtimes
+ * `*_runtime_compatible` boolean is explicitly forbidden â€” new runtimes
  * MUST extend the supportedRuntimes array, not bolt another boolean
  * onto the compat record.
  */
@@ -20,7 +20,7 @@ const typesSrc = fs.readFileSync(
   'utf8',
 );
 
-describe('ModelRuntimeCompat â€?runtime contract shape', () => {
+describe('ModelRuntimeCompat â€” runtime contract shape', () => {
   it('declares supportedRuntimes as the canonical compat field', () => {
     assert.match(typesSrc, /supportedRuntimes\?\:\s*string\[\]/);
   });
@@ -38,7 +38,7 @@ describe('ModelRuntimeCompat â€?runtime contract shape', () => {
     // Legacy ModelRuntimeCompat has exactly two boolean fields whose
     // names end in `_compatible`: claude_code_compatible and
     // codepilot_runtime_compatible. Anything else with that suffix on
-    // ModelRuntimeCompat is the regression we want to block â€?new
+    // ModelRuntimeCompat is the regression we want to block â€” new
     // runtimes MUST extend `supportedRuntimes`, not bolt another
     // boolean onto the compat record.
     const matches = typesSrc.match(/(\w+_compatible)\?\:\s*boolean/g) ?? [];
@@ -48,7 +48,7 @@ describe('ModelRuntimeCompat â€?runtime contract shape', () => {
     assert.deepEqual(
       names,
       ['claude_code_compatible', 'codepilot_runtime_compatible'],
-      'Adding a third *_compatible boolean to ModelRuntimeCompat is forbidden â€?extend supportedRuntimes instead.',
+      'Adding a third *_compatible boolean to ModelRuntimeCompat is forbidden â€” extend supportedRuntimes instead.',
     );
   });
 });

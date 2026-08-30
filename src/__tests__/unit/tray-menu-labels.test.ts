@@ -4,7 +4,7 @@
  * The Electron tray menu lives in the main process and has no access to the
  * React i18n bundle, so we pick labels via a small pure helper based on
  * `app.getLocale()`. Tests live here because the helper is callable without
- * an Electron runtime �?see src/lib/tray-menu-labels.ts.
+ * an Electron runtime — see src/lib/tray-menu-labels.ts.
  */
 
 import { describe, it } from 'node:test';
@@ -16,14 +16,14 @@ describe('getTrayMenuLabels', () => {
   it('returns Chinese labels for zh-CN locale', () => {
     const labels = getTrayMenuLabels('zh-CN');
     assert.equal(labels.open, '打开 CodePilot');
-    assert.equal(labels.quit, '退�?CodePilot');
+    assert.equal(labels.quit, '退出 CodePilot');
     assert.equal(labels.tooltip, 'CodePilot');
   });
 
   it('returns Chinese labels for zh-TW (any zh-* variant)', () => {
     const labels = getTrayMenuLabels('zh-TW');
     assert.equal(labels.open, '打开 CodePilot');
-    assert.equal(labels.quit, '退�?CodePilot');
+    assert.equal(labels.quit, '退出 CodePilot');
   });
 
   it('returns Chinese labels for plain "zh"', () => {
@@ -63,7 +63,7 @@ describe('getTrayMenuLabels', () => {
   it('does not mention Bridge in any label', () => {
     // Phase 3 Step 2 invariant: tray UI must not be bridge-coupled.
     // Local notifications and scheduler keep running with or without
-    // the bridge �?bridge is just an optional remote channel.
+    // the bridge — bridge is just an optional remote channel.
     for (const loc of ['zh-CN', 'en-US', 'fr-FR', '', undefined]) {
       const labels = getTrayMenuLabels(loc);
       for (const v of Object.values(labels)) {

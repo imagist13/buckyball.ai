@@ -1,5 +1,5 @@
 /**
- * Discord Adapter â€?implements BaseChannelAdapter for Discord Bot API.
+ * Discord Adapter â€” implements BaseChannelAdapter for Discord Bot API.
  *
  * Uses discord.js v14 Client with Gateway intents for real-time message
  * consumption, and REST API for message sending. Routes messages through
@@ -304,7 +304,7 @@ export class DiscordAdapter extends BaseChannelAdapter {
         await interaction.editReply({ content: text || 'OK' });
       }
     } catch {
-      // Interaction may have expired â€?non-critical
+      // Interaction may have expired â€” non-critical
     }
   }
 
@@ -357,7 +357,7 @@ export class DiscordAdapter extends BaseChannelAdapter {
   endPreview(chatId: string, _draftId: number): void {
     const msgId = this.previewMessages.get(chatId);
     if (msgId && this.client) {
-      // Delete the preview message â€?the final response replaces it
+      // Delete the preview message â€” the final response replaces it
       const channel = this.client.channels.cache.get(chatId);
       if (channel && 'messages' in channel) {
         channel.messages.fetch(msgId).then((msg: { delete: () => void }) => msg.delete()).catch(() => {});

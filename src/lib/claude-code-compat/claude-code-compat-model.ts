@@ -1,5 +1,5 @@
 /**
- * claude-code-compat-model.ts �?LanguageModelV3 implementation for Claude Code-compatible proxies.
+ * claude-code-compat-model.ts — LanguageModelV3 implementation for Claude Code-compatible proxies.
  *
  * Sends requests in the format that Claude Code proxy APIs expect
  * and translates Anthropic SSE responses into AI SDK stream parts.
@@ -27,14 +27,14 @@ import { parseSSEStream } from './sse-parser';
  */
 function buildMessagesUrl(baseUrl: string): string {
   const cleaned = baseUrl.replace(/\/+$/, '');
-  // Already ends with /v1 �?just append /messages
+  // Already ends with /v1 → just append /messages
   if (cleaned.endsWith('/v1')) return `${cleaned}/messages`;
-  // Has a deep path (e.g. /api/anthropic, /api/coding) �?insert /v1/messages
+  // Has a deep path (e.g. /api/anthropic, /api/coding) → insert /v1/messages
   try {
     const pathname = new URL(cleaned).pathname;
     if (pathname !== '/' && pathname !== '') return `${cleaned}/v1/messages`;
   } catch { /* fall through */ }
-  // Bare domain �?/v1/messages
+  // Bare domain → /v1/messages
   return `${cleaned}/v1/messages`;
 }
 
@@ -92,7 +92,7 @@ export class ClaudeCodeCompatModel implements LanguageModelV3 {
     const sseStream = parseSSEStream(response.body);
     let blockIdCounter = 0;
 
-    // Create a ReadableStream that transforms Anthropic SSE �?V3 StreamParts
+    // Create a ReadableStream that transforms Anthropic SSE → V3 StreamParts
     const stream = new ReadableStream<LanguageModelV3StreamPart>({
       async start(controller) {
         try {
@@ -194,7 +194,7 @@ export class ClaudeCodeCompatModel implements LanguageModelV3 {
   }
 }
 
-// ── SSE Event �?V3 StreamPart mapping ───────────────────────────
+// ── SSE Event → V3 StreamPart mapping ───────────────────────────
 
 interface MapResult {
   parts: LanguageModelV3StreamPart[];

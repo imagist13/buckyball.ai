@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { X } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -129,7 +129,7 @@ export function CommitDialog({ cwd, open, onClose, onSuccess }: CommitDialogProp
                 onChange={() => setMode("commit")}
                 className="accent-primary"
               />
-              <BuckyballIcon name="git_commit" size="sm" className="text-muted-foreground" aria-hidden />
+              <CodePilotIcon name="git_commit" size="sm" className="text-muted-foreground" aria-hidden />
               {t('topBar.commit')}
             </label>
             <label className="flex items-center gap-2 cursor-pointer text-sm">
@@ -140,7 +140,7 @@ export function CommitDialog({ cwd, open, onClose, onSuccess }: CommitDialogProp
                 onChange={() => setMode("commit-and-push")}
                 className="accent-primary"
               />
-              <BuckyballIcon name="upload_cloud" size="sm" className="text-muted-foreground" aria-hidden />
+              <CodePilotIcon name="upload_cloud" size="sm" className="text-muted-foreground" aria-hidden />
               {t('git.commitAndPush')}
             </label>
           </div>
@@ -161,9 +161,9 @@ export function CommitDialog({ cwd, open, onClose, onSuccess }: CommitDialogProp
             onClick={handleSubmit}
           >
             {mode === "commit-and-push" ? (
-              <BuckyballIcon name="upload_cloud" size="sm" className="mr-1.5" aria-hidden />
+              <CodePilotIcon name="upload_cloud" size="sm" className="mr-1.5" aria-hidden />
             ) : (
-              <BuckyballIcon name="git_commit" size="sm" className="mr-1.5" aria-hidden />
+              <CodePilotIcon name="git_commit" size="sm" className="mr-1.5" aria-hidden />
             )}
             {committing
               ? t('git.loading')

@@ -11,7 +11,7 @@ let _cache: { catalog: CliToolRuntimeInfo[]; extra: CliToolRuntimeInfo[]; timest
 const CACHE_TTL = 120_000; // 2 minutes
 
 /**
- * Detect a single CLI tool â€?checks binNames with which/where, then runs --version
+ * Detect a single CLI tool â€” checks binNames with which/where, then runs --version
  */
 export async function detectCliTool(tool: CliToolDefinition): Promise<CliToolRuntimeInfo> {
   const expandedPath = getExpandedPath();
@@ -47,11 +47,11 @@ export async function detectCliTool(tool: CliToolDefinition): Promise<CliToolRun
             const json = JSON.parse(versionText);
             if (json.version) version = String(json.version);
           } catch {
-            // Not JSON â€?skip, leave version null rather than showing garbage
+            // Not JSON â€” skip, leave version null rather than showing garbage
           }
         }
       } catch {
-        // Binary exists but --version failed â€?still mark as installed
+        // Binary exists but --version failed â€” still mark as installed
       }
 
       return {

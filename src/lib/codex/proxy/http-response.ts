@@ -14,7 +14,7 @@ const SSE_HEADERS = {
  *
  * A streaming Responses client must always receive HTTP 200 plus a structured
  * `response.failed` event for application/upstream failures. That leaves an
- * HTTP-level 502 at buckyball.ai's loopback URL as evidence that the request did
+ * HTTP-level 502 at CodePilot's loopback URL as evidence that the request did
  * not complete the managed proxy protocol (for example, a system proxy
  * intercepted it before the Next route).
  */

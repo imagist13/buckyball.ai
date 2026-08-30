@@ -8,7 +8,7 @@ import {
   Columns,
   ArrowLeft,
 } from "@/components/ui/icon";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,15 +40,10 @@ export function UnifiedTopBar() {
     workingDirectory,
     chatListOpen,
     setChatListOpen,
-    fileTreeOpen,
-    setFileTreeOpen,
-    isAssistantWorkspace,
     currentBranch,
     gitDirtyCount,
   } = usePanel();
-  // The new Workspace Sidebar replaces the old Git / Widget toggles.
-  // FileTree keeps its independent toggle (lightweight entry); the
-  // sidebar is for the unified Tab shell only.
+  // Files, Git, Widget, previews, and artifacts share one Workspace Sidebar.
   const ws = useWorkspaceSidebarOptional();
   const { addToSplit, isInSplit } = useSplit();
   const router = useRouter();
@@ -56,9 +51,10 @@ export function UnifiedTopBar() {
   const { isWindows } = useClientPlatform();
   const pathname = usePathname();
 
-  // Only show Git/terminal/panel controls on chat detail routes (/chat/[id]),
-  // not on the empty /chat page where panels aren't mounted.
-  const isChatRoute = pathname.startsWith("/chat/") && pathname !== "/chat";
+  // Workspace surfaces are project-scoped, so New Chat and existing sessions
+  // share the same entry point. Session-only actions remain guarded by
+  // `sessionId` below.
+  const isChatRoute = pathname === "/chat" || pathname.startsWith("/chat/");
 
   // Session actions menu (mirrors the chat list's row "..." menu so users
   // get the same set of actions on the active chat from inside the chat
@@ -86,7 +82,7 @@ export function UnifiedTopBar() {
         router.push('/chat');
       }
     } catch {
-      // Silent â?same as sidebar.
+      // Silent — same as sidebar.
     }
   }, [sessionId, router]);
 
@@ -103,7 +99,7 @@ export function UnifiedTopBar() {
 
   const handleCopyId = useCallback(() => {
     if (!sessionId) return;
-    // v11 fix â?was fire-and-forget `navigator.clipboard.writeText(...)`,
+    // v11 fix — was fire-and-forget `navigator.clipboard.writeText(...)`,
     // which rejects with NotAllowedError in Electron renderers when the
     // page isn't the focused document (very common after a dropdown
     // click). The unhandled rejection became a console error / Sentry
@@ -116,26 +112,26 @@ export function UnifiedTopBar() {
 
   // The reopen button is shown only when the sidebar has been
   // collapsed by the user. It pairs with the collapse toggle inside
-  // ChatListPanel â?so the user can always get the sidebar back from
+  // ChatListPanel — so the user can always get the sidebar back from
   // the page they're on, regardless of route.
   //
   // `mounted` gates the conditional render so SSR and the first
   // client paint produce the same tree. AppShell's matchMedia effect
   // flips chatListOpen on mount, so without this gate the button
-  // would briefly appear (server: chatListOpen=false â?button shown)
-  // and then disappear (client effect â?chatListOpen=true), tripping
+  // would briefly appear (server: chatListOpen=false → button shown)
+  // and then disappear (client effect → chatListOpen=true), tripping
   // a hydration mismatch warning.
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
     () => false,
   );
-  // Round 20 â?single sidebar toggle button (open AND close). Used
+  // Round 20 — single sidebar toggle button (open AND close). Used
   // to be a "reopen only" button that lived in the topbar; the
   // matching collapse button lived inside ChatListPanel. Round 20
-  // moves all topbar chrome â?traffic-light safe area, sidebar
-  // toggle â?into the UnifiedTopBar so the four floating cards
-  // (sidebar, main, workspace, file tree) all share the same
+  // moves all topbar chrome — traffic-light safe area, sidebar
+  // toggle — into the UnifiedTopBar so the floating cards
+  // (sidebar, main, workspace) all share the same
   // y-origin underneath the topbar.
   const sidebarToggleButton = mounted ? (
     <Tooltip>
@@ -153,7 +149,7 @@ export function UnifiedTopBar() {
           className="text-muted-foreground hover:text-foreground ml-[var(--platform-traffic-light-safe-area)] translate-y-[var(--platform-traffic-light-offset-y)]"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
-          <BuckyballIcon
+          <CodePilotIcon
             name={chatListOpen ? 'panel_left_close' : 'panel_left_open'}
             size="md"
             className="text-inherit"
@@ -167,8 +163,8 @@ export function UnifiedTopBar() {
     </Tooltip>
   ) : null;
 
-  // Round 33 â?settings routes get an inline Back button in the
-  // topbar (Codex feedback: "æ¢ç¶é¡¶ä¸æ?Tab æ¡äº, è¿åå¯ä»¥æ¾ä¸é?).
+  // Round 33 — settings routes get an inline Back button in the
+  // topbar (Codex feedback: "既然顶上有 Tab 条了, 返回可以放上面").
   // Mirrors the logic that used to live in `SettingsSidebar`: prefer
   // the recorded last-non-settings path, fall back to /chat. Wrapped
   // in `WebkitAppRegion: 'no-drag'` so it stays clickable inside the
@@ -228,7 +224,7 @@ export function UnifiedTopBar() {
             the left nav. Pairs with the collapse button inside
             ChatListPanel; null otherwise so it doesn't take up space. */}
         {sidebarToggleButton}
-        {/* Left: chat title â?workspace name (muted) â?per-session "..."
+        {/* Left: chat title → workspace name (muted) → per-session "..."
             menu. The "..." mirrors the chat list's row menu so users can
             rename / split / copy id / delete the active conversation
             from inside the chat page (the inline pencil edit affordance
@@ -303,16 +299,16 @@ export function UnifiedTopBar() {
                     setRenameOpen(true);
                   }}
                 >
-                  <BuckyballIcon name="edit" size="sm" aria-hidden />
+                  <CodePilotIcon name="edit" size="sm" aria-hidden />
                   <span>{t('chatList.renameConversation' as TranslationKey)}</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleCopyId}>
-                  <BuckyballIcon name="copy" size="sm" aria-hidden />
+                  <CodePilotIcon name="copy" size="sm" aria-hidden />
                   <span>{t('chatList.copySessionId' as TranslationKey)}</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-                  <BuckyballIcon name="delete" size="sm" aria-hidden />
+                  <CodePilotIcon name="delete" size="sm" aria-hidden />
                   <span>{t('chatList.deleteConversation' as TranslationKey)}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -328,7 +324,7 @@ export function UnifiedTopBar() {
           className="flex items-center gap-1"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
-          {/* Branch label â?informational only (no longer a toggle since
+          {/* Branch label — informational only (no longer a toggle since
               Git lives inside the Workspace Sidebar). Click jumps to the
               Git Tab; the assistant-buddy avatar is gone with the same
               consolidation since Widget is now a Sidebar Tab too. */}
@@ -344,7 +340,7 @@ export function UnifiedTopBar() {
                   }}
                   className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  <BuckyballIcon name="git" size="md" className="text-inherit" aria-hidden />
+                  <CodePilotIcon name="git" size="md" className="text-inherit" aria-hidden />
                   <span className="max-w-[100px] truncate">{currentBranch}</span>
                   {gitDirtyCount > 0 && (
                     <span className="flex items-center gap-0.5 text-[11px] text-amber-500">
@@ -358,43 +354,7 @@ export function UnifiedTopBar() {
             </Tooltip>
           )}
 
-          {/* File tree toggle â?independent topbar entry per the
-              revised Phase 2 boundary (2026-04-30):
-                1. File tree is a high-frequency deterministic tool, so
-                   it gets its own button.
-                2. Workspace Sidebar handles work surfaces (Git / Widget
-                   / preview); the file tree is NOT folded into it by
-                   default. Files Tab only appears when the user
-                   explicitly pins.
-                3. v13: File Tree ä¸?Workspace Sidebar å¯åæ¶æå¼ï¼?                   åèªç¬ç« toggle ââ?ä¸¤ä¸ªæé®ä¸åèªå¨å³é­å¯¹æ¹ï¼ç¨æ?                   å¯ä»¥ä¸è¾¹æµè§?file tree ä¸è¾¹å¨ Workspace Sidebar ä¸?                   éä¸ä¸?markdown / artifact preview Tabï¼èå¤©åºéä¹
-                   æ¶çªãå®æ?rationale è§?Phase 3 archive ç?v13 æ¡ç®ã?*/}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={fileTreeOpen ? 'secondary' : 'ghost'}
-                size="icon-sm"
-                className={
-                  fileTreeOpen ? '' : 'text-muted-foreground hover:text-foreground'
-                }
-                onClick={() => {
-                  // v13: file-tree and Workspace Sidebar are additive,
-                  // not mutex. Each toggle flips its own panel only;
-                  // user can have both open simultaneously and chat
-                  // area shrinks to fit.
-                  setFileTreeOpen(!fileTreeOpen);
-                }}
-              >
-                <BuckyballIcon name="file_tree" size="md" className="text-inherit" aria-hidden />
-                <span className="sr-only">{t('topBar.fileTree')}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('topBar.fileTree')}</TooltipContent>
-          </Tooltip>
-
-          {/* Single Workspace Sidebar toggle â?replaces the previous
-              Git + Widget + Dashboard cluster. The new sidebar hosts
-              fixed Git / Widget Tabs plus dynamic Markdown / Artifact /
-              File preview Tabs (April 2026 Phase 1). */}
+          {/* The single Workspace Sidebar owns Files, Git, Widget and inspectors. */}
           {ws && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -402,14 +362,10 @@ export function UnifiedTopBar() {
                   variant={ws.state.open ? "secondary" : "ghost"}
                   size="icon-sm"
                   className={ws.state.open ? "" : "text-muted-foreground hover:text-foreground"}
-                  onClick={() => {
-                    // v13: see file-tree button above â?additive, not
-                    // mutex. Each toggle is independent.
-                    ws.setOpen(!ws.state.open);
-                  }}
+                  onClick={() => ws.setOpen(!ws.state.open)}
                   aria-label={t('workspaceSidebar.toggle' as TranslationKey)}
                 >
-                  <BuckyballIcon name="panel_right" size="md" strokeWidth={ws.state.open ? 2 : undefined} className="text-inherit" aria-hidden />
+                  <CodePilotIcon name="panel_right" size="md" strokeWidth={ws.state.open ? 2 : undefined} className="text-inherit" aria-hidden />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom">

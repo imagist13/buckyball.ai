@@ -1,19 +1,19 @@
 /**
- * Permission adapter â€?Phase 0.5 Slice D (2026-05-13).
+ * Permission adapter â€” Phase 0.5 Slice D (2026-05-13).
  *
  * Each runtime adapter translates its native approval / sandbox /
  * confirm events into the canonical 4-event `RuntimePermissionEvent`
  * union (request / granted / denied / unavailable). PermissionPrompt
- * and the stream manager consume only the canonical union â€?they
+ * and the stream manager consume only the canonical union â€” they
  * don't branch on runtime-private shapes.
  *
  * Translators today:
- *   - `translateClaudeCodePermissionRequest` â€?Claude Code SDK's
- *     `PermissionRequestEvent` â†?`permission_request`. Preserves the
+ *   - `translateClaudeCodePermissionRequest` â€” Claude Code SDK's
+ *     `PermissionRequestEvent` â†’ `permission_request`. Preserves the
  *     SDK's permissionRequestId verbatim so the SDK-side resume path
  *     can echo it back.
  *   - `emitPermissionGranted` / `emitPermissionDenied` /
- *     `emitPermissionUnavailable` â€?adapter helpers that produce the
+ *     `emitPermissionUnavailable` â€” adapter helpers that produce the
  *     terminal events with the right runtimeId + requestId.
  *
  * Translators tomorrow:
@@ -24,7 +24,8 @@
  * Conservative default contract: when the adapter cannot determine
  * the semantics of a native approval event (e.g. the upstream
  * runtime adds a new approval kind we haven't mapped yet), the
- * adapter MUST emit `permission_unavailable` with a `reason` â€? * NEVER silently `permission_granted`. The 4th event type exists
+ * adapter MUST emit `permission_unavailable` with a `reason` â€”
+ * NEVER silently `permission_granted`. The 4th event type exists
  * specifically to make "we don't know" an explicit, visible state.
  */
 
@@ -41,13 +42,14 @@ type UnavailableEvent = Extract<RuntimePermissionEvent, { type: 'permission_unav
  * Translate Claude Code SDK's native `PermissionRequestEvent` into
  * the canonical `permission_request` event.
  *
- * Phase 0.5 Slice E.1 fix (2026-05-13) â€?earlier revision dropped
+ * Phase 0.5 Slice E.1 fix (2026-05-13) â€” earlier revision dropped
  * `toolName` / `toolInput` / `suggestions` / `toolUseId` into a
  * collapsed subject/details pair, which broke PermissionPrompt's
  * ExitPlanMode / AskUserQuestion / "Allow for session" affordances
  * downstream (Codex P1 finding). The canonical event now keeps
  * these as first-class fields so UI consumers can switch on
- * `toolName`, render `toolInput`, and surface `permissionHints` â€? * future Codex adapter populates the same fields from its native
+ * `toolName`, render `toolInput`, and surface `permissionHints` â€”
+ * future Codex adapter populates the same fields from its native
  * shape.
  *
  * `nativeRequestRef` carries the raw SDK event so the SDK-side
@@ -65,7 +67,7 @@ export function translateClaudeCodePermissionRequest(
   if (sdkEvent.decisionReason) detailLines.push(sdkEvent.decisionReason);
 
   // SDK `PermissionSuggestion[]` maps 1:1 to canonical `PermissionHint[]`
-  // â€?fields are structurally identical today. Codex adapter will
+  // â€” fields are structurally identical today. Codex adapter will
   // normalize its proposal shape into the same hint structure.
   const permissionHints = sdkEvent.suggestions?.map((s) => ({
     type: s.type,
@@ -92,7 +94,7 @@ export function translateClaudeCodePermissionRequest(
   };
 }
 
-/** Adapter helper â€?emits a `permission_granted` terminal event. */
+/** Adapter helper â€” emits a `permission_granted` terminal event. */
 export function emitPermissionGranted(
   runtimeId: RuntimeId,
   sessionId: string,
@@ -101,7 +103,7 @@ export function emitPermissionGranted(
   return { type: 'permission_granted', runtimeId, sessionId, requestId };
 }
 
-/** Adapter helper â€?emits a `permission_denied` terminal event. */
+/** Adapter helper â€” emits a `permission_denied` terminal event. */
 export function emitPermissionDenied(
   runtimeId: RuntimeId,
   sessionId: string,
@@ -114,9 +116,9 @@ export function emitPermissionDenied(
 }
 
 /**
- * Adapter helper â€?emits `permission_unavailable`. Use this when the
+ * Adapter helper â€” emits `permission_unavailable`. Use this when the
  * native approval event semantics are unknown / unmappable. NEVER
- * substitute `permission_granted` for an unknown native event â€?the
+ * substitute `permission_granted` for an unknown native event â€” the
  * fall-through-to-allow is exactly the failure mode this event
  * type exists to prevent.
  */

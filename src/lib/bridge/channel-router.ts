@@ -1,5 +1,5 @@
 /**
- * Channel Router â?resolves IM addresses to buckyball.ai sessions.
+ * Channel Router — resolves IM addresses to CodePilot sessions.
  *
  * When a message arrives from an IM channel, the router finds or creates
  * the corresponding ChannelBinding (and underlying chat_session).
@@ -78,14 +78,14 @@ export function resolve(address: ChannelAddress): ChannelBinding {
 
       return existing;
     }
-    // Session was deleted â?recreate
+    // Session was deleted — recreate
     return createBinding(address);
   }
   return createBinding(address);
 }
 
 /**
- * Create a new binding with a fresh buckyball.ai session.
+ * Create a new binding with a fresh CodePilot session.
  */
 export function createBinding(
   address: ChannelAddress,
@@ -106,7 +106,7 @@ export function createBinding(
     undefined,
     defaultCwd,
     'code',
-    undefined, // provider id â?set below once known
+    undefined, // provider id — set below once known
     undefined, // permission profile
     undefined, // source
     // The channel identity IS the name here; a fallback derived from the
@@ -131,7 +131,7 @@ export function createBinding(
 }
 
 /**
- * Bind an IM chat to an existing buckyball.ai session.
+ * Bind an IM chat to an existing CodePilot session.
  */
 export function bindToSession(
   address: ChannelAddress,

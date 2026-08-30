@@ -184,7 +184,7 @@ export function useSlashCommands(opts: {
 
     switch (result.action) {
       case 'immediate_command':
-        // Block during streaming â€?destructive commands (e.g. /clear) would race
+        // Block during streaming â€” destructive commands (e.g. /clear) would race
         if (isStreaming) { closePopover(); return; }
         if (onCommand) {
           setInputValue('');
@@ -194,7 +194,7 @@ export function useSlashCommands(opts: {
         return;
 
       case 'set_badge':
-        // Block during streaming â€?badges dispatch as slash/skill prompts, not queueable
+        // Block during streaming â€” badges dispatch as slash/skill prompts, not queueable
         if (isStreaming) { closePopover(); return; }
         addBadge(result.badge!);
         setInputValue(result.newInputValue ?? '');
@@ -255,7 +255,7 @@ export function useSlashCommands(opts: {
 
   // Insert `/` into textarea to trigger slash command popover. When the
   // preceding char isn't whitespace, auto-prepend a space so the trigger regex
-  // (which requires `^|\s` before `/`) matches â€?this is why the user can
+  // (which requires `^|\s` before `/`) matches â€” this is why the user can
   // click the slash button mid-word and still see the picker, without forcing
   // the regex to false-positive on path-like text.
   const handleInsertSlash = useCallback(() => {

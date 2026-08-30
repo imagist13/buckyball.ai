@@ -21,7 +21,8 @@ export function SetupCenter({ onClose, initialCard }: SetupCenterProps) {
   const [projectStatus, setProjectStatus] = useState<SetupCardStatus>('not-configured');
   const [defaultProject, setDefaultProject] = useState<string | undefined>();
   // Snapshot of the done/skipped count at the moment SetupCenter opened.
-  // Auto-close only fires when the user *made progress* this session â€?  // i.e. went from N<3 to 3. Users who manually open SetupCenter at 3/3
+  // Auto-close only fires when the user *made progress* this session â€”
+  // i.e. went from N<3 to 3. Users who manually open SetupCenter at 3/3
   // (e.g. from a skipped ProviderCard's "Open provider settings" link or
   // any future dedicated entry) keep the modal visible until they close it
   // themselves. The stale "3/3 without setup_completed" case is healed by
@@ -32,7 +33,7 @@ export function SetupCenter({ onClose, initialCard }: SetupCenterProps) {
   // Single helper that every "close the setup center" path goes through.
   // Awaits the PUT so callers that immediately navigate (e.g. ProviderCard's
   // "Add Provider" jump to /settings) can guarantee setup_completed is
-  // persisted before page change â€?otherwise the fire-and-forget fetch can
+  // persisted before page change â€” otherwise the fire-and-forget fetch can
   // be aborted by the unload and the next mount would re-open SetupCenter.
   // `keepalive: true` is belt-and-suspenders for any future path that
   // bypasses the await contract.
@@ -45,7 +46,7 @@ export function SetupCenter({ onClose, initialCard }: SetupCenterProps) {
         keepalive: true,
       });
     } catch {
-      // Swallow â€?backend GET /api/setup normalization patches stale state
+      // Swallow â€” backend GET /api/setup normalization patches stale state
       // on next mount, so a failed PUT degrades gracefully.
     }
     onClose();

@@ -1,13 +1,13 @@
 /**
  * GET /api/codex/account
  *
- * Phase 5 Phase 2 (2026-05-13) â€?surface Codex account state to UI.
+ * Phase 5 Phase 2 (2026-05-13) â€” surface Codex account state to UI.
  * Returns the narrowed `CodexAccountState` discriminated union. The
  * Settings status card branches on `kind`:
  *
- *   - logged_out â†?show "Login to Codex" button (POSTs /api/codex/login)
- *   - logged_in  â†?show account email + plan + "Logout" button
- *   - unknown    â†?app-server not initialized yet; show retry hint
+ *   - logged_out â†’ show "Login to Codex" button (POSTs /api/codex/login)
+ *   - logged_in  â†’ show account email + plan + "Logout" button
+ *   - unknown    â†’ app-server not initialized yet; show retry hint
  *
  * Query param `refresh=1` forces a token refresh through Codex's
  * built-in refresh path. Default is cache-friendly read.
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
  */
 export async function handleAccountDelete(perform: () => Promise<void> = logoutCodex) {
   try {
-    // Drops the model/list cache on success â€?the `cacheOnly` read path ignores
+    // Drops the model/list cache on success â€” the `cacheOnly` read path ignores
     // TTL, so without this the logged-out account's capability survives.
     await logoutCodexAndInvalidateModels(perform);
     return NextResponse.json({ ok: true });

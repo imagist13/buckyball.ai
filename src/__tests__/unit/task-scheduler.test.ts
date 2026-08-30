@@ -1,5 +1,5 @@
 /**
- * Unit tests for task-scheduler â€?cron parsing and interval parsing.
+ * Unit tests for task-scheduler â€” cron parsing and interval parsing.
  *
  * Run with: npx tsx --test src/__tests__/unit/task-scheduler.test.ts
  */
@@ -43,7 +43,7 @@ describe('getNextCronTime', () => {
       assert.equal(result.getMonth(), 1); // February (0-indexed)
       assert.equal(result.getDate(), 29);
     }
-    // Either a valid leap-year match or null â€?both are acceptable
+    // Either a valid leap-year match or null â€” both are acceptable
     // The key is it must NOT be a premature fallback like now + 1h
     if (result) {
       const daysDiff = (result.getTime() - Date.now()) / 86400000;
@@ -65,19 +65,19 @@ describe('getNextCronTime', () => {
 
   it('returns null for an impossible date like Feb 30', async () => {
     const { getNextCronTime } = await import('../../lib/task-scheduler');
-    const result = getNextCronTime('0 9 30 2 *'); // Feb 30 â€?impossible
+    const result = getNextCronTime('0 9 30 2 *'); // Feb 30 â€” impossible
     assert.equal(result, null);
   });
 
   it('returns null for Feb 31', async () => {
     const { getNextCronTime } = await import('../../lib/task-scheduler');
-    const result = getNextCronTime('0 9 31 2 *'); // Feb 31 â€?impossible
+    const result = getNextCronTime('0 9 31 2 *'); // Feb 31 â€” impossible
     assert.equal(result, null);
   });
 
   it('handles wildcard hour/minute on sparse date', async () => {
     const { getNextCronTime } = await import('../../lib/task-scheduler');
-    // Every minute on Feb 29 â€?sparse but valid in leap years
+    // Every minute on Feb 29 â€” sparse but valid in leap years
     const result = getNextCronTime('* * 29 2 *');
     if (result) {
       assert.equal(result.getMonth(), 1); // February

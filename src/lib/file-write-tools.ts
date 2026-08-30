@@ -4,7 +4,7 @@
  * Both MessageItem (DiffSummary cards) and stream-session-manager (the
  * codepilot:file-changed dispatcher) need to ask the same question
  * about an inbound tool_result: "does this imply a file was just
- * written?" Keeping the set in one module prevents drift â€?if a future
+ * written?" Keeping the set in one module prevents drift â€” if a future
  * tool variant lands (e.g. `multi_edit`, `apply_diff`), both surfaces
  * pick it up the moment this list is updated.
  *
@@ -17,7 +17,7 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set<string>([
   // Claude / Claude Code's MultiEdit applies a sequence of edits to one
   // file in one call. Without it, AI turns that touch a Markdown file
   // via MultiEdit don't fire codepilot:file-changed and DiffSummary
-  // skips the card â€?same end-user impact as if the file weren't
+  // skips the card â€” same end-user impact as if the file weren't
   // edited at all. snake_case variant covered for MCP servers that
   // expose the same semantics under a different naming convention.
   'multiedit',
@@ -32,7 +32,8 @@ export const WRITE_TOOLS: ReadonlySet<string> = new Set<string>([
 
 /**
  * Tools whose semantics are "produce a new file" rather than "modify
- * an existing one." Used by DiffSummary to label the operation â€? * `created` vs `modified` â€?in the Artifact card.
+ * an existing one." Used by DiffSummary to label the operation â€”
+ * `created` vs `modified` â€” in the Artifact card.
  */
 export const CREATE_TOOLS: ReadonlySet<string> = new Set<string>([
   'write',
@@ -54,7 +55,7 @@ export function isCreateTool(name: string | null | undefined): boolean {
 
 /**
  * Pull the target path from a write tool's `input`. Tools name this
- * field inconsistently across the ecosystem â€?`file_path` for the
+ * field inconsistently across the ecosystem â€” `file_path` for the
  * canonical SDK Write/Edit, `notebook_path` for NotebookEdit, `path`
  * or `filePath` for various MCP servers. Returns empty string when
  * the input has no recognizable path field; callers should treat that

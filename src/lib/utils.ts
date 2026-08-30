@@ -31,9 +31,9 @@ export function getLocalDateString(date: Date = new Date()): string {
 /**
  * Get the host machine's local timezone offset in minutes east of UTC.
  *
- * `Date.getTimezoneOffset()` returns UTCâˆ’local in minutes (e.g. UTC+8 â†?âˆ?80).
+ * `Date.getTimezoneOffset()` returns UTCâˆ’local in minutes (e.g. UTC+8 â†’ âˆ’480).
  * We negate it so callers get an intuitive "minutes east" value:
- *   UTC+8 â†?+480, UTC-5 â†?âˆ?00, UTC â†?0.
+ *   UTC+8 â†’ +480, UTC-5 â†’ âˆ’300, UTC â†’ 0.
  */
 export function getLocalTzOffsetMinutes(): number {
   return -(new Date().getTimezoneOffset());
@@ -57,10 +57,10 @@ export function localDayStartAsUTC(daysAgo: number = 0, now: Date = new Date()):
 
 export function parseDBDate(dateStr: string): Date {
   if (!dateStr) return new Date(0);
-  // Already has timezone info (ISO with Z or offset) â€?parse as-is
+  // Already has timezone info (ISO with Z or offset) â€” parse as-is
   if (dateStr.includes('Z') || dateStr.includes('+') || /T\d{2}:\d{2}:\d{2}[+-]/.test(dateStr)) {
     return new Date(dateStr);
   }
-  // DB format "YYYY-MM-DD HH:mm:ss" â€?append Z to mark as UTC
+  // DB format "YYYY-MM-DD HH:mm:ss" â€” append Z to mark as UTC
   return new Date(dateStr.replace(' ', 'T') + 'Z');
 }

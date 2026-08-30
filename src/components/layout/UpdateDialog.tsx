@@ -1,6 +1,8 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { useUpdate } from "@/hooks/useUpdate";
 import { useTranslation } from "@/hooks/useTranslation";
+import type { TranslationKey } from '@/i18n';
+import { releasePlatformLabel } from '@/lib/update-release';
+import {
+  releaseNotesSanitizeSchema,
+  releaseNotesUrlTransform,
+} from '@/lib/release-notes-rendering';
 
 export function UpdateDialog() {
   const { updateInfo, showDialog, dismissUpdate, downloadUpdate, quitAndInstall } = useUpdate();
@@ -22,6 +30,10 @@ export function UpdateDialog() {
 
   const { isNativeUpdate, readyToInstall, downloadProgress } = updateInfo;
   const isDownloading = isNativeUpdate && !readyToInstall && downloadProgress != null;
+  const errorMessage = updateInfo.lastErrorCode
+    ? t(`update.error.${updateInfo.lastErrorCode}` as TranslationKey)
+    : updateInfo.lastError;
+  const platformLabel = releasePlatformLabel(updateInfo.detectedPlatform);
 
   return (
     <Dialog open={showDialog} onOpenChange={(open) => {
@@ -44,6 +56,11 @@ export function UpdateDialog() {
           <div className="max-h-60 overflow-auto rounded-md border border-border/50 bg-muted/30 p-3 text-sm">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
+              rehypePlugins={[
+                rehypeRaw,
+                [rehypeSanitize, releaseNotesSanitizeSchema],
+              ]}
+              urlTransform={releaseNotesUrlTransform}
               components={{
                 h1: ({ children }) => <h3 className="mb-1 text-sm font-semibold">{children}</h3>,
                 h2: ({ children }) => <h3 className="mb-1 text-sm font-semibold">{children}</h3>,
@@ -89,6 +106,23 @@ export function UpdateDialog() {
           </p>
         )}
 
+        {isNativeUpdate
+          && updateInfo.nativePackageType === 'nsis'
+          && updateInfo.nativePublisherVerification === 'none' && (
+            <p className="rounded-md border border-status-warning-border bg-status-warning-muted px-2 py-1 text-xs text-status-warning-foreground">
+              {t('update.windowsUnsignedTrustNotice')}
+            </p>
+          )}
+
+        {updateInfo.platformAssetMissing && (
+          <p className="rounded-md border border-status-warning-border bg-status-warning-muted px-2 py-1 text-xs text-status-warning-foreground">
+            {t('update.platformAssetMissing', {
+              version: updateInfo.latestVersion,
+              platform: platformLabel,
+            })}
+          </p>
+        )}
+
         {updateInfo.downloadAssetName && (
           <p className="text-xs text-muted-foreground">
             {t('update.recommendedAsset', { asset: updateInfo.downloadAssetName })}
@@ -110,9 +144,9 @@ export function UpdateDialog() {
           </div>
         )}
 
-        {updateInfo.lastError && (
+        {errorMessage && (
           <p className="rounded-md border border-status-error-border bg-status-error-muted px-2 py-1 text-xs text-status-error-foreground">
-            {updateInfo.lastError}
+            {errorMessage}
           </p>
         )}
 
@@ -126,7 +160,11 @@ export function UpdateDialog() {
                 window.open(updateInfo.downloadUrl || updateInfo.releaseUrl, "_blank");
               }}
             >
-              {updateInfo.downloadAssetName ? t('update.getRecommendedBuild') : t('settings.viewRelease')}
+              {updateInfo.platformAssetMissing
+                ? t('update.viewReleaseDetails')
+                : updateInfo.downloadAssetName
+                  ? t('update.getRecommendedBuild')
+                  : t('settings.viewRelease')}
             </Button>
           ) : readyToInstall ? (
             <Button onClick={quitAndInstall}>

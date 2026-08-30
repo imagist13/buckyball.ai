@@ -1,12 +1,12 @@
 /**
- * Phase 0.5 follow-up guardrail (2026-05-13) â€?forbid new hand-rolled
- * `'claude_code' | 'bbagent'` type unions in the small set
+ * Phase 0.5 follow-up guardrail (2026-05-13) â€” forbid new hand-rolled
+ * `'claude_code' | 'codepilot_runtime'` type unions in the small set
  * of files that were previously the source of Codex P1.1 finding.
  *
  * The canonical contract is: `RuntimeId` from
  * `src/lib/runtime/runtime-id.ts` is the single source of truth.
  * Anywhere that takes / returns / stores a runtime label must type
- * against `RuntimeId`, not a literal union â€?otherwise Codex Runtime
+ * against `RuntimeId`, not a literal union â€” otherwise Codex Runtime
  * (or future Gemini etc.) can't be added with a single-place edit.
  *
  * The three files scanned here had hard-coded unions at review time;
@@ -31,20 +31,20 @@ const SCANNED_FILES = [
 // `RuntimeId`.
 //
 // The patterns deliberately match the type-position form (with
-// quotes + a pipe) â€?string literals like `'claude_code'` used as
+// quotes + a pipe) â€” string literals like `'claude_code'` used as
 // values are still fine (e.g. invoking `onRuntimePinChange('claude_code')`).
 const FORBIDDEN_PATTERNS: ReadonlyArray<{ pattern: RegExp; reason: string }> = [
   {
-    pattern: /'claude_code'\s*\|\s*'bbagent'/,
-    reason: "literal union 'claude_code' | 'bbagent'",
+    pattern: /'claude_code'\s*\|\s*'codepilot_runtime'/,
+    reason: "literal union 'claude_code' | 'codepilot_runtime'",
   },
   {
-    pattern: /'bbagent'\s*\|\s*'claude_code'/,
-    reason: "literal union 'bbagent' | 'claude_code'",
+    pattern: /'codepilot_runtime'\s*\|\s*'claude_code'/,
+    reason: "literal union 'codepilot_runtime' | 'claude_code'",
   },
 ];
 
-describe('Hand-rolled RuntimeId union â€?guardrail', () => {
+describe('Hand-rolled RuntimeId union â€” guardrail', () => {
   for (const rel of SCANNED_FILES) {
     it(`${rel} does not reintroduce a hand-rolled RuntimeId union`, () => {
       const abs = path.resolve(__dirname, '../..', rel);
@@ -53,7 +53,7 @@ describe('Hand-rolled RuntimeId union â€?guardrail', () => {
         assert.ok(
           !pattern.test(src),
           `${rel} reintroduces ${reason}. ` +
-            `Use \`RuntimeId\` from \`@/lib/runtime/runtime-id\` instead â€?` +
+            `Use \`RuntimeId\` from \`@/lib/runtime/runtime-id\` instead â€” ` +
             `the canonical union grows automatically when RUNTIME_IDS gains a new id.`,
         );
       }

@@ -1,5 +1,5 @@
 /**
- * Phase 4 P2.2 â€?refresh URL builder for Markdownâ†’HTML presentations.
+ * Phase 4 P2.2 â€” refresh URL builder for Markdownâ†’HTML presentations.
  *
  * Extracted from PreviewPanel.handleRefreshPresentation so the trust-
  * scope wiring can be tested without React. The function answers
@@ -8,14 +8,14 @@
  *
  * The fix (relative to the original implementation) is to honour the
  * trust tier captured at generation time:
- *  - sourceTrust === 'workspace'    â†?use sourceBaseDir (or fall back
+ *  - sourceTrust === 'workspace'    â†’ use sourceBaseDir (or fall back
  *                                     to workingDirectory if the
  *                                     legacy backlink didn't capture
  *                                     a baseDir)
- *  - sourceTrust === 'user-selected'â†?pass NO baseDir; route falls
+ *  - sourceTrust === 'user-selected'â†’ pass NO baseDir; route falls
  *                                     back to homeDir, same scope the
  *                                     original load used
- *  - missing / other                â†?fall back to the current
+ *  - missing / other                â†’ fall back to the current
  *                                     workingDirectory (back-compat
  *                                     for backlinks written before
  *                                     this fix landed)

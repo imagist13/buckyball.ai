@@ -22,7 +22,7 @@ export function isPaused(accountId: string): boolean {
   const state = pauseStates.get(accountId);
   if (!state) return false;
   if (Date.now() >= state.resumeAt) {
-    // Pause expired â€?auto-clear
+    // Pause expired â€” auto-clear
     pauseStates.delete(accountId);
     return false;
   }

@@ -4,11 +4,11 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/bridge/channels â€?List channel bindings.
+ * GET /api/bridge/channels â€” List channel bindings.
  *
  * Returns all bindings by default. Supports query parameters:
- *   ?active=true  â€?return only active bindings
- *   ?active=false â€?return only inactive bindings
+ *   ?active=true  â€” return only active bindings
+ *   ?active=false â€” return only inactive bindings
  */
 export async function GET(request: Request) {
   try {

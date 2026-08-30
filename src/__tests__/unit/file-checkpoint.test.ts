@@ -32,7 +32,7 @@ describe('createCheckpoint + restoreCheckpoint', () => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'codepilot-checkpoint-'));
   });
 
-  // Cleanup helper â€?called manually at end of each test since node:test
+  // Cleanup helper â€” called manually at end of each test since node:test
   // beforeEach/afterEach don't share mutable state across describe blocks easily.
   function cleanup() {
     try {
@@ -78,7 +78,7 @@ describe('createCheckpoint + restoreCheckpoint', () => {
       fs.writeFileSync(filePath, 'new content');
       assert.equal(fs.existsSync(filePath), true);
 
-      // Restore â€?new.txt should be deleted since it didn't exist at checkpoint time
+      // Restore â€” new.txt should be deleted since it didn't exist at checkpoint time
       restoreCheckpoint(sessionId, 'msg1', tmpDir);
       assert.equal(fs.existsSync(filePath), false);
     } finally {
@@ -94,21 +94,21 @@ describe('createCheckpoint + restoreCheckpoint', () => {
       fs.writeFileSync(fileA, 'A-original');
       fs.writeFileSync(fileB, 'B-original');
 
-      // First checkpoint â€?both files at original state
+      // First checkpoint â€” both files at original state
       createCheckpoint(sessionId, 'msg1', tmpDir);
       recordFileModification(sessionId, 'a.txt', tmpDir);
 
       // Modify file A
       fs.writeFileSync(fileA, 'A-modified-1');
 
-      // Second checkpoint â€?A is modified, B is still original
+      // Second checkpoint â€” A is modified, B is still original
       createCheckpoint(sessionId, 'msg2', tmpDir);
       recordFileModification(sessionId, 'b.txt', tmpDir);
 
       // Modify file B
       fs.writeFileSync(fileB, 'B-modified');
 
-      // Restore to msg1 â€?both A and B should be reverted to their original state
+      // Restore to msg1 â€” both A and B should be reverted to their original state
       const restored = restoreCheckpoint(sessionId, 'msg1', tmpDir);
       assert.equal(fs.readFileSync(fileA, 'utf-8'), 'A-original');
       assert.equal(fs.readFileSync(fileB, 'utf-8'), 'B-original');

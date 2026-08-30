@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
-// ── Suite 1: message dedup (inlined �?agent-loop needs DB to test directly) ──
+// ── Suite 1: message dedup (inlined — agent-loop needs DB to test directly) ──
 
 function shouldAppendPrompt(
   historyMessages: Array<{ role: string; content: unknown }>,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { TranslationKey } from "@/i18n";
@@ -16,8 +16,8 @@ interface SettingsSidebarProps {
 }
 
 /**
- * Settings sidebar â?replaces ChatListPanel when on /settings route.
- * Top: Back button â?returns to previous view (chat).
+ * Settings sidebar — replaces ChatListPanel when on /settings route.
+ * Top: Back button → returns to previous view (chat).
  * Below: section navigation (one entry per /settings/<section> route).
  *
  * Memory contract: nav items are <Link prefetch={false}> so dev only
@@ -38,12 +38,12 @@ export function SettingsSidebar({ open }: SettingsSidebarProps) {
 
   if (!open) return null;
 
-  // Phase 7c-B â?surface chrome (data-platform-sidebar attribute, bg
+  // Phase 7c-B — surface chrome (data-platform-sidebar attribute, bg
   // token, backdrop-filter, overflow-hidden, width inset) moved to
   // <CardSurface kind="sidebar" variant="settings"> in AppShell.
   return (
     <div className="flex h-full w-full flex-col">
-      {/* Round 33 â?back button moved out to UnifiedTopBar's
+      {/* Round 33 — back button moved out to UnifiedTopBar's
           /settings branch so it lives in the same tab bar as the
           sidebar-toggle button, not inside the sidebar card. Saves
           ~52px of vertical space at the top of the sidebar and
@@ -65,7 +65,7 @@ export function SettingsSidebar({ open }: SettingsSidebarProps) {
                   : "text-sidebar-foreground font-normal hover:bg-sidebar-accent/60",
               )}
             >
-              <BuckyballIcon
+              <CodePilotIcon
                 name={item.icon}
                 size="md"
                 strokeWidth={isActive ? 2 : undefined}

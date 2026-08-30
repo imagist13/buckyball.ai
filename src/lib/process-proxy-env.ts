@@ -1,8 +1,8 @@
 /**
  * Process-boundary proxy environment helpers.
  *
- * buckyball.ai keeps a user's proxy for outbound traffic, but every child process
- * must reach buckyball.ai's own loopback servers directly. This helper is shared
+ * CodePilot keeps a user's proxy for outbound traffic, but every child process
+ * must reach CodePilot's own loopback servers directly. This helper is shared
  * by Electron -> packaged Next and Next -> Codex app-server so either launch
  * path remains safe on its own.
  */
@@ -86,7 +86,7 @@ function deleteFamilyKeys(env: ProxyProcessEnvironment, family: string): void {
 }
 
 /**
- * Preserve all existing NO_PROXY rules and add buckyball.ai's loopback boundary.
+ * Preserve all existing NO_PROXY rules and add CodePilot's loopback boundary.
  *
  * Windows environment keys are case-insensitive, while Node child_process
  * sorts duplicate case variants and passes only one of them. Canonicalize all

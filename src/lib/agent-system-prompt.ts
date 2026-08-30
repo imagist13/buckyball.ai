@@ -1,5 +1,5 @@
 /**
- * agent-system-prompt.ts â€?System prompt assembly for the native Agent Loop.
+ * agent-system-prompt.ts â€” System prompt assembly for the native Agent Loop.
  *
  * Architecture modeled after Claude Code's prompts.ts + OpenCode's system.ts:
  * - Modular sections (identity, tasks, actions, tools, tone, output)
@@ -78,7 +78,7 @@ const OUTPUT_SECTION = `# Output efficiency
 
 Go straight to the point. Try the simplest approach first without going in circles. Do not overdo it. Be extra concise.
 
-Keep your text output brief and direct. Lead with the answer or action, not the reasoning. Skip filler words, preamble, and unnecessary transitions. Do not restate what the user said â€?just do it. When explaining, include only what is necessary for the user to understand.
+Keep your text output brief and direct. Lead with the answer or action, not the reasoning. Skip filler words, preamble, and unnecessary transitions. Do not restate what the user said â€” just do it. When explaining, include only what is necessary for the user to understand.
 
 Focus text output on:
 - Decisions that need the user's input

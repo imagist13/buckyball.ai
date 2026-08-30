@@ -1,5 +1,5 @@
 /**
- * Phase 4 / #577A (2026-06-02) â€?Xiaomi MiMo model "reverts" to mimo-v2-pro.
+ * Phase 4 / #577A (2026-06-02) â€” Xiaomi MiMo model "reverts" to mimo-v2-pro.
  *
  * Investigation verdict: there is NO overwrite of saved data. The MiMo presets
  * declared `fields: ['api_key']` (no model field), so the connect dialog saved
@@ -10,7 +10,7 @@
  * Fix: expose `model_names` for both MiMo presets so the user CAN set their
  * model (persisted to role_models_json.default), and pre-fill the connect
  * dialog's model field from the preset default. The resolver already honors a
- * non-empty role_models_json.default â€?these tests pin that guarantee + the
+ * non-empty role_models_json.default â€” these tests pin that guarantee + the
  * preset/wiring changes.
  */
 
@@ -89,7 +89,7 @@ async function createMimoProvider(roleModels: Record<string, string>) {
   });
 }
 
-describe('MiMo resolver honors a user-set model (no silent revert) â€?#577A', () => {
+describe('MiMo resolver honors a user-set model (no silent revert) â€” #577A', () => {
   it('a user-set role_models_json.default is used verbatim, NOT reverted to mimo-v2-pro', async () => {
     const provider = await createMimoProvider({ default: 'mimo-v2.5-pro' });
     const { resolveProvider, toClaudeCodeEnv } = await import('../../lib/provider-resolver');
@@ -99,7 +99,7 @@ describe('MiMo resolver honors a user-set model (no silent revert) â€?#577A', ()
     assert.notEqual(env.ANTHROPIC_MODEL, 'mimo-v2-pro', 'must not revert to the stale catalog default');
   });
 
-  it('an EMPTY role_models_json still back-fills the catalog default â€?exactly why the connect dialog must persist a value', async () => {
+  it('an EMPTY role_models_json still back-fills the catalog default â€” exactly why the connect dialog must persist a value', async () => {
     const provider = await createMimoProvider({});
     const { resolveProvider, toClaudeCodeEnv } = await import('../../lib/provider-resolver');
     const resolved = resolveProvider({ providerId: provider.id });
@@ -107,11 +107,11 @@ describe('MiMo resolver honors a user-set model (no silent revert) â€?#577A', ()
     assert.equal(
       env.ANTHROPIC_MODEL,
       // Merge decision (2026-06-04 integration rehearsal): catalog default is
-      // main's `mimo-v2.5-pro` (B-020 â€?users want 2.5 Pro), with the worktree's
+      // main's `mimo-v2.5-pro` (B-020 â€” users want 2.5 Pro), with the worktree's
       // #577 `model_names` override mechanism preserved on top. Was `mimo-v2-pro`
       // on the worktree branch alone.
       'mimo-v2.5-pro',
-      'empty mapping back-fills the preset default â€?the model_names field now lets the user override it',
+      'empty mapping back-fills the preset default â€” the model_names field now lets the user override it',
     );
   });
 
@@ -153,7 +153,7 @@ describe('connect dialog pre-fills the model field from the preset default (#577
   });
 });
 
-// â”€â”€ MiMo UltraSpeed â€?PAYG/API only, never the default, never on Token Plan â”€â”€
+// â”€â”€ MiMo UltraSpeed â€” PAYG/API only, never the default, never on Token Plan â”€â”€
 
 describe('MiMo UltraSpeed model (2026-06-09)', () => {
   const payg = VENDOR_PRESETS.find((p) => p.key === 'xiaomi-mimo');
@@ -168,7 +168,7 @@ describe('MiMo UltraSpeed model (2026-06-09)', () => {
     assert.ok(hasUltraSpeed(payg), 'PAYG preset must include UltraSpeed as an optional model');
   });
 
-  it('UltraSpeed is NOT the default â€?default stays mimo-v2.5-pro (approval-gated model)', () => {
+  it('UltraSpeed is NOT the default â€” default stays mimo-v2.5-pro (approval-gated model)', () => {
     assert.equal(payg!.defaultRoleModels?.default, 'mimo-v2.5-pro');
   });
 

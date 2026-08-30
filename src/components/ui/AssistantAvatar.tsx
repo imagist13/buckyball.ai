@@ -12,11 +12,11 @@ interface AssistantAvatarProps {
   size?: number;
   /** Avatar style variant (default 'beam') */
   variant?: AvatarVariant;
-  /** Buddy species â€?uses species-specific variant + emoji overlay */
+  /** Buddy species â€” uses species-specific variant + emoji overlay */
   buddySpecies?: string;
-  /** Buddy rarity â€?uses rarity-specific color palette */
+  /** Buddy rarity â€” uses rarity-specific color palette */
   buddyRarity?: string;
-  /** Buddy emoji â€?shown as overlay on the avatar */
+  /** Buddy emoji â€” shown as overlay on the avatar */
   buddyEmoji?: string;
   /** Additional CSS classes */
   className?: string;

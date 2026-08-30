@@ -1,5 +1,5 @@
 /**
- * Phase 4 P2.1 â€?markdown link interception classifier.
+ * Phase 4 P2.1 â€” markdown link interception classifier.
  *
  * The chat renders `[label](path)` as an <a href="path">; without
  * interception the browser tries to navigate to path against
@@ -117,17 +117,17 @@ describe('parseLocalMarkdownReference', () => {
   });
 });
 
-// Phase 4 P1.1 â€?workingDirectory-relative resolution before classify.
+// Phase 4 P1.1 â€” workingDirectory-relative resolution before classify.
 // The chip click handler in DevOutputChips uses `resolveToolPath` to
 // turn a bare / relative file ref into an absolute path BEFORE
 // `classifyPath` decides workspace vs. agent-referenced. This test
 // pins the contract that a workspace-relative path lands as
 // `workspace` (not as `agent-referenced` followed by a homeDir
 // fetch).
-describe('relative-path resolution â†?classifyPath workspace tier', () => {
+describe('relative-path resolution â†’ classifyPath workspace tier', () => {
   // Import via require to keep this test in the same file without
   // adding a new top-level dependency.
-  it('bare filename + workingDirectory â†?resolves under workspace + classifies workspace', async () => {
+  it('bare filename + workingDirectory â†’ resolves under workspace + classifies workspace', async () => {
     const { resolveToolPath } = await import('../../lib/file-write-tools');
     const { classifyPath } = await import('../../lib/preview-source');
     const cwd = '/Users/me/proj';
@@ -138,7 +138,7 @@ describe('relative-path resolution â†?classifyPath workspace tier', () => {
     assert.equal(cls.baseDir, cwd);
   });
 
-  it('relative subdir + workingDirectory â†?workspace tier', async () => {
+  it('relative subdir + workingDirectory â†’ workspace tier', async () => {
     const { resolveToolPath } = await import('../../lib/file-write-tools');
     const { classifyPath } = await import('../../lib/preview-source');
     const cwd = '/Users/me/proj';
@@ -154,7 +154,7 @@ describe('relative-path resolution â†?classifyPath workspace tier', () => {
     // resolveToolPath returns the raw path unchanged when cwd is missing.
     const absolute = resolveToolPath('README.md', null);
     assert.equal(absolute, 'README.md');
-    // classifyPath without cwd â†?agent-referenced (the safe default).
+    // classifyPath without cwd â†’ agent-referenced (the safe default).
     const cls = classifyPath(absolute, null);
     assert.equal(cls.trust, 'agent-referenced');
   });

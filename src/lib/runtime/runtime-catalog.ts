@@ -13,7 +13,7 @@ export type RuntimeExposureKey =
   | 'native'
   | 'codex_proxy';
 
-export type RuntimeBrandIcon = 'anthropic' | 'buckyball' | 'openai';
+export type RuntimeBrandIcon = 'anthropic' | 'codepilot' | 'openai';
 
 export interface RuntimeRegistration {
   readonly id: string;
@@ -54,17 +54,17 @@ export const BUILTIN_RUNTIME_REGISTRATIONS = [
     packagedRegistration: 'explicit',
   },
   {
-    id: 'bbagent',
-    displayName: { zh: 'buckyball.ai', en: 'buckyball.ai' },
+    id: 'codepilot_runtime',
+    displayName: { zh: 'CodePilot', en: 'CodePilot' },
     integrationLevel: 'full',
     driverId: 'native',
     exposureKey: 'native',
     projectionModes: ['context', 'mcp_descriptor', 'skill_descriptor', 'asset_reference'],
     translationKeys: {
-      label: 'runtimeSelector.bbagentRuntime',
-      description: 'runtimeSelector.bbagentRuntimeDesc',
+      label: 'runtimeSelector.codepilotRuntime',
+      description: 'runtimeSelector.codepilotRuntimeDesc',
     },
-    icon: 'buckyball',
+    icon: 'codepilot',
     packagedRegistration: 'explicit',
   },
   {

@@ -1,18 +1,19 @@
 /**
- * Phase 5b foundation â?Codex Responses proxy.
+ * Phase 5b foundation — Codex Responses proxy.
  *
  * Three units pinned here:
  *
- *   1. Request parser (`parseResponsesRequest`) â?happy path +
+ *   1. Request parser (`parseResponsesRequest`) — happy path +
  *      every field-level failure must produce a clean `field`
  *      identifier so the route can echo it back to Codex's reader.
  *
  *   2. Provider parity inventory (`getProxyParityEntry` /
- *      `ADAPTER_FAMILY_BY_COMPAT` / `ADAPTER_STATUS_BY_COMPAT`) â? *      every ProviderRuntimeCompat tier in the union MUST have a
+ *      `ADAPTER_FAMILY_BY_COMPAT` / `ADAPTER_STATUS_BY_COMPAT`) —
+ *      every ProviderRuntimeCompat tier in the union MUST have a
  *      family + status entry. Adding a new compat tier without
  *      registering its adapter mapping fails this test.
  *
- *   3. Route dispatch â?covered via the adapter entry point
+ *   3. Route dispatch — covered via the adapter entry point
  *      `handleProxyRequest`. Provider not targeted / not found /
  *      credentials missing / adapter pending all return the
  *      structured Responses error (no raw 501 anywhere).
@@ -33,11 +34,11 @@ import { serializeCodexProxyResult } from '@/lib/codex/proxy/http-response';
 import type { ResponsesRequestBody } from '@/lib/codex/proxy/types';
 import type { ProviderRuntimeCompat, ApiProvider } from '@/types';
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Request parser
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('parseResponsesRequest â?happy path + field-level failures', () => {
+describe('parseResponsesRequest — happy path + field-level failures', () => {
   it('parses a minimal valid request (model + empty input)', () => {
     const r = parseResponsesRequest({ model: 'gpt-4o', input: [] });
     assert.equal(r.ok, true);
@@ -138,7 +139,7 @@ describe('parseResponsesRequest â?happy path + field-level failures', () => {
     // Codex's own shell / apply_patch surface). The pre-fix parser
     // returned a 400 on those, blocking every real Codex chat that
     // surfaced non-trivial tools. Phase 5b's scope is chat parity,
-    // not full custom-tool bridging â?so non-function tools are
+    // not full custom-tool bridging — so non-function tools are
     // filtered out silently. The function tools survive.
     const r = parseResponsesRequest({
       model: 'x',
@@ -163,7 +164,7 @@ describe('parseResponsesRequest â?happy path + field-level failures', () => {
   });
 
   it('treats "all tools were filtered out" the same as no tools (undefined, not [])', () => {
-    // ai-sdk distinguishes undefined from an empty array â?passing []
+    // ai-sdk distinguishes undefined from an empty array — passing []
     // disables tool calling explicitly. The post-filter empty case
     // should look identical to "Codex sent no tools at all".
     const r = parseResponsesRequest({
@@ -210,7 +211,7 @@ describe('parseResponsesRequest â?happy path + field-level failures', () => {
     const rTrue = parseResponsesRequest({ model: 'x', input: [], store: true });
     assert.equal(rTrue.ok, true);
     if (!rTrue.ok) return;
-    assert.equal(rTrue.body.store, true, 'store:true also survives â?the adapter decides what to do');
+    assert.equal(rTrue.body.store, true, 'store:true also survives — the adapter decides what to do');
 
     const rOmitted = parseResponsesRequest({ model: 'x', input: [] });
     assert.equal(rOmitted.ok, true);
@@ -233,11 +234,11 @@ describe('parseResponsesRequest â?happy path + field-level failures', () => {
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Provider parity inventory
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('Provider parity inventory â?every compat tier maps to a family + status', () => {
+describe('Provider parity inventory — every compat tier maps to a family + status', () => {
   // The full ProviderRuntimeCompat union as documented in types/index.ts.
   // Adding a new tier upstream MUST be registered here AND in the two
   // maps; the test below catches the omission.
@@ -246,7 +247,7 @@ describe('Provider parity inventory â?every compat tier maps to a family + st
     'claude_code_verified',
     'claude_code_experimental',
     'openrouter_anthropic_skin',
-    'bbagent_only',
+    'codepilot_only',
     'codex_account',
     'media_only',
     'unknown',
@@ -276,7 +277,7 @@ describe('Provider parity inventory â?every compat tier maps to a family + st
   });
 
   it('claude_code_verified + claude_code_experimental route to the codeplan family', () => {
-    // Brand-specific subscription tiers (GLM / Kimi / ç¾ç¼ / MiniMax
+    // Brand-specific subscription tiers (GLM / Kimi / 百炼 / MiniMax
     // / DeepSeek) all speak Anthropic wire but carry per-brand alias
     // mapping the CodePlan adapter is responsible for. Verified +
     // experimental both classify there so the brand-specific quirks
@@ -303,13 +304,13 @@ describe('Provider parity inventory â?every compat tier maps to a family + st
     const glmEntry = getProxyParityEntry(glm);
     assert.equal(glmEntry.provider_id, 'glm-test');
     assert.equal(glmEntry.adapter_status, 'ready');
-    assert.equal(glmEntry.excluded_reason, undefined, 'ready tier must NOT carry excluded_reason â?picker should re-enable the row');
+    assert.equal(glmEntry.excluded_reason, undefined, 'ready tier must NOT carry excluded_reason — picker should re-enable the row');
 
-    // An `unknown`-tier provider still surfaces excluded_reason â?the
+    // An `unknown`-tier provider still surfaces excluded_reason — the
     // proxy can't pick a wire format without more info. Phase 5b
     // shipped the unified translator for every recognised tier, so the
-    // copy shifted from "æ­£å¨æ¥å¥" / "being wired" (sweep-pending) to
-    // "ææªè¯å« wire format" / "wire format unidentified" â?the proxy
+    // copy shifted from "正在接入" / "being wired" (sweep-pending) to
+    // "暂未识别 wire format" / "wire format unidentified" — the proxy
     // is live, it just can't fingerprint the wire format for this row.
     const unknownProv: ApiProvider = {
       id: 'mystery-test',
@@ -326,16 +327,16 @@ describe('Provider parity inventory â?every compat tier maps to a family + st
     const unknownEntry = getProxyParityEntry(unknownProv);
     assert.equal(unknownEntry.adapter_status, 'pending');
     assert.ok(unknownEntry.excluded_reason, 'pending tier must carry an excluded_reason for the picker tooltip');
-    assert.match(pickerDisabledReason(unknownEntry.adapter_family, true), /ææªè¯å«|wire format/);
+    assert.match(pickerDisabledReason(unknownEntry.adapter_family, true), /暂未识别|wire format/);
     assert.match(pickerDisabledReason(unknownEntry.adapter_family, false), /unidentified|wire format/);
   });
 });
 
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 // Adapter dispatch
-// âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─────────────────────────────────────────────────────────────────────
 
-describe('handleProxyRequest â?pre-stream errors are structured Responses errors, not 501', () => {
+describe('handleProxyRequest — pre-stream errors are structured Responses errors, not 501', () => {
   const validBody = {
     model: 'gpt-4o',
     input: [{ type: 'message' as const, role: 'user' as const, content: [{ type: 'input_text' as const, text: 'hi' }] }],
@@ -371,7 +372,7 @@ describe('handleProxyRequest â?pre-stream errors are structured Responses err
   });
 });
 
-describe('classifyUpstreamError â?maps ai-sdk / fetch errors to ResponsesErrorCode', () => {
+describe('classifyUpstreamError — maps ai-sdk / fetch errors to ResponsesErrorCode', () => {
   it('classifies AbortError to upstream_timeout', () => {
     const err = new Error('aborted');
     err.name = 'AbortError';
@@ -409,15 +410,15 @@ describe('classifyUpstreamError â?maps ai-sdk / fetch errors to ResponsesErro
   });
 });
 
-describe('makeErrorResult â?default status by code', () => {
-  it('credentials_missing â?401', () => {
+describe('makeErrorResult — default status by code', () => {
+  it('credentials_missing → 401', () => {
     assert.equal(makeErrorResult('credentials_missing', 'm').status, 401);
   });
-  it('provider_not_found â?404', () => {
+  it('provider_not_found → 404', () => {
     assert.equal(makeErrorResult('provider_not_found', 'm').status, 404);
   });
-  it('adapter_not_implemented â?501', () => {
-    // This is the one place 501 is still used â?for the
+  it('adapter_not_implemented → 501', () => {
+    // This is the one place 501 is still used — for the
     // adapter-pending case. It still encodes the structured error
     // body though, NOT the bare "unsupported_yet" the pre-5b
     // scaffold returned. Codex's HTTP client reads
@@ -425,15 +426,15 @@ describe('makeErrorResult â?default status by code', () => {
     // family from `error.context`.
     assert.equal(makeErrorResult('adapter_not_implemented', 'm').status, 501);
   });
-  it('upstream_rate_limited â?429', () => {
+  it('upstream_rate_limited → 429', () => {
     assert.equal(makeErrorResult('upstream_rate_limited', 'm').status, 429);
   });
-  it('upstream_timeout â?504', () => {
+  it('upstream_timeout → 504', () => {
     assert.equal(makeErrorResult('upstream_timeout', 'm').status, 504);
   });
 });
 
-describe('serializeCodexProxyResult â?transport status is not Provider status', () => {
+describe('serializeCodexProxyResult — transport status is not Provider status', () => {
   const body: ResponsesRequestBody = {
     model: 'gpt-4o',
     input: [],
@@ -473,7 +474,7 @@ describe('serializeCodexProxyResult â?transport status is not Provider status
   });
 });
 
-describe('registerAdapter â?runtime override stays available for tests', () => {
+describe('registerAdapter — runtime override stays available for tests', () => {
   it('exposes a function that swaps the family adapter at runtime', () => {
     // Phase 5b shipped a unified adapter wired statically at module
     // init. The registerAdapter escape hatch is retained so tests

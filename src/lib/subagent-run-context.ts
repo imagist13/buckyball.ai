@@ -196,7 +196,7 @@ export function buildCodexSubagentRunContext(sessionId: string): string {
     runs: runs.map(lifecycleFact),
   };
   return [
-    'buckyball.ai managed Sub-agent lifecycle contract:',
+    'CodePilot managed Sub-agent lifecycle contract:',
     `- The authoritative source is ${SUBAGENT_RUN_FACT_SOURCE}, never update_plan text, assistant narration, elapsed time, or workspace files.`,
     '- terminal=false means the child is still running. terminal=true means the child has stopped and no background process remains.',
     '- A failed/partial/cancelled/timed_out run is not completed. Do not mark a dependent task completed without consuming a successful terminal result.',

@@ -1,7 +1,7 @@
 /**
- * agent-loop-toolloop-poc.ts â?AI SDK 7 Phase 3 side-by-side POC.
+ * agent-loop-toolloop-poc.ts — AI SDK 7 Phase 3 side-by-side POC.
  *
- * EXPERIMENTAL â?NOT WIRED INTO ANY RUNTIME. Nothing on the default chat
+ * EXPERIMENTAL — NOT WIRED INTO ANY RUNTIME. Nothing on the default chat
  * path imports this module. The only entry points are:
  *   - src/__tests__/unit/toolloop-poc-parity.test.ts (SSE / DB / permission
  *     parity against agent-loop.ts)
@@ -9,20 +9,21 @@
  *
  * What it is: `runAgentLoop()` re-implemented on top of AI SDK 7's
  * `ToolLoopAgent` instead of the manual while-loop around single-step
- * `streamText()`. The goal is to measure parity, not to replace the loop â? * Experimental AI SDK 7 ToolLoop agent parity POC.
+ * `streamText()`. The goal is to measure parity, not to replace the loop —
+ * Experimental AI SDK 7 ToolLoop agent parity POC.
  *
  * Deliberate mirroring rules:
  *   - Same `AgentLoopOptions` input type as agent-loop.ts.
  *   - Same SSE event contract (text / thinking / tool_use / tool_result /
  *     status / result / error / permission_request / rewind_point /
  *     keep_alive / done) with identical payload field names.
- *   - Same tool assembly (assembleTools + permission wrapping) â?the
+ *   - Same tool assembly (assembleTools + permission wrapping) — the
  *     permission_request / permission_resolved flow lives INSIDE the wrapped
  *     tool's execute(), so it is shared verbatim with the production loop.
  *     ToolLoopAgent's own `toolApproval` / `needsApproval` machinery is
  *     intentionally NOT used: it pauses the loop and requires an
  *     approval-response resubmission round-trip, which would change
- *     buckyball.ai's blocking-approval semantics (documented as a Phase 3 gap).
+ *     CodePilot's blocking-approval semantics (documented as a Phase 3 gap).
  *   - providerOptions construction is copied verbatim from agent-loop.ts
  *     (lines ~284-414). agent-loop recomputes it every step but the value is
  *     step-invariant; the step===1 one-shot notifications map to "emit once
@@ -102,13 +103,13 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
   return new ReadableStream<string>({
     async start(controllerRaw) {
       const controller = wrapController(controllerRaw, (kind) => {
-        console.warn(`[toolloop-poc] late ${kind} after stream close â?silently dropped`);
+        console.warn(`[toolloop-poc] late ${kind} after stream close — silently dropped`);
       });
       const keepAliveTimer = setInterval(() => {
         controller.enqueue(formatSSE({ type: 'keep_alive', data: '' }));
       }, KEEPALIVE_INTERVAL_MS);
 
-      // Media side-channel â?same subscription contract as agent-loop.ts.
+      // Media side-channel — same subscription contract as agent-loop.ts.
       const pendingMediaByCallId = new Map<string, MediaBlock[]>();
       const { ToolInvocationAccumulator } = await import(
         '@/lib/harness/auto-invoke-accounting'
@@ -222,7 +223,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           createCheckpoint(sessionId, rewindMessageId, workingDirectory || process.cwd());
         }
 
-        // 5. providerOptions â?copied verbatim from agent-loop.ts (~284-414).
+        // 5. providerOptions — copied verbatim from agent-loop.ts (~284-414).
         // agent-loop recomputes per step but the value never varies across
         // steps; the step===1 one-shot notifications become emit-once here.
         const sanitized = sanitizeClaudeModelOptions({
@@ -249,7 +250,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
         }
         if (sanitized.thinkingForcedOn) {
           console.warn(
-            `[toolloop-poc] Fable 5: thinking cannot be disabled â?request runs with adaptive thinking despite thinking_mode='disabled'.`,
+            `[toolloop-poc] Fable 5: thinking cannot be disabled — request runs with adaptive thinking despite thinking_mode='disabled'.`,
           );
           controller.enqueue(formatSSE({
             type: 'status',
@@ -257,7 +258,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
               notification: true,
               code: 'THINKING_ALWAYS_ON',
               title: 'Thinking stays on for this model',
-              message: `Fable 5 always uses adaptive thinking â?the "thinking off" setting can't apply to this model. Use Effort to tune thinking depth instead.`,
+              message: `Fable 5 always uses adaptive thinking — the "thinking off" setting can't apply to this model. Use Effort to tune thinking depth instead.`,
             }),
           }));
         }
@@ -265,7 +266,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
         let providerOptions: any;
         if (config.sdkType === 'anthropic') {
           // Parity with agent-loop.ts via the SAME shared builder (model plan
-          // Phase 2 / s05) â?unsupported models, unsupported tiers, and
+          // Phase 2 / s05) — unsupported models, unsupported tiers, and
           // explicit picks dropped by a third-party proxy can no longer drift
           // between the two native paths.
           const wire = buildAnthropicProviderOptions({
@@ -277,7 +278,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           if (wire.effortDroppedForProxy) {
             const requestedEffort = wire.effortDroppedForProxyRequested || 'unknown';
             console.warn(
-              `[toolloop-poc] Third-party Anthropic proxy: dropping explicit effort='${requestedEffort}' â?effort GA beta header may not be supported by proxies. Switch to SDK runtime or the official Anthropic endpoint to control effort.`,
+              `[toolloop-poc] Third-party Anthropic proxy: dropping explicit effort='${requestedEffort}' — effort GA beta header may not be supported by proxies. Switch to SDK runtime or the official Anthropic endpoint to control effort.`,
             );
             controller.enqueue(formatSSE({
               type: 'status',
@@ -292,7 +293,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           if (wire.effortDroppedUnsupportedTier) {
             const { requested, supported } = wire.effortDroppedUnsupportedTier;
             console.warn(
-              `[toolloop-poc] ${config.modelId} does not accept effort='${requested}' â?supported tiers: ${supported.join(', ')}. The unsupported tier was omitted.`,
+              `[toolloop-poc] ${config.modelId} does not accept effort='${requested}' — supported tiers: ${supported.join(', ')}. The unsupported tier was omitted.`,
             );
             controller.enqueue(formatSSE({
               type: 'status',
@@ -310,7 +311,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           }
           if (wire.effortDroppedUnsupportedModel) {
             console.warn(
-              `[toolloop-poc] ${config.modelId} is not on Anthropic's effort-capable model list â?dropping explicit effort='${sanitized.effort}'. The model runs at its own default reasoning depth.`,
+              `[toolloop-poc] ${config.modelId} is not on Anthropic's effort-capable model list — dropping explicit effort='${sanitized.effort}'. The model runs at its own default reasoning depth.`,
             );
             controller.enqueue(formatSSE({
               type: 'status',
@@ -318,7 +319,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
                 notification: true,
                 code: 'RUNTIME_EFFORT_IGNORED',
                 // Client-localized, same key as agent-loop (no drift between
-                // the two native paths) â?see status-notice-i18n.ts.
+                // the two native paths) — see status-notice-i18n.ts.
                 reason: 'unsupported-model',
                 params: { model: config.modelId || '', effort: sanitized.effort || '' },
               }),
@@ -350,11 +351,11 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
         emitEvent('session:start', { sessionId, model: modelId });
         onRuntimeStatusChange?.('streaming');
 
-        // 6. ToolLoopAgent â?replaces the manual while-loop. Loop-continuation
+        // 6. ToolLoopAgent — replaces the manual while-loop. Loop-continuation
         // rule: SDK continues while the last step has tool RESULTS and no stop
         // condition is met; agent-loop continues while the step made tool
         // CALLS. Divergence only when a call produces no result (execute-less
-        // tool) â?not a shape buckyball.ai's assembled tools produce.
+        // tool) — not a shape CodePilot's assembled tools produce.
         const agent = new ToolLoopAgent({
           model: languageModel,
           ...(effectiveSystemPrompt ? { instructions: effectiveSystemPrompt } : {}),
@@ -364,7 +365,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           providerOptions,
           ...(config.useResponsesApi ? {} : { maxOutputTokens: 16384 }),
           stopWhen: stepCountIs(maxSteps),
-          // Per-step history pruning â?agent-loop applies pruneOldToolResults
+          // Per-step history pruning — agent-loop applies pruneOldToolResults
           // before every streamText call; prepareStep is the SDK's equivalent
           // interception point.
           prepareStep: ({ messages }) => ({
@@ -399,7 +400,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           },
         });
 
-        // 7. Consume the fullStream â?same switch as agent-loop's inner loop,
+        // 7. Consume the fullStream — same switch as agent-loop's inner loop,
         // plus start-step bookkeeping (agent-loop resets these per while-pass).
         let lastStepHadToolCalls = false;
         let lastStepHadContent = false;
@@ -468,7 +469,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
             }
 
             case 'tool-error': {
-              // #49 parity with agent-loop.ts â?a tool's execute() threw.
+              // #49 parity with agent-loop.ts — a tool's execute() threw.
               // ToolLoopAgent surfaces it as a `tool-error` stream part;
               // forward it as an is_error:true tool_result instead of letting
               // it fall to `default` and get swallowed (no UI error bubble).
@@ -512,7 +513,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
               break;
             }
 
-            // start / finish / abort / tool-input-* / text-start etc. â?not
+            // start / finish / abort / tool-input-* / text-start etc. — not
             // forwarded, same as agent-loop's default branch.
             default:
               break;
@@ -522,7 +523,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
         // 8a. Abort routing parity. When the user aborts while the last step
         // still had pending tool calls, agent-loop tries to CONTINUE the
         // while-loop (await result.response / next streamText call) and
-        // throws AbortError â?its catch tail: no empty-response check, no
+        // throws AbortError → its catch tail: no empty-response check, no
         // skill nudge, NO result event (finally still emits done). When the
         // abort lands on a step WITHOUT tool calls (mid-text abort),
         // agent-loop breaks normally and DOES emit the result event.
@@ -555,9 +556,9 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
           });
         }
 
-        // 8. Empty-response detection â?agent-loop checks the FINAL step (the
+        // 8. Empty-response detection — agent-loop checks the FINAL step (the
         // one that made no tool calls) for content before breaking, and it
-        // does so by awaiting result.finishReason â?which REJECTS when the
+        // does so by awaiting result.finishReason — which REJECTS when the
         // provider errored (NoOutputGeneratedError). That throw is what routes
         // agent-loop's error turns through the catch block (generic
         // AGENT_ERROR event, NO result event), so the POC must await the same
@@ -577,7 +578,7 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
             type: 'error',
             data: JSON.stringify({
               category: 'EMPTY_RESPONSE',
-              userMessage: `æ¨¡åæªè¿åä»»ä½åå®?(finishReason: ${finishReason})ãå¯è½æ¯ API ä»£çä¸å¼å®¹ææ¨¡å ID "${modelId}" ä¸è¢«æ¯æã`,
+              userMessage: `模型未返回任何内容 (finishReason: ${finishReason})。可能是 API 代理不兼容或模型 ID "${modelId}" 不被支持。`,
             }),
           }));
         }
@@ -652,7 +653,8 @@ export function runToolLoopAgentPoc(options: AgentLoopOptions): ReadableStream<s
   });
 }
 
-// Mirror of agent-loop.ts buildNativeAccountingSnapshot (not exported there â?// this POC must not modify the production module).
+// Mirror of agent-loop.ts buildNativeAccountingSnapshot (not exported there —
+// this POC must not modify the production module).
 async function buildNativeAccountingSnapshot(
   records: readonly ToolInvocationRecord[],
   workspacePath: string,
@@ -663,7 +665,7 @@ async function buildNativeAccountingSnapshot(
     return collectAutoInvokeSnapshot({
       workspacePath,
       records,
-      producedBy: 'bbagent',
+      producedBy: 'codepilot_runtime',
       unsupported: ['system_prompt', 'memory', 'files_attachments'],
       resolveRulesEntry: resolveWorkspaceClaudeMdRules,
     });

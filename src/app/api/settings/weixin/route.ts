@@ -1,7 +1,7 @@
 /**
  * WeChat global settings API.
- * GET â€?returns current settings
- * PUT â€?updates settings
+ * GET â€” returns current settings
+ * PUT â€” updates settings
  */
 
 import { NextResponse } from 'next/server';

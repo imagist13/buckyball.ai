@@ -25,7 +25,8 @@ export function FilesTabPanel({ files, refreshingDocs, onRefreshDocs }: FilesTab
 
   return (
     <div className="space-y-3">
-      {/* Inset-divider sub-card per `docs/design.md` § Sub-card �?          rounded-md bg-muted/40 + px-3.5 + divide-y. Replaces the flat
+      {/* Inset-divider sub-card per `docs/design.md` § Sub-card —
+          rounded-md bg-muted/40 + px-3.5 + divide-y. Replaces the flat
           `space-y-2` row list and individual hand-rolled `border-border/30`
           row borders. */}
       <div className="rounded-md bg-muted/40">

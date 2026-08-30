@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Reject raw protocol strings we don't recognize â€?otherwise a stray
+    // Reject raw protocol strings we don't recognize â€” otherwise a stray
     // 'random-garbage' protocol would survive in the DB, bypass the legacy
     // inference path in resolver/models, and mis-route capability metadata.
     // Undefined/empty is fine: getEffectiveProviderProtocol() will infer
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     // on the write path so third-party configurations don't leak there.
     // Users wanting official Anthropic must pass 'https://api.anthropic.com'.
     //
-    // Use effective protocol (raw â†?inferred) because body.protocol is
+    // Use effective protocol (raw â†’ inferred) because body.protocol is
     // optional; older clients or raw-API callers can post
     // { provider_type: 'anthropic', base_url: '' } without protocol and
     // still land in the same ambiguous state.
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     // ambiguity: the official preset fills baseUrl client-side, but the
     // third-party preset ships empty and relies on the user to type a URL.
     // If that field is left blank, provider-resolver falls back to the
-    // official endpoint â€?so a "third-party" row silently generates against
+    // official endpoint â€” so a "third-party" row silently generates against
     // api.openai.com / generativelanguage.googleapis.com. Mirror the
     // Anthropic guard so the wrong service can't be saved.
     if (
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     const provider = createProvider(body);
 
-    // Eager catalog seed for OpenRouter â€?the rest of the OpenRouter UX
+    // Eager catalog seed for OpenRouter â€” the rest of the OpenRouter UX
     // (success toast, search-and-add dialog, validate-models refresh)
     // assumes the 3 default aliases (sonnet/opus/haiku) are already in
     // `provider_models` immediately after creation. Lazy GET-time seed

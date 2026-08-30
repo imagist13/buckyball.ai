@@ -38,7 +38,7 @@ export function assertContained(workspaceDir: string, relativePath: string): str
       throw new Error(`Symlink target escapes workspace boundary: ${relativePath}`);
     }
   } catch (e) {
-    // File doesn't exist yet â€?that's fine for targets being created
+    // File doesn't exist yet â€” that's fine for targets being created
     if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e;
   }
 
@@ -111,7 +111,7 @@ export function classifyAndSuggest(
     };
   }
 
-  // No good match â€?suggest Inbox
+  // No good match â€” suggest Inbox
   const basename = path.basename(filePath);
   return {
     suggestedCategory: null,
@@ -258,7 +258,7 @@ export function suggestTaxonomyEvolution(
     }
   }
 
-  // Files without a good category â†?suggest new category
+  // Files without a good category â†’ suggest new category
   if (uncategorized.length > 0) {
     // Group by top-level directory
     const dirGroups = new Map<string, number>();
@@ -277,7 +277,7 @@ export function suggestTaxonomyEvolution(
     }
   }
 
-  // Categories with 0 files â†?suggest archive
+  // Categories with 0 files â†’ suggest archive
   for (const [catId, count] of categoryFileCounts) {
     if (count === 0) {
       const cat = taxonomy.categories.find((c) => c.id === catId);

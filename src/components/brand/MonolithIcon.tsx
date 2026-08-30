@@ -1,16 +1,16 @@
 /**
- * CodePilot Monolith app icon â?the canonical brand mark.
+ * CodePilot Monolith app icon — the canonical brand mark.
  *
  * Used in the brand-anchor surfaces:
- *   1. Runtime selector / Runtime panel (Settings â?Runtime) â?the
- *      visual identity of the "bb-agent Runtime" engine entry.
- *   2. New-chat welcome (centered hero above the composer) â?the
+ *   1. Runtime selector / Runtime panel (Settings → Runtime) — the
+ *      visual identity of the "CodePilot Runtime" engine entry.
+ *   2. New-chat welcome (centered hero above the composer) — the
  *      brand greeting.
- *   3. About page (Settings â?About) â?the canonical brand surface.
+ *   3. About page (Settings → About) — the canonical brand surface.
  *   4. Setup Center welcome card.
  *
  * Design:
- *   - 5Ã5 grid of squaresâdots that fade from solid (top-left) to
+ *   - 5×5 grid of squares→dots that fade from solid (top-left) to
  *     dispersed (bottom-right). Carries the "context dispersing into
  *     answers" metaphor.
  *   - Shape fills route through `currentColor` so the icon picks up
@@ -21,8 +21,8 @@
  *   - 2026-05-21 v2: switched to the cleaned master SVG that drops
  *     the Gaussian-blur backdrop + inner-shadow filters (those
  *     rendered as a dirty halo in the inline SVG path). The new
- *     master file is content-only at 595Ã595 edge-to-edge; we extend
- *     the viewBox to 655Ã655 (centered) to add ~5% padding on all
+ *     master file is content-only at 595×595 edge-to-edge; we extend
+ *     the viewBox to 655×655 (centered) to add ~5% padding on all
  *     sides so the icon doesn't sit jammed against its container.
  *
  * Sizes: pass `size` (px) for a fixed render, OR omit `size` and rely
@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
 
 interface MonolithIconProps {
   className?: string;
-  /** Optional pixel size â?leave undefined to fill parent via CSS. */
+  /** Optional pixel size — leave undefined to fill parent via CSS. */
   size?: number;
   style?: CSSProperties;
 }
@@ -44,9 +44,9 @@ export function MonolithIcon({ className, size, style }: MonolithIconProps) {
     ? { width: size, height: size, ...style }
     : style;
   return (
-    // viewBox extends 30px past the 595Ã595 content on every side
+    // viewBox extends 30px past the 595×595 content on every side
     // (~5% padding) so the icon never reads as cropped against its
-    // container edges â?matches the breathing room baked into peer
+    // container edges — matches the breathing room baked into peer
     // brand icons (LobeHub Anthropic / OpenAI).
     <svg
       viewBox="-30 -30 655 655"

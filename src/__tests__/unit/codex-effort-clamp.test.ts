@@ -1,11 +1,11 @@
 /**
  * Codex effort resolution on the codex_runtime `turn/start` path.
  *
- * P1 (2026-06-01) �?original rule: never forward CodePilot's `xhigh` / `max`
+ * P1 (2026-06-01) — original rule: never forward CodePilot's `xhigh` / `max`
  * to a Codex app-server that only knows minimal|low|medium|high (old builds
  * reject unknown variants fatally; 0.133 warns and falls back to medium).
  *
- * Phase 0 (2026-07-17) �?that global clamp became a lie of its own once
+ * Phase 0 (2026-07-17) — that global clamp became a lie of its own once
  * GPT-5.6 shipped real `xhigh` / `max` tiers: the user picked Max and the
  * wire carried `high`. The rule is now a PER-MODEL allowlist read from
  * `model/list` (resolveCodexEffort), with clampCodexEffort demoted to the
@@ -13,7 +13,7 @@
  * out / old binary).
  *
  * Scope guard: codex-only. Claude Code / Native keep the full union for
- * Anthropic Opus tiers �?they do NOT import from ./effort.
+ * Anthropic Opus tiers — they do NOT import from ./effort.
  *
  * See docs/research/packaged-preview-runtime-diagnosis-2026-05-31.md
  * and docs/research/foundation-experience-refresh-2026-07-17.md
@@ -33,7 +33,7 @@ import {
   CODEX_GENERIC_EXCLUDED_EFFORTS,
 } from '@/lib/codex/effort';
 
-describe('resolveCodexProviderEffort �?CodePilot provider catalog + binary gate', () => {
+describe('resolveCodexProviderEffort — CodePilot provider catalog + binary gate', () => {
   const contract = { supportedLevels: ['low', 'high', 'max'], defaultLevel: 'max' };
 
   it('preserves explicit Max and resolves Auto to the vendor default', () => {
@@ -81,7 +81,7 @@ describe('resolveCodexProviderEffort �?CodePilot provider catalog + binary gate
 /** What codex-cli 0.144.2 really reports for GPT-5.6 Sol. */
 const SOL_TIERS = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'];
 
-describe('resolveCodexEffort �?declared tiers pass through verbatim', () => {
+describe('resolveCodexEffort — declared tiers pass through verbatim', () => {
   it('forwards xhigh when the model declares it (NOT clamped to high)', () => {
     assert.equal(resolveCodexEffort('xhigh', SOL_TIERS), 'xhigh');
   });
@@ -97,7 +97,7 @@ describe('resolveCodexEffort �?declared tiers pass through verbatim', () => {
   });
 });
 
-describe('resolveCodexEffort �?undeclared tiers are omitted, never coerced', () => {
+describe('resolveCodexEffort — undeclared tiers are omitted, never coerced', () => {
   const modest = ['low', 'medium', 'high'];
 
   it('omits xhigh for a model that does not declare it', () => {
@@ -123,10 +123,10 @@ describe('resolveCodexEffort �?undeclared tiers are omitted, never coerced', ()
   });
 });
 
-describe('resolveCodexEffort �?no capability info falls back to the conservative clamp', () => {
+describe('resolveCodexEffort — no capability info falls back to the conservative clamp', () => {
   for (const declared of [undefined, []]) {
     const label = declared === undefined ? 'undefined' : 'empty';
-    it(`clamps xhigh �?high when tiers are ${label} (old binary may reject xhigh fatally)`, () => {
+    it(`clamps xhigh → high when tiers are ${label} (old binary may reject xhigh fatally)`, () => {
       assert.equal(resolveCodexEffort('xhigh', declared), 'high');
     });
     it(`keeps medium as-is when tiers are ${label}`, () => {
@@ -140,12 +140,12 @@ describe('resolveCodexEffort �?no capability info falls back to the conservativ
 
 // ── ultra is Codex-only, not a generic selector tier ─────────────────
 
-describe('toGenericEffortLevels �?ultra never reaches the shared effort menu', () => {
+describe('toGenericEffortLevels — ultra never reaches the shared effort menu', () => {
   it('drops ultra from the real GPT-5.6 Sol tier list', () => {
     assert.deepEqual(toGenericEffortLevels(SOL_TIERS), ['low', 'medium', 'high', 'xhigh', 'max']);
   });
 
-  it('keeps xhigh / max �?only Codex-exclusive tiers are withheld', () => {
+  it('keeps xhigh / max — only Codex-exclusive tiers are withheld', () => {
     assert.deepEqual(toGenericEffortLevels(['xhigh', 'max']), ['xhigh', 'max']);
   });
 
@@ -164,12 +164,12 @@ describe('toGenericEffortLevels �?ultra never reaches the shared effort menu', 
 
 // ── the fallback clamp itself (unchanged behavior, narrower role) ─────
 
-describe('clampCodexEffort �?conservative fallback contract', () => {
-  it('maps xhigh �?high', () => {
+describe('clampCodexEffort — conservative fallback contract', () => {
+  it('maps xhigh → high', () => {
     assert.equal(clampCodexEffort('xhigh'), 'high');
   });
 
-  it('maps max �?high', () => {
+  it('maps max → high', () => {
     assert.equal(clampCodexEffort('max'), 'high');
   });
 
@@ -192,16 +192,16 @@ describe('clampCodexEffort �?conservative fallback contract', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
-// Wiring pin �?the resolver tests above prove the helper, but not that
+// Wiring pin — the resolver tests above prove the helper, but not that
 // runtime.ts USES it. The runtime spawns the app-server (can't mock without
 // dragging the whole subprocess machinery into a unit test), so we pin the
-// turn/start wiring at the source level �?same convention as the
+// turn/start wiring at the source level — same convention as the
 // thread/start + thread/resume pins in codex-runtime-proxy-injection.test.ts.
 // Catches a revert to raw `options.effort` (leaking undeclared tiers) or to
 // the global clamp (silently downgrading a model's real max) at zero cost.
 // ─────────────────────────────────────────────────────────────────────
 
-describe('CodexRuntime turn/start �?effort wiring pin (per-model allowlist)', () => {
+describe('CodexRuntime turn/start — effort wiring pin (per-model allowlist)', () => {
   const runtimeSrc = fs.readFileSync(
     path.resolve(__dirname, '../../lib/codex/runtime.ts'),
     'utf8',

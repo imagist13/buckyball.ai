@@ -1,5 +1,5 @@
 /**
- * Obsidian callout rewriting �?Phase 4 Markdown data layer.
+ * Obsidian callout rewriting — Phase 4 Markdown data layer.
  *
  * Obsidian's callout syntax is:
  *
@@ -10,7 +10,7 @@
  *   > [!warning]
  *   > Warning body
  *
- * Streamdown / remark-gfm renders this as a plain blockquote �?the
+ * Streamdown / remark-gfm renders this as a plain blockquote — the
  * `[!type]` marker isn't recognized. Rather than ship a remark
  * plugin we pre-process the markdown body: detect callout-shaped
  * blockquotes and rewrite them into HTML <blockquote> elements with
@@ -40,7 +40,7 @@ interface CalloutAppearance {
 const APPEARANCE: Record<string, CalloutAppearance> = {
   note: { icon: '📝', label: 'Note', className: 'codepilot-callout-note' },
   tip: { icon: '💡', label: 'Tip', className: 'codepilot-callout-tip' },
-  important: { icon: '�?, label: 'Important', className: 'codepilot-callout-important' },
+  important: { icon: '❗', label: 'Important', className: 'codepilot-callout-important' },
   warning: { icon: '⚠️', label: 'Warning', className: 'codepilot-callout-warning' },
   caution: { icon: '🛑', label: 'Caution', className: 'codepilot-callout-caution' },
   info: { icon: 'ℹ️', label: 'Info', className: 'codepilot-callout-info' },
@@ -113,7 +113,7 @@ export function rewriteCallouts(body: string): string {
     //
     // Going through a plain markdown blockquote (rather than inline
     // <blockquote class="...">) means streamdown's strong + paragraph
-    // formatting works as usual �?bold title, regular body �?and we
+    // formatting works as usual — bold title, regular body — and we
     // don't fight the renderer's sanitizer over class attributes.
     const headerLine = `**${appearance.icon} ${title || appearance.label}**`;
     output.push(`> ${CALLOUT_MARKER_PREFIX}${type}${CALLOUT_MARKER_SUFFIX}`);
@@ -138,14 +138,14 @@ export function rewriteCallouts(body: string): string {
  * happens to use today.
  */
 export const CALLOUT_MARKER_PREFIX = '⟦codepilot-callout:';
-export const CALLOUT_MARKER_SUFFIX = '�?;
+export const CALLOUT_MARKER_SUFFIX = '⟧';
 
 /**
  * Detect a callout marker in a string, returning the callout type or
  * null. Used by the post-render pass + by tests.
  */
 export function readCalloutMarker(text: string): string | null {
-  const m = text.match(/⟦codepilot-callout:([a-z]+)�?);
+  const m = text.match(/⟦codepilot-callout:([a-z]+)⟧/);
   return m ? m[1] : null;
 }
 

@@ -20,7 +20,7 @@ const CANONICAL_INSTRUCTIONS_FILE = 'instructions.md';
 const NATIVE_INSTRUCTION_MIRRORS = ['CLAUDE.md', 'AGENTS.md'] as const;
 const MANAGED_MIRROR_HEADER = /^<!-- codepilot-managed-instructions\r?\nsource: instructions\.md\r?\ncontent-sha256: ([a-f0-9]{64})\r?\n-->\r?\n/;
 
-// Canonical filenames �?neutral instructions.md for new workspaces, with
+// Canonical filenames — neutral instructions.md for new workspaces, with
 // legacy Claude/Agent-specific names kept as read-compatible fallbacks.
 const FILE_MAP: Record<keyof AssistantWorkspaceFiles, string[]> = {
   claude: [CANONICAL_INSTRUCTIONS_FILE, 'claude.md', 'Claude.md', 'CLAUDE.md', 'AGENTS.md'],
@@ -31,7 +31,7 @@ const FILE_MAP: Record<keyof AssistantWorkspaceFiles, string[]> = {
 
 // Templates for initialization
 const FILE_TEMPLATES: Record<keyof AssistantWorkspaceFiles, string> = {
-  claude: '# Rules\n\n## Time Awareness\n任何涉及时间的场景，先用 date 命令确认当前时间，不要凭记忆猜测。\n\n## Memory Rules\n- 用户�?记一�?�?记住"：保留原文存笔记，不添加 TODO，不"发挥"，不改写\n- 重要决策和稳定偏�?�?写入 memory.md（追加，不覆写）\n- 日常工作记录 �?写入 memory/daily/{日期}.md\n- 修改 soul.md / user.md / instructions.md �?必须告知用户\n\n## Document Organization\n- 双向链接：使�?[[文件名]] 创建文档之间的链接\n- 反向链接：追踪哪些文档引用了当前文档\n- 标签系统：使�?#标签 进行分类和检索\n- 属性标记：在文档顶部使�?YAML frontmatter 添加元数据\n- 少用文件夹层级，多用标签和链接做组织\n\n## Writing Constraints\n- 不使用空泛修饰词（核心能力、关键、彰显、赋能、驱动…）\n- 不使�?不是...而是..."对比句式，除非用户要求\n- 输出内容以实用为主，不添加不必要的修饰\n\n## Safety\n- 修改身份文件（soul/user/instructions.md）后必须通知用户具体改了什么\n- memory.md 只追加，不覆写已有内容\n- 不在记忆文件中存储密码、API key 等敏感信息\n',
+  claude: '# Rules\n\n## Time Awareness\n任何涉及时间的场景，先用 date 命令确认当前时间，不要凭记忆猜测。\n\n## Memory Rules\n- 用户说"记一下"或"记住"：保留原文存笔记，不添加 TODO，不"发挥"，不改写\n- 重要决策和稳定偏好 → 写入 memory.md（追加，不覆写）\n- 日常工作记录 → 写入 memory/daily/{日期}.md\n- 修改 soul.md / user.md / instructions.md → 必须告知用户\n\n## Document Organization\n- 双向链接：使用 [[文件名]] 创建文档之间的链接\n- 反向链接：追踪哪些文档引用了当前文档\n- 标签系统：使用 #标签 进行分类和检索\n- 属性标记：在文档顶部使用 YAML frontmatter 添加元数据\n- 少用文件夹层级，多用标签和链接做组织\n\n## Writing Constraints\n- 不使用空泛修饰词（核心能力、关键、彰显、赋能、驱动…）\n- 不使用"不是...而是..."对比句式，除非用户要求\n- 输出内容以实用为主，不添加不必要的修饰\n\n## Safety\n- 修改身份文件（soul/user/instructions.md）后必须通知用户具体改了什么\n- memory.md 只追加，不覆写已有内容\n- 不在记忆文件中存储密码、API key 等敏感信息\n',
   soul: '# Soul\n\n<!-- Assistant personality and style go here -->\n',
   user: '# User Profile\n\n<!-- User preferences and information go here -->\n',
   memory: '# Memory\n\n<!-- Long-term facts and notes go here -->\n',
@@ -290,13 +290,14 @@ export function migrateStateV1ToV2(dir: string): void {
 }
 
 /**
- * Migrate schema v2 �?v3: normalize lastCheckInDate from UTC to local.
+ * Migrate schema v2 → v3: normalize lastCheckInDate from UTC to local.
  *
  * Before v3, lastCheckInDate was written as `new Date().toISOString().slice(0, 10)`
  * which is a UTC date. After v3 it's written via `getLocalDateString()`.
  *
  * For users east/west of UTC, the old UTC date can differ from the local date
- * by ±1 day. We only rewrite the stored date if it matches today's UTC date �? * meaning the user checked in "today" under the old semantics and the value
+ * by ±1 day. We only rewrite the stored date if it matches today's UTC date —
+ * meaning the user checked in "today" under the old semantics and the value
  * just needs normalizing to local. Clearly-past dates are left as-is so the
  * user correctly receives their next check-in.
  *
@@ -318,7 +319,7 @@ export function migrateStateV2ToV3(dir: string): void {
 
   if (state.lastCheckInDate) {
     const utcToday = new Date().toISOString().slice(0, 10);
-    // Only normalize if the stored UTC date is "today" �?the ambiguous case
+    // Only normalize if the stored UTC date is "today" — the ambiguous case
     // where the user checked in today but the UTC/local date may differ.
     // Past dates are left untouched so needsDailyCheckIn triggers correctly.
     if (state.lastCheckInDate === utcToday) {
@@ -333,7 +334,7 @@ export function migrateStateV2ToV3(dir: string): void {
 /**
  * v3→v4 migration: reset dailyCheckInEnabled to false for all users.
  * Previously the default was implicitly "enabled" (undefined treated as true).
- * Now the default is explicitly false �?users must opt-in.
+ * Now the default is explicitly false — users must opt-in.
  */
 export function migrateStateV3ToV4(dir: string): void {
   let state: AssistantWorkspaceState;
@@ -354,7 +355,7 @@ export function migrateStateV3ToV4(dir: string): void {
 
 /**
  * v4→v5 migration: rename check-in fields to heartbeat fields.
- * lastCheckInDate �?lastHeartbeatDate, dailyCheckInEnabled �?heartbeatEnabled.
+ * lastCheckInDate → lastHeartbeatDate, dailyCheckInEnabled → heartbeatEnabled.
  */
 function migrateStateV4ToV5(dir: string): void {
   let state: AssistantWorkspaceState;
@@ -371,7 +372,7 @@ function migrateStateV4ToV5(dir: string): void {
   // Work with raw parsed object to safely rename fields across schema versions
   const raw = state as unknown as Record<string, unknown>;
 
-  // Rename lastCheckInDate �?lastHeartbeatDate
+  // Rename lastCheckInDate → lastHeartbeatDate
   if ('lastCheckInDate' in raw && !('lastHeartbeatDate' in raw)) {
     raw.lastHeartbeatDate = raw.lastCheckInDate ?? null;
   }
@@ -379,7 +380,7 @@ function migrateStateV4ToV5(dir: string): void {
     raw.lastHeartbeatDate = null;
   }
 
-  // Rename dailyCheckInEnabled �?heartbeatEnabled
+  // Rename dailyCheckInEnabled → heartbeatEnabled
   if ('dailyCheckInEnabled' in raw && !('heartbeatEnabled' in raw)) {
     raw.heartbeatEnabled = raw.dailyCheckInEnabled ?? false;
   }
@@ -412,8 +413,8 @@ export function generateRootDocs(dir: string): string[] {
   const startMarker = '<!-- AI_GENERATED_START -->';
   const endMarker = '<!-- AI_GENERATED_END -->';
 
-  // README.ai.md �?workspace purpose + categories + structure
-  const dirList = subdirs.map(d => `- **${d.name}/** �?directory`).join('\n');
+  // README.ai.md — workspace purpose + categories + structure
+  const dirList = subdirs.map(d => `- **${d.name}/** — directory`).join('\n');
   const fileList = files
     .filter(f => !f.name.startsWith('.'))
     .map(f => `- ${f.name}`)
@@ -436,7 +437,7 @@ ${endMarker}`;
   writeAiDoc(readmePath, readmeContent, startMarker, endMarker);
   generated.push(readmePath);
 
-  // PATH.ai.md �?directory tree + role map
+  // PATH.ai.md — directory tree + role map
   const treeLines = [
     `${startMarker}`,
     `# Workspace Path Index`,
@@ -835,7 +836,7 @@ export function shouldRunHeartbeat(
 }
 
 // ==========================================
-// Directory Docs (legacy �?kept for backward compatibility)
+// Directory Docs (legacy — kept for backward compatibility)
 // ==========================================
 
 export function generateDirectoryDocs(dir: string): string[] {
@@ -888,7 +889,7 @@ export function generateDirectoryDocs(dir: string): string[] {
     generated.push(readmePath);
 
     // Generate PATH.ai.md containing full path index
-    const pathContent = `${startMarker}\n# ${subdir.name} �?Path Index\n\nBase: \`${subdirPath}\`\n\n${subEntries.map(e => `- \`${path.join(subdirPath, e.name)}${e.isDirectory() ? '/' : ''}\``).sort().join('\n')}\n${endMarker}`;
+    const pathContent = `${startMarker}\n# ${subdir.name} — Path Index\n\nBase: \`${subdirPath}\`\n\n${subEntries.map(e => `- \`${path.join(subdirPath, e.name)}${e.isDirectory() ? '/' : ''}\``).sort().join('\n')}\n${endMarker}`;
     const pathFilePath = path.join(subdirPath, 'PATH.ai.md');
 
     if (fs.existsSync(pathFilePath)) {

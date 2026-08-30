@@ -26,13 +26,13 @@ const ok: BuildCheckpointsOpts = {
   runtimeFallback: false,
 };
 
-describe('buildCheckpoints �?happy path', () => {
+describe('buildCheckpoints — happy path', () => {
   it('returns [] when nothing is wrong', () => {
     assert.deepEqual(buildCheckpoints(ok), []);
   });
 });
 
-describe('buildCheckpoints �?no-compatible-provider precedence', () => {
+describe('buildCheckpoints — no-compatible-provider precedence', () => {
   it('emits only the no-provider reason even if other flags are set', () => {
     const out = buildCheckpoints({
       noCompatibleProvider: true,
@@ -51,18 +51,18 @@ describe('buildCheckpoints �?no-compatible-provider precedence', () => {
   });
 });
 
-describe('buildCheckpoints �?pinned-invalid', () => {
+describe('buildCheckpoints — pinned-invalid', () => {
   it('emits the pinned-invalid reason when defaultInvalid is true', () => {
     const out = buildCheckpoints({ ...ok, defaultInvalid: true });
     assert.equal(out.length, 1);
     assert.equal(out[0].id, 'pinned-invalid');
-    // Phase 6 UI收口 P0 (2026-05-14) �?pinned-invalid is a non-blocking
+    // Phase 6 UI收口 P0 (2026-05-14) — pinned-invalid is a non-blocking
     // warning, not an error. The composer no longer blocks when the
-    // current selected (provider, model, runtime) is sendable �?the
+    // current selected (provider, model, runtime) is sendable — the
     // banner just informs the user that their *default-model* pin is
     // in a degraded state. Tone reflects that.
     assert.equal(out[0].tone, 'warning');
-    // Phase 6 UI收口 fix-up (2026-05-14) �?the primary action is
+    // Phase 6 UI收口 fix-up (2026-05-14) — the primary action is
     // "Change default" (not "Fix runtime"); jump target is
     // /settings/models where the pinned-default is set, not
     // /settings/runtime which was a leftover from when the banner
@@ -85,7 +85,7 @@ describe('buildCheckpoints �?pinned-invalid', () => {
   });
 });
 
-describe('buildCheckpoints �?runtime-fallback', () => {
+describe('buildCheckpoints — runtime-fallback', () => {
   it('emits the runtime-fallback reason as warning, not error', () => {
     const out = buildCheckpoints({ ...ok, runtimeFallback: true });
     assert.equal(out.length, 1);
@@ -95,7 +95,7 @@ describe('buildCheckpoints �?runtime-fallback', () => {
   });
 });
 
-describe('buildCheckpoints �?stacking', () => {
+describe('buildCheckpoints — stacking', () => {
   it('stacks pinned-invalid + runtime-fallback when both apply', () => {
     const out = buildCheckpoints({
       ...ok,
@@ -110,9 +110,9 @@ describe('buildCheckpoints �?stacking', () => {
   });
 });
 
-describe('buildCheckpoints �?Round 1 + 2 scope guard', () => {
+describe('buildCheckpoints — Round 1 + 2 scope guard', () => {
   // The active reason set is exactly the four below. If a future
-  // commit adds `dangerous-tool-call` (Round 3) �?or any new id �?to
+  // commit adds `dangerous-tool-call` (Round 3) — or any new id — to
   // the builder, this test will fail and force the author to confirm
   // the new round has been formally started (plan + i18n + state
   // wiring + e2e all in place). permission-elevation was removed
@@ -141,7 +141,7 @@ describe('buildCheckpoints �?Round 1 + 2 scope guard', () => {
     );
   });
 
-  it('each reason has at most one well-formed action �?single-action plan §B', () => {
+  it('each reason has at most one well-formed action — single-action plan §B', () => {
     for (const opts of [
       { ...ok, noCompatibleProvider: true },
       { ...ok, defaultInvalid: true },
@@ -150,7 +150,7 @@ describe('buildCheckpoints �?Round 1 + 2 scope guard', () => {
     ]) {
       for (const r of buildCheckpoints(opts)) {
         // context-cost-change is a NON-BLOCKING info heads-up with NO action
-        // (#632 / Phase 2 �?an estimated context size must not force a confirm).
+        // (#632 / Phase 2 — an estimated context size must not force a confirm).
         if (r.id === 'context-cost-change') {
           assert.equal(r.action, undefined, 'context-cost is info-only; must carry no action');
           continue;
@@ -167,7 +167,7 @@ describe('buildCheckpoints �?Round 1 + 2 scope guard', () => {
   });
 });
 
-// ─── Round 2 �?context-cost-change ──────────────────────────────────
+// ─── Round 2 — context-cost-change ──────────────────────────────────
 
 describe('shouldTriggerContextCost', () => {
   it('returns true when pending crosses the hard 10K cap regardless of used', () => {
@@ -191,13 +191,13 @@ describe('shouldTriggerContextCost', () => {
   });
 
   it('the 10K hard cap takes precedence over the ratio for tiny used', () => {
-    // pending=10K, used=1 �?ratio is huge but hard-cap fires first
+    // pending=10K, used=1 → ratio is huge but hard-cap fires first
     assert.equal(shouldTriggerContextCost(10_000, 1), true);
   });
 });
 
-describe('buildCheckpoints �?context-cost-change reason', () => {
-  it('emits an info-toned, NON-blocking heads-up �?no requiresConfirm, no confirm action (#632 / Phase 2)', () => {
+describe('buildCheckpoints — context-cost-change reason', () => {
+  it('emits an info-toned, NON-blocking heads-up — no requiresConfirm, no confirm action (#632 / Phase 2)', () => {
     const reasons = buildCheckpoints({ ...ok, pendingContextTokens: 12_000, usedContextTokens: 0 });
     const r = reasons.find((x) => x.id === 'context-cost-change');
     assert.ok(r, 'context-cost reason should still fire as info');
@@ -225,9 +225,9 @@ describe('buildCheckpoints �?context-cost-change reason', () => {
   });
 });
 
-// ─── Round 2 �?stacking with Round 1 ────────────────────────────────
+// ─── Round 2 — stacking with Round 1 ────────────────────────────────
 
-describe('buildCheckpoints �?Round 1 + 2 stacking', () => {
+describe('buildCheckpoints — Round 1 + 2 stacking', () => {
   it('runtime-fallback + context-cost stack together', () => {
     const reasons = buildCheckpoints({
       ...ok,

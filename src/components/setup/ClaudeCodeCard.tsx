@@ -100,7 +100,7 @@ export function ClaudeCodeCard({ status, onStatusChange }: ClaudeCodeCardProps) 
   }, [onStatusChange]);
 
   const description = claudeStatus?.connected
-    ? `${t('setup.claude.detected')} â€?v${claudeStatus.version}`
+    ? `${t('setup.claude.detected')} â€” v${claudeStatus.version}`
     : claudeStatus?.missingGit
       ? t('setup.claude.missingGit')
       : t('setup.claude.description');

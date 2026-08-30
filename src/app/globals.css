@@ -445,7 +445,7 @@ html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="au
          overflow:hidden. Shadow paints freely past the rounded
          silhouette.
        inner surface (`[data-platform-sidebar]` / `-main-content` /
-         `-file-tree` / `[data-workspace-sidebar]`):
+         `[data-workspace-sidebar]`):
          clip-path + radius + backdrop-filter + bg + inset highlight.
          The clip-path now only constrains the surface's own
          content; the frame's shadow lives outside it.
@@ -479,7 +479,6 @@ html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="au
   html[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-sidebar],
   html[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-workspace-sidebar],
   html[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-main-content],
-  html[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-file-tree],
   html[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-assistant] {
     border-radius: 14px;
     clip-path: inset(0 round 14px);
@@ -490,7 +489,6 @@ html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="au
   html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-sidebar],
   html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-workspace-sidebar],
   html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-main-content],
-  html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-file-tree],
   html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="auto"] [data-platform-assistant] {
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
@@ -649,6 +647,33 @@ html.dark[data-platform="darwin"][data-shell="electron"][data-platform-style="au
     transparent 100%
   );
   background-size: 200% 100%;
+}
+
+/* Indeterminate because Electron's webview reports lifecycle, not byte progress. */
+@keyframes browser-loading-progress {
+  0% {
+    transform: translateX(-110%) scaleX(0.45);
+    transform-origin: left;
+  }
+  55% {
+    transform: translateX(105%) scaleX(0.8);
+    transform-origin: center;
+  }
+  100% {
+    transform: translateX(260%) scaleX(0.45);
+    transform-origin: right;
+  }
+}
+
+.browser-loading-progress {
+  animation: browser-loading-progress 1.15s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .browser-loading-progress {
+    animation-duration: 2.4s;
+  }
 }
 
 /*

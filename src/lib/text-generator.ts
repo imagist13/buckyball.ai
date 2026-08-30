@@ -21,8 +21,8 @@ export interface StreamTextParams {
  * Stream text from the user's current provider.
  * Returns an async iterable of text chunks.
  *
- * Provider resolution is fully delegated to ai-provider.ts �?provider-resolver.ts.
- * No fallback logic here �?the resolver's chain (explicit �?session �?global default �?env)
+ * Provider resolution is fully delegated to ai-provider.ts → provider-resolver.ts.
+ * No fallback logic here — the resolver's chain (explicit → session → global default → env)
  * is the single source of truth.
  *
  * NOTE: Do NOT expand model aliases (sonnet/opus/haiku) here.
@@ -33,9 +33,11 @@ export interface StreamTextParams {
 /**
  * Pump a fullStream: yield text deltas, THROW on error parts.
  *
- * ai@7 �?`textStream` �?error part 静默收尾（不抛）——上�?4xx/5xx 会变�? * "空文�?，调用方只能报出误导性的下游错误（tech-debt #53 实测：ClinePass
+ * ai@7 的 `textStream` 对 error part 静默收尾（不抛）——上游 4xx/5xx 会变成
+ * "空文本"，调用方只能报出误导性的下游错误（tech-debt #53 实测：ClinePass
  * 400 invalid model format 被伪装成 "Failed to extract plan JSON"）。走
- * fullStream 并把 error part 转成异常，错误语义才是真实的�? * Exported for unit testing.
+ * fullStream 并把 error part 转成异常，错误语义才是真实的。
+ * Exported for unit testing.
  */
 export async function* pumpTextStream(
   fullStream: AsyncIterable<{ type: string; text?: string; error?: unknown }>,
@@ -45,7 +47,7 @@ export async function* pumpTextStream(
       yield part.text;
     } else if (part.type === 'error') {
       const er = part.error as { message?: string; responseBody?: string } | undefined;
-      const body = typeof er?.responseBody === 'string' ? ` �?upstream: ${er.responseBody.slice(0, 300)}` : '';
+      const body = typeof er?.responseBody === 'string' ? ` — upstream: ${er.responseBody.slice(0, 300)}` : '';
       const failure = new Error(`${er?.message || String(part.error)}${body}`);
       // Keep the SDK error as a non-enumerable cause so the shared telemetry
       // normalizer can recover status/code without serializing responseBody.

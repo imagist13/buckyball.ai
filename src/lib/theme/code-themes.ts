@@ -41,7 +41,7 @@ import {
 
 type SyntaxStyle = Record<string, CSSProperties>;
 
-/** Prism theme name â†?style object. Keys match `codeTheme.dark` / `codeTheme.light` in theme JSONs. */
+/** Prism theme name â†’ style object. Keys match `codeTheme.dark` / `codeTheme.light` in theme JSONs. */
 export const PRISM_THEME_MAP: Record<string, SyntaxStyle> = {
   oneDark,
   oneLight,
@@ -98,7 +98,7 @@ import {
 
 type HljsStyle = Record<string, CSSProperties>;
 
-/** HLJS theme name â†?style object. Same keys as Prism map where possible. */
+/** HLJS theme name â†’ style object. Same keys as Prism map where possible. */
 export const HLJS_THEME_MAP: Record<string, HljsStyle> = {
   oneDark: atomOneDark,
   oneLight: atomOneLight,

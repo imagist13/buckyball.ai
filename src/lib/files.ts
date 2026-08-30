@@ -167,7 +167,7 @@ async function scanDirectoryRecursive(dir: string, depth: number): Promise<FileT
  * Per-extension line caps for preview API.
  *
  * Prose files (Markdown, plain text, logs, delimited data) get a generous cap
- * so long AI-generated reports and 10ä¸?å­—ç¬¦çº?Markdown display completely.
+ * so long AI-generated reports and 10ä¸‡-å­—ç¬¦çº§ Markdown display completely.
  * Code files keep a tighter cap because full file rendering is rarely useful
  * in a side panel.
  *
@@ -184,7 +184,7 @@ const EXTENSION_LINE_CAPS: Record<string, number> = {
 
 const DEFAULT_LINE_CAP = 1000;
 
-/** Hard ceiling â€?no preview can exceed this even if extension allows more. */
+/** Hard ceiling â€” no preview can exceed this even if extension allows more. */
 const ABSOLUTE_LINE_CEILING = 100000;
 
 /** Single-file byte ceiling. Files larger than this return file_too_large. */
@@ -211,7 +211,7 @@ function looksBinary(buf: Buffer): boolean {
   let nonText = 0;
   for (let i = 0; i < buf.length; i++) {
     const b = buf[i];
-    if (b === 0) return true;  // NUL byte â†?definitely binary
+    if (b === 0) return true;  // NUL byte â†’ definitely binary
     // Printable ASCII + common whitespace (tab, LF, CR, FF)
     if (b === 9 || b === 10 || b === 12 || b === 13 || (b >= 32 && b <= 126)) continue;
     // High bytes could be multi-byte UTF-8; count them as "possibly non-text"
@@ -234,7 +234,8 @@ export class FilePreviewError extends Error {
 
 // ---------------------------------------------------------------------------
 // File I/O helpers shared by write / mkdir / rename / delete API routes.
-// Kept here so every write path enforces the same path-safety contract â€?// callers cannot accidentally create an "almost the same" validator that
+// Kept here so every write path enforces the same path-safety contract â€”
+// callers cannot accidentally create an "almost the same" validator that
 // misses a bypass.
 // ---------------------------------------------------------------------------
 
@@ -337,7 +338,7 @@ export function isValidFilename(name: string): boolean {
 /**
  * Assert that a resolved target path is safe to write/modify relative to
  * an optional baseDir. Throws FileIOError with a specific code the API
- * route can map to the right HTTP status â€?never returns a generic
+ * route can map to the right HTTP status â€” never returns a generic
  * "path unsafe" without detail, so the UI can show actionable messages.
  *
  * Throws for: root paths (`/`, `C:\`), blocked directories (.git, node_modules,
@@ -366,7 +367,7 @@ export function assertWritablePath(resolvedPath: string, baseDir?: string): void
 /**
  * Walk the path chain and throw if any segment is a symlink. This prevents
  * attackers from tricking the API into writing through a symlink pointing
- * outside `baseDir` (TOCTOU-resistant to a reasonable degree â€?a racing
+ * outside `baseDir` (TOCTOU-resistant to a reasonable degree â€” a racing
  * attacker could still swap a segment after check, but covers the common case).
  *
  * Caller is responsible for resolving path before calling.
@@ -379,7 +380,7 @@ export function assertWritablePath(resolvedPath: string, baseDir?: string): void
  *
  * Both the target and the base are `realpath`'d so the check is
  * resilient when the *workspace itself* is a symlink (common on macOS
- * project folders placed inside ~/Library symlinks etc.) â€?without the
+ * project folders placed inside ~/Library symlinks etc.) â€” without the
  * base-side realpath, legitimate workspace reads get falsely flagged.
  *
  * Returns the resolved real target. Callers that still want to read
@@ -470,7 +471,7 @@ export async function assertNoSymlinkInChain(resolvedPath: string): Promise<void
       }
     } catch (err) {
       if (err instanceof FileIOError) throw err;
-      // ENOENT for not-yet-created paths is fine â€?the final write will
+      // ENOENT for not-yet-created paths is fine â€” the final write will
       // create it, and its parent has already been walked.
       const code = (err as NodeJS.ErrnoException)?.code;
       if (code !== 'ENOENT') {
@@ -486,7 +487,7 @@ export async function assertNoSymlinkInChain(resolvedPath: string): Promise<void
 export async function readFilePreview(filePath: string, userMaxLines?: number): Promise<FilePreview> {
   const resolvedPath = path.resolve(filePath);
 
-  // Same turbopackIgnore rationale as scanDirectory â€?runtime-dynamic path.
+  // Same turbopackIgnore rationale as scanDirectory â€” runtime-dynamic path.
   try {
     await fs.access(/*turbopackIgnore: true*/ resolvedPath);
   } catch {

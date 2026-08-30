@@ -1,17 +1,17 @@
 /**
- * AppShell static-import contract â€?Phase A memory cut (2026-05-08, refined 2026-05-09).
+ * AppShell static-import contract â€” Phase A memory cut (2026-05-08, refined 2026-05-09).
  *
  * Six components used to be statically imported at the top of AppShell:
  *
- *   â€?SetupCenter            â€?onboarding modal, gated by `setupOpen`
- *   â€?SplitChatContainer     â€?split-view chat, gated by `isSplitActive`
- *   â€?WorkspaceSidebar       â€?right rail, gated by `isChatDetailRoute`
- *   â€?PanelZone              â€?file/assistant rail, gated by `isChatDetailRoute`
- *   â€?UpdateDialog           â€?update modal, gated by `showDialog && updateAvailable`
- *   â€?FeatureAnnouncementDialog â€?one-shot announcement, localStorage gate
+ *   â€¢ SetupCenter            â€” onboarding modal, gated by `setupOpen`
+ *   â€¢ SplitChatContainer     â€” split-view chat, gated by `isSplitActive`
+ *   â€¢ WorkspaceSidebar       â€” right rail, gated by `isChatDetailRoute`
+ *   â€¢ PanelZone              â€” file/assistant rail, gated by `isChatDetailRoute`
+ *   â€¢ UpdateDialog           â€” update modal, gated by `showDialog && updateAvailable`
+ *   â€¢ FeatureAnnouncementDialog â€” one-shot announcement, localStorage gate
  *
  * They are all conditionally rendered, but a static `import` still pulled
- * their full dev compile graphs into the initial /chat boot â€?first-paint
+ * their full dev compile graphs into the initial /chat boot â€” first-paint
  * RSS hit ~2.3 GB just from the AppShell chain. Phase A switched the imports
  * to `next/dynamic` with `ssr: false` and added explicit AppShell-level
  * state gates for the two dialogs that previously always-mounted.
@@ -75,7 +75,8 @@ function escapeRegex(s: string): string {
  * past one import into the next when the FIRST import does not contain
  * the target path.
  *
- * `dynamic(() => import("modulePath").then(...))` is NOT matched â€? * those expressions never start a line with the bare `import` keyword
+ * `dynamic(() => import("modulePath").then(...))` is NOT matched â€”
+ * those expressions never start a line with the bare `import` keyword
  * (the line begins with `() =>` or `const X = dynamic(`).
  */
 function findStaticImports(src: string, modulePath: string): { line: number; text: string }[] {
@@ -96,7 +97,7 @@ function findStaticImports(src: string, modulePath: string): { line: number; tex
   return out;
 }
 
-describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
+describe('AppShell static-import contract â€” Phase A memory guardrail', () => {
   it('next/dynamic is imported (the lazy mechanism is wired)', () => {
     assert.match(APPSHELL, /import\s+dynamic\s+from\s+["']next\/dynamic["']/);
   });
@@ -106,14 +107,14 @@ describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
       // Path-based lookup: catches `import { X }`, `import X`,
       // `import * as X`, and `import "path"`. The point of Phase A is
       // that AppShell's compile graph never reaches these modules on
-      // boot â€?re-introducing any static import form regresses memory.
+      // boot â€” re-introducing any static import form regresses memory.
       const offenders = findStaticImports(APPSHELL, target.modulePath);
       assert.equal(
         offenders.length,
         0,
-        `${target.name} (${target.modulePath}) is statically imported in AppShell â€?` +
+        `${target.name} (${target.modulePath}) is statically imported in AppShell â€” ` +
           `convert to next/dynamic to keep its compile graph off the boot path. ` +
-          `Offenders:\n${offenders.map((o) => `  AppShell.tsx:${o.line} â†?${o.text}`).join('\n')}`,
+          `Offenders:\n${offenders.map((o) => `  AppShell.tsx:${o.line} â†’ ${o.text}`).join('\n')}`,
       );
 
       // Positive assertion: the dynamic loader expression itself must
@@ -124,7 +125,7 @@ describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
       assert.match(
         APPSHELL,
         dynamicLoader,
-        `${target.name} is missing its dynamic() loader â€?every Phase A target ` +
+        `${target.name} is missing its dynamic() loader â€” every Phase A target ` +
           `must be wrapped in next/dynamic with ssr:false`,
       );
     }
@@ -137,7 +138,7 @@ describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
     // server-side on every request.
     //
     // Anchor on the `m.<Name>` selector and look ahead for ssr:false
-    // within the next ~250 chars â€?far enough to cover the canonical
+    // within the next ~250 chars â€” far enough to cover the canonical
     // shape `dynamic(() => import(...).then((m) => ({ default: m.X })),
     // { ssr: false })` without false-positively matching a sibling
     // dynamic loader.
@@ -146,7 +147,7 @@ describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
       assert.match(
         APPSHELL,
         re,
-        `${target.name} must use ssr:false in its dynamic() options â€?it is ` +
+        `${target.name} must use ssr:false in its dynamic() options â€” it is ` +
           `a client-only conditional renderer; ssr:true would resolve the ` +
           `chunk server-side on every request and defeat the boot-path cut`,
       );
@@ -154,8 +155,8 @@ describe('AppShell static-import contract â€?Phase A memory guardrail', () => {
   });
 
   it('UpdateDialog is mounted only when the modal should actually be open', () => {
-    // Phase A originally gated on `updateAvailable` only â€?but the user
-    // can dismiss the modal (Later button â†?showDialog=false) without
+    // Phase A originally gated on `updateAvailable` only â€” but the user
+    // can dismiss the modal (Later button â†’ showDialog=false) without
     // changing updateAvailable, so the chunk stayed mounted for the rest
     // of the session. The tightened gate (P3 review) requires BOTH:
     // showDialog (the user hasn't dismissed) AND updateAvailable.

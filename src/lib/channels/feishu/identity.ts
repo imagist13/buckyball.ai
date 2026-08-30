@@ -9,7 +9,7 @@ const LOG_TAG = '[feishu/identity]';
 
 // The identity-retry timer polls getBotInfo every 60s until it resolves. Log a
 // fetch failure AT MOST ONCE per process so a persistent failure (e.g. missing
-// bot scope) doesn't spam the log every minute â€?that per-minute noise was the
+// bot scope) doesn't spam the log every minute â€” that per-minute noise was the
 // reported `undefined (reading 'v3')` symptom.
 let loggedBotInfoFailure = false;
 
@@ -37,7 +37,7 @@ interface BotInfoFields {
  *
  * `@larksuiteoapi/node-sdk` 1.59's generated client has NO bot namespace, so
  * the previous typed-client call (`client.bot` resolved to undefined) threw
- * `Cannot read properties of undefined (reading 'v3')` on every call â€?which
+ * `Cannot read properties of undefined (reading 'v3')` on every call â€” which
  * the 60s identity-retry timer surfaced as per-minute log noise. We call the
  * documented endpoint via the raw `client.request` (which carries tenant-token
  * auth) instead. Returns null on any failure, logged once per process (never

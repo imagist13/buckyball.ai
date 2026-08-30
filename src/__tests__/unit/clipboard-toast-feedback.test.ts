@@ -1,5 +1,5 @@
 /**
- * v11 fix â€?Copy buttons must give the user feedback AND must catch
+ * v11 fix â€” Copy buttons must give the user feedback AND must catch
  * clipboard rejections.
  *
  * Pre-fix had three fire-and-forget call sites:
@@ -8,7 +8,7 @@
  *   - `ProjectGroupHeader` dropdown menu item "Copy folder path"
  * All three did `navigator.clipboard.writeText(value)` and dropped the
  * promise. In Electron renderers `writeText` rejects with
- * `NotAllowedError` whenever the document isn't focused â€?which is the
+ * `NotAllowedError` whenever the document isn't focused â€” which is the
  * COMMON case after a DropdownMenu click, because Radix transfers
  * focus to the menu item. The unhandled promise rejection became a
  * console error and a Sentry report; the user got no toast either way
@@ -19,8 +19,8 @@
  * with the raw text inline so the user can manually copy from the
  * toast). All three call sites use it.
  *
- * This file is a source-grep contract â€?pure Node test, no React
- * Testing Library â€?so the runtime behaviour (await + catch + toast)
+ * This file is a source-grep contract â€” pure Node test, no React
+ * Testing Library â€” so the runtime behaviour (await + catch + toast)
  * is pinned at the structural level.
  */
 
@@ -83,7 +83,7 @@ describe('lib/clipboard.ts copyWithToast helper', () => {
     assert.match(
       HELPER,
       /export\s+async\s+function\s+copyWithToast\s*\(/,
-      'lib/clipboard.ts must export an async copyWithToast function â€?the single entry point all "Copy â€? sites route through',
+      'lib/clipboard.ts must export an async copyWithToast function â€” the single entry point all "Copy â€¦" sites route through',
     );
   });
 
@@ -100,14 +100,14 @@ describe('lib/clipboard.ts copyWithToast helper', () => {
     assert.match(
       body,
       /try\s*\{[\s\S]*?await\s+navigator\.clipboard\.writeText\([\s\S]*?\}\s*catch/,
-      'copyWithToast must `await navigator.clipboard.writeText(...)` inside a try block followed by a catch â€?the original bug was fire-and-forget without await',
+      'copyWithToast must `await navigator.clipboard.writeText(...)` inside a try block followed by a catch â€” the original bug was fire-and-forget without await',
     );
   });
 
   it('shows a toast in BOTH the success and failure branches', () => {
     // The helper must call showToast on success (so user knows the
     // copy worked) AND on failure (so user can see what to copy
-    // manually). Pre-fix had neither branch â€?the failure path was an
+    // manually). Pre-fix had neither branch â€” the failure path was an
     // unhandled rejection.
     const showToastCount = (HELPER.match(/showToast\(/g) ?? []).length;
     assert.ok(
@@ -120,12 +120,12 @@ describe('lib/clipboard.ts copyWithToast helper', () => {
       /showToast\(\s*\{\s*type:\s*['"]success['"]/,
       'success branch must use type: "success"',
     );
-    // Failure branch must use warning (not error â€?the value is
+    // Failure branch must use warning (not error â€” the value is
     // shown inline, so the user can recover by hand).
     assert.match(
       HELPER,
       /showToast\(\s*\{\s*type:\s*['"]warning['"]/,
-      'failure branch must use type: "warning" (the helper surfaces the raw text so user can copy manually â€?not a fatal error)',
+      'failure branch must use type: "warning" (the helper surfaces the raw text so user can copy manually â€” not a fatal error)',
     );
   });
 });
@@ -140,12 +140,12 @@ describe('the three copy-id / copy-path entries route through copyWithToast (no 
     assert.match(
       TOPBAR,
       /copyWithToast\s*\(/,
-      'UnifiedTopBar.tsx must call copyWithToast â€?handleCopyId is the only copy entry in this file',
+      'UnifiedTopBar.tsx must call copyWithToast â€” handleCopyId is the only copy entry in this file',
     );
     assert.doesNotMatch(
       TOPBAR,
       /navigator\.clipboard\.writeText\s*\(/,
-      'UnifiedTopBar.tsx must NOT use navigator.clipboard.writeText directly â€?go through copyWithToast (which handles the rejection)',
+      'UnifiedTopBar.tsx must NOT use navigator.clipboard.writeText directly â€” go through copyWithToast (which handles the rejection)',
     );
   });
 

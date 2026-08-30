@@ -3,12 +3,12 @@
  * path (`runtime-permission-modes.md` Phase 1, a07).
  *
  * Kept out of `profile.ts` so the decision logic there stays pure and
- * table-testable â€?this module is the only part that touches the installed
+ * table-testable â€” this module is the only part that touches the installed
  * package on disk.
  *
  * Fail-closed by construction: any failure to read a version means "not
  * supported", so the UI disables the option and says why. It NEVER falls
- * back to acceptEdits or full_access behind the user's back â€?a permission
+ * back to acceptEdits or full_access behind the user's back â€” a permission
  * profile that silently means something else is the exact failure this whole
  * plan exists to prevent.
  */
@@ -26,7 +26,7 @@ let cached: { version: string | null; supported: boolean } | null = null;
  * The SDK does NOT list `./package.json` in its `exports` map, so
  * `require('@anthropic-ai/claude-agent-sdk/package.json')` throws
  * ERR_PACKAGE_PATH_NOT_EXPORTED. Resolve the entry point instead and walk up
- * to the package root â€?the manifest is readable from disk even when it isn't
+ * to the package root â€” the manifest is readable from disk even when it isn't
  * an allowed subpath import.
  */
 function readSdkVersion(): string | null {
@@ -43,7 +43,7 @@ function readSdkVersion(): string | null {
       const manifest = path.join(dir, 'package.json');
       if (fs.existsSync(manifest)) {
         const pkg = JSON.parse(fs.readFileSync(manifest, 'utf-8')) as { name?: string; version?: string };
-        // Only trust the SDK's OWN manifest â€?walking up from a nested dist/
+        // Only trust the SDK's OWN manifest â€” walking up from a nested dist/
         // directory can hit an unrelated package.json first.
         if (pkg.name === SDK_PACKAGE_NAME) {
           return typeof pkg.version === 'string' ? pkg.version : null;
@@ -54,7 +54,7 @@ function readSdkVersion(): string | null {
       dir = parent;
     }
   } catch {
-    // fall through â€?unreadable means unsupported, never "assume yes"
+    // fall through â€” unreadable means unsupported, never "assume yes"
   }
   return null;
 }
@@ -85,7 +85,7 @@ export function getAutoReviewUnavailableReason(): { minVersion: string; installe
   return { minVersion: AUTO_REVIEW_MIN_SDK_VERSION, installedVersion: getAgentSdkVersion() };
 }
 
-/** Test-only â€?drop the memoised probe. */
+/** Test-only â€” drop the memoised probe. */
 export function __resetAgentSdkCapabilityCache(): void {
   cached = null;
 }

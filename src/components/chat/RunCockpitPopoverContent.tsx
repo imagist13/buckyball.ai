@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * RunCockpit popover content â?the heavy half of the per-chat run-status
+ * RunCockpit popover content — the heavy half of the per-chat run-status
  * surface. Lives in its own file specifically so the dev compile graph
  * for /chat does NOT statically reach Settings overview / provider
  * catalog / runtime resolver code.
  *
  * Phase A (2026-05-09 follow-up): Chat first-paint was being inflated by
- * `RunCockpit.tsx` statically importing `useOverviewData` â? * `runtime/effective` (the same data layer Settings â?Overview uses).
+ * `RunCockpit.tsx` statically importing `useOverviewData` →
+ * `runtime/effective` (the same data layer Settings → Overview uses).
  * `provider-catalog.ts` and friends rode in transitively. The fix is
  * structural: the trigger button (RingIcon + percentage) doesn't need
  * any of that, so the heavy data layer moves here, and `RunCockpit`
@@ -15,7 +16,7 @@
  *
  * Radix's `<PopoverContent>` only mounts its children when `open=true`.
  * Combined with `dynamic({ ssr: false })`, the chunk for this file (and
- * everything it transitively imports â?useOverviewData, runtime/effective,
+ * everything it transitively imports — useOverviewData, runtime/effective,
  * useClaudeStatus, ai-elements/context's ContextContent* family) only
  * resolves the first time the user actually clicks the cockpit trigger.
  *
@@ -31,7 +32,7 @@ import { useClaudeStatus } from "@/hooks/useClaudeStatus";
 import { ContextContentFooter } from "@/components/ai-elements/context";
 import { ContextBreakdownList } from "@/components/chat/context-breakdown/ContextBreakdownList";
 import { ContextDotMatrix } from "@/components/chat/context-breakdown/ContextDotMatrix";
-import { BuckyballIcon } from "@/components/ui/semantic-icon";
+import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import { cn } from "@/lib/utils";
 import {
   computeEffectiveRuntime,
@@ -58,7 +59,7 @@ function formatTokensCompact(n: number): string {
 }
 
 export interface RunCockpitPopoverContentProps {
-  /** Active chat's provider â?used here only for resolving the model
+  /** Active chat's provider — used here only for resolving the model
    *  label from `useOverviewData().providers`. The trigger / shell pass
    *  it through verbatim. */
   providerId?: string;
@@ -68,7 +69,7 @@ export interface RunCockpitPopoverContentProps {
   upstreamModelId?: string;
   /** Active chat's permission profile. */
   permissionProfile: SessionPermissionProfile;
-  /** Step 4c round 4 â?session-level runtime pin. Same semantics as
+  /** Step 4c round 4 — session-level runtime pin. Same semantics as
    *  before; suppresses global pinned/runtime-fallback signals because
    *  the user has explicitly opted out of the global default. */
   sessionRuntimePin?: string;
@@ -93,10 +94,10 @@ export function RunCockpitPopoverContent({
 }: RunCockpitPopoverContentProps) {
   void upstreamModelId;
   const { t } = useTranslation();
-  const isZh = t("nav.chats") === "å¯¹è¯";
+  const isZh = t("nav.chats") === "对话";
   const state = useOverviewData();
   const { status: claudeStatus } = useClaudeStatus();
-  // Settings is route-level split â?cross-section CTAs router.push the
+  // Settings is route-level split — cross-section CTAs router.push the
   // route path so the navigation actually switches pages.
   const router = useRouter();
   const navToSection = useCallback(
@@ -113,21 +114,21 @@ export function RunCockpitPopoverContent({
     cliConnected,
   );
   const isNonAnthropicProvider = providerId === "openai-oauth" || providerId === "xai-oauth";
-  // Round 4 â?session-level runtime override. When the user has
+  // Round 4 — session-level runtime override. When the user has
   // explicitly pinned a runtime via the composer's RuntimeSelector,
   // this surface must reflect THAT runtime, not the global setting.
   const sessionRuntimeOverride = !!sessionRuntimePin;
   const sessionPinnedAgentRuntime: AgentRuntime | null =
     sessionRuntimePin === "claude_code"
       ? "claude-code-sdk"
-      : sessionRuntimePin === "bbagent"
+      : sessionRuntimePin === "codepilot_runtime"
         ? "native"
         : null;
   const effectiveRuntime: AgentRuntime = isNonAnthropicProvider
     ? "native"
     : sessionPinnedAgentRuntime ?? settingRuntime;
   void effectiveRuntime;
-  // Global SDKânative fallback notice: only meaningful when this session
+  // Global SDK→native fallback notice: only meaningful when this session
   // follows the global runtime. Suppressed under explicit pin.
   const runtimeFallback =
     !sessionRuntimeOverride &&
@@ -162,20 +163,20 @@ export function RunCockpitPopoverContent({
     );
   }
 
-  // Issues â?providers / models / Claude CLI warnings that don't reach
+  // Issues — providers / models / Claude CLI warnings that don't reach
   // the upper RunCheckpoint. Surface them here (in the popover) so the
   // user can still get to a fix without leaving the chat.
   const issues: RunStatusIssue[] = [];
   if (state.providersConfigured === 0) {
     issues.push({
-      message: isZh ? "å°æªéç½®ä»»ä½æå¡å? : "No providers configured",
+      message: isZh ? "尚未配置任何服务商" : "No providers configured",
       actionLabel: t("runStatus.fixIssue" as TranslationKey),
       onAction: () => navToSection("providers"),
     });
   }
   if (state.modelsEnabled === 0 && state.providersConfigured > 0) {
     issues.push({
-      message: isZh ? "æªå¯ç¨ä»»ä½æ¨¡å? : "No models enabled",
+      message: isZh ? "未启用任何模型" : "No models enabled",
       actionLabel: t("runStatus.fixIssue" as TranslationKey),
       onAction: () => navToSection("models"),
     });
@@ -183,7 +184,7 @@ export function RunCockpitPopoverContent({
   if (state.noCompatibleProvider) {
     issues.push({
       message: isZh
-        ? "å½åæ§è¡å¼æä¸æ²¡æå¯ç¨çæå¡å?
+        ? "当前执行引擎下没有可用的服务商"
         : "No compatible provider under the current Runtime",
       actionLabel: t("runStatus.fixIssue" as TranslationKey),
       onAction: () => navToSection("runtime"),
@@ -197,10 +198,11 @@ export function RunCockpitPopoverContent({
 
   const modeIsPinned = state.defaultMode === "pinned";
 
-  // 2026-05-08 â?model row reflects THIS session's selection (providerId
+  // 2026-05-08 — model row reflects THIS session's selection (providerId
   // + modelName props), not the global default; resolve via the cached
   // groups in `useOverviewData`. Fall back to the raw id/value when the
-  // lookup misses (mid-fetch, or a deleted provider). Empty fields â?  // "æªéç½? so an unfilled session reads coherently.
+  // lookup misses (mid-fetch, or a deleted provider). Empty fields →
+  // "未配置" so an unfilled session reads coherently.
   const sessionProviderGroup = providerId
     ? state.providers.find((g) => g.provider_id === providerId)
     : undefined;
@@ -235,7 +237,7 @@ export function RunCockpitPopoverContent({
           {t("runStatus.model" as TranslationKey)}
         </span>
         <span className="min-w-0 flex-1 truncate text-right text-foreground">
-          {`${providerLabel} Â· ${modelLabel}`}
+          {`${providerLabel} · ${modelLabel}`}
         </span>
         <button
           type="button"
@@ -243,7 +245,7 @@ export function RunCockpitPopoverContent({
           className="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/40 transition-colors group-hover/row:text-muted-foreground hover:!text-foreground"
         >
           {t("runStatus.switch" as TranslationKey)}
-          <BuckyballIcon name="external" size={10} aria-hidden />
+          <CodePilotIcon name="external" size={10} aria-hidden />
         </button>
       </div>
       <div className="group/row flex items-baseline gap-3">
@@ -266,7 +268,7 @@ export function RunCockpitPopoverContent({
           className="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground/40 transition-colors group-hover/row:text-muted-foreground hover:!text-foreground"
         >
           {t("runStatus.modify" as TranslationKey)}
-          <BuckyballIcon name="external" size={10} aria-hidden />
+          <CodePilotIcon name="external" size={10} aria-hidden />
         </button>
       </div>
       <div className="flex items-baseline gap-3">
@@ -277,7 +279,7 @@ export function RunCockpitPopoverContent({
           className={cn(
             "min-w-0 flex-1 truncate text-right",
             // Only the bypass reads as an alarm. auto_review is elevated but
-            // reviewed â?colouring it red would tell the user it's the same
+            // reviewed — colouring it red would tell the user it's the same
             // risk as full access.
             permissionProfile === "full_access"
               ? "text-status-error-foreground"
@@ -313,7 +315,7 @@ export function RunCockpitPopoverContent({
                     className="ml-2 inline-flex items-center gap-0.5 text-[11px] text-muted-foreground hover:text-foreground"
                   >
                     {issue.actionLabel}
-                    <BuckyballIcon name="external" size={10} aria-hidden />
+                    <CodePilotIcon name="external" size={10} aria-hidden />
                   </button>
                 )}
               </div>
@@ -333,8 +335,8 @@ export function RunCockpitPopoverContent({
     // PLUS the percentage/tokens text. With the new dot-matrix main bar
     // below, the Progress bar duplicated the same information visually.
     // Inline the header text (no Progress bar) so Context section shows
-    // exactly one bar â?the dot-matrix.
-    // hasFullCtx (the prop) already requires a trusted window; clamp â?00%
+    // exactly one bar — the dot-matrix.
+    // hasFullCtx (the prop) already requires a trusted window; clamp ≤100%
     // so a trusted-but-momentarily-exceeded window (post-compaction) never
     // renders ">100%" (#632).
     const clampedRatio = Math.min(1, Math.max(0, usage.ratio));
@@ -344,10 +346,10 @@ export function RunCockpitPopoverContent({
         : "";
     const headerTokensText = `${formatTokensCompact(usage.used)} / ${formatTokensCompact(usage.contextWindow ?? 0)}`;
     // UI review 2026-05-19: previously the popover divided children with
-    // `divide-y` AND each child carried its own p-3 â?that produced 3
+    // `divide-y` AND each child carried its own p-3 — that produced 3
     // dividers + uneven outer/inner spacing. Now PopoverContent owns the
     // outer p-3 + space-y-3, each child is padding-free, and there is
-    // exactly one divider â?a 1px border-top line between the context-
+    // exactly one divider — a 1px border-top line between the context-
     // usage half (header + breakdown) and the per-session-state half
     // (model / mode / permission + issues + cost). The -mx-3 lets the
     // line stretch across the popover width despite the parent p-3.
@@ -355,7 +357,7 @@ export function RunCockpitPopoverContent({
       <>
         {/* UI review round 3 (2026-05-19): PopoverContent dropped its
             outer `space-y-3` because that uniformly gave every child a
-            12px margin-top â?including the divider, making the line
+            12px margin-top — including the divider, making the line
             feel marooned 24px from both neighbours. Now the popover
             splits into two groups (context-usage half + session-state
             half), each keeping internal `space-y-3`, with the divider
@@ -382,11 +384,11 @@ export function RunCockpitPopoverContent({
     );
   }
 
-  // Fallback / unknown-capacity branch â?usage exists but the context
+  // Fallback / unknown-capacity branch — usage exists but the context
   // window couldn't be resolved (e.g. glm-5-turbo). Phase 2a (2026-05-19):
   // the legacy Input/Output/Cache three-row block is replaced by the
   // 10-row ContextBreakdownList (same component as the hasFullCtx branch).
-  // Header stays as the bespoke "capacity unknown Â· used N + pending"
+  // Header stays as the bespoke "capacity unknown · used N + pending"
   // line because ContextContentHeader requires a known maxTokens.
   const showUnknownCapacityBlock = usage.hasData && !hasFullCtx;
   const usedDisplay = formatTokensCompact(usage.used);

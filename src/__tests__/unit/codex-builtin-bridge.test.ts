@@ -1,5 +1,5 @@
 /**
- * Phase 5c (2026-05-16) â€?CodePilot built-in tool bridge contract.
+ * Phase 5c (2026-05-16) â€” CodePilot built-in tool bridge contract.
  *
  * The bridge mounts CodePilot's built-in tools onto the ai-sdk
  * ToolSet the proxy passes to streamText. Pre-5c the proxy dropped
@@ -10,14 +10,16 @@
  * This file pins the bridge's:
  *   1. Mount/skip decisions (sessionId required, codex_account
  *      excluded).
- *   2. Tool surface â€?which tools land on the ToolSet, which only
+ *   2. Tool surface â€” which tools land on the ToolSet, which only
  *      mount when a workspace is bound.
- *   3. Side-channel event emission shape â€?tool_started â†?handler â†? *      tool_completed with optional media.
- *   4. Error mapping â€?handler exceptions become tool_completed.error
+ *   3. Side-channel event emission shape â€” tool_started â†’ handler â†’
+ *      tool_completed with optional media.
+ *   4. Error mapping â€” handler exceptions become tool_completed.error
  *      rather than throwing out of execute().
  *
  * We don't pin the underlying handlers' business logic here (that's
- * `image-gen-mcp.test.ts` / `memory-search-mcp.test.ts` etc.) â€? * just the bridge's wrapping behaviour.
+ * `image-gen-mcp.test.ts` / `memory-search-mcp.test.ts` etc.) â€”
+ * just the bridge's wrapping behaviour.
  */
 
 import { describe, it, beforeEach } from 'node:test';
@@ -39,7 +41,7 @@ beforeEach(() => {
   __resetBuiltinEventBusForTests();
 });
 
-describe('createCodePilotBuiltinTools â€?mount + skip', () => {
+describe('createCodePilotBuiltinTools â€” mount + skip', () => {
   it('returns empty bridge when sessionId is missing (older runtime / smoke without CodexRuntime)', () => {
     const bridge = createCodePilotBuiltinTools({ sessionId: '', targetProviderId: 'prov-1' });
     assert.equal(Object.keys(bridge.tools).length, 0);
@@ -192,12 +194,12 @@ describe('createCodePilotBuiltinTools â€?mount + skip', () => {
     assert.ok(bridge.tools.codepilot_memory_recent);
     assert.ok(bridge.tools.codepilot_memory_search);
     assert.ok(bridge.tools.codepilot_memory_get);
-    // Phase 5d Phase 2 slice 2e (2026-05-17) â€?bridge no longer
+    // Phase 5d Phase 2 slice 2e (2026-05-17) â€” bridge no longer
     // assembles its own systemPrompt. The presence of the memory
     // tools in `bridge.tools` is the contract surface here; prompt
     // text is asserted in `harness-context-compiler.test.ts` against
     // the compiler output.
-    assert.equal(bridge.systemPrompt, '', 'bridge.systemPrompt must be empty post-slice-2e â€?compiler owns prompts');
+    assert.equal(bridge.systemPrompt, '', 'bridge.systemPrompt must be empty post-slice-2e â€” compiler owns prompts');
   });
 
   it('bridge mounts the expected tool surface for live capabilities (prompt text is compiler\'s job)', () => {
@@ -207,7 +209,7 @@ describe('createCodePilotBuiltinTools â€?mount + skip', () => {
       workspacePath: '/w',
       grokVideoAvailable: true,
     });
-    // Phase 5d Phase 2 slice 2e (2026-05-17) â€?the bridge's job is
+    // Phase 5d Phase 2 slice 2e (2026-05-17) â€” the bridge's job is
     // tool mounting + side-channel event emission. Prompt assembly
     // moved to the Context Compiler (see harness-context-compiler.test.ts).
     // This test pins the tool surface only; the test that used to
@@ -226,7 +228,7 @@ describe('createCodePilotBuiltinTools â€?mount + skip', () => {
   });
 });
 
-describe('CODEPILOT_BUILTIN_TOOL_NAMES â€?catalog drift guard', () => {
+describe('CODEPILOT_BUILTIN_TOOL_NAMES â€” catalog drift guard', () => {
   it('hides the Grok video bridge when OAuth is unavailable', () => {
     const bridge = createCodePilotBuiltinTools({
       sessionId: 'chat-no-grok',
@@ -260,7 +262,7 @@ describe('CODEPILOT_BUILTIN_TOOL_NAMES â€?catalog drift guard', () => {
   });
 });
 
-describe('Tool execute() â€?side-channel event emission', () => {
+describe('Tool execute() â€” side-channel event emission', () => {
   it('codepilot_notify success: emits tool_started then tool_completed with output text', async () => {
     const events: RuntimeRunEvent[] = [];
     subscribeBuiltinEvents('chat-1', (e) => events.push(e));
@@ -268,7 +270,7 @@ describe('Tool execute() â€?side-channel event emission', () => {
       sessionId: 'chat-1',
       targetProviderId: 'prov-glm',
     });
-    // codepilot_notify hits sendNotification â€?we patch the module.
+    // codepilot_notify hits sendNotification â€” we patch the module.
     // Easiest test isolation: spy via global mock state on the
     // notification-manager export.
     const origFetch = globalThis.fetch;
@@ -308,7 +310,8 @@ describe('Tool execute() â€?side-channel event emission', () => {
       // workspacePath omitted on purpose so memory_recent throws.
     });
     // codepilot_memory_recent isn't mounted without a workspace. Use
-    // codepilot_cancel_task with a bad id so the API call fails â€?    // we override fetch so it returns 500.
+    // codepilot_cancel_task with a bad id so the API call fails â€”
+    // we override fetch so it returns 500.
     const origFetch = globalThis.fetch;
     globalThis.fetch = async () =>
       new Response(JSON.stringify({ error: 'task not found' }), {
@@ -348,7 +351,7 @@ describe('Tool execute() â€?side-channel event emission', () => {
     assert.equal(events[1].type, 'tool_completed');
   });
 
-  it('events isolate to the bridge\'s sessionId â€?a probe on a different session sees nothing', async () => {
+  it('events isolate to the bridge\'s sessionId â€” a probe on a different session sees nothing', async () => {
     const aEvents: RuntimeRunEvent[] = [];
     const bEvents: RuntimeRunEvent[] = [];
     subscribeBuiltinEvents('chat-A', (e) => aEvents.push(e));
@@ -362,11 +365,11 @@ describe('Tool execute() â€?side-channel event emission', () => {
     }).execute;
     await exec!({ modules: ['interactive'] }, {});
     assert.ok(aEvents.length >= 2, 'sessionId A must see its events');
-    assert.equal(bEvents.length, 0, 'sessionId B must not see A\'s events â€?cross-session leak guard');
+    assert.equal(bEvents.length, 0, 'sessionId B must not see A\'s events â€” cross-session leak guard');
   });
 });
 
-describe('Image generation handler â€?failure-path text does not mention anti-pattern fallbacks', () => {
+describe('Image generation handler â€” failure-path text does not mention anti-pattern fallbacks', () => {
   it('source-level pin: bridge throws a structured message for NoImageGeneratedError, NOT a CLI / auth.json fallback hint', () => {
     // Module-mocking the underlying image-generator across the ESM
     // boundary isn't straightforward in node:test. We pin the
@@ -381,7 +384,7 @@ describe('Image generation handler â€?failure-path text does not mention anti-pa
       'utf-8',
     );
     // 1. The bridge handles NoImageGeneratedError by rethrowing a
-    //    descriptive Error â€?the runWithEvents wrapper catches it
+    //    descriptive Error â€” the runWithEvents wrapper catches it
     //    and emits tool_completed.error.
     assert.match(src, /NoImageGeneratedError\.isInstance/);
     assert.match(

@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Markdown �?HTML presentation template picker �?Phase 4.C.
+ * Markdown → HTML presentation template picker — Phase 4.C.
  *
  * Compact popover that lets the user pick one of the article / report /
  * brief / pitch templates. The Markdown PreviewPanel mounts this as a
- * small panel under the "生成展示�? button; on confirm it calls
+ * small panel under the "生成展示版" button; on confirm it calls
  * `onGenerate(templateId)` and closes.
  */
 

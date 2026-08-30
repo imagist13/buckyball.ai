@@ -84,7 +84,7 @@ interface CheckInCardProps {
   autoTriggerEnabled: boolean;
   onAutoTriggerChange: (enabled: boolean) => void;
   /**
-   * Phase 3 Step 4 â€?heartbeat interval (in hours). When set the
+   * Phase 3 Step 4 â€” heartbeat interval (in hours). When set the
    * select control is rendered below the description; when undefined
    * the control hides (e.g. legacy callers that don't supply it).
    * Min 1h enforced server-side.
@@ -152,7 +152,7 @@ export function CheckInCard({
   // v12 layout: title + Switch on the top row only; description and
   // status get full card width below. v13 (Step 4) adds an interval
   // picker (24 / 12 / 6 / 1 hours) when `intervalHours` + the change
-  // callback are supplied â€?the only NEW user-facing control on this
+  // callback are supplied â€” the only NEW user-facing control on this
   // card after Step 4. Hidden when the toggle is off (no interval to
   // configure when heartbeat won't run).
   return (

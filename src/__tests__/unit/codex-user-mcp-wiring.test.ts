@@ -1,24 +1,24 @@
 /**
- * Phase 8 â€?Codex Runtime MCP wiring guardrail.
+ * Phase 8 â€” Codex Runtime MCP wiring guardrail.
  *
  * History: Phase 5e (2026-05-18) pinned "Codex Runtime does NOT mount user
  * MCP servers" by forbidding the ClaudeCode SDK MCP loaders in the Codex
  * files. Phase 8 (2026-05-27) gives Codex its OWN native injection path
  * (`config.mcp_servers` via `buildCodexMcpServersConfig` /
- * `buildCodexMemoryMcpConfig`), validated against Codex 0.133 â€?see
+ * `buildCodexMemoryMcpConfig`), validated against Codex 0.133 â€” see
  * `docs/research/codex-mcp-injection-poc/`.
  *
  * So the guardrail evolved from "Codex has no MCP wire-up" to "Codex's MCP
  * wire-up is its OWN native injection, and the Settings capability flag
  * stays in lock-step with that wiring":
  *
- *   A. Codex files must never import the ClaudeCode SDK loaders â€?Codex
+ *   A. Codex files must never import the ClaudeCode SDK loaders â€” Codex
  *      injects via `config.mcp_servers`, not Claude's in-process loaders.
  *   B. The native injection builder must exist.
  *   C. SAME-SOURCE invariant: the scanner may only mark `mcp_server`
  *      executable on `codex_runtime` if the runtime actually injects
  *      `config.mcp_servers`. Until Phase 4 validates + flips that capability
- *      (paired with a Phase 5 smoke), it stays `perception_only` â€?and the
+ *      (paired with a Phase 5 smoke), it stays `perception_only` â€” and the
  *      explicit pin below fails loudly when someone flips it, so the flip,
  *      the injection, and this guardrail are reviewed together.
  */
@@ -52,7 +52,7 @@ const CODEX_FILES = [
 // Files where the native injection wiring lives (Phase 2).
 const CODEX_INJECTION_FILES = ['src/lib/codex/provider-proxy.ts', 'src/lib/codex/runtime.ts'];
 
-describe('Codex Runtime â€?A. never borrows the ClaudeCode SDK MCP loaders', () => {
+describe('Codex Runtime â€” A. never borrows the ClaudeCode SDK MCP loaders', () => {
   it('no Codex send-path file imports the SDK loaders', () => {
     const forbidden = [
       'buildMcpToolSet',
@@ -66,14 +66,14 @@ describe('Codex Runtime â€?A. never borrows the ClaudeCode SDK MCP loaders', () 
         assert.equal(
           src.includes(symbol),
           false,
-          `${rel} references "${symbol}" â€?Codex must inject MCP via its own native config.mcp_servers (buildCodexMcpServersConfig), not the ClaudeCode SDK loaders.`,
+          `${rel} references "${symbol}" â€” Codex must inject MCP via its own native config.mcp_servers (buildCodexMcpServersConfig), not the ClaudeCode SDK loaders.`,
         );
       }
     }
   });
 });
 
-describe('Codex Runtime â€?B. native MCP injection builder exists', () => {
+describe('Codex Runtime â€” B. native MCP injection builder exists', () => {
   it('mcp-config.ts exports the Codex MCP config builders', async () => {
     assert.ok(srcExists('src/lib/codex/mcp-config.ts'), 'src/lib/codex/mcp-config.ts is missing');
     const mod = await import('@/lib/codex/mcp-config');
@@ -83,7 +83,7 @@ describe('Codex Runtime â€?B. native MCP injection builder exists', () => {
   });
 });
 
-describe('Codex Runtime â€?C. capability flag stays in lock-step with injection', () => {
+describe('Codex Runtime â€” C. capability flag stays in lock-step with injection', () => {
   // Does the runtime actually inject config.mcp_servers? (Phase 2 wiring.)
   function runtimeInjectsMcp(): boolean {
     return CODEX_INJECTION_FILES.some((rel) => {
@@ -114,11 +114,11 @@ describe('Codex Runtime â€?C. capability flag stays in lock-step with injection'
       if (mcp!.executable) {
         assert.ok(
           runtimeInjectsMcp(),
-          'scanner marks codex_runtime mcp_server executable, but no runtime file injects config.mcp_servers â€?wire injection (Phase 2) before flipping the capability.',
+          'scanner marks codex_runtime mcp_server executable, but no runtime file injects config.mcp_servers â€” wire injection (Phase 2) before flipping the capability.',
         );
       }
 
-      // Current state (Phase 1â€?): the injection plumbing is wired, but the
+      // Current state (Phase 1â€“3): the injection plumbing is wired, but the
       // capability is NOT yet surfaced as executable. Phase 4 flips this only
       // after a Phase 5 real-credential smoke; when it does, update this
       // assertion + the capability matrix together (they change as a pair).

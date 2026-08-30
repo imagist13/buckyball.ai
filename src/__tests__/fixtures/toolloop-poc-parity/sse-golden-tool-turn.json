@@ -121,7 +121,7 @@
             "memory",
             "files_attachments"
           ],
-          "producedBy": "bbagent"
+          "producedBy": "codepilot_runtime"
         }
       },
       "session_id": "<SID>",

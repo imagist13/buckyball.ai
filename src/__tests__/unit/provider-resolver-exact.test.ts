@@ -1,11 +1,11 @@
 /**
- * `resolveExactProvider` â€?fail-closed provider identity (g03).
+ * `resolveExactProvider` â€” fail-closed provider identity (g03).
  *
  * `resolveProvider` is deliberately forgiving: a session pointing at a deleted
  * or deactivated provider silently becomes the user's default one, so the chat
  * keeps working. That is right for answering the user, and WRONG for any
  * background call that carries the user's own text somewhere on its own
- * initiative â€?there, the same fallback means sending the first message of a
+ * initiative â€” there, the same fallback means sending the first message of a
  * conversation to a vendor the user never picked for it.
  *
  * These cases pin the difference directly: same input, forgiving resolver hands
@@ -67,7 +67,7 @@ async function seedTwoProviders() {
   return { pinned, other };
 }
 
-describe('resolveExactProvider â€?fail-closed identity', () => {
+describe('resolveExactProvider â€” fail-closed identity', () => {
   it('returns the provider when it is really that provider', async () => {
     const { pinned } = await seedTwoProviders();
     const { resolveExactProvider } = await import('../../lib/provider-resolver');
@@ -76,7 +76,7 @@ describe('resolveExactProvider â€?fail-closed identity', () => {
     assert.equal(resolved!.provider?.id, pinned.id);
   });
 
-  it('returns null when the provider was deleted â€?where resolveProvider returns another vendor', async () => {
+  it('returns null when the provider was deleted â€” where resolveProvider returns another vendor', async () => {
     const { pinned, other } = await seedTwoProviders();
     const { deleteProvider } = await import('../../lib/db');
     const { resolveProvider, resolveExactProvider } = await import('../../lib/provider-resolver');
@@ -105,7 +105,7 @@ describe('resolveExactProvider â€?fail-closed identity', () => {
     assert.equal(resolveExactProvider(''), null);
   });
 
-  it('a deactivated provider still resolves to itself â€?is_active is a UI marker, not a delete', async () => {
+  it('a deactivated provider still resolves to itself â€” is_active is a UI marker, not a delete', async () => {
     // Guard against over-tightening: is_active is a radio-button "currently
     // selected" flag (see activateProvider in db.ts). Treating it as "gone"
     // would silently kill title generation for every non-selected provider.

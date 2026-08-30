@@ -1,5 +1,5 @@
 /**
- * openai-oauth-manager.ts â€?Token lifecycle management + local callback server.
+ * openai-oauth-manager.ts â€” Token lifecycle management + local callback server.
  *
  * Manages OAuth tokens in SQLite, handles lazy refresh, and runs a temporary
  * HTTP server on port 1455 to receive the OAuth callback.
@@ -50,7 +50,7 @@ export function getOAuthStatus(): OpenAIOAuthStatus {
   const expiresAt = Number(getSetting(KEYS.expiresAt) || '0');
   const refreshToken = getSetting(KEYS.refreshToken);
   if (expiresAt && Date.now() > expiresAt && !refreshToken) {
-    // Token expired with no way to refresh â€?treat as unauthenticated
+    // Token expired with no way to refresh â€” treat as unauthenticated
     clearOAuthTokens();
     return { authenticated: false };
   }
@@ -69,7 +69,7 @@ export function getOAuthStatus(): OpenAIOAuthStatus {
 }
 
 /**
- * Synchronous status check â€?returns false for expired tokens even if
+ * Synchronous status check â€” returns false for expired tokens even if
  * a refresh token exists (since refresh is async). Use ensureTokenFresh()
  * for async callers that can wait for refresh.
  */
@@ -78,7 +78,7 @@ export function isOAuthUsable(): boolean {
   if (!accessToken) return false;
   const expiresAt = Number(getSetting(KEYS.expiresAt) || '0');
   if (expiresAt && Date.now() > expiresAt) {
-    // Expired â€?only usable if refresh token exists (caller must refresh async)
+    // Expired â€” only usable if refresh token exists (caller must refresh async)
     return !!getSetting(KEYS.refreshToken);
   }
   return true;
@@ -182,7 +182,7 @@ const g = globalThis as unknown as Record<string, OAuthGlobalState>;
 if (!g[GLOBAL_KEY]) g[GLOBAL_KEY] = {};
 const oauthState = g[GLOBAL_KEY];
 
-// Convenience accessors â€?all reads/writes go through oauthState
+// Convenience accessors â€” all reads/writes go through oauthState
 function getOAuthServer(): Server | undefined { return oauthState.oauthServer; }
 function setOAuthServer(s: Server | undefined) { oauthState.oauthServer = s; }
 function getPendingOAuth(): PendingOAuth | undefined { return oauthState.pendingOAuth; }
@@ -190,7 +190,7 @@ function setPendingOAuth(p: PendingOAuth | undefined) { oauthState.pendingOAuth 
 
 /**
  * Start the OAuth flow: prepare PKCE, start callback server, return auth URL.
- * MUST be awaited â€?the server needs to be listening before opening the browser.
+ * MUST be awaited â€” the server needs to be listening before opening the browser.
  */
 export async function startOAuthFlow(): Promise<{ authUrl: string; completion: Promise<string> }> {
   // Clean up any stale state from previous attempts
@@ -289,7 +289,7 @@ async function startOAuthServer(): Promise<void> {
   setOAuthServer(server);
 
   // Wait for the server to actually be listening before returning
-  // Bind to localhost only â€?no need to expose to LAN
+  // Bind to localhost only â€” no need to expose to LAN
   await new Promise<void>((resolve, reject) => {
     server.listen(CALLBACK_PORT, '127.0.0.1', () => {
       console.log(`[openai-oauth] Callback server listening on 127.0.0.1:${CALLBACK_PORT}`);
@@ -325,7 +325,7 @@ function successHtml(): string {
 <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fafafa;}
 .card{text-align:center;padding:2rem;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 h1{color:#10b981;font-size:1.5rem;}p{color:#6b7280;}</style></head>
-<body><div class="card"><h1>âœ?Login Successful</h1><p>You can close this tab and return to CodePilot.</p></div>
+<body><div class="card"><h1>âœ“ Login Successful</h1><p>You can close this tab and return to CodePilot.</p></div>
 <script>setTimeout(()=>window.close(),2000)</script></body></html>`;
 }
 
@@ -335,5 +335,5 @@ function errorHtml(message: string): string {
 <style>body{font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#fafafa;}
 .card{text-align:center;padding:2rem;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
 h1{color:#ef4444;font-size:1.5rem;}p{color:#6b7280;}</style></head>
-<body><div class="card"><h1>âœ?Login Failed</h1><p>${safe}</p></div></body></html>`;
+<body><div class="card"><h1>âœ— Login Failed</h1><p>${safe}</p></div></body></html>`;
 }

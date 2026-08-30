@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "startedAt": "2026-08-25T13:08:16.517Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "electron": "40.10.6",
+  "chrome": "144.0.7559.236",
+  "checks": [
+    { "name": "allowed-loopback-navigation", "result": "pass" },
+    { "name": "blocked-data-navigation", "result": "pass" },
+    { "name": "isolated-partition-cookie", "result": "pass" },
+    { "name": "overlay-preserves-page-state", "result": "pass" },
+    { "name": "overlay-audio-muted-while-hidden", "result": "pass" },
+    { "name": "guest-node-disabled", "result": "pass" },
+    { "name": "guest-context-isolated", "result": "pass" },
+    { "name": "guest-sandboxed", "result": "pass" },
+    { "name": "guest-web-security", "result": "pass" }
+  ],
+  "manual": {
+    "ime": "not run",
+    "focusRoundTrip": "not run",
+    "overlayVisual": "not run",
+    "packaged": "not run"
+  },
+  "note": "Sanitized durable copy of /tmp/codepilot-browser-poc-mac.json; temporary paths and full window options were removed."
+}

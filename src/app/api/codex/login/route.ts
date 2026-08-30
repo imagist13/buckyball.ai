@@ -1,7 +1,7 @@
 /**
  * POST /api/codex/login
  *
- * Phase 5 Phase 2 (2026-05-13) â€?kick off a Codex login flow. The UI
+ * Phase 5 Phase 2 (2026-05-13) â€” kick off a Codex login flow. The UI
  * caller opens the returned `authUrl` (or shows `verificationUrl` +
  * `userCode` for device code) and then listens for the completion
  * event via /api/codex/account polling.
@@ -28,7 +28,7 @@ interface LoginBody {
 /**
  * POST body, split out so tests can drive the real handler (request parsing,
  * branching, invalidation, response) while replacing only the bottom JSON-RPC
- * call. `perform` defaults to the real login start â€?the route export below
+ * call. `perform` defaults to the real login start â€” the route export below
  * binds production wiring.
  */
 export async function handleLoginPost(
@@ -39,7 +39,7 @@ export async function handleLoginPost(
   try {
     body = (await request.json()) as LoginBody;
   } catch {
-    // Empty body is fine â€?default to chatgpt streamlined.
+    // Empty body is fine â€” default to chatgpt streamlined.
   }
 
   try {

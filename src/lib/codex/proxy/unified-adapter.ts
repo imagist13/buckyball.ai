@@ -1,25 +1,25 @@
 /**
- * Phase 5b â?Unified Responses adapter built on ai-sdk.
+ * Phase 5b — Unified Responses adapter built on ai-sdk.
  *
  * Same translator works for all three adapter families (OpenAI-compat,
  * Anthropic-compat, CodePlan) because the wire-format divergence lives
  * INSIDE ai-sdk's per-provider SDK (createAnthropic / createOpenAI /
- * createGoogleGenerativeAI / etc.). buckyball.ai's `createModel()` factory
+ * createGoogleGenerativeAI / etc.). CodePilot's `createModel()` factory
  * already picks the right SDK based on `ResolvedProvider.sdkType`, so
- * once the Responses â?ModelMessage[] translation is done, the adapter
+ * once the Responses ↔ ModelMessage[] translation is done, the adapter
  * just hands the model to `streamText` / `generateText` and translates
  * the result back. The family-by-family registration in `adapter.ts`
  * is therefore a dispatch + gate concern, not a separate translator.
  *
  * Two paths:
  *
- *   stream:true  (default)  â?`streamText` + `translateStream`
+ *   stream:true  (default)  → `streamText` + `translateStream`
  *                              Returns a ReadableStream<Uint8Array>
  *                              of SSE-framed Responses events.
- *   stream:false            â?`generateText` + `translateNonStreamResponse`
+ *   stream:false            → `generateText` + `translateNonStreamResponse`
  *                              Returns a full JSON ResponsesNonStreamResponse.
  *
- * Adapter never throws â?every failure path maps to a Responses-shaped
+ * Adapter never throws — every failure path maps to a Responses-shaped
  * error via `classifyUpstreamError` / `makeFailureStream`.
  */
 
@@ -87,7 +87,7 @@ function harnessPromptFromResponsesBody(body: ResponsesRequestBody): string {
 
 /**
  * Build the unified adapter. The family parameter is accepted but
- * doesn't change behaviour today â?it's threaded into error context
+ * doesn't change behaviour today — it's threaded into error context
  * so a failure surface tells us *which family* hit the issue without
  * needing to grep through provider ids. When a family later needs a
  * provider-specific tweak (e.g. CodePlan brand requires header X),
@@ -98,8 +98,8 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     const responseId = makeResponseId();
 
     // 1. Resolve the LanguageModel via the same factory native uses.
-    //    Pass the RAW targetProviderId from the inbound header â?NOT
-    //    `resolved.provider?.id` â?so virtual providers like
+    //    Pass the RAW targetProviderId from the inbound header — NOT
+    //    `resolved.provider?.id` — so virtual providers like
     //    `openai-oauth` / `xai-oauth` (which have
     //    `resolved.provider === undefined`)
     //    flow through to ai-provider.ts's per-virtual-id branches
@@ -132,11 +132,11 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
       });
     }
 
-    // Phase 5d Phase 2 slice 2e + P0 fix (2026-05-17) â?bridge,
+    // Phase 5d Phase 2 slice 2e + P0 fix (2026-05-17) — bridge,
     // compileContext, and bodyWithBridgePrompt MUST run BEFORE
     // buildMessages. Pre-fix the adapter ran `buildMessages(input.body)`
     // first, so the compiler prompt only reached the upstream model
-    // via `providerOptions.openai.instructions` â?visible to OpenAI
+    // via `providerOptions.openai.instructions` — visible to OpenAI
     // Responses-API paths but invisible to Anthropic-compat /
     // CodePlan / OpenAI chat-completions paths whose system content
     // lives entirely in the `messages` array. That made every
@@ -147,7 +147,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     //   1. Mount the bridge (capability gating + tool factories)
     //   2. Translate Codex's incoming tools[] (the function-typed
     //      ones) so we have the merged tool surface
-    //   3. Run compileContext â?systemPromptText
+    //   3. Run compileContext → systemPromptText
     //   4. Splice systemPromptText into body.instructions
     //   5. Now call buildMessages(bodyWithBridgePrompt) so the
     //      compiler's content lands as the first system message
@@ -197,7 +197,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
       );
     }
 
-    // Phase 5d Phase 3 (2026-05-17) â?capability prompt assembly +
+    // Phase 5d Phase 3 (2026-05-17) — capability prompt assembly +
     // stopWhen / builtinToolNames hints routed through the Runtime
     // Capability Adapter (`adaptForCodexProxy`). The adapter wraps
     // Phase 2's compileContext call so this entry point no longer
@@ -213,7 +213,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     // executed bridge call must never be echoed to app-server, even when the
     // capability catalog has no entry for it (for example Sub-agent spawn).
     const bridgeMounted = bridge.toolNames.size > 0;
-    // Phase 5e review fix P1 #2 (2026-05-18) â?scan User + External
+    // Phase 5e review fix P1 #2 (2026-05-18) — scan User + External
     // Harness extensions and pass through the adapter so the model
     // sees the user's MCP servers / Skills / commands / external
     // framework configs as a perception fragment. External scans
@@ -221,7 +221,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     // Codex Runtime that's `codex`, so the user's `~/.codex/*`
     // entries are callable while `~/.claude/*` entries are perception-
     // only with a "switch to ClaudeCode Runtime" hint. Best-effort
-    // import â?scan failures degrade silently to "no extensions".
+    // import — scan failures degrade silently to "no extensions".
     let userExtensions: ReturnType<
       typeof import('@/lib/harness/user-codepilot-extensions').scanUserCodePilotExtensions
     > = [];
@@ -310,7 +310,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
           error: error instanceof Error ? error.message : String(error),
         });
         subagentRunContext = [
-          'buckyball.ai managed Sub-agent lifecycle storage is currently unavailable.',
+          'CodePilot managed Sub-agent lifecycle storage is currently unavailable.',
           'Do not claim that a Sub-agent is running or completed, and do not infer progress from update_plan, assistant narration, elapsed time, or workspace files.',
           'Tell the user the status cannot be verified and ask them to retry after local storage recovers.',
         ].join('\n');
@@ -318,7 +318,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     }
     const managedDelegationInstruction = bridge.toolNames.has('codepilot_spawn_subagent')
       ? [
-          'buckyball.ai managed delegation rule: codepilot_spawn_subagent is the only Sub Agent entry point in this proxied Codex thread.',
+          'CodePilot managed delegation rule: codepilot_spawn_subagent is the only Sub Agent entry point in this proxied Codex thread.',
           'Call it directly once per requested child. Do not call or simulate multi_agent_v1, spawn_agent, wait_agent, resume_agent, or close_agent around it.',
           'A native Codex worker inherits the wrong Provider/Model route here and would create an extra, misleading Agent run.',
         ].join(' ')
@@ -338,7 +338,7 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     // Splice the compiler prompt into the request body's
     // `instructions`. `buildPrompt` below merges `body.instructions`
     // (plus any system/developer input items) into the AI SDK 7
-    // `instructions` OPTION â?ai@7 forbids system messages inside
+    // `instructions` OPTION — ai@7 forbids system messages inside
     // `messages`, so the option is the only channel for system text
     // and the SDK forwards it per provider (system message for chat
     // skins, top-level instructions for Responses).
@@ -384,12 +384,12 @@ export function createUnifiedAdapter(family: string): ResponsesAdapter {
     );
     const wantsStream = input.body.stream !== false;
 
-    // Phase 5d Phase 3 review fix #1 (2026-05-17) â?Path inputs read
+    // Phase 5d Phase 3 review fix #1 (2026-05-17) — Path inputs read
     // builtinToolNames / stopWhen / stepCount FROM THE ADAPTER, not
     // local state. Previously `streamPath` received `bridge.toolNames`
     // directly and hard-coded `BUILTIN_BRIDGE_STEP_LIMIT = 8`. That
     // made `runtime-adapter.ts`'s `stopWhen / stepCount` hint
-    // half-dead â?changing the compiler hint would NOT have changed
+    // half-dead — changing the compiler hint would NOT have changed
     // the real send path. The adapter is now the single source for
     // these values; the compiler owns `CODEX_BRIDGE_STEP_LIMIT`.
     if (wantsStream) {
@@ -477,7 +477,7 @@ export function buildCodexHostedSearchTools(
 }
 
 /**
- * Phase 5d Phase 2 slice 2e (2026-05-17) â?map the bridge's mounted
+ * Phase 5d Phase 2 slice 2e (2026-05-17) — map the bridge's mounted
  * tool names back to capability ids so the Context Compiler emits
  * fragments for exactly those capabilities. Workspace-gated cases
  * (memory tools mounted only when workspacePath is present) flow
@@ -486,7 +486,7 @@ export function buildCodexHostedSearchTools(
  */
 function capabilitiesFromBridgeToolNames(toolNames: ReadonlySet<string>): Set<string> {
   const out = new Set<string>();
-  // Capability id â?tool name mapping mirrors capability-contract.ts.
+  // Capability id ← tool name mapping mirrors capability-contract.ts.
   // The compiler will then look up exposure / fragment / artifact
   // details from the catalog.
   if (toolNames.has('codepilot_generate_image')) out.add('image_generation');
@@ -523,12 +523,12 @@ interface PathInput {
   responseId: string;
   body: ResponsesRequestBody;
   languageModel: LanguageModel;
-  /** System text for the AI SDK 7 `instructions` option â?ai@7 rejects
+  /** System text for the AI SDK 7 `instructions` option — ai@7 rejects
    *  system messages inside `messages`, so this is the only channel. */
   instructions: string | undefined;
   messages: ModelMessage[];
   tools: ToolSet | undefined;
-  /** Names belonging to the bridge â?Codex doesn't need their
+  /** Names belonging to the bridge — Codex doesn't need their
    *  function_call events because the bridge already executed them.
    *  See `translate-stream.ts` for the suppression logic. Sourced
    *  from `adaptForCodexProxy().builtinToolNames` so the value is
@@ -555,13 +555,14 @@ interface PathInput {
 }
 
 /**
- * Phase 5c (2026-05-16) â?multi-step ceiling for streamText. The
+ * Phase 5c (2026-05-16) — multi-step ceiling for streamText. The
  * actual constant value lives in `src/lib/harness/context-compiler.ts`
  * (`CODEX_BRIDGE_STEP_LIMIT`); both stream and non-stream paths read
  * it from `adapted.stepCount` via PathInput, so the value is the
  * compiler's choice rather than a parallel local constant.
  *
- * 8 is empirical: enough for chained tools (memory read â?image gen â? * narration â?schedule task), low enough that a confused model loop
+ * 8 is empirical: enough for chained tools (memory read → image gen →
+ * narration → schedule task), low enough that a confused model loop
  * terminates instead of looping indefinitely on tool calls.
  */
 function buildStopWhen(
@@ -717,7 +718,7 @@ async function nonStreamPath(args: PathInput): Promise<ProxyResult> {
       tools,
       providerOptions,
       abortSignal: signal,
-      // Same step ceiling as streamPath â?kept symmetric so the
+      // Same step ceiling as streamPath — kept symmetric so the
       // non-stream path doesn't surprise callers that switch
       // between stream:true/false at runtime. Source: adapter.
       ...buildStopWhen(stopWhen, stepCount),
@@ -751,7 +752,7 @@ async function nonStreamPath(args: PathInput): Promise<ProxyResult> {
 
 /**
  * Split the prompt for AI SDK 7: system text must travel via the
- * `instructions` OPTION â?ai@7 rejects `role: 'system'` inside `messages`
+ * `instructions` OPTION — ai@7 rejects `role: 'system'` inside `messages`
  * ("System messages are not allowed in the prompt or messages fields.
  * Use the instructions option instead."). Merged into `instructions`
  * in order: Codex's top-level `body.instructions`, then any
@@ -791,10 +792,10 @@ export function buildPrompt(body: ResponsesRequestBody): {
  * The translator picks BOTH possible paths so whichever underlying SDK
  * is used picks up the option without the adapter needing to know
  * which one upfront. ai-sdk silently drops options the model doesn't
- * recognise â?confirmed by reading providerOptions handling in each
+ * recognise — confirmed by reading providerOptions handling in each
  * @ai-sdk/* package.
  */
-/** Exported for unit testing â?see codex-proxy-translators.test.ts. */
+/** Exported for unit testing — see codex-proxy-translators.test.ts. */
 export function buildProviderOptions(
   body: ResponsesRequestBody,
   context?: {
@@ -834,11 +835,11 @@ export function buildProviderOptions(
     }
   }
 
-  // Phase 5b smoke follow-up (2026-05-15) â?Codex's `/responses`
+  // Phase 5b smoke follow-up (2026-05-15) — Codex's `/responses`
   // endpoint (chatgpt.com/backend-api/codex/responses) REQUIRES a
   // non-empty `instructions` top-level field. ai-sdk's openai
   // `responses(...)` model only populates that field from
-  // `providerOptions.openai.instructions` â?system messages in the
+  // `providerOptions.openai.instructions` — system messages in the
   // `messages` array end up as input items, not as the top-level
   // instructions. So forward Codex's body.instructions verbatim into
   // the provider options so the openai-oauth path stops returning
@@ -848,7 +849,7 @@ export function buildProviderOptions(
     out.openai = { ...(out.openai ?? {}), instructions: body.instructions };
   }
 
-  // Phase 5b smoke follow-up (2026-05-15) â?Codex's `/responses`
+  // Phase 5b smoke follow-up (2026-05-15) — Codex's `/responses`
   // endpoint also REQUIRES `store: false`. ai-sdk's openai `responses(...)`
   // path defaults store to true (the public OpenAI API stores by
   // default for the dashboard). When Codex's HTTP client forwards a
@@ -859,7 +860,7 @@ export function buildProviderOptions(
   // openai-flavoured call we make.
   out.openai = { ...(out.openai ?? {}), store: body.store ?? false };
   // xAI Responses has its own `store` contract. @ai-sdk/xai defaults it to
-  // true; buckyball.ai does not use previousResponseId, so the shared xAI helper
+  // true; CodePilot does not use previousResponseId, so the shared xAI helper
   // explicitly disables upstream retention for this channel.
   out.xai = buildXaiProviderOptions(body.model, body.reasoning?.effort);
 

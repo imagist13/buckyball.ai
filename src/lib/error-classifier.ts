@@ -1,5 +1,5 @@
 /**
- * Error Classifier â€?structured error categorization for Claude Code process errors.
+ * Error Classifier â€” structured error categorization for Claude Code process errors.
  *
  * Replaces the ad-hoc if/else chain in claude-client.ts with a pattern-matching
  * classifier that produces actionable, user-facing error messages.
@@ -23,11 +23,11 @@ import {
  *
  * Side-effect-free and exported so tests can lock the semantics WITHOUT
  * importing `@sentry/node` (that import would pull the @opentelemetry chain
- * into the dev/test compile graph â€?see reportToSentry's guard and the
+ * into the dev/test compile graph â€” see reportToSentry's guard and the
  * sentry-dev-guard contract).
  *
  *  1. category must be in the reportable allow-list.
- *  2. user-initiated abort/cancel is dropped â€?EXCEPT TIMEOUT_*, which the
+ *  2. user-initiated abort/cancel is dropped â€” EXCEPT TIMEOUT_*, which the
  *     native runtime raises as an AbortError (a fired timeout budget aborts
  *     the combined signal; see agent-loop.ts:728). A timeout is a real
  *     failure, so the abort/cancel message filter must not swallow it.
@@ -60,7 +60,7 @@ function reportToSentry(category: string, error: unknown, context: SentryReportC
   // skips Sentry.init in dev, this lazy import path would still pull
   // `@sentry/node` + the `@opentelemetry/*` chain into Turbopack's compile
   // graph the moment a reportable error fires (NATIVE_STREAM_ERROR /
-  // MCP_CONNECTION_ERROR / PROVIDER_NOT_APPLIED / â€?. One unguarded code
+  // MCP_CONNECTION_ERROR / PROVIDER_NOT_APPLIED / â€¦). One unguarded code
   // path is enough to undo the entire dev memory cut, so we mirror the
   // instrumentation.ts contract here. Locked in by
   // `src/__tests__/unit/sentry-dev-guard.test.ts`.
@@ -74,7 +74,7 @@ function reportToSentry(category: string, error: unknown, context: SentryReportC
     });
     if (!normalized.shouldReport) return;
 
-    // Fire-and-forget async import â€?never blocks the classifier
+    // Fire-and-forget async import â€” never blocks the classifier
     import('@sentry/node').then((Sentry) => {
       if (!Sentry.isInitialized()) return;
       Sentry.withScope((scope) => {
@@ -135,7 +135,7 @@ export function reportNativeError(
   },
 ) {
   reportToSentry(category, error, {
-    runtimeId: 'bbagent',
+    runtimeId: 'codepilot_runtime',
     providerProtocol: context?.providerProtocol,
     providerClass: context?.providerClass,
     retryExhausted: context?.retryExhausted,
@@ -146,6 +146,7 @@ export function reportNativeError(
 
 export type ClaudeErrorCategory =
   | 'CLI_NOT_FOUND'
+  | 'EXECUTION_PERMISSION_DENIED'
   | 'NO_CREDENTIALS'
   | 'AUTH_REJECTED'
   | 'AUTH_FORBIDDEN'
@@ -168,7 +169,7 @@ export type ClaudeErrorCategory =
   | 'OPENAI_AUTH_FAILED'     // OpenAI OAuth token expired/invalid
   | 'MCP_CONNECTION_ERROR'   // MCP server connect/sync failure
   | 'EMPTY_RESPONSE'         // Model returned nothing (proxy rejection, unsupported model)
-  // Native Runtime timeout reason codes (Phase 4 â‘?â€?src/lib/native-timeout.ts).
+  // Native Runtime timeout reason codes (Phase 4 â‘  â€” src/lib/native-timeout.ts).
   // Assigned directly from the fired timeout budget, never regex-inferred.
   | 'TIMEOUT_CONNECT'        // No provider response headers within connectMs
   | 'TIMEOUT_FIRST_TOKEN'    // Response arrived but no model output within firstTokenMs
@@ -252,6 +253,21 @@ const providerHint = (ctx: ErrorContext) =>
   ctx.providerName ? ` (Provider: ${ctx.providerName})` : '';
 
 const ERROR_PATTERNS: ErrorPattern[] = [
+  // â”€â”€ Local process launch denied by the operating system â”€â”€
+  // Keep the text patterns spawn/exec-specific: provider APIs also use
+  // phrases such as "permission denied", which belong to AUTH_FORBIDDEN.
+  {
+    category: 'EXECUTION_PERMISSION_DENIED',
+    patterns: [
+      /(?:spawn|exec(?:file)?) [^\n]+ e(?:perm|acces)/i,
+      /(?:spawn|exec(?:file)?)[^\n]+operation not permitted/i,
+      /(?:spawn|exec(?:file)?)[^\n]+permission denied/i,
+    ],
+    userMessage: () => 'The operating system blocked CodePilot from starting a required process.',
+    actionHint: () => 'Check the executable permissions and your system security or antivirus policy, then restart CodePilot. On a managed device, ask your administrator to allow the process.',
+    retryable: false,
+  },
+
   // â”€â”€ CLI not found â”€â”€
   {
     category: 'CLI_NOT_FOUND',
@@ -282,7 +298,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
   // error when settings.json is missing or its base URL/token combo is
   // rejected. In the CodePilot UI the CLI's /login flow is a dead-end, so
   // we surface the same user-friendly guidance as a true credentials-missing
-  // case â€?open the Providers setup instead of telling users to run a
+  // case â€” open the Providers setup instead of telling users to run a
   // command that doesn't exist in the desktop app.
   {
     category: 'NO_CREDENTIALS',
@@ -292,7 +308,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       'not logged in', 'please run /login',
     ],
     userMessage: (ctx) => `No API credentials found${providerHint(ctx)}.`,
-    actionHint: () => 'Go to Settings â†?Providers and add your API key, or set the ANTHROPIC_API_KEY environment variable.',
+    actionHint: () => 'Go to Settings â†’ Providers and add your API key, or set the ANTHROPIC_API_KEY environment variable.',
     retryable: false,
   },
 
@@ -401,7 +417,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       'failed to resume',
       'resume_failed',
       'conversation not found',
-      // #629 (POC-B 2026-06-26) â€?third-party Anthropic proxies (GLM / MiMo /
+      // #629 (POC-B 2026-06-26) â€” third-party Anthropic proxies (GLM / MiMo /
       // DeepSeek / Aliyun) return "No conversation found with session ID: <sid>"
       // for a stale resume. 'conversation not found' has the wrong word order and
       // the session-id regex below needs "not found" AFTER the id (here it's
@@ -431,7 +447,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       /(?:invalid|stale|expired|corrupt)\s*(?:session|sdk_session)/,
     ],
     userMessage: () => 'Session state is invalid or corrupted.',
-    actionHint: () => 'The stored session state has become stale. Please start a new conversation, or retry â€?the session will be automatically reset.',
+    actionHint: () => 'The stored session state has become stale. Please start a new conversation, or retry â€” the session will be automatically reset.',
     retryable: true,
   },
 
@@ -447,7 +463,7 @@ const ERROR_PATTERNS: ErrorPattern[] = [
       if (ctx.hasImages) hints.push('Provider may not support image/vision input');
       if (ctx.thinkingEnabled) hints.push('Thinking mode may not be supported');
       if (ctx.context1mEnabled) hints.push('1M context may not be supported');
-      return `Claude Code process exited with an error${providerHint(ctx)}. Common causes:\nâ€?${hints.join('\nâ€?')}`;
+      return `Claude Code process exited with an error${providerHint(ctx)}. Common causes:\nâ€¢ ${hints.join('\nâ€¢ ')}`;
     },
     actionHint: () => 'Check your API key and provider settings. Run Provider Doctor in Settings for detailed diagnostics.',
     retryable: false,
@@ -505,7 +521,7 @@ export function classifyError(ctx: ErrorContext): ClassifiedError {
           return {
             category: 'SESSION_STATE_ERROR',
             userMessage: 'Session state is invalid or corrupted.',
-            actionHint: 'The stored session state has become stale. Please start a new conversation, or retry â€?the session will be automatically reset.',
+            actionHint: 'The stored session state has become stale. Please start a new conversation, or retry â€” the session will be automatically reset.',
             rawMessage,
             providerName: ctx.providerName,
             details: extraDetail || undefined,
@@ -532,12 +548,12 @@ export function classifyError(ctx: ErrorContext): ClassifiedError {
 }
 
 /**
- * #629 â€?decide whether an is_error RESULT's `errors[]` indicates a stale/bad
+ * #629 â€” decide whether an is_error RESULT's `errors[]` indicates a stale/bad
  * resume (session-state) that SHOULD clear sdk_session_id, vs a transient error
  * (rate-limit / auth / budget) that must NOT (clearing would force a fresh
  * session and drop SDK-side context). Pure: feeds `errors.join('\n')` through
  * classifyError; true only for RESUME_FAILED / SESSION_STATE_ERROR. Empty / null
- * â†?false (no text signal; caller may fall back to a non-text heuristic).
+ * â†’ false (no text signal; caller may fall back to a non-text heuristic).
  *
  * Verified shape (POC-B 2026-06-26, docs/research/issue-629-resume-error-shape-poc):
  * GLM / MiMo / DeepSeek / Aliyun Anthropic proxies all return
@@ -582,6 +598,10 @@ function buildRecoveryActions(category: ClaudeErrorCategory, ctx: ErrorContext):
       if (meta?.apiKeyUrl) actions.push({ label: 'Check API Key', url: meta.apiKeyUrl });
       if (meta?.docsUrl) actions.push({ label: 'View Docs', url: meta.docsUrl });
       actions.push({ label: 'Open Settings', action: 'open_settings' });
+      break;
+    case 'EXECUTION_PERMISSION_DENIED':
+      // There is no safe cross-platform deep link for OS/antivirus policy.
+      // The classifier's actionHint is the complete recovery instruction.
       break;
     default:
       actions.push({ label: 'Open Settings', action: 'open_settings' });

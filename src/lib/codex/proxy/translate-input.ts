@@ -1,5 +1,5 @@
 /**
- * Phase 5b â€?Responses input items â†?ai-sdk ModelMessage[].
+ * Phase 5b â€” Responses input items â†’ ai-sdk ModelMessage[].
  *
  * Codex sends turn state as a flat `ResponsesInputItem[]`. ai-sdk's
  * `streamText` consumes `messages: ModelMessage[]` with the
@@ -11,14 +11,14 @@
  * Mapping:
  *
  *   { type: 'message', role: 'user', content: [{ input_text }, ...] }
- *     â†?{ role: 'user', content: <flattened> }
+ *     â†’ { role: 'user', content: <flattened> }
  *   { type: 'message', role: 'assistant', content: [{ output_text }, ...] }
- *     â†?{ role: 'assistant', content: <flattened> }
+ *     â†’ { role: 'assistant', content: <flattened> }
  *   { type: 'function_call', ... }
- *     â†?assistant message with content: [{ type: 'tool-call', ... }]
+ *     â†’ assistant message with content: [{ type: 'tool-call', ... }]
  *       (merged into the previous assistant message if it exists)
  *   { type: 'function_call_output', ... }
- *     â†?tool message: { role: 'tool', content: [{ type: 'tool-result', ... }] }
+ *     â†’ tool message: { role: 'tool', content: [{ type: 'tool-result', ... }] }
  *
  * Image content blocks (input_image) pass through as ai-sdk's
  * `ImagePart`. Codex doesn't currently emit those for chat, but the
@@ -36,7 +36,7 @@ import type {
 } from './types';
 import { flattenCodexNamespaceToolName } from './namespace-tools';
 
-/** Mirror of ai-sdk's JSONValue â€?recursive primitive/array/object. */
+/** Mirror of ai-sdk's JSONValue â€” recursive primitive/array/object. */
 type JsonValue =
   | string | number | boolean | null
   | JsonValue[]
@@ -51,12 +51,12 @@ const ORPHAN_TOOL_RESULT_SENTINEL = '__orphan_function_call_output__';
  * Translate a Responses input array into ai-sdk ModelMessage[].
  * Caller prepends the system message (from `instructions`) if any.
  *
- * Phase 5b smoke round 7 (2026-05-16) â€?tool-result toolName fix.
+ * Phase 5b smoke round 7 (2026-05-16) â€” tool-result toolName fix.
  *
  * Codex's Responses request body interleaves `function_call` and
  * `function_call_output` items keyed by `call_id`. ai-sdk's
  * `tool-result` content part also expects a `toolName` that matches
- * what was declared on the preceding `tool-call` â€?providers like
+ * what was declared on the preceding `tool-call` â€” providers like
  * Anthropic and OpenAI Responses use the name to look up the tool
  * schema and route the result back to the model.
  *
@@ -68,15 +68,16 @@ const ORPHAN_TOOL_RESULT_SENTINEL = '__orphan_function_call_output__';
  * skill completes but Codex never produces the final assistant turn
  * because the provider can't reconcile the result).
  *
- * The fix walks the input array once first to build a call_id â†? * function_call.name map, then translates linearly using that map.
+ * The fix walks the input array once first to build a call_id â†’
+ * function_call.name map, then translates linearly using that map.
  * Orphan function_call_outputs (no matching function_call in the same
- * request â€?should only happen on malformed inputs) fall back to a
+ * request â€” should only happen on malformed inputs) fall back to a
  * named sentinel so the divergence stays visible.
  */
 export function translateResponsesInput(
   input: ResponsesInputItem[],
 ): ModelMessage[] {
-  // Pass 1 â€?collect call_id â†?toolName from every function_call.
+  // Pass 1 â€” collect call_id â†’ toolName from every function_call.
   // Codex emits function_call BEFORE the corresponding _output in the
   // same request, but we do a separate pass first so any future
   // re-ordering doesn't quietly break correlation.
@@ -118,7 +119,8 @@ export function translateResponsesInput(
     } else if (item.type === 'function_call') {
       // Merge into the previous assistant message if the previous
       // item was already an assistant message (typical Codex shape:
-      // assistant text â†?function_call â†?function_call â†?      // function_call_output â†?assistant text). ai-sdk's tool-call
+      // assistant text â†’ function_call â†’ function_call â†’
+      // function_call_output â†’ assistant text). ai-sdk's tool-call
       // content part lives on the assistant message.
       const prev = out[out.length - 1];
       const toolCallPart = {
@@ -142,7 +144,7 @@ export function translateResponsesInput(
       // assistant tool-call AND carry the real toolName so the
       // downstream provider (Anthropic, OpenAI Responses, etc.) can
       // route the result back to the tool definition. The call_id
-      // alone isn't enough â€?that's the round-7 regression we hit.
+      // alone isn't enough â€” that's the round-7 regression we hit.
       const resolvedName = callIdToToolName.get(item.call_id);
       const toolName = resolvedName ?? ORPHAN_TOOL_RESULT_SENTINEL;
       if (!resolvedName) {
@@ -152,7 +154,7 @@ export function translateResponsesInput(
         // dev/prod logs without dropping the request entirely.
         console.warn(
           `[codex.proxy.translate-input] function_call_output(call_id=${item.call_id}) has no matching function_call in this request. ` +
-            `Routing result to sentinel toolName "${ORPHAN_TOOL_RESULT_SENTINEL}" â€?provider may fail to reconcile.`,
+            `Routing result to sentinel toolName "${ORPHAN_TOOL_RESULT_SENTINEL}" â€” provider may fail to reconcile.`,
         );
       }
       // Output is JSON-parsed when possible (so the model sees a
@@ -179,7 +181,7 @@ export function translateResponsesInput(
   return out;
 }
 
-/** Best-effort JSON.parse â€?returns undefined on failure. */
+/** Best-effort JSON.parse â€” returns undefined on failure. */
 function safeParseJson(raw: string): unknown | undefined {
   if (!raw) return undefined;
   try {
@@ -222,7 +224,7 @@ type AssistantContentPart =
   | { type: 'text'; text: string }
   | { type: 'tool-call'; toolCallId: string; toolName: string; input: unknown };
 
-/** Translate assistant-side content (text only at this layer â€?tool calls handled separately). */
+/** Translate assistant-side content (text only at this layer â€” tool calls handled separately). */
 function translateAssistantContent(content: ResponsesContentBlock[]): AssistantContentPart[] {
   const parts: AssistantContentPart[] = [];
   for (const block of content) {
