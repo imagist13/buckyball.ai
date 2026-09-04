@@ -40,6 +40,7 @@ import { assertCliProviderLaunchAllowed } from './cli-maintenance-lease';
 import { notifyPermissionRequest, notifyGeneric } from './telegram-bot';
 import { classifyError, formatClassifiedError, isSessionStateResultError } from './error-classifier';
 import { resolveWorkingDirectory } from './working-directory';
+import { resolveSelectedSkillInjection } from './selected-skill-injection';
 import { wrapController } from './safe-stream';
 import { type ShadowHome } from './claude-home-shadow';
 import { prepareSdkSubprocessEnv } from './sdk-subprocess-env';
@@ -896,13 +897,22 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
     }));
   }
 
+  const selectedSkillInjection = resolveSelectedSkillInjection(
+    options.selectedSkills,
+    options.workingDirectory || process.cwd(),
+  );
+  const effectiveSystemPrompt = [
+    options.systemPrompt,
+    selectedSkillInjection?.systemPromptAppend,
+  ].filter(Boolean).join('\n\n') || undefined;
+
   return runtime.stream({
     // Universal fields
     prompt: options.prompt,
     callScene: options.callScene,
     sessionId: options.sessionId,
     model: options.model,
-    systemPrompt: options.systemPrompt,
+    systemPrompt: effectiveSystemPrompt,
     workingDirectory: options.workingDirectory,
     abortController: options.abortController,
     autoTrigger: options.autoTrigger,
@@ -914,6 +924,7 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
     temperature: options.temperature,
     topP: options.topP,
     topK: options.topK,
+    selectedSkills: options.selectedSkills,
     mcpServers: options.mcpServers,
     permissionMode: effectivePermissionMode,
     bypassPermissions: options.bypassPermissions,
@@ -933,6 +944,7 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
       enableFileCheckpointing: options.enableFileCheckpointing,
       generativeUI: options.generativeUI,
       provider: options.provider,
+      selectedSkills: options.selectedSkills,
       lockId: options.lockId,
     },
   });
@@ -1318,6 +1330,33 @@ export function streamClaudeSdk(options: ClaudeStreamOptions): ReadableStream<st
         // else is dropped here.
         if (!isHeartbeatMode && mcpServers && Object.keys(mcpServers).length > 0) {
           queryOptions.mcpServers = toSdkMcpConfig(mcpServers);
+        }
+
+        // bbagent 注入：bbdev MCP（系统级）—— 总是尝试注入；
+        // 未配置或 feature 关闭时由 applyBbMcpInjection 自动跳过。
+        // heartbeat mode 也跳过（与上面 heartbeat 屏蔽 external MCP 一致）。
+        if (!isHeartbeatMode) {
+          try {
+            const { applyBbMcpInjection } = await import('@/lib/bbagent/mcp-injector');
+            const bbdevRaw: Record<string, MCPServerConfig> = {};
+            const bbdevResult = applyBbMcpInjection('claude_code', bbdevRaw);
+            if (!bbdevResult.ok) {
+              console.warn(
+                '[claude-client] bbagent mcp injection failed (non-fatal):',
+                bbdevResult.reason,
+              );
+            } else if (Object.keys(bbdevRaw).length > 0) {
+              queryOptions.mcpServers = {
+                ...(queryOptions.mcpServers || {}),
+                ...toSdkMcpConfig(bbdevRaw),
+              };
+            }
+          } catch (err) {
+            console.warn(
+              '[claude-client] bbagent load error (non-fatal):',
+              err instanceof Error ? err.message : err,
+            );
+          }
         }
 
         // For DB-provider requests, settingSources is ['user'] only (project

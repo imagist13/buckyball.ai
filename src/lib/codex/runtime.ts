@@ -594,6 +594,41 @@ export const codexRuntime: AgentRuntime = {
           // only Memory is wired here, and the Settings capability stays
           // perception_only until then (codex-user-mcp-wiring guardrail).
           const codexMcpServers: CodexMcpServersConfig = {};
+
+          // bbagent 注入：bbdev MCP（系统级）—— 总是尝试注入；
+          // 未配置或 feature 关闭时由 applyBbMcpInjection 自动跳过。
+          // Codex 的 mcpServers 类型不同于 MCPServerConfig，先注入到临时
+          // 容器再用 buildCodexMcpServersConfig 转换并合并。
+          // 单点失败非阻塞：runtime 仍能以普通 chat 模式运行。
+          try {
+            const { applyBbMcpInjection } = await import('@/lib/bbagent/mcp-injector');
+            const { buildCodexMcpServersConfig } = await import('./mcp-config');
+            const bbdevRaw: Record<string, import('@/types').MCPServerConfig> = {};
+            const bbdevResult = applyBbMcpInjection('codex', bbdevRaw);
+            if (!bbdevResult.ok) {
+              console.warn(
+                '[codex/runtime] bbagent mcp injection failed (non-fatal):',
+                bbdevResult.reason,
+              );
+            } else if (Object.keys(bbdevRaw).length > 0) {
+              const built = buildCodexMcpServersConfig(bbdevRaw);
+              for (const [name, entry] of Object.entries(built.servers)) {
+                codexMcpServers[name] = entry;
+              }
+              if (built.unsupported.length > 0) {
+                console.warn(
+                  '[codex/runtime] bbagent mcp conversion unsupported:',
+                  built.unsupported.map(u => `${u.name}:${u.reason}`).join('; '),
+                );
+              }
+            }
+          } catch (err) {
+            console.warn(
+              '[codex/runtime] bbagent load error (non-fatal):',
+              err instanceof Error ? err.message : err,
+            );
+          }
+
           const assistantWorkspacePath = getSetting('assistant_workspace_path');
           if (
             assistantWorkspacePath &&

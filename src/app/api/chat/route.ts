@@ -18,6 +18,7 @@ import { hasCodePilotProvider } from '@/lib/provider-presence';
 import { createSessionLockSettler } from '@/lib/session-lock-settle';
 import { evaluateRenewal } from '@/lib/session-lock-renewal';
 import { validateSendMessageBody } from '@/lib/chat-request-validation';
+import { resolveSelectedSkillInjection, SelectedSkillNotFoundError } from '@/lib/selected-skill-injection';
 import {
   normalizePermissionProfile,
   resolveClaudeWireOptions,
@@ -81,6 +82,23 @@ export async function POST(request: NextRequest) {
         status: 404,
         headers: { 'Content-Type': 'application/json' },
       });
+    }
+
+    const skillWorkingDirectory = session.sdk_cwd || session.working_directory || process.cwd();
+    try {
+      // Validate explicit badge selections before acquiring the session lock or
+      // persisting a user message. A stale badge must be retryable after the
+      // user fixes the workspace, not become a silent ordinary-chat turn.
+      resolveSelectedSkillInjection(selectedSkills, skillWorkingDirectory);
+    } catch (error) {
+      if (error instanceof SelectedSkillNotFoundError) {
+        return new Response(JSON.stringify({
+          error: error.message,
+          code: 'SELECTED_SKILL_NOT_FOUND',
+          missingSkills: error.missingSkills,
+        }), { status: 422, headers: { 'Content-Type': 'application/json' } });
+      }
+      throw error;
     }
 
     // Precondition: CodePilot must have a provider configured. A selected DB

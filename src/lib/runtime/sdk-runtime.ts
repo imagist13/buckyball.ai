@@ -49,6 +49,7 @@ export const sdkRuntime: AgentRuntime = {
       temperature: options.temperature,
       topP: options.topP,
       topK: options.topK,
+      selectedSkills: options.selectedSkills,
       autoTrigger: options.autoTrigger,
       bypassPermissions: options.bypassPermissions,
       onRuntimeStatusChange: options.onRuntimeStatusChange,

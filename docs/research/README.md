@@ -4,10 +4,19 @@
 
 **AI 须知：修改或新增文件后更新下方索引；检索本目录前先读此文件。**
 
+## 当前主线
+
+- **[buckyball-ai-design.md](./buckyball-ai-design.md)** — **CodePilot 二开 fork + 改名 buckyball.ai** 总体设计：核心魔改 = `src/lib/bbagent/` 注入层（MCP / Skill / Prompt 三注入点）；保留所有上游通用多模型 Agent 能力；持久化路径切到 `~/.buckyball/`；图像生成 / 个人助手 feature flag 默认关闭。
+
+## 历史归档（superseded）
+
+- **[chatnpu-design-proposal.md](./chatnpu-design-proposal.md)** — **已被 buckyball-ai-design.md 取代（2026-09-03）**。旧方案把 buckyball 当作"CodePilot 垂直领域定制版" + 新增独立 `bbdev_runtime`。新方案改为 CodePilot 二开 fork + bbagent 注入层；保留本文档作历史参考，顶部 Archive note 指向新设计。
+
 ## 索引
 
 | 文件 | 主题 |
 |------|------|
+| buckyball-ai-design.md | **buckyball.ai 总体设计（当前主线）**：CodePilot 二开 fork + 改名 + 在三 Runtime 注入 skill/提示词；通用 Runtime 切换与旧版聊天能力保留；持久化路径切到 `~/.buckyball/`；图像生成 / 个人助手 feature flag 默认关闭 |
 | glm-5-3-flash-codeplan-adaptation-2026-08-26.md | **GLM-5.3-Flash Coding Plan 适配核验**：当前目录收敛为 5.3 + 5.3-Flash；Flash 1M/vision/always-thinking/Low-High-Max default Max；Claude `[1m]` 与 Codex bare ID 分流；旗舰默认保持 5.3、稳定 haiku 槽升级 Flash；存量 Turbo/4.7 行非破坏保留；synthetic 双 Runtime wire 已验证，真实套餐 smoke 待跑 |
 | browser-webcontentsview-poc/ | **Browser WebContentsView 隔离 POC（BLOCKED / INCONCLUSIVE；路线已取代）**：Electron 40.10.6 / macOS arm64 的 9 项局部安全基线通过；首轮 SIGTRAP 因 observer 内 `loadURL()` 的非 canonical 序列而失效，修订 harness 又停在 `app.whenReady()` 前；Windows/Linux、IME、focus、packaged 均未执行。2026-08-26 用户选择 hardened `<webview>` MVP；本研究不再阻塞产品，也不伪造 GO |
 | t3code-composer-sidebar-browser-ux-2026-08-25.md | **T3 Code 模型输入区 / 单一 Surface 侧边栏 / 内置浏览器专项调研（独立审查后修订）**：核验 provider instance + model 收藏、能力描述驱动的 reasoning/context/fast 单菜单、空态 surface cards 与 `<webview>` + persistent partition + main-process Manager/CDP 的真实实现；确认 T3 未观察到项目级 pin。建议 CodePilot 重新引入搜索，把 Plan 作为 `只读规划` 权限档位收进 Permission，以 repository identity 的 workspace pin + thread surface 管理状态，并用同一外壳的 Files Primary + preview Inspector 保留 v13 浏览/预览工作流；浏览器先做主进程 `WebContentsView` POC，新增 native overlay/zoom/快捷键/crash 门禁，不直接复制 `<webview>` 或 `contextIsolation:false`，Agent automation 后置 |

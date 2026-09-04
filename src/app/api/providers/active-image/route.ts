@@ -59,6 +59,17 @@ function resolveModelForProvider(provider: ApiProvider): { model: string; modelL
  * showing a provider as "active" while generation silently falls back.
  */
 export async function GET() {
+  // bbagent Phase 7 — imageGeneration feature flag off → 返回空 active provider
+  // 旧数据保留在 db（不让 UI 显示"假活跃"），但 GET 直接给空
+  try {
+    const { isBbFeatureEnabled } = await import('@/lib/bbagent/features');
+    if (!isBbFeatureEnabled('imageGeneration')) {
+      return NextResponse.json({ providerId: '', stale: false, disabled: true });
+    }
+  } catch {
+    return NextResponse.json({ providerId: '', stale: false, disabled: true });
+  }
+
   const id = getSetting('active_image_provider_id') || '';
   if (!id) return NextResponse.json({ providerId: '', stale: false });
 
@@ -104,6 +115,22 @@ export async function GET() {
  * reads through getAllProviders() so encrypted-at-rest credentials work too.
  */
 export async function PUT(request: NextRequest) {
+  // bbagent Phase 7 — imageGeneration feature flag off → 410 Gone
+  try {
+    const { isBbFeatureEnabled } = await import('@/lib/bbagent/features');
+    if (!isBbFeatureEnabled('imageGeneration')) {
+      return NextResponse.json(
+        { error: 'imageGeneration feature is disabled in buckyball.ai', disabled: true },
+        { status: 410 },
+      );
+    }
+  } catch {
+    return NextResponse.json(
+      { error: 'feature flag unavailable', disabled: true },
+      { status: 410 },
+    );
+  }
+
   try {
     const { providerId } = (await request.json()) as { providerId?: string };
     if (typeof providerId !== 'string') {

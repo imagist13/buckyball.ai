@@ -107,6 +107,8 @@ export interface AgentLoopOptions {
   temperature?: number;
   topP?: number;
   topK?: number;
+  /** Agent Skills explicitly selected through composer badges. */
+  selectedSkills?: readonly string[];
   /** Max agent loop steps (default 50) */
   maxSteps?: number;
   /** Whether this is an auto-trigger turn (skip rewind points) */
@@ -167,6 +169,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
     mcpServers,
     bypassPermissions,
     files,
+    selectedSkills,
     timeouts,
   } = options;
 
@@ -240,11 +243,30 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
 
       try {
         // 0. Sync MCP servers before assembling tools (await to avoid race condition)
-        if (mcpServers && Object.keys(mcpServers).length > 0) {
-          console.log(`[agent-loop] Syncing ${Object.keys(mcpServers).length} MCP servers: ${Object.keys(mcpServers).join(', ')}`);
+        // Always include bbdev MCP server if configured (system-level, not per-session)
+        //
+        // bbagent 注入：把 bbdev MCP 配置从 inline 提到 bbagent 层，
+        // Runtime 改造点收敛到 bbagent 调用（不接触 bbdev 细节）。
+        const serversToSync: Record<string, import('@/types').MCPServerConfig> = { ...(mcpServers ?? {}) };
+        try {
+          const { applyBbMcpInjection } = await import('@/lib/bbagent/mcp-injector');
+          const result = applyBbMcpInjection('native', serversToSync);
+          if (!result.ok) {
+            console.warn(
+              '[agent-loop] bbagent mcp injection failed (non-fatal):',
+              result.reason,
+            );
+          }
+        } catch (err) {
+          // bbagent import / 调用失败 = bbdev 完全离线，普通 chat 不受影响
+          console.warn('[agent-loop] bbagent load error (non-fatal):', err instanceof Error ? err.message : err);
+        }
+
+        if (Object.keys(serversToSync).length > 0) {
+          console.log(`[agent-loop] Syncing ${Object.keys(serversToSync).length} MCP servers: ${Object.keys(serversToSync).join(', ')}`);
           try {
             const { syncMcpConnections } = await import('./mcp-connection-manager');
-            await syncMcpConnections(mcpServers);
+            await syncMcpConnections(serversToSync);
           } catch (err) {
             console.warn('[agent-loop] MCP sync error:', err instanceof Error ? err.message : err);
             reportNativeError('MCP_CONNECTION_ERROR', err, { sessionId });
@@ -304,10 +326,30 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
         // silently dropped toolSystemPrompts whenever the base was
         // empty. Now both halves combine through filter(Boolean) so
         // either side can be empty without losing the other.
+        //
+        // bbagent 注入：BB system prompt fragment（chip / balldomain /
+        // 工具列表 / submit-poll 规则）拼到 systemPrompt 末尾。
+        // 返回 null = bbdev 关闭或未配置，跳过注入（不引入假 0 文本）。
+        let bbPromptFragment: string | null = null;
+        try {
+          const { getBbPromptFragmentForAgentLoop } = await import(
+            '@/lib/bbagent/prompt-injector'
+          );
+          bbPromptFragment = getBbPromptFragmentForAgentLoop();
+        } catch (err) {
+          console.warn(
+            '[agent-loop] bbagent prompt fragment failed (non-fatal):',
+            err instanceof Error ? err.message : err,
+          );
+        }
         let effectiveSystemPrompt =
-          [systemPrompt, ...toolSystemPrompts].filter(Boolean).join('\n\n') ||
-          undefined;
+          [systemPrompt, ...toolSystemPrompts, bbPromptFragment]
+            .filter(Boolean)
+            .join('\n\n') || undefined;
 
+        // Selected Skills are resolved centrally by streamClaude before the
+        // runtime is chosen, so Native and SDK paths receive one identical
+        // deterministic execution contract.
         // 1. Create model
         const { languageModel, modelId, config, resolved, isThirdPartyProxy } = createModel({
           callScene,

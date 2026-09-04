@@ -41,6 +41,7 @@
     "packages",
     ".claude",
     "资料",
+    "buckyball",
     ".next/dev/types/validator.ts"
   ]
 }

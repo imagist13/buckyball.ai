@@ -56,6 +56,9 @@ export interface RuntimeStreamOptions {
   abortController?: AbortController;
   autoTrigger?: boolean;
 
+  /** Agent Skills explicitly selected through composer badges. */
+  selectedSkills?: readonly string[];
+
   // ── Provider (all runtimes need to know which provider to use) ──
   providerId?: string;
   sessionProviderId?: string;

@@ -1,17 +1,28 @@
 import os from 'node:os';
 import path from 'node:path';
+import { resolveBuckyballDataDir } from './bbagent/paths';
 
 /**
- * Single source of truth for every CodePilot-owned data path.
+ * Legacy thin shell for `resolveCodePilotDataDir`.
  *
- * The Electron recovery surface and the embedded Next utility must resolve
- * the same absolute directory. Otherwise a custom CLAUDE_GUI_DATA_DIR can
- * make recovery inspect or delete a different database from the one in use.
+ * New code should call `resolveBuckyballDataDir` from `lib/bbagent/paths.ts`
+ * directly. This wrapper preserves the existing `CLAUDE_GUI_DATA_DIR` and
+ * default `~/.codepilot` paths so existing installs keep their data.
+ *
+ * Behavior (Phase 6A — backward compatible):
+ *   - BUCKYBALL_DATA_DIR env (new) > CLAUDE_GUI_DATA_DIR env (legacy) > ~/.codepilot
+ *
+ * Note: default is still `~/.codepilot` because Phase 6A is dual-write
+ * compatibility mode. Phase 6B will switch the default to `~/.buckyball`
+ * after the migration script ships — see `docs/exec-plans/active/bbdev-skill-integration.md`
+ * Phase 6.5.
  */
 export function resolveCodePilotDataDir(
-  env: { CLAUDE_GUI_DATA_DIR?: string } = process.env as { CLAUDE_GUI_DATA_DIR?: string },
+  env: {
+    CLAUDE_GUI_DATA_DIR?: string;
+    BUCKYBALL_DATA_DIR?: string;
+  } = process.env as { CLAUDE_GUI_DATA_DIR?: string; BUCKYBALL_DATA_DIR?: string },
   homeDirectory: string = os.homedir(),
 ): string {
-  const configured = env.CLAUDE_GUI_DATA_DIR?.trim();
-  return configured ? path.resolve(configured) : path.join(homeDirectory, '.codepilot');
+  return resolveBuckyballDataDir(env, homeDirectory);
 }

@@ -18,6 +18,28 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
+  // bbagent Phase 7 — imageGeneration feature flag off → 410 Gone
+  // 旧数据保留（db 表不动），但 API 入口关闭，避免上游用户
+  // 通过老 API 路径绕过 UI 隐藏。
+  try {
+    const { isBbFeatureEnabled } = await import('@/lib/bbagent/features');
+    if (!isBbFeatureEnabled('imageGeneration')) {
+      return new Response(
+        JSON.stringify({
+          error: 'imageGeneration feature is disabled in buckyball.ai',
+          disabled: true,
+        }),
+        { status: 410, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+  } catch {
+    // bbagent import 失败 = 二开层挂了，按"feature 默认关闭"处理
+    return new Response(
+      JSON.stringify({ error: 'feature flag unavailable', disabled: true }),
+      { status: 410, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const body: GenerateRequest = await request.json();
 
