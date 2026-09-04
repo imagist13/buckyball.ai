@@ -69,7 +69,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
   );
   const [hoveredFolder, setHoveredFolder] = useState<string | null>(null);
   const [creatingChat, setCreatingChat] = useState(false);
-  // Codex-style sectioned sidebar: separate 项目 (non-assistant) and 助理 (assistant flat list)
+  // BB Agent owns the conversation list; project grouping is intentionally hidden.
   const [projectsCollapsed, setProjectsCollapsed] = useState(false);
   const [assistantCollapsed, setAssistantCollapsed] = useState(false);
   // projectsHovered / assistantHovered state previously gated chevron
@@ -131,7 +131,8 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
   }, [isElectron, openNativePicker, t, handleFolderSelect]);
 
   const handleNewChat = useCallback(async () => {
-    let lastDir = workingDirectory
+    let lastDir = workspacePath
+      || workingDirectory
       || (typeof window !== 'undefined' ? localStorage.getItem("codepilot:last-working-directory") : null);
 
     // Fall back to setup default project if no recent directory
@@ -209,7 +210,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
     } finally {
       setCreatingChat(false);
     }
-  }, [router, workingDirectory, openFolderPicker, getCurrentModelAndProvider, t]);
+  }, [router, workingDirectory, workspacePath, openFolderPicker, getCurrentModelAndProvider, t]);
 
   const toggleProject = useCallback((wd: string) => {
     setCollapsedProjects((prev) => {
@@ -366,33 +367,15 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
 
   const filteredSessions = sessions;
 
-  const projectGroups = useMemo(() => {
-    const groups = groupSessionsByProject(filteredSessions);
-    // A configured assistant exists before it has any chat sessions. Keep a
-    // synthetic zero-session group so the sidebar immediately exposes the
-    // primary "new assistant conversation" action after bootstrap.
-    if (workspacePath) {
-      const wsIdx = groups.findIndex(g => g.workingDirectory === workspacePath);
-      if (wsIdx === -1) {
-        groups.unshift({
-          workingDirectory: workspacePath,
-          displayName: workspacePath.split(/[\\/]/).pop() || 'Assistant',
-          sessions: [],
-          latestUpdatedAt: 0,
-        });
-      } else if (wsIdx > 0) {
-        const [wsGroup] = groups.splice(wsIdx, 1);
-        groups.unshift(wsGroup);
-      }
-    }
-    return groups;
-  }, [filteredSessions, workspacePath]);
-
-  // Split into 助理 (assistant workspace) and 项目 (everything else)
-  const assistantGroup = useMemo(
-    () => workspacePath ? projectGroups.find(g => g.workingDirectory === workspacePath) : undefined,
-    [projectGroups, workspacePath],
-  );
+  // The assistant is the only visible conversation scope. Keep one flat group
+  // so every existing session remains available and can be renamed in place.
+  const assistantGroup = useMemo(() => ({
+    workingDirectory: workspacePath || workingDirectory || '',
+    displayName: 'Assistant',
+    sessions: filteredSessions,
+    latestUpdatedAt: filteredSessions[0]?.updated_at ? new Date(filteredSessions[0].updated_at).getTime() : 0,
+  }), [filteredSessions, workspacePath, workingDirectory]);
+  const projectGroups = useMemo(() => groupSessionsByProject([]), []);
   const nonAssistantGroups = useMemo(
     () => projectGroups.filter(g => !workspacePath || g.workingDirectory !== workspacePath),
     [projectGroups, workspacePath],
@@ -514,10 +497,9 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
             />
           )}
 
-          {/* ─── 项目 section ─── */}
-          <div
-            className="px-2 pt-2 pb-1"
-          >
+          {/* Project navigation is intentionally hidden; BB Agent is the sole conversation scope. */}
+          {false && (
+            <div className="px-2 pt-2 pb-1">
             {/* Section header — chevron always visible (was hover-revealed
                 and "太不显眼"); button itself takes a hover background
                 so the toggle reads as a tappable affordance, not as
@@ -568,13 +550,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                       let visibleProjects = nonAssistantGroups;
                       if (projectsShouldTruncate && !projectListExpanded) {
                         const truncated = nonAssistantGroups.slice(0, PROJECT_LIST_TRUNCATE_LIMIT);
-                        // Always include the project containing the currently active session
-                        const activeProject = nonAssistantGroups.find(g =>
-                          g.sessions.some(s => pathname === `/chat/${s.id}`)
-                        );
-                        if (activeProject && !truncated.includes(activeProject)) {
-                          truncated.push(activeProject);
-                        }
+                        // Project navigation is disabled; this branch stays empty.
                         visibleProjects = truncated;
                       }
                       const projectsHiddenCount = nonAssistantGroups.length - visibleProjects.length;
@@ -698,7 +674,7 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+          </div>)}
 
           {/* ─── 助理 section ─── */}
           {assistantGroup && (() => {

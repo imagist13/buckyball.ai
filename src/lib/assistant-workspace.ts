@@ -70,6 +70,7 @@ export {
 
 export {
   migrateBbAssistantStateV1ToV2 as migrateStateV1ToV2,
+  migrateBbAssistantStateV2ToV3 as migrateStateV2ToV3,
 } from './bbagent/assistant/workspace';
 
 // ── heartbeat eligibility ─────────────────────────────────────────

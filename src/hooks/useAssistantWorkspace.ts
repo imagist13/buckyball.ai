@@ -53,6 +53,12 @@ export function useAssistantWorkspace() {
     refetch();
   }, [refetch]);
 
+  /**
+   * Automatic bootstrap is performed by the Electron renderer after it gets
+   * the fixed default path from Main. The API intentionally requires the
+   * resolved path so web callers cannot make the server guess a filesystem
+   * location.
+   */
   useEffect(() => {
     if (workspace?.reason !== 'no_path_configured') return;
     if (bootstrapAttempted.current) return;

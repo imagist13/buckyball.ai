@@ -15,8 +15,8 @@ export const BB_FEATURES = {
   /** 二开默认关闭：图像生成（Gemini / GPT-image / Grok Imagine）。路由 410 / UI 隐藏 / 旧数据保留 */
   imageGeneration: false,
 
-  /** 二开默认关闭：个人助手（AssistantWorkspace / Buddy / Heartbeat）。入口隐藏 / 不再自动 seed / 旧数据保留 */
-  personalAssistant: false,
+  /** 二开默认开启：BB Agent 助手工作区（Buddy / Heartbeat）。通用聊天仍保持可用 */
+  personalAssistant: true,
 } as const;
 
 export type BbFeatureKey = keyof typeof BB_FEATURES;
