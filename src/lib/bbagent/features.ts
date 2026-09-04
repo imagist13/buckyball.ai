@@ -34,3 +34,15 @@ export function isBbFeatureEnabled(key: BbFeatureKey): boolean {
 export function isBbdevEnabled(): boolean {
   return BB_FEATURES.bbdev;
 }
+
+/**
+ * 检查 BB Agent 个人助手功能是否启用。
+ *
+ * 默认 false —— 个人助手入口在 UI 上隐藏、路由 410 / seed 关停，但代码 / 测试 / i18n
+ * 仍保留以便后续回滚或合并入 BB Agent（详见
+ * docs/exec-plans/active/assistant-merge-into-bbagent.md）。设为 true 后需配
+ * 合 UI 入口回显（见 M3 Phase 计划）。
+ */
+export function isBbAssistantEnabled(): boolean {
+  return BB_FEATURES.personalAssistant;
+}

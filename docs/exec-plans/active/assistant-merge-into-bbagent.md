@@ -28,7 +28,7 @@
 | Phase | 内容 | 状态 | 备注 |
 |-------|------|------|------|
 | Phase M0 | 计划文档 + 索引回写 + 在 bbdev-skill-integration 计划里同步状态 | ✅ 已完成 | 本次先写 |
-| Phase M1 | 把 4 个核心模块搬进 `src/lib/bbagent/assistant/`，路径 / 命名重整 | 📋 待开始 | |
+| Phase M1 | 把 6 个核心模块搬进 `src/lib/bbagent/assistant/`，路径 / 命名重整 | ✅ 已完成 | 2026-09-04 |
 | Phase M2 | API 路由（wizard / hatch-buddy / evolve-buddy / summary / session）合并到 BB Agent 名称空间 | 📋 待开始 | |
 | Phase M3 | UI 端：迁入 `src/components/bbagent/AssistantWorkspaceSection.tsx`，Settings 入口改名 | 📋 待开始 | |
 | Phase M4 | 测试搬迁 + i18n 整理 + provider/permission/lib 引用清点 | 📋 待开始 | |
@@ -45,13 +45,13 @@
 
 ### Phase M1 — 核心模块搬到 `bbagent/assistant/`
 
-- [ ] M1.1 新建 `src/lib/bbagent/assistant/paths.ts` 暴露 `resolveAssistantWorkspacePath()`（取代旧的 `getSetting('assistant_workspace_path')` 散落引用；不强制改所有调用方，留允许旧 key 兜底）
-- [ ] M1.2 把 `src/lib/assistant-workspace.ts` 整文件迁入 `src/lib/bbagent/assistant/workspace.ts`，导出重命名 `BbAssistantWorkspace*`；保留未导出的同义别名 1 release 双轨
-- [ ] M1.3 把 `src/lib/buddy.ts` 迁入 `src/lib/bbagent/assistant/buddy.ts`，导出 `BbBuddy*` / `BbSpecies` / `BbRarity` / `BbBuddyData`
-- [ ] M1.4 把 `src/lib/heartbeat.ts` 迁入 `src/lib/bbagent/assistant/heartbeat.ts`，导出 `BbHeartbeat*`
-- [ ] M1.5 把 `src/lib/assistant-heartbeat.ts` 迁入 `src/lib/bbagent/assistant/reconcile.ts`（包含 `readAssistantHeartbeatDesiredState` → `readBbAssistantHeartbeatDesiredState`）
-- [ ] M1.6 把 `src/lib/assistant-default-workspace.ts` 迁入 `src/lib/bbagent/assistant/bootstrap.ts`
-- [ ] M1.7 在 `src/lib/bbagent/features.ts` 增 `isBbAssistantEnabled()`（基于 flag），但**flag 默认值保持 false**——本 Phase 不改默认
+- [x] M1.1 新建 `src/lib/bbagent/assistant/paths.ts` 暴露 `resolveAssistantWorkspacePath()`（取代旧的 `getSetting('assistant_workspace_path')` 散落引用；不强制改所有调用方，留允许旧 key 兜底）
+- [x] M1.2 把 `src/lib/assistant-workspace.ts` 整文件迁入 `src/lib/bbagent/assistant/workspace.ts`，导出重命名 `BbAssistantWorkspace*`；保留未导出的同义别名 1 release 双轨
+- [x] M1.3 把 `src/lib/buddy.ts` 迁入 `src/lib/bbagent/assistant/buddy.ts`，导出 `BbBuddy*` / `BbSpecies` / `BbRarity` / `BbBuddyData`
+- [x] M1.4 把 `src/lib/heartbeat.ts` 迁入 `src/lib/bbagent/assistant/heartbeat.ts`，导出 `BbHeartbeat*`
+- [x] M1.5 把 `src/lib/assistant-heartbeat.ts` 迁入 `src/lib/bbagent/assistant/reconcile.ts`（包含 `readAssistantHeartbeatDesiredState` → `readBbAssistantHeartbeatDesiredState`）
+- [x] M1.6 把 `src/lib/assistant-default-workspace.ts` 迁入 `src/lib/bbagent/assistant/bootstrap.ts`
+- [x] M1.7 在 `src/lib/bbagent/features.ts` 增 `isBbAssistantEnabled()`（基于 flag），但**flag 默认值保持 false**——本 Phase 不改默认
 
 ### Phase M2 — API 路由合并
 
@@ -110,6 +110,7 @@
 - 2026-09-04: 守卫选用 `scripts/bbagent-assistant-import-guard.mjs`（不引入 lint plugin），用 CI hook + pre-commit 拦截旧路径新增引用。
 - 2026-09-04: 不动 `bbagent/prompt-injector.ts` / `bbagent/mcp-injector.ts` / `bbagent/skill-injector.ts` 已落地的三注入点；本计划是"迁助手，不重做注入"。
 - 2026-09-04: Bridge `qq-adapter.ts` 触发 assistant 部分暂时指向 `bbagent/assistant/*`——但保留下游调用的兼容（QQ 场景不验证 wizard 端到端，只保证 import 不报错）。
+- 2026-09-04: **Phase M1 完成**。把 4 个核心模块（assistant-workspace / buddy / heartbeat / assistant-heartbeat / assistant-default-workspace）整文件迁入 `src/lib/bbagent/assistant/{workspace,buddy,heartbeat,reconcile,bootstrap}.ts`，导出统一 `BbAssistant*` / `BbBuddy*` / `BbHeartbeat*` 前缀；新建 `paths.ts` 暴露 `resolveAssistantWorkspacePath()` 收敛 `getSetting('assistant_workspace_path')` 散落引用；`features.ts` 增 `isBbAssistantEnabled()`（默认 false）。旧路径文件已删除，未在 lib 层留 alias（符合"避免双轨漂移"决策）。**预期 typecheck / 测试会临时失败**——30+ 引用点（API 路由 / lib / 组件 / 测试）需要 M2 / M3 / M4 跟进改写导入。已通过 `npx tsc --noEmit` 验证：仅 module-not-found / 由此衍生的 unknown 错误，无其它意外回归。
 
 ## Smoke Ledger
 

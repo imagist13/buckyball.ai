@@ -1,16 +1,23 @@
 /**
- * Heartbeat system — HEARTBEAT_OK protocol, active hours, deduplication.
- * Only applies to assistant workspace sessions.
+ * BB Assistant — Heartbeat System
+ *
+ * HEARTBEAT_OK protocol, active hours, deduplication for BB Assistant
+ * workspaces. Forked from CodePilot's `lib/heartbeat.ts` and renamed to
+ * `BbHeartbeat*` per
+ * [docs/exec-plans/active/assistant-merge-into-bbagent.md](../../../../docs/exec-plans/active/assistant-merge-into-bbagent.md)
+ * Phase M1.4.
+ *
+ * Only applies to bbagent assistant workspace sessions.
  */
 
-export const HEARTBEAT_TOKEN = 'HEARTBEAT_OK';
+export const BB_HEARTBEAT_TOKEN = 'HEARTBEAT_OK';
 
-export function classifyHeartbeatOutcome(raw: string):
-  | { kind: 'silent'; text: typeof HEARTBEAT_TOKEN }
+export function classifyBbHeartbeatOutcome(raw: string):
+  | { kind: 'silent'; text: typeof BB_HEARTBEAT_TOKEN }
   | { kind: 'speak_up'; text: string } {
   const text = raw.trim();
-  return text === HEARTBEAT_TOKEN
-    ? { kind: 'silent', text: HEARTBEAT_TOKEN }
+  return text === BB_HEARTBEAT_TOKEN
+    ? { kind: 'silent', text: BB_HEARTBEAT_TOKEN }
     : { kind: 'speak_up', text };
 }
 
@@ -18,7 +25,7 @@ export function classifyHeartbeatOutcome(raw: string):
  * Check if HEARTBEAT.md content is effectively empty.
  * Returns true for files with only headings, empty checklists, and comments.
  */
-export function isHeartbeatContentEmpty(content: string | null | undefined): boolean {
+export function isBbHeartbeatContentEmpty(content: string | null | undefined): boolean {
   if (!content?.trim()) return true;
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
@@ -35,7 +42,7 @@ export function isHeartbeatContentEmpty(content: string | null | undefined): boo
  * Check if current time is within active hours window.
  * Uses local time. Returns true if no config provided.
  */
-export function isWithinActiveHours(config: { start?: string; end?: string } | undefined): boolean {
+export function isBbWithinActiveHours(config: { start?: string; end?: string } | undefined): boolean {
   if (!config?.start || !config?.end) return true;
 
   const now = new Date();
@@ -59,7 +66,7 @@ export function isWithinActiveHours(config: { start?: string; end?: string } | u
 /**
  * Check if heartbeat reply is a duplicate of the last one within 24 hours.
  */
-export function shouldSkipDuplicate(
+export function shouldSkipBbDuplicate(
   text: string,
   state: { lastHeartbeatText?: string; lastHeartbeatSentAt?: number },
 ): boolean {
@@ -69,7 +76,7 @@ export function shouldSkipDuplicate(
 }
 
 /** Default HEARTBEAT.md template content */
-export const HEARTBEAT_TEMPLATE = `# 心跳检查清单
+export const BB_HEARTBEAT_TEMPLATE = `# 心跳检查清单
 
 每次心跳时按以下清单检查，如果都没有需要关注的事项，回复 HEARTBEAT_OK。
 

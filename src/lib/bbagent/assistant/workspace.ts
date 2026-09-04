@@ -1,9 +1,27 @@
+/**
+ * BB Assistant — Workspace Files & State
+ *
+ * Assistant-workspace file/state management for BB Agent. Forked from
+ * CodePilot's `lib/assistant-workspace.ts` and renamed to `BbAssistant*`
+ * per
+ * [docs/exec-plans/active/assistant-merge-into-bbagent.md](../../../../docs/exec-plans/active/assistant-merge-into-bbagent.md)
+ * Phase M1.2.
+ *
+ * Original exports renamed to `BbAssistantWorkspace*`:
+ *   - InspectInstructionMirrors → BbInstructionMirrors*
+ *   - reconcile / load / save / migrate / initialize / validate → *BbAssistant*
+ *   - loadDailyMemories → loadBbAssistantDailyMemories
+ *   - generateRootDocs / DirectoryDocs → generateBbAssistantRootDocs / DirectoryDocs
+ *
+ * Internal helpers (truncateContent, etc.) are NOT exported.
+ */
+
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import type { AssistantWorkspaceState, AssistantWorkspaceFiles, AssistantWorkspaceFilesV2, SearchResult } from '@/types';
 import { getLocalDateString } from '@/lib/utils';
-import { HEARTBEAT_TEMPLATE, isWithinActiveHours } from './heartbeat';
+import { BB_HEARTBEAT_TEMPLATE, isBbWithinActiveHours } from './heartbeat';
 import { inferTaxonomyFromDirs, loadTaxonomy, saveTaxonomy } from '@/lib/workspace-taxonomy';
 
 const DEFAULT_STATE: AssistantWorkspaceState = {
@@ -52,20 +70,20 @@ function resolveFile(dir: string, key: keyof AssistantWorkspaceFiles): { filePat
   return { filePath: path.join(dir, FILE_MAP[key][0]), exists: false };
 }
 
-export type InstructionMirrorStatus = 'missing' | 'synced' | 'stale' | 'modified' | 'unmanaged';
+export type BbInstructionMirrorStatus = 'missing' | 'synced' | 'stale' | 'modified' | 'unmanaged';
 
-export interface InstructionMirrorInspection {
+export interface BbInstructionMirrorInspection {
   fileName: (typeof NATIVE_INSTRUCTION_MIRRORS)[number];
-  status: InstructionMirrorStatus;
+  status: BbInstructionMirrorStatus;
 }
 
-export interface InstructionMirrorsInspection {
+export interface BbInstructionMirrorsInspection {
   canonicalExists: boolean;
-  mirrors: InstructionMirrorInspection[];
+  mirrors: BbInstructionMirrorInspection[];
   conflicts: string[];
 }
 
-export interface InstructionMirrorsReconcileResult extends InstructionMirrorsInspection {
+export interface BbInstructionMirrorsReconcileResult extends BbInstructionMirrorsInspection {
   created: string[];
   updated: string[];
 }
@@ -102,7 +120,7 @@ function inspectInstructionMirror(
   dir: string,
   fileName: (typeof NATIVE_INSTRUCTION_MIRRORS)[number],
   canonicalContent: string,
-): InstructionMirrorInspection {
+): BbInstructionMirrorInspection {
   const canonicalPath = path.join(dir, CANONICAL_INSTRUCTIONS_FILE);
   const mirrorPath = path.join(dir, fileName);
   if (!fs.existsSync(mirrorPath)) {
@@ -144,7 +162,7 @@ function inspectInstructionMirror(
 }
 
 /** Read-only status used by Settings and Runtime ownership gates. */
-export function inspectInstructionMirrors(dir: string): InstructionMirrorsInspection {
+export function inspectBbAssistantInstructionMirrors(dir: string): BbInstructionMirrorsInspection {
   const canonicalPath = path.join(dir, CANONICAL_INSTRUCTIONS_FILE);
   if (!fs.existsSync(canonicalPath)) {
     return {
@@ -185,8 +203,8 @@ function atomicWriteManagedMirror(targetPath: string, content: string): void {
  * Any unmanaged or manually edited mirror freezes the whole pair so CodePilot
  * never overwrites user-authored rules or leaves Claude/Codex on two versions.
  */
-export function reconcileInstructionMirrors(dir: string): InstructionMirrorsReconcileResult {
-  const before = inspectInstructionMirrors(dir);
+export function reconcileBbAssistantInstructionMirrors(dir: string): BbInstructionMirrorsReconcileResult {
+  const before = inspectBbAssistantInstructionMirrors(dir);
   const created: string[] = [];
   const updated: string[] = [];
   if (!before.canonicalExists || before.conflicts.length > 0) {
@@ -215,7 +233,7 @@ export function reconcileInstructionMirrors(dir: string): InstructionMirrorsReco
     }
   }
 
-  const after = inspectInstructionMirrors(dir);
+  const after = inspectBbAssistantInstructionMirrors(dir);
   return { ...after, created, updated };
 }
 
@@ -223,7 +241,7 @@ export function reconcileInstructionMirrors(dir: string): InstructionMirrorsReco
 // Daily Memory
 // ==========================================
 
-export function ensureDailyDir(dir: string): string {
+export function ensureBbAssistantDailyDir(dir: string): string {
   const dailyDir = path.join(dir, MEMORY_DAILY_DIR);
   if (!fs.existsSync(dailyDir)) {
     fs.mkdirSync(dailyDir, { recursive: true });
@@ -231,14 +249,14 @@ export function ensureDailyDir(dir: string): string {
   return dailyDir;
 }
 
-export function writeDailyMemory(dir: string, date: string, content: string): string {
-  const dailyDir = ensureDailyDir(dir);
+export function writeBbAssistantDailyMemory(dir: string, date: string, content: string): string {
+  const dailyDir = ensureBbAssistantDailyDir(dir);
   const filePath = path.join(dailyDir, `${date}.md`);
   fs.writeFileSync(filePath, content, 'utf-8');
   return filePath;
 }
 
-export function loadDailyMemories(dir: string, count = 2): Array<{ date: string; content: string }> {
+export function loadBbAssistantDailyMemories(dir: string, count = 2): Array<{ date: string; content: string }> {
   const dailyDir = path.join(dir, MEMORY_DAILY_DIR);
   if (!fs.existsSync(dailyDir)) return [];
 
@@ -262,7 +280,7 @@ export function loadDailyMemories(dir: string, count = 2): Array<{ date: string;
 // State Migration
 // ==========================================
 
-export function migrateStateV1ToV2(dir: string): void {
+export function migrateBbAssistantStateV1ToV2(dir: string): void {
   // Read state directly (not via loadState, which triggers migration recursively)
   let state: AssistantWorkspaceState;
   try {
@@ -276,7 +294,7 @@ export function migrateStateV1ToV2(dir: string): void {
   if (state.schemaVersion >= 2) return;
 
   // Create daily memory directory
-  ensureDailyDir(dir);
+  ensureBbAssistantDailyDir(dir);
 
   // Create Inbox if not exists
   const inboxDir = path.join(dir, 'Inbox');
@@ -286,7 +304,7 @@ export function migrateStateV1ToV2(dir: string): void {
 
   // Update schema version
   state.schemaVersion = 2;
-  saveState(dir, state);
+  saveBbAssistantState(dir, state);
 }
 
 /**
@@ -305,7 +323,7 @@ export function migrateStateV1ToV2(dir: string): void {
  * the UTC/local day-boundary mismatch window, but migration runs after UTC
  * midnight) are handled by a runtime compat fallback in needsDailyCheckIn.
  */
-export function migrateStateV2ToV3(dir: string): void {
+export function migrateBbAssistantStateV2ToV3(dir: string): void {
   let state: AssistantWorkspaceState;
   try {
     const statePath = path.join(dir, STATE_DIR, STATE_FILE);
@@ -328,7 +346,7 @@ export function migrateStateV2ToV3(dir: string): void {
   }
 
   state.schemaVersion = 3;
-  saveState(dir, state);
+  saveBbAssistantState(dir, state);
 }
 
 /**
@@ -336,7 +354,7 @@ export function migrateStateV2ToV3(dir: string): void {
  * Previously the default was implicitly "enabled" (undefined treated as true).
  * Now the default is explicitly false — users must opt-in.
  */
-export function migrateStateV3ToV4(dir: string): void {
+export function migrateBbAssistantStateV3ToV4(dir: string): void {
   let state: AssistantWorkspaceState;
   try {
     const statePath = path.join(dir, STATE_DIR, STATE_FILE);
@@ -350,14 +368,14 @@ export function migrateStateV3ToV4(dir: string): void {
 
   state.dailyCheckInEnabled = false;
   state.schemaVersion = 4;
-  saveState(dir, state);
+  saveBbAssistantState(dir, state);
 }
 
 /**
  * v4→v5 migration: rename check-in fields to heartbeat fields.
  * lastCheckInDate → lastHeartbeatDate, dailyCheckInEnabled → heartbeatEnabled.
  */
-function migrateStateV4ToV5(dir: string): void {
+function migrateBbAssistantStateV4ToV5(dir: string): void {
   let state: AssistantWorkspaceState;
   try {
     const statePath = path.join(dir, STATE_DIR, STATE_FILE);
@@ -389,14 +407,14 @@ function migrateStateV4ToV5(dir: string): void {
   }
 
   state.schemaVersion = 5;
-  saveState(dir, state);
+  saveBbAssistantState(dir, state);
 }
 
 // ==========================================
 // Root Docs
 // ==========================================
 
-export function generateRootDocs(dir: string): string[] {
+export function generateBbAssistantRootDocs(dir: string): string[] {
   const generated: string[] = [];
 
   // Scan top-level entries
@@ -480,7 +498,7 @@ function writeAiDoc(filePath: string, content: string, startMarker: string, endM
 // Validation & Initialization
 // ==========================================
 
-export function validateWorkspace(dir: string): {
+export function validateBbAssistantWorkspace(dir: string): {
   exists: boolean;
   files: Record<keyof AssistantWorkspaceFiles, { exists: boolean; path: string | null; size: number }>;
 } {
@@ -505,7 +523,7 @@ export function validateWorkspace(dir: string): {
   return { exists: dirExists, files };
 }
 
-export function initializeWorkspace(dir: string): string[] {
+export function initializeBbAssistantWorkspace(dir: string): string[] {
   const stateDir = path.join(dir, STATE_DIR);
   if (!fs.existsSync(stateDir)) {
     fs.mkdirSync(stateDir, { recursive: true });
@@ -537,16 +555,16 @@ export function initializeWorkspace(dir: string): string[] {
   // Code and Codex. Existing legacy workspaces have no instructions.md and
   // therefore remain strictly no-touch. Managed mirrors update only while
   // their provenance hash proves the user has not edited them independently.
-  const mirrorResult = reconcileInstructionMirrors(dir);
+  const mirrorResult = reconcileBbAssistantInstructionMirrors(dir);
   created.push(...mirrorResult.created);
   if (mirrorResult.conflicts.length > 0) {
-    console.warn('[assistant-workspace] Instruction mirror conflict; auto-sync paused', {
+    console.warn('[bbagent-assistant] Instruction mirror conflict; auto-sync paused', {
       files: mirrorResult.conflicts,
     });
   }
 
   // Create V2 directories
-  ensureDailyDir(dir);
+  ensureBbAssistantDailyDir(dir);
   const inboxDir = path.join(dir, 'Inbox');
   if (!fs.existsSync(inboxDir)) {
     fs.mkdirSync(inboxDir, { recursive: true });
@@ -555,25 +573,25 @@ export function initializeWorkspace(dir: string): string[] {
   // Create HEARTBEAT.md if not exists (V3)
   const heartbeatPath = path.join(dir, 'HEARTBEAT.md');
   if (!fs.existsSync(heartbeatPath)) {
-    fs.writeFileSync(heartbeatPath, HEARTBEAT_TEMPLATE, 'utf-8');
+    fs.writeFileSync(heartbeatPath, BB_HEARTBEAT_TEMPLATE, 'utf-8');
     created.push(heartbeatPath);
   }
 
   // State file
   const statePath = path.join(stateDir, STATE_FILE);
   if (!fs.existsSync(statePath)) {
-    saveState(dir, { ...DEFAULT_STATE });
+    saveBbAssistantState(dir, { ...DEFAULT_STATE });
   } else {
     // Migrate existing state through all schema versions
-    migrateStateV1ToV2(dir);
-    migrateStateV2ToV3(dir);
-    migrateStateV3ToV4(dir);
-    migrateStateV4ToV5(dir);
+    migrateBbAssistantStateV1ToV2(dir);
+    migrateBbAssistantStateV2ToV3(dir);
+    migrateBbAssistantStateV3ToV4(dir);
+    migrateBbAssistantStateV4ToV5(dir);
   }
 
   // For existing directories, generate root docs and infer taxonomy
   if (hasExistingContent) {
-    generateRootDocs(dir);
+    generateBbAssistantRootDocs(dir);
     try {
       // Was lazy `require('@/lib/workspace-taxonomy')`; converted to static
       // import after Turbopack's CJS↔ESM interop broke similar destructuring
@@ -599,23 +617,23 @@ export function initializeWorkspace(dir: string): string[] {
 // File Loading
 // ==========================================
 
-export function truncateContent(content: string, limit: number): string {
+function truncateBbAssistantContent(content: string, limit: number): string {
   if (content.length <= limit) return content;
   const headSize = Math.min(HEAD_SIZE, Math.floor(limit * 0.75));
   const tailSize = Math.min(TAIL_SIZE, limit - headSize - 30);
   return content.slice(0, headSize) + '\n\n[...truncated...]\n\n' + content.slice(-tailSize);
 }
 
-export function loadWorkspaceFiles(dir: string): AssistantWorkspaceFilesV2 {
+export function loadBbAssistantWorkspaceFiles(dir: string): AssistantWorkspaceFilesV2 {
   const result: AssistantWorkspaceFilesV2 = {};
   const keys = Object.keys(FILE_MAP) as Array<keyof AssistantWorkspaceFiles>;
-  const instructionMirrors = inspectInstructionMirrors(dir);
+  const instructionMirrors = inspectBbAssistantInstructionMirrors(dir);
 
   for (const key of keys) {
     const resolved = resolveFile(dir, key);
     if (resolved.exists) {
       const content = fs.readFileSync(resolved.filePath, 'utf-8');
-      result[key] = truncateContent(content, PER_FILE_LIMIT);
+      result[key] = truncateBbAssistantContent(content, PER_FILE_LIMIT);
       if (key === 'claude') {
         const selectedIsCanonical = path.basename(resolved.filePath) === CANONICAL_INSTRUCTIONS_FILE;
         const claudeMirror = instructionMirrors.mirrors.find((mirror) => mirror.fileName === 'CLAUDE.md');
@@ -657,7 +675,7 @@ export function loadWorkspaceFiles(dir: string): AssistantWorkspaceFilesV2 {
  * AGENTS.md mirror: non-git cwd discovery and project_doc_max_bytes=0 have not
  * been proven, so duplicate delivery is safer than silently losing rules.
  */
-export function shouldOmitCanonicalRules(
+export function shouldOmitBbAssistantCanonicalRules(
   nativeProjectRulesOwner: 'claude_code' | 'codex_runtime' | undefined,
   files: Pick<AssistantWorkspaceFilesV2, 'rulesFileNativeClaude' | 'rulesFileNativeCodex'>,
 ): boolean {
@@ -668,19 +686,19 @@ export function shouldOmitCanonicalRules(
 // Budget-Aware Prompt Assembly (V2)
 // ==========================================
 
-interface PromptSection {
+interface BbPromptSection {
   tag: string;
   content: string;
   priority: number; // lower = higher priority
   maxSize: number;
 }
 
-export function assembleWorkspacePrompt(
+export function assembleBbAssistantWorkspacePrompt(
   files: AssistantWorkspaceFilesV2,
   retrievalResults?: SearchResult[],
   options?: { omitRules?: boolean },
 ): string {
-  const sections: PromptSection[] = [];
+  const sections: BbPromptSection[] = [];
 
   // Identity layer only (instructions + soul + user). `files.claude` is a
   // compatibility field for old callers; the prompt role itself is neutral
@@ -709,7 +727,7 @@ export function assembleWorkspacePrompt(
   const wrapperOverhead = 50; // <assistant-workspace> tags
 
   for (const section of sections) {
-    const sectionContent = truncateContent(section.content, section.maxSize);
+    const sectionContent = truncateBbAssistantContent(section.content, section.maxSize);
     const sectionSize = sectionContent.length + section.tag.length * 2 + 10; // tag overhead
 
     if (totalSize + sectionSize + wrapperOverhead > TOTAL_PROMPT_LIMIT) {
@@ -737,7 +755,7 @@ export function assembleWorkspacePrompt(
 // State Management
 // ==========================================
 
-export function loadState(dir: string): AssistantWorkspaceState {
+export function loadBbAssistantState(dir: string): AssistantWorkspaceState {
   try {
     const statePath = path.join(dir, STATE_DIR, STATE_FILE);
     const raw = fs.readFileSync(statePath, 'utf-8');
@@ -746,23 +764,23 @@ export function loadState(dir: string): AssistantWorkspaceState {
     // Auto-migrate on load
     let migrated = false;
     if (state.schemaVersion < 2) {
-      migrateStateV1ToV2(dir);
+      migrateBbAssistantStateV1ToV2(dir);
       migrated = true;
     }
     if (state.schemaVersion < 3) {
-      migrateStateV2ToV3(dir);
+      migrateBbAssistantStateV2ToV3(dir);
       migrated = true;
     }
     if (state.schemaVersion < 4) {
-      migrateStateV3ToV4(dir);
+      migrateBbAssistantStateV3ToV4(dir);
       migrated = true;
     }
     if (state.schemaVersion < 5) {
-      migrateStateV4ToV5(dir);
+      migrateBbAssistantStateV4ToV5(dir);
       migrated = true;
     }
     if (migrated) {
-      return loadState(dir); // Reload after migration
+      return loadBbAssistantState(dir); // Reload after migration
     }
 
     return state;
@@ -771,7 +789,7 @@ export function loadState(dir: string): AssistantWorkspaceState {
   }
 }
 
-export function saveState(dir: string, state: AssistantWorkspaceState): void {
+export function saveBbAssistantState(dir: string, state: AssistantWorkspaceState): void {
   const stateDir = path.join(dir, STATE_DIR);
   if (!fs.existsSync(stateDir)) {
     fs.mkdirSync(stateDir, { recursive: true });
@@ -807,12 +825,12 @@ function cryptoRandomSuffix(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** @deprecated Use shouldRunHeartbeat instead */
-export function needsDailyCheckIn(state: AssistantWorkspaceState, now?: Date): boolean {
-  return shouldRunHeartbeat(state, undefined, now);
+/** @deprecated Use shouldRunBbAssistantHeartbeat instead */
+export function needsBbAssistantDailyCheckIn(state: AssistantWorkspaceState, now?: Date): boolean {
+  return shouldRunBbAssistantHeartbeat(state, undefined, now);
 }
 
-export function shouldRunHeartbeat(
+export function shouldRunBbAssistantHeartbeat(
   state: AssistantWorkspaceState,
   heartbeatConfig?: { activeHours?: { start?: string; end?: string } },
   now?: Date,
@@ -829,7 +847,7 @@ export function shouldRunHeartbeat(
   if (lastDate === utcToday) return false;
 
   if (heartbeatConfig?.activeHours) {
-    if (!isWithinActiveHours(heartbeatConfig.activeHours)) return false;
+    if (!isBbWithinActiveHours(heartbeatConfig.activeHours)) return false;
   }
 
   return true;
@@ -839,7 +857,7 @@ export function shouldRunHeartbeat(
 // Directory Docs (legacy — kept for backward compatibility)
 // ==========================================
 
-export function generateDirectoryDocs(dir: string): string[] {
+export function generateBbAssistantDirectoryDocs(dir: string): string[] {
   const generated: string[] = [];
 
   let entries: fs.Dirent[];

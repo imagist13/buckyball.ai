@@ -1,6 +1,11 @@
 /**
- * Buddy System — deterministic AI companion generation.
- * Inspired by Claude Code's companion.ts.
+ * BB Assistant — Buddy System
+ *
+ * Deterministic AI companion generation for bb agent assistant workspaces.
+ * Forked from CodePilot's `lib/buddy.ts` and renamed to `BbBuddy*` /
+ * `BbSpecies` / `BbRarity` / `BbBuddyData` per
+ * [docs/exec-plans/active/assistant-merge-into-bbagent.md](../../../../docs/exec-plans/active/assistant-merge-into-bbagent.md)
+ * Phase M1.3.
  *
  * Each assistant workspace gets a unique buddy based on a hash of the
  * workspace path + creation timestamp. Rarity is probability-controlled
@@ -9,22 +14,22 @@
 
 // ── Species ────────────────────────────────────────────────────────
 
-export const SPECIES = [
+export const BB_SPECIES = [
   'cat', 'duck', 'dragon', 'owl', 'penguin', 'turtle', 'octopus', 'ghost',
   'axolotl', 'capybara', 'robot', 'rabbit', 'mushroom', 'fox', 'panda', 'whale',
 ] as const;
 
-export type Species = typeof SPECIES[number];
+export type BbSpecies = typeof BB_SPECIES[number];
 
 // Species → boring-avatars variant for unique visual identity
-export const SPECIES_AVATAR_VARIANT: Record<Species, 'beam' | 'marble' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'> = {
+export const BB_SPECIES_AVATAR_VARIANT: Record<BbSpecies, 'beam' | 'marble' | 'pixel' | 'sunset' | 'ring' | 'bauhaus'> = {
   cat: 'beam', duck: 'sunset', dragon: 'marble', owl: 'bauhaus', penguin: 'pixel',
   turtle: 'ring', octopus: 'marble', ghost: 'sunset', axolotl: 'beam', capybara: 'ring',
   robot: 'pixel', rabbit: 'beam', mushroom: 'bauhaus', fox: 'sunset', panda: 'ring', whale: 'marble',
 };
 
 // Rarity → avatar color palette (higher rarity = richer colors)
-export const RARITY_AVATAR_COLORS: Record<Rarity, string[]> = {
+export const BB_RARITY_AVATAR_COLORS: Record<BbRarity, string[]> = {
   common: ['#A0AEC0', '#CBD5E0', '#E2E8F0', '#EDF2F7', '#F7FAFC'],
   uncommon: ['#48BB78', '#68D391', '#9AE6B4', '#C6F6D5', '#F0FFF4'],
   rare: ['#4299E1', '#63B3ED', '#90CDF4', '#BEE3F8', '#EBF8FF'],
@@ -32,7 +37,7 @@ export const RARITY_AVATAR_COLORS: Record<Rarity, string[]> = {
   legendary: ['#F6AD55', '#FBD38D', '#FEFCBF', '#F6E05E', '#ECC94B'],
 };
 
-export const SPECIES_IMAGE_URL: Record<Species, string> = {
+export const BB_SPECIES_IMAGE_URL: Record<BbSpecies, string> = {
   cat: '/buddy/cat.png',
   duck: '/buddy/duck.png',
   dragon: '/buddy/dragon.png',
@@ -52,9 +57,9 @@ export const SPECIES_IMAGE_URL: Record<Species, string> = {
 };
 
 // Egg image for unhatched state
-export const EGG_IMAGE_URL = '/buddy/egg.png';
+export const BB_EGG_IMAGE_URL = '/buddy/egg.png';
 
-export const RARITY_BG_GRADIENT: Record<Rarity, string> = {
+export const BB_RARITY_BG_GRADIENT: Record<BbRarity, string> = {
   common: 'linear-gradient(135deg, #e2e8f0, #f1f5f9)',
   uncommon: 'linear-gradient(135deg, #dcfce7, #f0fdf4)',
   rare: 'linear-gradient(135deg, #dbeafe, #eff6ff)',
@@ -62,13 +67,13 @@ export const RARITY_BG_GRADIENT: Record<Rarity, string> = {
   legendary: 'linear-gradient(135deg, #fef3c7, #fffbeb)',
 };
 
-export const SPECIES_EMOJI: Record<Species, string> = {
+export const BB_SPECIES_EMOJI: Record<BbSpecies, string> = {
   cat: '🐱', duck: '🦆', dragon: '🐉', owl: '🦉', penguin: '🐧',
   turtle: '🐢', octopus: '🐙', ghost: '👻', axolotl: '🦎', capybara: '🦫',
   robot: '🤖', rabbit: '🐰', mushroom: '🍄', fox: '🦊', panda: '🐼', whale: '🐋',
 };
 
-export const SPECIES_LABEL: Record<Species, { en: string; zh: string }> = {
+export const BB_SPECIES_LABEL: Record<BbSpecies, { en: string; zh: string }> = {
   cat: { en: 'Cat', zh: '猫咪' }, duck: { en: 'Duck', zh: '鸭子' },
   dragon: { en: 'Dragon', zh: '龙' }, owl: { en: 'Owl', zh: '猫头鹰' },
   penguin: { en: 'Penguin', zh: '企鹅' }, turtle: { en: 'Turtle', zh: '海龟' },
@@ -81,17 +86,17 @@ export const SPECIES_LABEL: Record<Species, { en: string; zh: string }> = {
 
 // ── Rarity ─────────────────────────────────────────────────────────
 
-export type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+export type BbRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
-const RARITY_WEIGHTS: Record<Rarity, number> = {
+const BB_RARITY_WEIGHTS: Record<BbRarity, number> = {
   common: 60, uncommon: 25, rare: 10, epic: 4, legendary: 1,
 };
 
-const RARITY_FLOORS: Record<Rarity, number> = {
+const BB_RARITY_FLOORS: Record<BbRarity, number> = {
   common: 5, uncommon: 15, rare: 25, epic: 35, legendary: 50,
 };
 
-export const RARITY_DISPLAY: Record<Rarity, { stars: string; label: { en: string; zh: string } }> = {
+export const BB_RARITY_DISPLAY: Record<BbRarity, { stars: string; label: { en: string; zh: string } }> = {
   common: { stars: '★', label: { en: 'Common', zh: '普通' } },
   uncommon: { stars: '★★', label: { en: 'Uncommon', zh: '稀有' } },
   rare: { stars: '★★★', label: { en: 'Rare', zh: '精良' } },
@@ -101,10 +106,10 @@ export const RARITY_DISPLAY: Record<Rarity, { stars: string; label: { en: string
 
 // ── Stats ──────────────────────────────────────────────────────────
 
-export const STAT_NAMES = ['creativity', 'patience', 'insight', 'humor', 'precision'] as const;
-export type StatName = typeof STAT_NAMES[number];
+export const BB_STAT_NAMES = ['creativity', 'patience', 'insight', 'humor', 'precision'] as const;
+export type BbStatName = typeof BB_STAT_NAMES[number];
 
-export const STAT_LABEL: Record<string, { en: string; zh: string }> = {
+export const BB_STAT_LABEL: Record<string, { en: string; zh: string }> = {
   creativity: { en: 'Creativity', zh: '创意' },
   patience: { en: 'Patience', zh: '耐心' },
   insight: { en: 'Insight', zh: '洞察' },
@@ -113,7 +118,7 @@ export const STAT_LABEL: Record<string, { en: string; zh: string }> = {
 };
 
 // Mapping from peak stat to soul.md personality hint
-export const STAT_PERSONALITY_HINTS: Record<StatName, { en: string; zh: string }> = {
+export const BB_STAT_PERSONALITY_HINTS: Record<BbStatName, { en: string; zh: string }> = {
   creativity: { en: 'You excel at creative solutions and unexpected suggestions.', zh: '你擅长给出创意方案和意想不到的建议。' },
   patience: { en: 'You are very patient, explaining things step by step.', zh: '你非常耐心，善于一步步解释清楚。' },
   insight: { en: 'You are great at analyzing the essence of problems.', zh: '你善于分析问题的本质。' },
@@ -123,12 +128,12 @@ export const STAT_PERSONALITY_HINTS: Record<StatName, { en: string; zh: string }
 
 // ── Data Types ─────────────────────────────────────────────────────
 
-export interface BuddyData {
-  species: Species;
-  rarity: Rarity;
-  stats: Record<StatName, number>;
+export interface BbBuddyData {
+  species: BbSpecies;
+  rarity: BbRarity;
+  stats: Record<BbStatName, number>;
   emoji: string;
-  peakStat: StatName;
+  peakStat: BbStatName;
   hatchedAt: string;
   buddyName?: string;  // User-given name for the buddy
 }
@@ -160,10 +165,10 @@ function pickRandom<T>(rng: () => number, arr: readonly T[]): T {
   return arr[Math.floor(rng() * arr.length)]!;
 }
 
-function rollRarity(rng: () => number): Rarity {
-  const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
+function rollRarity(rng: () => number): BbRarity {
+  const total = Object.values(BB_RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
   let roll = rng() * total;
-  for (const [rarity, weight] of Object.entries(RARITY_WEIGHTS) as [Rarity, number][]) {
+  for (const [rarity, weight] of Object.entries(BB_RARITY_WEIGHTS) as [BbRarity, number][]) {
     roll -= weight;
     if (roll <= 0) return rarity;
   }
@@ -177,12 +182,12 @@ function shuffle<T>(arr: T[], rng: () => number): void {
   }
 }
 
-function rollStats(rng: () => number, rarity: Rarity): { stats: Record<StatName, number>; peakStat: StatName } {
-  const floor = RARITY_FLOORS[rarity];
-  const names = [...STAT_NAMES];
+function rollStats(rng: () => number, rarity: BbRarity): { stats: Record<BbStatName, number>; peakStat: BbStatName } {
+  const floor = BB_RARITY_FLOORS[rarity];
+  const names = [...BB_STAT_NAMES];
   shuffle(names, rng);
 
-  const stats = {} as Record<StatName, number>;
+  const stats = {} as Record<BbStatName, number>;
   // Peak stat (first after shuffle)
   stats[names[0]!] = Math.min(100, floor + 50 + Math.floor(rng() * 30));
   // Dump stat (second)
@@ -201,14 +206,14 @@ function rollStats(rng: () => number, rarity: Rarity): { stats: Record<StatName,
  *
  * @param seed - Usually `workspacePath + ':' + createdAt`
  */
-export function generateBuddy(seed: string): BuddyData {
+export function generateBbBuddy(seed: string): BbBuddyData {
   const hash = hashString(seed + ':buddy-2026');
   const rng = mulberry32(hash);
 
   const rarity = rollRarity(rng);
-  const species = pickRandom(rng, SPECIES);
+  const species = pickRandom(rng, BB_SPECIES);
   const { stats, peakStat } = rollStats(rng, rarity);
-  const emoji = SPECIES_EMOJI[species];
+  const emoji = BB_SPECIES_EMOJI[species];
 
   return {
     species,
@@ -223,12 +228,12 @@ export function generateBuddy(seed: string): BuddyData {
 /**
  * Get the personality hint for a buddy's peak stat.
  */
-export function getPeakStatHint(peakStat: StatName, lang: 'en' | 'zh' = 'zh'): string {
-  return STAT_PERSONALITY_HINTS[peakStat][lang];
+export function getBbPeakStatHint(peakStat: BbStatName, lang: 'en' | 'zh' = 'zh'): string {
+  return BB_STAT_PERSONALITY_HINTS[peakStat][lang];
 }
 
 /** Get Tailwind color class for a rarity string. */
-export function rarityColor(rarity: string): string {
+export function bbRarityColor(rarity: string): string {
   const colors: Record<string, string> = {
     common: 'text-muted-foreground',
     uncommon: 'text-green-500',
@@ -241,7 +246,7 @@ export function rarityColor(rarity: string): string {
 
 // ── Titles (Uncommon+) ──────────────────────────────────────────
 
-export const TITLE_POOL: Record<string, { en: string; zh: string }[]> = {
+export const BB_TITLE_POOL: Record<string, { en: string; zh: string }[]> = {
   creativity: [
     { en: 'Imaginative', zh: '富有想象力的' },
     { en: 'Inventive', zh: '善于创造的' },
@@ -268,26 +273,26 @@ export const TITLE_POOL: Record<string, { en: string; zh: string }[]> = {
  * Get the title prefix for a buddy based on rarity and peak stat.
  * Common = no title, Uncommon+ = title from peak stat pool.
  */
-export function getBuddyTitle(buddy: BuddyData, lang: 'en' | 'zh' = 'zh'): string {
+export function getBbBuddyTitle(buddy: BbBuddyData, lang: 'en' | 'zh' = 'zh'): string {
   if (buddy.rarity === 'common') return '';
-  const pool = TITLE_POOL[buddy.peakStat];
+  const pool = BB_TITLE_POOL[buddy.peakStat];
   if (!pool || pool.length === 0) return '';
   // Deterministic: use species index to pick from pool
-  const idx = SPECIES.indexOf(buddy.species as Species) % pool.length;
+  const idx = BB_SPECIES.indexOf(buddy.species as BbSpecies) % pool.length;
   return pool[idx]?.[lang] || '';
 }
 
 // ── Rarity Abilities ────────────────────────────────────────────
 
-export interface RarityAbilities {
+export interface BbRarityAbilities {
   title: boolean;              // Uncommon+: has title prefix
   enhancedPersonality: boolean; // Rare+: stronger soul.md traits
   memoryBoost: boolean;        // Epic+: faster auto-extraction (every 2 turns instead of 3)
   legendaryPerks: boolean;     // Legendary: shimmer effect + auto dream
 }
 
-export function getRarityAbilities(rarity: Rarity): RarityAbilities {
-  const rarityOrder: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+export function getBbRarityAbilities(rarity: BbRarity): BbRarityAbilities {
+  const rarityOrder: BbRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
   const level = rarityOrder.indexOf(rarity);
   return {
     title: level >= 1,           // uncommon+
@@ -299,19 +304,19 @@ export function getRarityAbilities(rarity: Rarity): RarityAbilities {
 
 // ── Enhanced Personality (Rare+) ────────────────────────────────
 
-export function getEnhancedPersonalityTraits(buddy: BuddyData, lang: 'en' | 'zh' = 'zh'): string[] {
-  const abilities = getRarityAbilities(buddy.rarity);
+export function getBbEnhancedPersonalityTraits(buddy: BbBuddyData, lang: 'en' | 'zh' = 'zh'): string[] {
+  const abilities = getBbRarityAbilities(buddy.rarity);
   const traits: string[] = [];
 
   // Base trait from peak stat (all rarities)
-  traits.push(STAT_PERSONALITY_HINTS[buddy.peakStat][lang]);
+  traits.push(BB_STAT_PERSONALITY_HINTS[buddy.peakStat][lang]);
 
   if (abilities.enhancedPersonality) {
     // Rare+: add secondary stat trait
     const sortedStats = Object.entries(buddy.stats).sort((a, b) => b[1] - a[1]);
-    const secondStat = sortedStats[1]?.[0] as StatName | undefined;
+    const secondStat = sortedStats[1]?.[0] as BbStatName | undefined;
     if (secondStat && secondStat !== buddy.peakStat) {
-      traits.push(STAT_PERSONALITY_HINTS[secondStat][lang]);
+      traits.push(BB_STAT_PERSONALITY_HINTS[secondStat][lang]);
     }
   }
 
@@ -320,10 +325,10 @@ export function getEnhancedPersonalityTraits(buddy: BuddyData, lang: 'en' | 'zh'
 
 // ── Evolution ───────────────────────────────────────────────────
 
-export interface EvolutionCheck {
+export interface BbEvolutionCheck {
   canEvolve: boolean;
-  currentRarity: Rarity;
-  nextRarity: Rarity | null;
+  currentRarity: BbRarity;
+  nextRarity: BbRarity | null;
   memoryCount: number;
   requiredMemories: number;
   daysActive: number;
@@ -332,7 +337,7 @@ export interface EvolutionCheck {
   requiredConversations: number;
 }
 
-const EVOLUTION_REQUIREMENTS: Record<Rarity, { memories: number; days: number; conversations: number } | null> = {
+const BB_EVOLUTION_REQUIREMENTS: Record<BbRarity, { memories: number; days: number; conversations: number } | null> = {
   common: { memories: 10, days: 7, conversations: 20 },       // -> uncommon
   uncommon: { memories: 30, days: 21, conversations: 50 },     // -> rare
   rare: { memories: 60, days: 45, conversations: 100 },        // -> epic
@@ -340,16 +345,16 @@ const EVOLUTION_REQUIREMENTS: Record<Rarity, { memories: number; days: number; c
   legendary: null,  // max rarity
 };
 
-const RARITY_ORDER: Rarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+const BB_RARITY_ORDER: BbRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
 /**
  * Check if a buddy can evolve to the next rarity.
  * Evolution is based on: memory file count + days since hatching + conversation approximation.
  */
-export function checkEvolution(buddy: BuddyData, memoryCount: number): EvolutionCheck {
-  const currentIdx = RARITY_ORDER.indexOf(buddy.rarity);
-  const nextRarity = currentIdx < RARITY_ORDER.length - 1 ? RARITY_ORDER[currentIdx + 1]! : null;
-  const req = EVOLUTION_REQUIREMENTS[buddy.rarity];
+export function checkBbEvolution(buddy: BbBuddyData, memoryCount: number): BbEvolutionCheck {
+  const currentIdx = BB_RARITY_ORDER.indexOf(buddy.rarity);
+  const nextRarity = currentIdx < BB_RARITY_ORDER.length - 1 ? BB_RARITY_ORDER[currentIdx + 1]! : null;
+  const req = BB_EVOLUTION_REQUIREMENTS[buddy.rarity];
 
   if (!req || !nextRarity) {
     return {
@@ -386,20 +391,20 @@ export function checkEvolution(buddy: BuddyData, memoryCount: number): Evolution
 }
 
 /**
- * Evolve a buddy to the next rarity. Returns new BuddyData with upgraded rarity + boosted stats.
+ * Evolve a buddy to the next rarity. Returns new BbBuddyData with upgraded rarity + boosted stats.
  */
-export function evolveBuddy(buddy: BuddyData): BuddyData {
-  const currentIdx = RARITY_ORDER.indexOf(buddy.rarity);
-  if (currentIdx >= RARITY_ORDER.length - 1) return buddy; // already max
+export function evolveBbBuddy(buddy: BbBuddyData): BbBuddyData {
+  const currentIdx = BB_RARITY_ORDER.indexOf(buddy.rarity);
+  if (currentIdx >= BB_RARITY_ORDER.length - 1) return buddy; // already max
 
-  const newRarity = RARITY_ORDER[currentIdx + 1]!;
-  const newFloor = RARITY_FLOORS[newRarity];
-  const oldFloor = RARITY_FLOORS[buddy.rarity];
+  const newRarity = BB_RARITY_ORDER[currentIdx + 1]!;
+  const newFloor = BB_RARITY_FLOORS[newRarity];
+  const oldFloor = BB_RARITY_FLOORS[buddy.rarity];
   const boost = newFloor - oldFloor; // stat boost from floor increase
 
   // Boost all stats by the floor difference, cap at 100
   const newStats = { ...buddy.stats };
-  for (const stat of STAT_NAMES) {
+  for (const stat of BB_STAT_NAMES) {
     newStats[stat] = Math.min(100, (newStats[stat] || 0) + boost);
   }
 
