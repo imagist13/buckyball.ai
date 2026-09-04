@@ -82,10 +82,10 @@ const CAPABILITY_DISPLAY: Readonly<Record<string, CapabilityDisplay>> = {
     },
   },
   image_generation: {
-    label: { zh: '生成媒体', en: 'Generate media' },
+    label: { zh: '生成视频', en: 'Generate video' },
     description: {
-      zh: '调用图像或视频生成模型，生成结果直接出现在聊天里。',
-      en: 'Calls an image or video generation model; results appear inline in chat.',
+      zh: '调用 Grok Imagine Video 1.5 生成视频，生成结果直接出现在聊天里。',
+      en: 'Calls Grok Imagine Video 1.5 to generate a video; results appear inline in chat.',
     },
   },
   media_import: {
@@ -300,8 +300,6 @@ export const TOOL_NAME_TO_CAPABILITY_ID: Readonly<Record<string, string>> = {
   codepilot_cancel_task: 'tasks_and_notify',
   // assistant_buddy (ClaudeCode SDK only)
   codepilot_hatch_buddy: 'assistant_buddy',
-  // image_generation
-  codepilot_generate_image: 'image_generation',
   codepilot_generate_video: 'image_generation',
   // media_import
   codepilot_import_media: 'media_import',

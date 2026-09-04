@@ -13,89 +13,15 @@ import { MediaPreview } from './MediaPreview';
 import { SearchSources } from './SearchSources';
 import { Button } from '@/components/ui/button';
 import { Shimmer } from '@/components/ai-elements/shimmer';
-import { ImageGenConfirmation } from './ImageGenConfirmation';
-import { BatchPlanInlinePreview } from './batch-image-gen/BatchPlanInlinePreview';
 import { WidgetRenderer } from './WidgetRenderer';
 import { parseAllShowWidgets, computePartialWidgetKey, MalformedWidgetNotice } from './MessageItem';
-import { PENDING_KEY, buildReferenceImages } from '@/lib/image-ref-store';
-import type { PlannerOutput, MediaBlock, ExternalSource } from '@/types';
+import type { MediaBlock, ExternalSource } from '@/types';
 import { SubagentCard } from './SubagentCard';
 import {
   buildSubagentRunView,
   collapseLogicalSubagentRuns,
   isSubagentToolCall,
 } from '@/lib/subagent-view';
-
-interface ImageGenRequest {
-  prompt: string;
-  aspectRatio: string;
-  resolution: string;
-  referenceImages?: string[];
-  useLastGenerated?: boolean;
-}
-
-function parseImageGenRequest(text: string): { beforeText: string; request: ImageGenRequest; afterText: string; rawBlock: string } | null {
-  const regex = /```image-gen-request\s*\n?([\s\S]*?)\n?\s*```/;
-  const match = text.match(regex);
-  if (!match) return null;
-  try {
-    let raw = match[1].trim();
-    let json: Record<string, unknown>;
-    try {
-      json = JSON.parse(raw);
-    } catch {
-      // Attempt to fix common model output issues: unescaped quotes in values
-      raw = raw.replace(/"prompt"\s*:\s*"([\s\S]*?)"\s*([,}])/g, (_m, val, tail) => {
-        const escaped = val.replace(/(?<!\\)"/g, '\\"');
-        return `"prompt": "${escaped}"${tail}`;
-      });
-      json = JSON.parse(raw);
-    }
-    const beforeText = text.slice(0, match.index).trim();
-    const afterText = text.slice((match.index || 0) + match[0].length).trim();
-    return {
-      beforeText,
-      request: {
-        prompt: String(json.prompt || ''),
-        aspectRatio: String(json.aspectRatio || '1:1'),
-        resolution: String(json.resolution || '1K'),
-        referenceImages: Array.isArray(json.referenceImages) ? json.referenceImages : undefined,
-        useLastGenerated: json.useLastGenerated === true,
-      },
-      afterText,
-      rawBlock: match[0], // full ```image-gen-request...``` block for exact matching
-    };
-  } catch {
-    return null;
-  }
-}
-
-function parseBatchPlan(text: string): { beforeText: string; plan: PlannerOutput; afterText: string } | null {
-  const regex = /```batch-plan\s*\n?([\s\S]*?)\n?\s*```/;
-  const match = text.match(regex);
-  if (!match) return null;
-  try {
-    const json = JSON.parse(match[1]);
-    const beforeText = text.slice(0, match.index).trim();
-    const afterText = text.slice((match.index || 0) + match[0].length).trim();
-    return {
-      beforeText,
-      plan: {
-        summary: json.summary || '',
-        items: Array.isArray(json.items) ? json.items.map((item: Record<string, unknown>) => ({
-          prompt: String(item.prompt || ''),
-          aspectRatio: String(item.aspectRatio || '1:1'),
-          resolution: String(item.resolution || '1K'),
-          tags: Array.isArray(item.tags) ? item.tags : [],
-          sourceRefs: Array.isArray(item.sourceRefs) ? item.sourceRefs : [],
-        })) : [],
-      },
-      afterText,
-    };
-  } catch {
-    return null;
-  }
-}
 
 interface ToolUseInfo {
   id: string;
@@ -126,11 +52,11 @@ interface StreamingMessageProps {
 
 /**
  * Smart content buffering — holds initial text until meaningful, but bypasses
- * for structured blocks (show-widget, batch-plan, image-gen-request).
+ * for structured blocks (show-widget).
  */
 const BUFFER_WORD_THRESHOLD = 40;
 const BUFFER_MAX_MS = 2500;
-const STRUCTURED_BLOCK_RE = /```(show-widget|batch-plan|image-gen-request)/;
+const STRUCTURED_BLOCK_RE = /```(show-widget)/;
 
 function useBufferedContent(rawContent: string, isStreaming: boolean): string {
   const [bypassed, setBypassed] = useState(false);
@@ -555,61 +481,16 @@ export function StreamingMessage({
             }
           }
 
-          // Try batch-plan (Image Agent batch mode)
-          const batchPlanResult = parseBatchPlan(content);
-          if (batchPlanResult) {
-            return (
-              <>
-                {batchPlanResult.beforeText && <MessageResponse>{batchPlanResult.beforeText}</MessageResponse>}
-                <BatchPlanInlinePreview plan={batchPlanResult.plan} messageId="streaming-preview" />
-                {batchPlanResult.afterText && <MessageResponse>{batchPlanResult.afterText}</MessageResponse>}
-              </>
-            );
-          }
-
-          // Try image-gen-request
-          const parsed = parseImageGenRequest(content);
-          if (parsed) {
-            const refs = buildReferenceImages(
-              PENDING_KEY,
-              sessionId || '',
-              parsed.request.useLastGenerated || false,
-              parsed.request.referenceImages,
-            );
-            return (
-              <>
-                {parsed.beforeText && <MessageResponse>{parsed.beforeText}</MessageResponse>}
-                <ImageGenConfirmation
-                  sessionId={sessionId}
-                  initialPrompt={parsed.request.prompt}
-                  initialAspectRatio={parsed.request.aspectRatio}
-                  initialResolution={parsed.request.resolution}
-                  rawRequestBlock={parsed.rawBlock}
-                  referenceImages={refs.length > 0 ? refs : undefined}
-                />
-                {parsed.afterText && <MessageResponse>{parsed.afterText}</MessageResponse>}
-              </>
-            );
-          }
           // Strip partial or unparseable code fence blocks to avoid Shiki errors
           if (isStreaming) {
-            const hasImageGenBlock = /```image-gen-request/.test(content);
-            const hasBatchPlanBlock = /```batch-plan/.test(content);
-            // Use bufferedContent for plain text to avoid initial character flicker
             const textToRender = bufferedContent || '';
             const stripped = textToRender
-              .replace(/```image-gen-request[\s\S]*$/, '')
-              .replace(/```batch-plan[\s\S]*$/, '')
               .replace(/```show-widget[\s\S]*$/, '')
               .trim();
             if (stripped) return <MessageResponse key="pre-text">{stripped}</MessageResponse>;
-            // Show shimmer while the structured block is being streamed
-            if (hasImageGenBlock || hasBatchPlanBlock) return <Shimmer>{t('streaming.thinking')}</Shimmer>;
             return null;
           }
           const stripped = content
-            .replace(/```image-gen-request[\s\S]*?```/g, '')
-            .replace(/```batch-plan[\s\S]*?```/g, '')
             .replace(/```show-widget[\s\S]*?(```|$)/g, '')
             .trim();
           return stripped ? <MessageResponse>{stripped}</MessageResponse> : null;

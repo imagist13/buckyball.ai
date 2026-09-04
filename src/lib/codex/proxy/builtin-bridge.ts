@@ -193,7 +193,6 @@ export function createCodePilotBuiltinTools(
 
   const tools: ToolSet = {};
 
-  tools.codepilot_generate_image = buildImageGenerationTool(opts);
   if (opts.grokVideoAvailable ?? isXaiOAuthUsable()) {
     tools.codepilot_generate_video = buildVideoGenerationTool(opts);
   }
@@ -739,85 +738,10 @@ async function runWithEvents(
 // ─────────────────────────────────────────────────────────────────────
 // Image generation
 //
-// Phase 5d Phase 2 slice 2e (2026-05-17) — MEDIA_PROMPT scalar
-// removed. Media capability prompt is sourced from the canonical
-// MEDIA_MCP_SYSTEM_PROMPT (media_import) / MEDIA_SYSTEM_PROMPT
-// (image_generation) via the Context Compiler. Bridge no longer
-// holds runtime-local prompt copies.
+// Removed 2026-09-04 in image-generation-cleanup plan (Phase I2). Image
+// generation is no longer a buckyball.ai capability. Grok Imagine video
+// generation is kept via buildVideoGenerationTool() below.
 // ─────────────────────────────────────────────────────────────────────
-
-interface ImageGenInput {
-  prompt: string;
-  provider?: 'active' | 'grok-build';
-  aspectRatio?: '1:1' | '16:9' | '9:16' | '4:3' | '3:4';
-  imageSize?: '1K' | '2K';
-  referenceImagePaths?: string[];
-}
-
-function buildImageGenerationTool(opts: BuiltinBridgeOpts) {
-  return tool({
-    description:
-      'Generate or edit an image using the configured image provider. Select grok-build for Grok Imagine Image 2.0. The generated image appears inline in the chat and is saved to the CodePilot media library.',
-    inputSchema: jsonSchema({
-      type: 'object',
-      additionalProperties: false,
-      required: ['prompt'],
-      properties: {
-        prompt: { type: 'string', description: 'Detailed image generation prompt in English' },
-        provider: {
-          type: 'string',
-          enum: ['active', 'grok-build'],
-          description: 'Use grok-build only when the user explicitly requests Grok Imagine.',
-        },
-        aspectRatio: {
-          type: 'string',
-          enum: ['1:1', '16:9', '9:16', '4:3', '3:4'],
-          description: 'Aspect ratio (default 1:1)',
-        },
-        imageSize: { type: 'string', enum: ['1K', '2K'], description: 'Output resolution (default 1K)' },
-        referenceImagePaths: {
-          type: 'array',
-          items: { type: 'string' },
-          description: 'Optional list of local file paths to use as style/content references.',
-        },
-      },
-    } satisfies JSONSchema7),
-    execute: async (rawInput: unknown, execOptions) => {
-      const input = rawInput as ImageGenInput;
-      return runWithEvents(opts, 'codepilot_generate_image', input, async () => {
-        const { generateSingleImage, NoImageGeneratedError } = await import('@/lib/image-generator');
-        try {
-          const result = await generateSingleImage({
-            prompt: input.prompt,
-            providerId: input.provider === 'grok-build' ? 'xai-oauth' : undefined,
-            aspectRatio: input.aspectRatio,
-            imageSize: input.imageSize,
-            referenceImagePaths: input.referenceImagePaths,
-            sessionId: opts.sessionId,
-            cwd: opts.workspacePath,
-            abortSignal: execOptions.abortSignal,
-          });
-          const media: MediaBlock[] = result.images.map((img) => ({
-            type: 'image' as const,
-            mimeType: img.mimeType,
-            localPath: img.localPath,
-            mediaId: result.mediaGenerationId,
-          }));
-          const text = [
-            `Image generated successfully (${result.elapsedMs}ms).`,
-            `Local paths: ${result.images.map((img) => img.localPath).join(', ')}`,
-          ].join('\n');
-          return { text, media };
-        } catch (err) {
-          if (NoImageGeneratedError.isInstance(err)) {
-            throw new Error('Image generation succeeded but no image was returned by the model. Try a different prompt.');
-          }
-          throw err;
-        }
-      });
-    },
-  });
-}
 
 interface VideoGenInput {
   prompt: string;

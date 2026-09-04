@@ -5,7 +5,6 @@ import {
   getSnapshot,
   clearSnapshot,
 } from '@/lib/stream-session-manager';
-import { transferPendingToMessage } from '@/lib/image-ref-store';
 
 interface UseStreamSubscriptionOpts {
   sessionId: string;
@@ -58,7 +57,6 @@ export function useStreamSubscription({
                 created_at: new Date().toISOString(),
                 token_usage: existing.tokenUsage ? JSON.stringify(existing.tokenUsage) : null,
               };
-              transferPendingToMessage(assistantMessage.id);
               setMessages((prev) => [...prev, assistantMessage]);
             });
         } else {
@@ -72,7 +70,6 @@ export function useStreamSubscription({
             created_at: new Date().toISOString(),
             token_usage: existing.tokenUsage ? JSON.stringify(existing.tokenUsage) : null,
           };
-          transferPendingToMessage(assistantMessage.id);
           setMessages((prev) => [...prev, assistantMessage]);
         }
         clearSnapshot(sessionId);
@@ -119,8 +116,6 @@ export function useStreamSubscription({
             created_at: new Date().toISOString(),
             token_usage: event.snapshot.tokenUsage ? JSON.stringify(event.snapshot.tokenUsage) : null,
           };
-          // Transfer pending reference images to this message ID
-          transferPendingToMessage(assistantMessage.id);
           setMessages((prev) => [...prev, assistantMessage]);
         }
 

@@ -42,8 +42,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Clock, X } from '@/components/ui/icon';
-import { BatchExecutionDashboard, BatchContextSync } from './batch-image-gen';
-import { setLastGeneratedImages, loadLastGenerated } from '@/lib/image-ref-store';
 import { useChatCommands } from '@/hooks/useChatCommands';
 import { useAssistantTrigger } from '@/hooks/useAssistantTrigger';
 import { useStreamSubscription } from '@/hooks/useStreamSubscription';
@@ -476,9 +474,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
   }, [currentProviderId, currentModel]);
   useEffect(() => { if (initialPermissionProfile) setPermissionProfile(initialPermissionProfile); }, [initialPermissionProfile]);
 
-  // Restore session-scoped last-generated images from sessionStorage
-  useEffect(() => { loadLastGenerated(sessionId); }, [sessionId]);
-
   // Stream snapshot from the manager — drives all streaming UI
   const [streamSnapshot, setStreamSnapshot] = useState<SessionStreamSnapshot | null>(
     () => getSnapshot(sessionId)
@@ -604,8 +599,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
   // optimistic message stays in `messages` until the next reload).
   const pendingOptimisticUserIdRef = useRef<string | null>(null);
 
-  // Pending image generation notices
-  const pendingImageNoticesRef = useRef<string[]>([]);
   const sendMessageRef = useRef<(content: string, files?: FileAttachment[], systemPromptAppend?: string, displayOverride?: string, mentions?: MentionRef[]) => Promise<boolean | void>>(undefined);
   const initMetaRef = useRef<{ tools?: unknown; slash_commands?: unknown; skills?: unknown } | null>(null);
 
@@ -1169,10 +1162,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
         console.warn('[ChatView] startStream suppressed: Codex Runtime disabled by recovery safe mode');
         return false;
       }
-      const notices = pendingImageNoticesRef.current.length > 0
-        ? [...pendingImageNoticesRef.current]
-        : undefined;
-      if (notices) pendingImageNoticesRef.current = [];
 
       // Wire decision:
       //   - loaded → use resolved pair (runtime-filtered truth).
@@ -1196,7 +1185,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
         files,
         workingDirectory,
         systemPromptAppend,
-        pendingImageNotices: notices,
         // 'auto' sentinel means "no explicit effort" — omitted so the CLI
         // applies its per-model default (Opus 4.7 → xhigh, etc.)
         effort: toWireEffort(selectedEffort),
@@ -1445,34 +1433,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
 
   const handleCommand = useChatCommands({ sessionId, messages, setMessages: cappedSetMessages, sendMessage });
 
-  // Listen for image generation completion
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (!detail) return;
-      const paths = (detail.images || [])
-        .map((img: { localPath?: string }) => img.localPath)
-        .filter(Boolean);
-      const pathInfo = paths.length > 0 ? `\nGenerated image file paths:\n${paths.map((p: string) => `- ${p}`).join('\n')}` : '';
-      const notice = `[Image generation completed]\n- Prompt: "${detail.prompt}"\n- Aspect ratio: ${detail.aspectRatio}\n- Resolution: ${detail.resolution}${pathInfo}`;
-
-      if (paths.length > 0) {
-        setLastGeneratedImages(sessionId, paths);
-      }
-
-      pendingImageNoticesRef.current.push(notice);
-
-      const dbNotice = `[__IMAGE_GEN_NOTICE__ prompt: "${detail.prompt}", aspect ratio: ${detail.aspectRatio}, resolution: ${detail.resolution}${paths.length > 0 ? `, file path: ${paths.join(', ')}` : ''}]`;
-      fetch('/api/chat/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, role: 'user', content: dbNotice }),
-      }).catch(() => {});
-    };
-    window.addEventListener('image-gen-completed', handler);
-    return () => window.removeEventListener('image-gen-completed', handler);
-  }, [sessionId]);
-
   // New-chat layout (2026-05-21): when a session exists but has no
   // messages yet and is NOT actively streaming, render the same
   // centered logo + welcome + composer hero as /chat (the
@@ -1685,10 +1645,6 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
           </div>
         </div>
       )}
-      {/* Batch image generation panels */}
-      <BatchExecutionDashboard />
-      <BatchContextSync />
-
       {/* Queued message banner — shown above input when messages are
           waiting. Same Luma-light pill aesthetic as the chat composer:
           24px radius, soft muted bg, no border, ghost X button. */}

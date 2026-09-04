@@ -11,7 +11,6 @@
  */
 
 import { consumeSSEStream } from '@/hooks/useSSEStream';
-import { transferPendingToMessage } from '@/lib/image-ref-store';
 import { dispatchFileChanged } from '@/lib/file-changed-event';
 import { refreshSessionTitle } from '@/lib/session-title-events';
 import {
@@ -81,7 +80,6 @@ export interface StartStreamParams {
   files?: FileAttachment[];
   mentions?: MentionRef[];
   systemPromptAppend?: string;
-  pendingImageNotices?: string[];
   /** When true, backend skips saving user message and title update (assistant auto-trigger) */
   autoTrigger?: boolean;
   /** Called when SDK mode changes (e.g. plan → code) */
@@ -438,13 +436,6 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     }
   }, 10_000);
 
-  // Flush pending image notices
-  let effectiveContent = params.content;
-  if (params.pendingImageNotices && params.pendingImageNotices.length > 0) {
-    const notices = params.pendingImageNotices.join('\n\n');
-    effectiveContent = `${notices}\n\n---\n\n${params.content}`;
-  }
-
   // Adaptive snapshot emit throttle — avoids excessive React re-renders during
   // fast streaming. Phase 2 ② — reused (kept the `Text` names for a minimal
   // diff) by the three high-frequency non-text handlers too: onThinking,
@@ -488,7 +479,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: params.sessionId,
-        content: effectiveContent,
+        content: params.content,
         mode: params.mode,
         model: params.model,
         provider_id: params.providerId,

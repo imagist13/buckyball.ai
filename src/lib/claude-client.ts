@@ -1500,11 +1500,11 @@ export function streamClaudeSdk(options: ClaudeStreamOptions): ReadableStream<st
 
         if (needsMediaMcp) {
           const { createMediaImportMcpServer } = await import('@/lib/media-import-mcp');
-          const { createImageGenMcpServer } = await import('@/lib/image-gen-mcp');
+          const { createVideoGenMcpServer } = await import('@/lib/xai-video-mcp');
           queryOptions.mcpServers = {
             ...(queryOptions.mcpServers || {}),
             'codepilot-media': createMediaImportMcpServer(sessionId, resolvedWorkingDirectory.path),
-            'codepilot-image-gen': createImageGenMcpServer(sessionId, resolvedWorkingDirectory.path),
+            'codepilot-video-gen': createVideoGenMcpServer(sessionId, resolvedWorkingDirectory.path),
           };
           enabledCapabilities.add('media_import');
           enabledCapabilities.add('image_generation');

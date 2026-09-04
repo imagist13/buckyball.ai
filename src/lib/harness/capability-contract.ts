@@ -372,32 +372,32 @@ const assistantBuddy: CapabilityContract = {
   uiRenderPath: 'Inline text + buddy gamification updates (src/components/Buddy* + assistant workspace metadata)',
 };
 
-const imageGeneration: CapabilityContract = {
+const videoGeneration: CapabilityContract = {
   id: 'image_generation',
-  displayName: 'AI media generation',
+  displayName: 'Grok Imagine video generation',
   status: 'live',
-  toolNames: ['codepilot_generate_image', 'codepilot_generate_video'],
+  toolNames: ['codepilot_generate_video'],
   exposure: {
     claudecode_sdk: {
       kind: 'mcp_server',
-      module: 'src/lib/image-gen-mcp.ts',
-      factory: 'createImageGenMcpServer',
-      notes: 'Image generation supports the configured provider; Grok Build OAuth additionally exposes Grok Imagine video generation. Both use MEDIA_RESULT_MARKER text markers, which claude-client.ts parses and injects into SSE tool_result.media.',
+      module: 'src/lib/xai-video-mcp.ts',
+      factory: 'createVideoGenMcpServer',
+      notes: 'Grok Build OAuth-gated; uses MEDIA_RESULT_MARKER text markers, which claude-client.ts parses and injects into SSE tool_result.media. Returns an empty tool set when no usable Grok Build OAuth account is connected (advertised tools must remain honest).',
     },
     native: {
       kind: 'ai_sdk_tool',
       module: 'src/lib/builtin-tools/media.ts',
-      factory: 'createMediaTools (codepilot_generate_image / codepilot_generate_video keys)',
-      notes: 'Calls generateSingleImage or generateGrokVideo and constructs MediaBlock[] with image/video type, mimeType, localPath and mediaId. Emits via the harness side-channel (`@/lib/harness/builtin-event-bus`); agent-loop.ts subscribes and splices into SSE `tool_result.media`. execute() return value is plain text (no JSON pollution model-side). Tool result shape parity with Codex bridge.',
+      factory: 'createMediaTools (codepilot_generate_video key)',
+      notes: 'Calls generateGrokVideo and constructs MediaBlock[] with video type, mimeType, localPath and mediaId. Emits via the harness side-channel (`@/lib/harness/builtin-event-bus`); agent-loop.ts subscribes and splices into SSE `tool_result.media`. execute() return value is plain text (no JSON pollution model-side). Tool result shape parity with Codex bridge.',
     },
     codex_proxy: {
       kind: 'bridge_executable',
       module: 'src/lib/codex/proxy/builtin-bridge.ts',
-      factory: 'buildImageGenerationTool / buildVideoGenerationTool',
-      notes: 'Both image and Grok Imagine video tools construct MediaBlock results, materialize Codex event media and emit through the same side-channel bus used by the Native path.',
+      factory: 'buildVideoGenerationTool',
+      notes: 'Grok Imagine video tool constructs MediaBlock results, materializes Codex event media and emits through the same side-channel bus used by the Native path.',
     },
   },
-  // Image generation and media import share one dependency-free canonical
+  // Video generation and media import share one dependency-free canonical
   // prompt so Native tool assembly never pulls the Claude SDK into its
   // synchronous Turbopack boundary.
   systemPromptFragment: MEDIA_CAPABILITY_SYSTEM_PROMPT,
@@ -532,7 +532,7 @@ export const HARNESS_CAPABILITIES: readonly CapabilityContract[] = [
   memory,
   tasksAndNotify,
   assistantBuddy,
-  imageGeneration,
+  videoGeneration,
   mediaImport,
   dashboard,
   cliTools,

@@ -47,9 +47,9 @@
 ### Phase I1 — 核心库删除
 
 - [ ] I1.1 删除 `src/lib/image-generator.ts`
-- [ ] I1.2 删除 `src/lib/image-gen-mcp.ts`
-- [ ] I1.3 删 `src/types/index.ts` 中 `image-gen-mcp` / `imageGenerator` 相关类型导出
-- [ ] I1.4 删 `src/lib/harness/capability-matrix.ts` / `capability-contract.ts` / `capability-display-text.ts` / `context-compiler.ts` / `runtime-adapter.ts` / `mutation-level.ts` 中所有 `image-generation` / `imageGeneration` capability 字段与描述段（含对应 i18n key 引用）
+- [ ] I1.2 拆 `src/lib/image-gen-mcp.ts` → **删 `codepilot_generate_image` 工具 + `MEDIA_RESULT_MARKER` + `extractMcpAbortSignal` 全部仅图像段**；**视频段（`codepilot_generate_video`）保留并重命名为 `src/lib/xai-video-mcp.ts`**，新文件只导出 `createVideoGenMcpServer`；`image-gen-mcp.ts` 文件本体删除
+- [ ] I1.3 删 `src/types/index.ts` 中 `image-gen-mcp` / `imageGenerator` 相关类型导出（保留 video 相关导出）
+- [ ] I1.4 删 `src/lib/harness/capability-matrix.ts` / `capability-contract.ts` / `capability-display-text.ts` / `context-compiler.ts` / `runtime-adapter.ts` / `mutation-level.ts` 中所有 `image-generation` / `imageGeneration` capability 字段与描述段（含对应 i18n key 引用）；**保留** `video-generation` 段
 
 ### Phase I2 — 路由与 UI 删除
 
@@ -65,7 +65,7 @@
 
 - [ ] I3.1 `src/lib/provider-catalog.ts`：删 `gemini-image` / `openai-image` 的定义 + icon + 字段；adjust `ProviderType` union
 - [ ] I3.2 `src/lib/db.ts`：删 `media_generations` 相关 insert / query 中**仅图像生成使用**字段的 helper（`registerMediaGenerationAsset` 等保留——属于 Gallery 通用）；保留表 schema 不动
-- [ ] I3.3 删 `src/lib/xai-imagine.ts` / `src/lib/xai-oauth-manager.ts` 中 `image-generation` 路径分支；若仍有非图像段使用，保留非图像部分
+- [ ] I3.3 删 `src/lib/xai-imagine.ts` / `src/lib/xai-oauth-manager.ts` 中 `image-generation` 路径分支；`requestGrokImagineImage` 整段删（若还有别处引用则一起改）；`generateGrokVideo` / `XAI_IMAGINE_VIDEO_MODEL` / `readGrokReferenceImages` 全部保留
 - [ ] I3.4 启动时清理旧 `active_image_provider_id` setting（写一次性 migration：发现键存在则 delete；连续 2 个版本后正式移除键）
 
 ### Phase I4 — 测试 / i18n / 守卫
@@ -103,6 +103,7 @@
 - 2026-09-04: `/api/media/*` 其它端点（serve / gallery / jobs / tags）保留——是 Gallery 通用 API，不只服务于图像生成。
 - 2026-09-04: 守卫脚本与"个人助手合并"计划同一类（`scripts/bbagent-assistant-import-guard.mjs` / `scripts/image-gen-import-guard.mjs`），后续可合并成一个 `scripts/feature-removal-guards.mjs`——本 Phase 不做合并，留作 tech-debt。
 - 2026-09-04: 不删 `@ai-sdk/google` / `@ai-sdk/openai` dep，仅 grep 清除引用——因为这些 SDK 同时用于文本模型；移除 dep 留给后续清理 PR。
+- 2026-09-04: **用户决策：保留 Grok 视频生成**。`image-gen-mcp.ts` 里的 `codepilot_generate_video` 走 `xai-imagine`（视频），与 `generateSingleImage`（图像）无依赖。I1.2 改为"拆出视频段 → 新文件 `xai-video-mcp.ts`"；`generateGrokVideo` / `XAI_IMAGINE_VIDEO_MODEL` / `readGrokReferenceImages` 全部保留（I3.3 / I1.4 video 段保留）；`requestGrokImagineImage` 整段删。
 
 ## Smoke Ledger
 

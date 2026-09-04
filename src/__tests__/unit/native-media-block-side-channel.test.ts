@@ -40,7 +40,7 @@ import {
 import { createMediaTools } from '@/lib/builtin-tools/media';
 import type { RuntimeRunEvent } from '@/lib/runtime/contract';
 import { promptNeedsMedia } from '@/lib/media-capability-prompt';
-import { extractMcpAbortSignal } from '@/lib/image-gen-mcp';
+import { extractMcpAbortSignal } from '@/lib/xai-video-mcp';
 import { isTelemetryFailureHandled } from '@/lib/telemetry/provider-marker';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
@@ -71,9 +71,9 @@ describe('Claude SDK media intent gate', () => {
   });
 
   it('the Claude MCP only registers Grok video when OAuth is usable', () => {
-    const source = readSrc('src/lib/image-gen-mcp.ts');
+    const source = readSrc('src/lib/xai-video-mcp.ts');
     assert.match(source, /isXaiOAuthUsable\(\)/);
-    assert.match(source, /\.\.\.\(isXaiOAuthUsable\(\)\s*\?\s*\[/);
+    assert.match(source, /name: 'codepilot-video-gen'/);
   });
 });
 
@@ -85,18 +85,15 @@ describe('media cancellation wiring', () => {
     assert.equal(extractMcpAbortSignal(undefined), undefined);
   });
 
-  it('threads cancellation through Claude MCP, Codex bridge, Native and confirmation API', () => {
-    const claudeMcp = readSrc('src/lib/image-gen-mcp.ts');
-    assert.equal((claudeMcp.match(/abortSignal:\s*extractMcpAbortSignal\(extra\)/g) || []).length, 2);
+  it('threads cancellation through Claude MCP, Codex bridge, Native', () => {
+    const claudeMcp = readSrc('src/lib/xai-video-mcp.ts');
+    assert.equal((claudeMcp.match(/abortSignal:\s*extractMcpAbortSignal\(extra\)/g) || []).length, 1);
 
     const codexBridge = readSrc('src/lib/codex/proxy/builtin-bridge.ts');
     assert.equal((codexBridge.match(/abortSignal:\s*execOptions\.abortSignal/g) || []).length >= 2, true);
 
     const nativeMedia = readSrc('src/lib/builtin-tools/media.ts');
-    assert.equal((nativeMedia.match(/abortSignal:\s*execution\?\.abortSignal/g) || []).length >= 2, true);
-
-    const confirmationRoute = readSrc('src/app/api/media/generate/route.ts');
-    assert.match(confirmationRoute, /abortSignal:\s*request\.signal/);
+    assert.equal((nativeMedia.match(/abortSignal:\s*execution\?\.abortSignal/g) || []).length >= 1, true);
   });
 });
 
@@ -125,10 +122,9 @@ function stripComments(src: string): string {
 // ─────────────────────────────────────────────────────────────────────
 
 describe('createMediaTools — tool factory shape', () => {
-  it('returns import + image + video media tools with execute()', () => {
+  it('returns import + video media tools with execute()', () => {
     const tools = createMediaTools({ sessionId: 's1', grokVideoAvailable: true });
     assert.ok(tools.codepilot_import_media);
-    assert.ok(tools.codepilot_generate_image);
     assert.ok(tools.codepilot_generate_video);
     assert.equal(
       typeof (tools.codepilot_import_media as { execute?: unknown }).execute,
@@ -138,16 +134,11 @@ describe('createMediaTools — tool factory shape', () => {
       typeof (tools.codepilot_generate_video as { execute?: unknown }).execute,
       'function',
     );
-    assert.equal(
-      typeof (tools.codepilot_generate_image as { execute?: unknown }).execute,
-      'function',
-    );
   });
 
-  it('hides Grok video when OAuth is unavailable without hiding active-provider images', () => {
+  it('hides Grok video when OAuth is unavailable without hiding import', () => {
     const tools = createMediaTools({ sessionId: 's1', grokVideoAvailable: false });
     assert.ok(tools.codepilot_import_media);
-    assert.ok(tools.codepilot_generate_image);
     assert.equal(tools.codepilot_generate_video, undefined);
   });
 });

@@ -432,9 +432,9 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
     // Introspects the REAL server instances: if a tool is added to a server and
     // not to CODEPILOT_MCP_TOOL_SERVERS, derivation would silently skip it —
     // which is exactly how the previous hand-written table went stale.
-    const [memory, notify, media, imageGen, cliTools, dashboard, widget, subagent] = await Promise.all([
+    const [memory, notify, media, videoGen, cliTools, dashboard, widget, subagent] = await Promise.all([
       import('@/lib/memory-search-mcp'), import('@/lib/notification-mcp'),
-      import('@/lib/media-import-mcp'), import('@/lib/image-gen-mcp'),
+      import('@/lib/media-import-mcp'), import('@/lib/xai-video-mcp'),
       import('@/lib/cli-tools-mcp'), import('@/lib/dashboard-mcp'),
       import('@/lib/widget-guidelines'), import('@/lib/claude-subagent-mcp'),
     ]);
@@ -442,7 +442,7 @@ describe('human-only tools are denied before the SDK classifier (a04 + a09)', ()
       'codepilot-memory': memory.createMemorySearchMcpServer('/tmp') as never,
       'codepilot-notify': notify.createNotificationMcpServer({} as never) as never,
       'codepilot-media': media.createMediaImportMcpServer('s', '/tmp') as never,
-      'codepilot-image-gen': imageGen.createImageGenMcpServer('s', '/tmp') as never,
+      'codepilot-video-gen': videoGen.createVideoGenMcpServer('s', '/tmp') as never,
       'codepilot-cli-tools': cliTools.createCliToolsMcpServer() as never,
       'codepilot-dashboard': dashboard.createDashboardMcpServer('s', '/tmp') as never,
       'codepilot-widget': widget.createWidgetMcpServer() as never,

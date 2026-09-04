@@ -43,7 +43,8 @@ export type MutationLevel =
   /** Shell executes, installs/uninstalls system packages, calls
    *  third-party APIs that bill the user, writes files outside the
    *  media library. The most dangerous bucket. Example:
-   *  `codepilot_cli_tools_install`, `codepilot_generate_image`. */
+   *  `codepilot_cli_tools_install`. (codepilot_generate_image was removed
+   *  2026-09-04.) */
   | 'mutating_external'
   /** User-perceivable but not state-mutating (visible
    *  notification / toast / Telegram bridge / Electron banner).
@@ -92,7 +93,7 @@ export const CODEPILOT_TOOL_MUTATION_LEVELS: Readonly<Record<string, MutationLev
 
   // Media — generation calls third-party API + writes file;
   // import writes user file into media library.
-  codepilot_generate_image: 'mutating_external',
+  // codepilot_generate_image was removed in image-generation cleanup (2026-09-04)
   codepilot_generate_video: 'mutating_external',
   codepilot_import_media: 'mutating_local',
 
