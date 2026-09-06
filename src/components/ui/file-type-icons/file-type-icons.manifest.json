@@ -1,0 +1,461 @@
+{
+  "generatedBy": "scripts/generate-file-type-icons.mjs",
+  "generatorVersion": 1,
+  "sourcePackage": "material-icon-theme",
+  "sourceVersion": "5.37.0",
+  "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+  "license": "MIT",
+  "trademarkNotice": "Third-party brand marks remain subject to their owners' trademark terms. They are used only to identify file types and do not imply endorsement.",
+  "icons": [
+    {
+      "iconId": "astro",
+      "sourceFile": "icons/astro.svg",
+      "outputFile": "public/file-type-icons/astro.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "changelog",
+      "sourceFile": "icons/changelog.svg",
+      "outputFile": "public/file-type-icons/changelog.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "console",
+      "sourceFile": "icons/console.svg",
+      "outputFile": "public/file-type-icons/console.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "css",
+      "sourceFile": "icons/css.svg",
+      "outputFile": "public/file-type-icons/css.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "dart",
+      "sourceFile": "icons/dart.svg",
+      "outputFile": "public/file-type-icons/dart.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "database",
+      "sourceFile": "icons/database.svg",
+      "outputFile": "public/file-type-icons/database.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "docker",
+      "sourceFile": "icons/docker.svg",
+      "outputFile": "public/file-type-icons/docker.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "document",
+      "sourceFile": "icons/document.svg",
+      "outputFile": "public/file-type-icons/document.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "file",
+      "sourceFile": "icons/file.svg",
+      "outputFile": "public/file-type-icons/file.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "git",
+      "sourceFile": "icons/git.svg",
+      "outputFile": "public/file-type-icons/git.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "go",
+      "sourceFile": "icons/go.svg",
+      "outputFile": "public/file-type-icons/go.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "html",
+      "sourceFile": "icons/html.svg",
+      "outputFile": "public/file-type-icons/html.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "image",
+      "sourceFile": "icons/image.svg",
+      "outputFile": "public/file-type-icons/image.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "java",
+      "sourceFile": "icons/java.svg",
+      "outputFile": "public/file-type-icons/java.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "javascript",
+      "sourceFile": "icons/javascript.svg",
+      "outputFile": "public/file-type-icons/javascript.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "jsconfig",
+      "sourceFile": "icons/jsconfig.svg",
+      "outputFile": "public/file-type-icons/jsconfig.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "json",
+      "sourceFile": "icons/json.svg",
+      "outputFile": "public/file-type-icons/json.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "less",
+      "sourceFile": "icons/less.svg",
+      "outputFile": "public/file-type-icons/less.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "license",
+      "sourceFile": "icons/license.svg",
+      "outputFile": "public/file-type-icons/license.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "lock",
+      "sourceFile": "icons/lock.svg",
+      "outputFile": "public/file-type-icons/lock.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "makefile",
+      "sourceFile": "icons/makefile.svg",
+      "outputFile": "public/file-type-icons/makefile.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "markdown",
+      "sourceFile": "icons/markdown.svg",
+      "outputFile": "public/file-type-icons/markdown.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "mdx",
+      "sourceFile": "icons/mdx.svg",
+      "outputFile": "public/file-type-icons/mdx.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "next",
+      "sourceFile": "icons/next.svg",
+      "outputFile": "public/file-type-icons/next.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "nodejs",
+      "sourceFile": "icons/nodejs.svg",
+      "outputFile": "public/file-type-icons/nodejs.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "pdf",
+      "sourceFile": "icons/pdf.svg",
+      "outputFile": "public/file-type-icons/pdf.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "pnpm",
+      "sourceFile": "icons/pnpm.svg",
+      "outputFile": "public/file-type-icons/pnpm.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "powershell",
+      "sourceFile": "icons/powershell.svg",
+      "outputFile": "public/file-type-icons/powershell.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "python",
+      "sourceFile": "icons/python.svg",
+      "outputFile": "public/file-type-icons/python.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "react",
+      "sourceFile": "icons/react.svg",
+      "outputFile": "public/file-type-icons/react.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "react_ts",
+      "sourceFile": "icons/react_ts.svg",
+      "outputFile": "public/file-type-icons/react_ts.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "readme",
+      "sourceFile": "icons/readme.svg",
+      "outputFile": "public/file-type-icons/readme.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "rust",
+      "sourceFile": "icons/rust.svg",
+      "outputFile": "public/file-type-icons/rust.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "sass",
+      "sourceFile": "icons/sass.svg",
+      "outputFile": "public/file-type-icons/sass.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "svelte",
+      "sourceFile": "icons/svelte.svg",
+      "outputFile": "public/file-type-icons/svelte.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "svg",
+      "sourceFile": "icons/svg.svg",
+      "outputFile": "public/file-type-icons/svg.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "table",
+      "sourceFile": "icons/table.svg",
+      "outputFile": "public/file-type-icons/table.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "test-js",
+      "sourceFile": "icons/test-js.svg",
+      "outputFile": "public/file-type-icons/test-js.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "test-jsx",
+      "sourceFile": "icons/test-jsx.svg",
+      "outputFile": "public/file-type-icons/test-jsx.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "test-ts",
+      "sourceFile": "icons/test-ts.svg",
+      "outputFile": "public/file-type-icons/test-ts.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "toml",
+      "sourceFile": "icons/toml.svg",
+      "outputFile": "public/file-type-icons/toml.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "tsconfig",
+      "sourceFile": "icons/tsconfig.svg",
+      "outputFile": "public/file-type-icons/tsconfig.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "tune",
+      "sourceFile": "icons/tune.svg",
+      "outputFile": "public/file-type-icons/tune.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "typescript",
+      "sourceFile": "icons/typescript.svg",
+      "outputFile": "public/file-type-icons/typescript.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "typescript-def",
+      "sourceFile": "icons/typescript-def.svg",
+      "outputFile": "public/file-type-icons/typescript-def.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "vite",
+      "sourceFile": "icons/vite.svg",
+      "outputFile": "public/file-type-icons/vite.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "vue",
+      "sourceFile": "icons/vue.svg",
+      "outputFile": "public/file-type-icons/vue.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "yaml",
+      "sourceFile": "icons/yaml.svg",
+      "outputFile": "public/file-type-icons/yaml.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "yarn",
+      "sourceFile": "icons/yarn.svg",
+      "outputFile": "public/file-type-icons/yarn.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    },
+    {
+      "iconId": "zip",
+      "sourceFile": "icons/zip.svg",
+      "outputFile": "public/file-type-icons/zip.svg",
+      "sourcePackage": "material-icon-theme",
+      "sourceVersion": "5.37.0",
+      "upstreamRepository": "https://github.com/material-extensions/vscode-material-icon-theme",
+      "license": "MIT"
+    }
+  ]
+}
