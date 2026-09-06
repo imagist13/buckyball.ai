@@ -7,8 +7,9 @@
  * unambiguous Agent-subtask requirement.
  */
 
-import { getSkill } from './skill-discovery';
+import { getSkill, invalidateSkillCache } from './skill-discovery';
 import { prepareSkillExecution } from './skill-executor';
+import { getBuckyballRepoRoot } from './bbdev/project-skills';
 
 export class SelectedSkillNotFoundError extends Error {
   readonly missingSkills: readonly string[];
@@ -33,6 +34,36 @@ function canonicalizeSkillName(value: string): string {
   return value.trim().replace(/^\/+/, '');
 }
 
+function resolveSelectedSkill(
+  name: string,
+  workingDirectory: string,
+  fallbackDirectory: string | undefined,
+) {
+  const workspaceSkill = getSkill(name, workingDirectory);
+  if (workspaceSkill) return workspaceSkill;
+
+  // buckyball 仓库下挂着一组项目级 Skills（ball / verify / check / debug / ...），
+  // 物理路径可能在 `<repoRoot>/.claude/skills/<name>/SKILL.md`，但 chat session
+  // 的 working directory 不一定是 buckyball 仓库根。当用户在前端选了这类
+  // skill、提交到 /api/chat 时，单纯扫 workingDirectory 找不到，必须以配置的
+  // buckyball repoRoot 作为 fallback，否则会抛 422。
+  if (fallbackDirectory && fallbackDirectory !== workingDirectory) {
+    const fallbackSkill = getSkill(name, fallbackDirectory);
+    console.log(
+      `[selected-skill-injection] name=${name} cwd=${workingDirectory} ` +
+      `fallback=${fallbackDirectory} foundInWorkspace=${Boolean(workspaceSkill)} ` +
+      `foundInFallback=${Boolean(fallbackSkill)}`,
+    );
+    return fallbackSkill;
+  }
+  console.log(
+    `[selected-skill-injection] name=${name} cwd=${workingDirectory} ` +
+    `fallback=${fallbackDirectory ?? 'undefined'} foundInWorkspace=${Boolean(workspaceSkill)} ` +
+    `noFallbackApplied=true`,
+  );
+  return undefined;
+}
+
 /**
  * Resolve selected Skills from the current workspace and build the exact prompt
  * fragment used by the Native Runtime. Throws before model invocation when any
@@ -42,6 +73,23 @@ export function resolveSelectedSkillInjection(
   selectedSkills: readonly string[] | undefined,
   workingDirectory: string,
 ): SelectedSkillInjection | undefined {
+  return resolveSelectedSkillInjectionCore(
+    selectedSkills,
+    workingDirectory,
+    getBuckyballRepoRoot(),
+  );
+}
+
+/**
+ * Core resolution. Exported (without re-export) for unit tests so they can
+ * inject a deterministic fallback directory without touching the bbdev
+ * settings store. Production code must call the public `resolveSelectedSkillInjection`.
+ */
+export function resolveSelectedSkillInjectionCore(
+  selectedSkills: readonly string[] | undefined,
+  workingDirectory: string,
+  fallbackDirectory: string | undefined,
+): SelectedSkillInjection | undefined {
   const names = [...new Set(
     (selectedSkills ?? [])
       .map(canonicalizeSkillName)
@@ -50,7 +98,14 @@ export function resolveSelectedSkillInjection(
   )];
   if (names.length === 0) return undefined;
 
-  const resolved = names.map(name => ({ name, skill: getSkill(name, workingDirectory) }));
+  // The command popover scans the filesystem live. Clear the separate
+  // resolver cache so a just-created or edited Skill cannot be selectable
+  // in the UI yet falsely reported missing when the turn is sent.
+  invalidateSkillCache();
+  const resolved = names.map(name => ({
+    name,
+    skill: resolveSelectedSkill(name, workingDirectory, fallbackDirectory),
+  }));
   const missing = resolved.filter(({ skill }) => !skill).map(({ name }) => name);
   if (missing.length > 0) throw new SelectedSkillNotFoundError(missing);
 

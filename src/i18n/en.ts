@@ -37,7 +37,7 @@ const en = {
   'chatList.addProjectFolder': 'New Project',
   'chatList.threads': 'Threads',
   'chatList.projects': 'Projects',
-  'chatList.assistantSection': 'Assistant',
+  'chatList.assistantSection': 'Sessions',
   'chatList.newProject': 'New Project',
   'chatList.showMore': 'Show {count} more',
   'chatList.showLess': 'Show less',
@@ -65,6 +65,11 @@ const en = {
   'message.streamStatus.streaming': 'Response is still running · saved content updates automatically',
   'message.streamStatus.interrupted': 'Response was interrupted · showing the last saved content',
   'message.streamStatus.error': 'Response ended with an error · showing the last saved content',
+
+  'chat.contextMessage.title': 'bb.ai Assistant · Context',
+  'chat.contextMessage.collapse': 'Collapse context',
+  'chat.contextMessage.expand': 'Show context',
+  'chat.contextMessage.skillLabel': 'Selected Skills: {names}',
 
   // ── Message input ───────────────────────────────────────────
   'messageInput.attachFiles': 'Attach files',

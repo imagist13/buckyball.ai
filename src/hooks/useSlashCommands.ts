@@ -4,6 +4,51 @@ import { detectPopoverTrigger, resolveItemSelection } from '@/lib/message-input-
 import { BUILT_IN_COMMANDS, COMMAND_PROMPTS } from '@/lib/constants/commands';
 import { COMMAND_ICON_NAMES } from '@/lib/constants/command-icons';
 
+interface SdkCapabilityItem {
+  name?: string;
+}
+
+function capabilityNames(raw: unknown): Set<string> {
+  if (!Array.isArray(raw)) return new Set();
+  return new Set(raw
+    .map((item) => typeof item === 'string' ? item : (item as SdkCapabilityItem)?.name)
+    .filter((name): name is string => typeof name === 'string' && name.length > 0));
+}
+
+/**
+ * SDK init metadata contains names the SDK can dispatch, but not the local
+ * SKILL.md body required by deterministic selected-Skill injection. Therefore
+ * every metadata-only capability is an SDK slash command; only the API's
+ * filesystem-backed `agent_skill` entries are eligible for Skill injection.
+ */
+export function appendSdkCapabilityCommands(
+  items: PopoverItem[],
+  rawCommands: unknown,
+  rawSkills: unknown,
+): PopoverItem[] {
+  const sdkCapabilityNames = new Set([
+    ...capabilityNames(rawCommands),
+    ...capabilityNames(rawSkills),
+  ]);
+  const existingNames = new Set(items.map((item) => item.label));
+  const appended: PopoverItem[] = [];
+
+  for (const name of sdkCapabilityNames) {
+    if (existingNames.has(name)) continue;
+    existingNames.add(name);
+    appended.push({
+      label: name,
+      value: `/${name}`,
+      description: `SDK command: /${name}`,
+      builtIn: false,
+      source: 'sdk',
+      kind: 'sdk_command',
+    });
+  }
+
+  return [...items, ...appended];
+}
+
 // Re-export for backward compatibility
 export { BUILT_IN_COMMANDS, COMMAND_PROMPTS };
 
@@ -120,53 +165,20 @@ export function useSlashCommands(opts: {
       // API not available - just use built-in commands
     }
 
-    // When SDK init metadata is available, use it as the truth source
+    // SDK metadata is authoritative only for SDK-dispatched commands. Every
+    // filesystem-backed agent Skill is independently verified by `/api/skills`
+    // and has a local `SKILL.md` that the send route can resolve.
     if (sdkInitMeta) {
-      const rawCmds = sdkInitMeta.slash_commands;
-      const rawSkills = sdkInitMeta.skills;
-      const sdkCommandNames = new Set(
-        Array.isArray(rawCmds) ? rawCmds.map(c => typeof c === 'string' ? c : (c as { name?: string })?.name).filter(Boolean) as string[] : []
+      const sdkCommandNames = capabilityNames(sdkInitMeta.slash_commands);
+      apiSkills = apiSkills.filter(item => {
+        if (item.kind === 'agent_skill') return true;
+        return item.source !== 'sdk' || sdkCommandNames.has(item.label);
+      });
+      apiSkills = appendSdkCapabilityCommands(
+        apiSkills,
+        sdkInitMeta.slash_commands,
+        sdkInitMeta.skills,
       );
-      const sdkSkillNames = new Set(
-        Array.isArray(rawSkills) ? rawSkills.map(s => typeof s === 'string' ? s : (s as { name?: string })?.name).filter(Boolean) as string[] : []
-      );
-
-      // Only filter if SDK actually reported capabilities (non-empty arrays)
-      if (sdkCommandNames.size > 0 || sdkSkillNames.size > 0) {
-        apiSkills = apiSkills.filter(item => {
-          if (item.kind === 'agent_skill') return sdkSkillNames.has(item.label);
-          return sdkCommandNames.has(item.label);
-        });
-      }
-
-      const existingNames = new Set(apiSkills.map(s => s.label));
-
-      // Add SDK-reported commands not found in filesystem scan
-      for (const cmdName of sdkCommandNames) {
-        if (!existingNames.has(cmdName)) {
-          apiSkills.push({
-            label: cmdName,
-            value: `/${cmdName}`,
-            description: `SDK command: /${cmdName}`,
-            builtIn: false,
-            source: 'sdk',
-            kind: 'sdk_command',
-          });
-        }
-      }
-
-      // Add SDK-reported skills not found in filesystem scan
-      for (const skillName of sdkSkillNames) {
-        if (!existingNames.has(skillName)) {
-          apiSkills.push({
-            label: skillName,
-            value: `/${skillName}`,
-            description: `Skill: /${skillName}`,
-            builtIn: false,
-            kind: 'agent_skill',
-          });
-        }
-      }
     }
 
     // Deduplicate: remove API skills that share a name with built-in commands

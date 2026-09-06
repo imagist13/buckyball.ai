@@ -29,7 +29,13 @@ export interface SkillNudgeData {
   toolNames: string[];
 }
 
+export interface ContextMessageData {
+  content: string;
+  skillNames: readonly string[];
+}
+
 export interface SSECallbacks {
+  onContextMessage?: (data: ContextMessageData) => void;
   onText: (accumulated: string) => void;
   onToolUse: (tool: ToolUseInfo) => void;
   onToolResult: (result: ToolResultInfo) => void;
@@ -259,6 +265,21 @@ export function handleSSEEvent(
   callbacks: SSECallbacks,
 ): string {
   switch (event.type) {
+    case 'context_message': {
+      try {
+        const data = JSON.parse(event.data) as { content?: unknown; skillNames?: unknown };
+        if (typeof data.content === 'string') {
+          callbacks.onContextMessage?.({
+            content: data.content,
+            skillNames: Array.isArray(data.skillNames)
+              ? data.skillNames.filter((name): name is string => typeof name === 'string')
+              : [],
+          });
+        }
+      } catch { /* malformed ephemeral context must not interrupt the turn */ }
+      return accumulated;
+    }
+
     case 'text': {
       const next = accumulated + event.data;
       callbacks.onText(next);
@@ -654,6 +675,7 @@ export function useSSEStream() {
 
       // Proxy through ref so callers always hit the latest callbacks
       const proxied: SSECallbacks = {
+        onContextMessage: (data) => callbacksRef.current?.onContextMessage?.(data),
         onText: (a) => callbacksRef.current?.onText(a),
         onToolUse: (t) => callbacksRef.current?.onToolUse(t),
         onToolResult: (r) => callbacksRef.current?.onToolResult(r),

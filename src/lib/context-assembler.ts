@@ -12,6 +12,7 @@
 
 import type { ChatSession } from '@/types';
 import { getSetting } from '@/lib/db';
+import { resolveSelectedSkillInjection } from '@/lib/selected-skill-injection';
 import { EGG_IMAGE_URL } from '@/lib/buddy';
 
 // ── Types ────────────────────────────────────────────────────────────
@@ -25,6 +26,8 @@ export interface ContextAssemblyConfig {
   userPrompt: string;
   /** Per-request system prompt append (e.g., skill injection for image generation) */
   systemPromptAppend?: string;
+  /** Agent Skills selected through composer badges. */
+  selectedSkills?: readonly string[];
   /** Conversation history (for widget keyword detection in resume context) */
   conversationHistory?: Array<{ role: string; content: string }>;
   /** Whether this is an invisible assistant hook (for example buddy welcome). */
@@ -40,8 +43,15 @@ export interface AssembledContext {
   generativeUIEnabled: boolean;
   /** Onboarding/checkin instructions (route.ts uses this for server-side completion detection) */
   assistantProjectInstructions: string;
-  /** Whether this session is in the assistant workspace */
+  /** Whether the session points to the configured assistant workspace. */
   isAssistantProject: boolean;
+  /** Ephemeral first user-role context for supported runtimes; never persisted to DB. */
+  contextMessage?: {
+    role: 'user';
+    content: string;
+    isContextMessage: true;
+    skillNames: readonly string[];
+  };
 }
 
 // ── Main function ────────────────────────────────────────────────────
@@ -61,6 +71,10 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
   let memoryHint = '';
   let assistantProjectInstructions = '';
   let isAssistantProject = false;
+  const selectedSkillInjection = resolveSelectedSkillInjection(
+    config.selectedSkills,
+    session.working_directory || process.cwd(),
+  );
 
   // ── Layer 1: Workspace prompt (if assistant project session) ──────
   try {
@@ -127,18 +141,13 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
         if (!state.onboardingComplete) {
           assistantProjectInstructions = buildOnboardingInstructions();
         } else {
-          // Progressive file update guidance for completed onboarding
+          // Progressive file update guidance for completed onboarding.
+          // Product identity is injected unconditionally below.
           assistantProjectInstructions = buildProgressiveUpdateInstructions();
 
-          // If no buddy yet, prepend a welcome + adoption prompt
-          if (!state.buddy) {
-            assistantProjectInstructions = buildNoBuddyWelcome() + '\n\n' + assistantProjectInstructions;
-          } else {
-            // Inject buddy personality prompt before progressive update instructions
-            const buddyPersonality = buildBuddyPersonalityPrompt(state.buddy);
-            assistantProjectInstructions = buddyPersonality + '\n\n' + assistantProjectInstructions;
-
-            // Check evolution readiness
+          // Legacy evolution state remains functional, but never changes the
+          // assistant's public identity or conversational persona.
+          if (state.buddy) {
             try {
               const { checkEvolution } = await import('@/lib/buddy');
               const fs = await import('fs');
@@ -184,6 +193,11 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
 
   const staticParts: string[] = [];
   const volatileParts: string[] = [];
+
+  // [STATIC 0] Product identity — required for every chat and runtime.
+  // It precedes session/workspace instructions so custom prompts extend the
+  // Buckyball.ai role instead of replacing it.
+  staticParts.push(buildBbAssistantIdentityPrompt());
 
   // [STATIC 1] Widget system prompt (desktop only) — compile-time constant
   const generativeUISetting = getSetting('generative_ui_enabled');
@@ -238,18 +252,36 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
   }
 
   // [VOLATILE 7] Per-request append (image agent mode, skills, etc.)
-  if (systemPromptAppend) {
-    volatileParts.push(systemPromptAppend);
+  const effectiveSystemPromptAppend = [
+    systemPromptAppend,
+    selectedSkillInjection?.systemPromptAppend,
+  ].filter(Boolean).join('\n\n');
+  if (effectiveSystemPromptAppend) {
+    volatileParts.push(effectiveSystemPromptAppend);
   }
 
   // Concatenate: static prefix + volatile suffix
   const allParts = [...staticParts, ...volatileParts].filter(Boolean);
   const finalSystemPrompt = allParts.length > 0 ? allParts.join('\n\n') : undefined;
 
+  // Context is injected only for a session's first turn. Repeating it costs
+  // tokens and breaks the stable prefix cache without adding information.
+  const isFirstTurn = !(config.conversationHistory?.length);
+  const skillNames = selectedSkillInjection?.skillNames ?? [];
+  const contextMessage = isFirstTurn && finalSystemPrompt
+    ? {
+        role: 'user' as const,
+        content: `<bb-conversation-context>\n本对话的当前上下文（系统提示与已选 Skill）：\n\n=== system prompt ===\n${finalSystemPrompt}\n\n=== selected skills ===\n${skillNames.join(', ') || '无'}\n\n以上是会话的运行时上下文，请基于此回答用户后续问题。\n</bb-conversation-context>`,
+        isContextMessage: true as const,
+        skillNames,
+      }
+    : undefined;
+
   console.log(`[context-assembler] total: ${Date.now() - t0}ms (entry=${entryPoint}, prompt=${finalSystemPrompt?.length ?? 0} chars)`);
 
   return {
     systemPrompt: finalSystemPrompt,
+    contextMessage,
     generativeUIEnabled,
     assistantProjectInstructions,
     isAssistantProject,
@@ -258,6 +290,17 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
 
 // ── Instruction templates ────────────────────────────────────────────
 
+function buildBbAssistantIdentityPrompt(): string {
+  return `<bb-assistant-identity>
+你是 Buckyball.ai 助手，专注于帮助用户完成芯片开发云验证相关工作。
+保持专业、简洁、直击要点；不要使用宠物、拟人化或 emoji 性格开场来描述自己。
+</bb-assistant-identity>`;
+}
+
+/**
+ * @deprecated Legacy buddy persona template. Retained temporarily for rollback
+ * compatibility; bb.ai conversation assembly no longer calls this function.
+ */
 function buildBuddyPersonalityPrompt(buddy: {
   species: string;
   rarity: string;

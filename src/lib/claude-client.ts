@@ -897,10 +897,12 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
     }));
   }
 
-  const selectedSkillInjection = resolveSelectedSkillInjection(
-    options.selectedSkills,
-    options.workingDirectory || process.cwd(),
-  );
+  const selectedSkillInjection = options.selectedSkillsAlreadyInjected
+    ? undefined
+    : resolveSelectedSkillInjection(
+        options.selectedSkills,
+        options.workingDirectory || process.cwd(),
+      );
   const effectiveSystemPrompt = [
     options.systemPrompt,
     selectedSkillInjection?.systemPromptAppend,
@@ -913,6 +915,7 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
     sessionId: options.sessionId,
     model: options.model,
     systemPrompt: effectiveSystemPrompt,
+    contextMessage: options.contextMessage,
     workingDirectory: options.workingDirectory,
     abortController: options.abortController,
     autoTrigger: options.autoTrigger,
@@ -932,6 +935,7 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
 
     // Runtime-specific fields (SDK Runtime reads these from runtimeOptions)
     runtimeOptions: {
+      contextMessage: options.contextMessage,
       sdkSessionId: options.sdkSessionId,
       files: options.files,
       conversationHistory: options.conversationHistory,
@@ -961,6 +965,7 @@ export function streamClaudeSdk(options: ClaudeStreamOptions): ReadableStream<st
     sdkSessionId,
     model,
     systemPrompt,
+    contextMessage,
     workingDirectory,
     mcpServers,
     abortController,
@@ -1002,6 +1007,12 @@ export function streamClaudeSdk(options: ClaudeStreamOptions): ReadableStream<st
       const controller = wrapController(controllerRaw, (kind) => {
         console.warn(`[claude-client] late ${kind} after stream close — silently dropped`);
       });
+      if (contextMessage) {
+        controller.enqueue(formatSSE({
+          type: 'context_message',
+          data: JSON.stringify(contextMessage),
+        }));
+      }
       // Flag to prevent infinite PTL retry loops (at most one retry per request)
       let ptlRetryAttempted = false;
       // #577: once the turn's `result` SSE has been emitted, the turn SUCCEEDED
@@ -2143,13 +2154,16 @@ export function streamClaudeSdk(options: ClaudeStreamOptions): ReadableStream<st
                 tokenBudget: options.fallbackTokenBudget,
               })
             : prompt;
+          const promptWithContext = contextMessage
+            ? `${contextMessage.content}\n\n${basePrompt}`
+            : basePrompt;
 
-          if (!files || files.length === 0) return basePrompt;
+          if (!files || files.length === 0) return promptWithContext;
 
           const imageFiles = files.filter(f => isImageFile(f.type));
           const nonImageFiles = files.filter(f => !isImageFile(f.type));
 
-          let textPrompt = basePrompt;
+          let textPrompt = promptWithContext;
           if (nonImageFiles.length > 0) {
             const workDir = resolvedWorkingDirectory.path;
             const savedPaths = getUploadedFilePaths(nonImageFiles, workDir);

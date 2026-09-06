@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
   let activeLockId: string | undefined;
 
   try {
-    const body: SendMessageRequest & { files?: FileAttachment[]; toolTimeout?: number; provider_id?: string; systemPromptAppend?: string; autoTrigger?: boolean; thinking?: unknown; effort?: string; enableFileCheckpointing?: boolean; displayOverride?: string; context_1m?: boolean; selectedSkills?: readonly string[] } = await request.json();
-    const { session_id, content, model, mode, files, toolTimeout, provider_id, systemPromptAppend, autoTrigger, thinking, effort, enableFileCheckpointing, displayOverride, context_1m, selectedSkills } = body;
+    const body: SendMessageRequest & { files?: FileAttachment[]; toolTimeout?: number; provider_id?: string; systemPromptAppend?: string; autoTrigger?: boolean; thinking?: unknown; effort?: string; enableFileCheckpointing?: boolean; displayOverride?: string; context_1m?: boolean; selectedSkills?: readonly string[]; cwd?: string } = await request.json();
+    const { session_id, content, model, mode, files, toolTimeout, provider_id, systemPromptAppend, autoTrigger, thinking, effort, enableFileCheckpointing, displayOverride, context_1m, selectedSkills, cwd: bodyCwd } = body;
 
     // Required-field validation BEFORE any use of `content` (audit ③). The
     // logs below read content.length/slice; a missing or non-string content
@@ -84,7 +84,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const skillWorkingDirectory = session.sdk_cwd || session.working_directory || process.cwd();
+    // Skills are discovered from the chat project's `.claude/skills` directory.
+    // Priority: (1) cwd from request body (set by the UI for the current project),
+    // (2) session's persisted working_directory (authoritative across turns),
+    // (3) cwd from the URL query (current project context for new sessions),
+    // (4) sdk_cwd (runtime-resolved, can differ from project dir).
+    const urlCwd = request.nextUrl.searchParams.get('cwd') || undefined;
+    const skillWorkingDirectory = bodyCwd || session.working_directory || urlCwd || session.sdk_cwd || process.cwd();
+    console.log(`[api/chat] selectedSkills=${JSON.stringify(selectedSkills)} skillWorkingDirectory=${skillWorkingDirectory} session.working_directory=${session.working_directory} bodyCwd=${bodyCwd} urlCwd=${urlCwd} sdk_cwd=${session.sdk_cwd}`);
     try {
       // Validate explicit badge selections before acquiring the session lock or
       // persisting a user message. A stale badge must be retryable after the
@@ -616,8 +623,8 @@ export async function POST(request: NextRequest) {
       entryPoint: 'desktop',
       userPrompt: content,
       systemPromptAppend,
+      selectedSkills,
       conversationHistory: historyMsgs,
-      autoTrigger: !!autoTrigger,
       nativeProjectRulesOwner:
         effectiveSessionRuntime === 'claude_code' && !resolved.provider
           ? 'claude_code'
@@ -801,6 +808,7 @@ export async function POST(request: NextRequest) {
       sdkSessionId: streamSdkSessionId,
       model: resolved.upstreamModel || resolved.model || effectiveModel,
       systemPrompt: finalSystemPrompt,
+      contextMessage: assembled.contextMessage,
       workingDirectory: session.sdk_cwd || session.working_directory || undefined,
       abortController,
       permissionMode,
@@ -837,6 +845,7 @@ export async function POST(request: NextRequest) {
       enableFileCheckpointing: enableFileCheckpointing ?? true,
       autoTrigger: !!autoTrigger,
       selectedSkills,
+      selectedSkillsAlreadyInjected: true,
       onRuntimeStatusChange: (status: string) => {
         // I1 ownership gate: a superseded turn (its session lock taken over by a
         // newer turn) must not write session-level runtime_status. lockId is the

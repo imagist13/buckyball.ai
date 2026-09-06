@@ -494,6 +494,7 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
         ...(params.selectedSkills && params.selectedSkills.length > 0
           ? { selectedSkills: params.selectedSkills }
           : {}),
+        ...(params.workingDirectory ? { cwd: params.workingDirectory } : {}),
       }),
       signal: stream.abortController.signal,
     });
@@ -549,6 +550,13 @@ async function runStream(stream: ActiveStream, params: StartStreamParams): Promi
     if (!reader) throw new Error('No response stream');
 
     const result = await consumeSSEStream(reader, {
+      onContextMessage: (data) => {
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('context-message', {
+            detail: { sessionId: params.sessionId, ...data },
+          }));
+        }
+      },
       onText: (acc) => {
         markActive();
         stream.sawUpstreamModelOutput = true; // #635 — first model-output tier

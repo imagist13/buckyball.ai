@@ -981,6 +981,7 @@ function NewChatPageInner() {
             ...(selectedSkills && selectedSkills.length > 0
               ? { selectedSkills }
               : {}),
+            cwd: workingDir.trim(),
           }),
           signal: controller.signal,
         });

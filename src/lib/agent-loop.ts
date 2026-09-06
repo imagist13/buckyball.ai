@@ -109,6 +109,8 @@ export interface AgentLoopOptions {
   topK?: number;
   /** Agent Skills explicitly selected through composer badges. */
   selectedSkills?: readonly string[];
+  /** Ephemeral first-turn user context; never persisted to DB. */
+  contextMessage?: { content: string; skillNames: readonly string[] };
   /** Max agent loop steps (default 50) */
   maxSteps?: number;
   /** Whether this is an auto-trigger turn (skip rewind points) */
@@ -170,6 +172,7 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
     bypassPermissions,
     files,
     selectedSkills,
+    contextMessage,
     timeouts,
   } = options;
 
@@ -372,6 +375,19 @@ export function runAgentLoop(options: AgentLoopOptions): ReadableStream<string> 
         // 2. Load conversation history from DB
         const { messages: dbMessages } = getMessages(sessionId, { limit: 200, excludeHeartbeatAck: true });
         const historyMessages = buildCoreMessages(dbMessages);
+
+        // Context is an ephemeral first user turn: do not persist it, and do
+        // not re-inject it after turn one. It must precede DB history even
+        // when that history already starts with a user message.
+        if (contextMessage && !historyMessages.some((message) =>
+          typeof message.content === 'string' && message.content.includes('<bb-conversation-context>')
+        )) {
+          historyMessages.unshift({ role: 'user' as const, content: contextMessage.content });
+          controller.enqueue(formatSSE({
+            type: 'context_message',
+            data: JSON.stringify(contextMessage),
+          }));
+        }
 
         // The chat route persists the user message to DB BEFORE calling us,
         // so for normal messages it's already the last entry in historyMessages.

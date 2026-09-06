@@ -65,7 +65,9 @@ interface ParsedFrontmatter {
 }
 
 function splitFrontmatter(content: string): { frontmatter: ParsedFrontmatter; body: string } {
-  const match = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+  // Accept LF, CRLF, and CR line endings so SKILL.md files saved on Windows
+  // (or checked out via git autocrlf) parse the same as Unix-encoded ones.
+  const match = content.match(/^---\s*\r?\n([\s\S]*?)\r?\n---\s*\r?\n([\s\S]*)$/);
   if (!match) {
     return { frontmatter: {}, body: content };
   }
@@ -75,7 +77,7 @@ function splitFrontmatter(content: string): { frontmatter: ParsedFrontmatter; bo
 
   // Simple YAML parser (handles key: value, key: [array], nested objects)
   const frontmatter: ParsedFrontmatter = {};
-  for (const line of yamlStr.split('\n')) {
+  for (const line of yamlStr.split(/\r?\n/)) {
     const kvMatch = line.match(/^(\S[\w-]*)\s*:\s*(.*)$/);
     if (!kvMatch) continue;
 

@@ -34,7 +34,7 @@ const zh: Record<TranslationKey, string> = {
   'chatList.addProjectFolder': '新建项目',
   'chatList.threads': '对话列表',
   'chatList.projects': '项目',
-  'chatList.assistantSection': '助理',
+  'chatList.assistantSection': '会话',
   'chatList.newProject': '新建项目',
   'chatList.showMore': '展开更多（{count} 条）',
   'chatList.showLess': '收起',
@@ -62,6 +62,11 @@ const zh: Record<TranslationKey, string> = {
   'message.streamStatus.streaming': '回复仍在进行 · 已保存内容会自动更新',
   'message.streamStatus.interrupted': '回复已中断 · 以上为最后保存的内容',
   'message.streamStatus.error': '回复异常结束 · 以上为最后保存的内容',
+
+  'chat.contextMessage.title': 'bb.ai 助手 · 上下文',
+  'chat.contextMessage.collapse': '收起上下文',
+  'chat.contextMessage.expand': '展开上下文',
+  'chat.contextMessage.skillLabel': '已选 Skill：{names}',
 
   // ── Message input ───────────────────────────────────────────
   'messageInput.attachFiles': '附加文件',

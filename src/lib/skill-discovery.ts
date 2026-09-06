@@ -72,7 +72,9 @@ export function invalidateSkillCache(): void {
  */
 export function getSkill(name: string, workingDirectory?: string): SkillDefinition | undefined {
   const skills = discoverSkills(workingDirectory);
-  return skills.find(s => s.name === name || s.name.toLowerCase() === name.toLowerCase());
+  const match = skills.find(s => s.name === name || s.name.toLowerCase() === name.toLowerCase());
+  console.log(`[skill-discovery] getSkill(${name}, cwd=${workingDirectory ?? process.cwd()}) total=${skills.length} found=${Boolean(match)} matchName=${match?.name ?? 'null'}`);
+  return match;
 }
 
 // ── Internal ────────────────────────────────────────────────────
@@ -111,14 +113,18 @@ function tryParseSkill(filePath: string, skills: SkillDefinition[], seen: Set<st
   try {
     const content = fs.readFileSync(filePath, 'utf-8');
     const skill = parseSkillFile(content, filePath);
+    const key = skill.name.toLowerCase();
 
     // Dedup by name (first one wins — project-level overrides user-level)
-    const key = skill.name.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
       skills.push(skill);
+      console.log(`[skill-discovery] parsed ${filePath} -> name=${skill.name} key=${key}`);
+    } else {
+      console.log(`[skill-discovery] skip (dup) ${filePath} -> name=${skill.name} key=${key}`);
     }
-  } catch {
+  } catch (error) {
+    console.log(`[skill-discovery] parse failed for ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
     // Skip unparseable files
   }
 }

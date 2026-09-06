@@ -56,6 +56,8 @@ export interface RuntimeStreamOptions {
   abortController?: AbortController;
   autoTrigger?: boolean;
 
+  /** Ephemeral first user-role context for turn one; never persisted to DB. */
+  contextMessage?: { content: string; skillNames: readonly string[] };
   /** Agent Skills explicitly selected through composer badges. */
   selectedSkills?: readonly string[];
 

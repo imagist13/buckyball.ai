@@ -124,6 +124,7 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
   // Whether this session's working directory matches the configured assistant workspace
   const [isAssistantProject, setIsAssistantProject] = useState(false);
   const [assistantName, setAssistantName] = useState('');
+  const [contextMessage, setContextMessage] = useState<{ content: string; skillNames: readonly string[] } | null>(null);
 
   // Workspace mismatch banner state
   const [workspaceMismatchPath, setWorkspaceMismatchPath] = useState<string | null>(null);
@@ -538,6 +539,22 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
     }
     return true;
   });
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.sessionId === sessionId && typeof detail.content === 'string') {
+        setContextMessage({
+          content: detail.content,
+          skillNames: Array.isArray(detail.skillNames)
+            ? detail.skillNames.filter((name: unknown): name is string => typeof name === 'string')
+            : [],
+        });
+      }
+    };
+    window.addEventListener('context-message', handler);
+    return () => window.removeEventListener('context-message', handler);
+  }, [sessionId]);
 
   // ── Skill nudge banner ──
   // Listens for 'skill-nudge' window events dispatched by stream-session-manager
@@ -1558,6 +1575,7 @@ export function ChatView({ sessionId, initialMessages = [], initialHasMore = fal
         startedAt={streamSnapshot?.startedAt}
         isAssistantProject={isAssistantProject}
         assistantName={assistantName}
+        contextMessage={contextMessage}
         taskRuns={taskRuns}
         // Codex P2 — wire the WaitingForPermissionPanel's
         // post-action callback into our existing message reconcile

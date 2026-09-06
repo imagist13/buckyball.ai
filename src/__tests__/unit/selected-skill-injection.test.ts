@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {
   resolveSelectedSkillInjection,
+  resolveSelectedSkillInjectionCore,
   SelectedSkillNotFoundError,
 } from '@/lib/selected-skill-injection';
 import { invalidateSkillCache } from '@/lib/skill-discovery';
@@ -64,12 +65,79 @@ describe('selected Skill deterministic injection', () => {
     assert.match(resolved.systemPromptAppend, /Run the bbdev compiler/);
   });
 
+  it('refreshes discovery before resolving a newly added selected Skill', () => {
+    const root = workspace({});
+    assert.throws(() => resolveSelectedSkillInjection(['ball'], root), SelectedSkillNotFoundError);
+
+    const skillDir = path.join(root, '.claude', 'skills', 'ball');
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(skillDir, 'SKILL.md'),
+      '---\nname: ball\ncontext: inline\n---\nBuild the selected ball task.',
+    );
+
+    const resolved = resolveSelectedSkillInjection(['ball'], root);
+    assert.ok(resolved);
+    assert.match(resolved.systemPromptAppend, /Build the selected ball task/);
+  });
+
   it('fails honestly when a selected Skill is unavailable', () => {
     const root = workspace({});
     assert.throws(
       () => resolveSelectedSkillInjection(['missing-skill'], root),
       (error: unknown) => error instanceof SelectedSkillNotFoundError
         && error.missingSkills[0] === 'missing-skill',
+    );
+  });
+
+  it('falls back to the buckyball repoRoot for project skills located outside the chat cwd', () => {
+    // chat session cwd has no buckyball project skills
+    const sessionCwd = workspace({});
+    // buckyball repo root has the project-level ball/verify/check skills
+    const repoRoot = workspace({
+      ball: '---\nname: ball\ncontext: inline\n---\nBuckyball ball body.',
+      verify: '---\nname: verify\ncontext: inline\n---\nBuckyball verify body.',
+    });
+
+    const resolved = resolveSelectedSkillInjectionCore(
+      ['ball', 'verify'],
+      sessionCwd,
+      repoRoot,
+    );
+    assert.ok(resolved);
+    assert.equal(resolved.requiresFork, false);
+    assert.deepEqual(resolved.skillNames, ['ball', 'verify']);
+    assert.match(resolved.systemPromptAppend, /Buckyball ball body/);
+    assert.match(resolved.systemPromptAppend, /Buckyball verify body/);
+  });
+
+  it('prefers the chat cwd over the buckyball fallback when both define the same skill', () => {
+    // both directories define `ball`; the chat cwd's copy must win
+    const sessionCwd = workspace({
+      ball: '---\nname: ball\ncontext: inline\n---\nChat-workspace ball body.',
+    });
+    const repoRoot = workspace({
+      ball: '---\nname: ball\ncontext: inline\n---\nBuckyball-repo ball body.',
+    });
+
+    const resolved = resolveSelectedSkillInjectionCore(
+      ['ball'],
+      sessionCwd,
+      repoRoot,
+    );
+    assert.ok(resolved);
+    assert.match(resolved.systemPromptAppend, /Chat-workspace ball body/);
+    assert.doesNotMatch(resolved.systemPromptAppend, /Buckyball-repo ball body/);
+  });
+
+  it('still throws SelectedSkillNotFoundError when the fallback repo also lacks the skill', () => {
+    const sessionCwd = workspace({});
+    const repoRoot = workspace({});
+
+    assert.throws(
+      () => resolveSelectedSkillInjectionCore(['ball'], sessionCwd, repoRoot),
+      (error: unknown) => error instanceof SelectedSkillNotFoundError
+        && error.missingSkills[0] === 'ball',
     );
   });
 });

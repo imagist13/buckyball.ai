@@ -272,6 +272,7 @@ export async function processMessage(
       session: session!,
       entryPoint: 'bridge',
       userPrompt: text,
+      selectedSkills: undefined,
       conversationHistory: historyMsgs,
       nativeProjectRulesOwner:
         activeRuntime === 'claude_code' && !resolved.provider
@@ -321,6 +322,7 @@ export async function processMessage(
       sdkSessionId: effectiveSdkSessionId,
       model: effectiveModel,
       systemPrompt: assembled.systemPrompt,
+      contextMessage: assembled.contextMessage,
       workingDirectory: effectiveCwd,
       abortController,
       permissionMode,

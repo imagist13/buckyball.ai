@@ -20,7 +20,6 @@ import { TaskWaitingForPermissionPanel } from './TaskWaitingForPermissionPanel';
 import type { TaskRunSummary } from '@/types';
 import { StreamingMessage } from './StreamingMessage';
 import { MonolithIcon } from '@/components/brand/MonolithIcon';
-import { SPECIES_IMAGE_URL, EGG_IMAGE_URL, RARITY_BG_GRADIENT, type Species, type Rarity } from '@/lib/buddy';
 import {
   MESSAGE_ROW_ESTIMATE,
   MESSAGE_ROW_OVERSCAN,
@@ -172,6 +171,29 @@ function RewindButton({ sessionId, userMessageId }: { sessionId: string; userMes
   );
 }
 
+function ContextMessageCard({ content, skillNames }: { content: string; skillNames: readonly string[] }) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <section className="rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-3">
+        <div className="font-medium text-foreground">{t('chat.contextMessage.title' as TranslationKey)}</div>
+        <Button
+          variant="ghost"
+          size="xs"
+          className="h-auto px-1 text-xs"
+          onClick={() => setExpanded((value) => !value)}
+          title={expanded ? t('chat.contextMessage.collapse' as TranslationKey) : t('chat.contextMessage.expand' as TranslationKey)}
+        >
+          {expanded ? t('chat.contextMessage.collapse' as TranslationKey) : t('chat.contextMessage.expand' as TranslationKey)}
+        </Button>
+      </div>
+      <div className="mt-1">{t('chat.contextMessage.skillLabel' as TranslationKey, { names: skillNames.join(', ') || '—' })}</div>
+      {expanded && <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-background/60 p-2 text-[11px] leading-relaxed">{content}</pre>}
+    </section>
+  );
+}
+
 interface ToolUseInfo {
   id: string;
   name: string;
@@ -211,6 +233,8 @@ interface MessageListProps {
   isAssistantProject?: boolean;
   /** Assistant name for avatar display */
   assistantName?: string;
+  /** Ephemeral first-turn context shown above persisted messages. */
+  contextMessage?: { content: string; skillNames: readonly string[] } | null;
   /**
    * Phase 3 Step 4 — inline-joined task_run_logs metadata, keyed by
    * run id, delivered by `/api/chat/sessions/[id]/messages`. When a
@@ -252,45 +276,19 @@ export function MessageList({
   startedAt,
   isAssistantProject,
   assistantName,
+  contextMessage,
 }: MessageListProps) {
   const { t } = useTranslation();
 
   if (messages.length === 0 && !isStreaming) {
     if (isAssistantProject) {
-      // Assistant workspace — show buddy or egg welcome
-      const buddyInfo = typeof globalThis !== 'undefined'
-        ? (globalThis as Record<string, unknown>).__codepilot_buddy_info__ as { species?: string; rarity?: string } | undefined
-        : undefined;
-      const hasBuddy = !!buddyInfo?.species;
       return (
         <div className="flex flex-1 items-center justify-center">
-          <div className="flex flex-col items-center gap-3 text-center">
-            {hasBuddy ? (
-              <div
-                className="w-20 h-20 rounded-2xl flex items-center justify-center"
-                style={{ background: RARITY_BG_GRADIENT[buddyInfo!.rarity as Rarity] || '' }}
-              >
-                <img
-                  src={SPECIES_IMAGE_URL[buddyInfo!.species as Species] || ''}
-                  alt="" width={64} height={64} className="drop-shadow-md"
-                />
-              </div>
-            ) : (
-              <img src={EGG_IMAGE_URL} alt="" width={64} height={64} className="drop-shadow-md" />
-            )}
-            <div className="space-y-1">
-              <h3 className="font-medium text-sm">
-                {hasBuddy
-                  ? (assistantName || t('messageList.claudeChat'))
-                  : t('buddy.adoptPrompt' as TranslationKey)}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {hasBuddy
-                  ? t('messageList.emptyDescription')
-                  : t('buddy.adoptDescription' as TranslationKey)}
-              </p>
-            </div>
-          </div>
+          <ConversationEmptyState
+            title="bb.ai Assistant"
+            description={t('messageList.emptyDescription')}
+            icon={<MonolithIcon className="h-16 w-16" />}
+          />
         </div>
       );
     }
@@ -309,6 +307,7 @@ export function MessageList({
     <Conversation>
       <ScrollOnStream isStreaming={isStreaming} messageCount={messages.length} firstId={messages[0]?.id} />
       <ConversationContent className="mx-auto max-w-3xl px-4 py-6 gap-6">
+        {contextMessage && <ContextMessageCard {...contextMessage} />}
         <VirtualTranscript
           messages={messages}
           rewindPoints={rewindPoints}

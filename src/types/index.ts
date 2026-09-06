@@ -448,6 +448,7 @@ export type MessageContentBlock =
   | { type: 'thinking'; thinking: string }
   | { type: 'tool_use'; id: string; name: string; input: unknown }
   | { type: 'tool_result'; tool_use_id: string; content: string; is_error?: boolean; media?: MediaBlock[]; sources?: ExternalSource[] }
+  | { type: 'context_message'; content: string; skillNames: readonly string[]; isContextMessage: true }
   | { type: 'code'; language: string; code: string };
 
 // Helper to parse message content - returns blocks or wraps plain text
@@ -1185,6 +1186,7 @@ export type SSEEventType =
                          // SDK doesn't emit this — file changes inside
                          // tool_result events still flow through the
                          // existing isWriteTool inspection path.
+  | 'context_message'    // ephemeral first-turn system/skill context for UI display
   | 'done';              // stream complete
 
 export interface SSEEvent {
@@ -1865,6 +1867,14 @@ export interface ClaudeStreamOptions {
   model?: string;
   systemPrompt?: string;
   workingDirectory?: string;
+  /** Ephemeral first-turn user context; never persisted with chat messages. */
+  contextMessage?: {
+    content: string;
+    skillNames: readonly string[];
+  };
+  /** True when systemPrompt already contains the selected Skill bodies. */
+  selectedSkillsAlreadyInjected?: boolean;
+
   mcpServers?: Record<string, MCPServerConfig>;
   abortController?: AbortController;
   permissionMode?: string;

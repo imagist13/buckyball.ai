@@ -66,6 +66,7 @@ export const nativeRuntime: AgentRuntime = {
       autoTrigger: options.autoTrigger,
       onRuntimeStatusChange: options.onRuntimeStatusChange,
       files,
+      contextMessage: options.contextMessage,
     });
 
     // Clean up controller when stream ends

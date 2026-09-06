@@ -351,6 +351,32 @@ export async function GET(request: NextRequest) {
       (s) => !projectCommandNames.has(s.name)
     );
 
+    // buckyball owns a hardware repository that may differ from the chat
+    // session's working directory. Its user-invocable Skills (bbdev, ball,
+    // ball-align, check, chip-designer, debug, optimize, verify, waveform, ...)
+    // live beneath <repoRoot>/.claude/skills/. They must remain discoverable
+    // from every chat; otherwise `/ball`, `/verify`, etc. cannot be selected
+    // from the UI even when `bbdev_connection.repoRoot` points at the
+    // buckyball checkout. Resolve that canonical repository as a fallback.
+    let configuredBuckyballSkills: SkillFile[] = [];
+    try {
+      const { getBuckyballRepoRoot, getBuckyballProjectSkillsDir } = await import('@/lib/bbdev/project-skills');
+      const repoRoot = getBuckyballRepoRoot();
+      if (repoRoot && repoRoot !== cwd) {
+        configuredBuckyballSkills = scanProjectSkills(getBuckyballProjectSkillsDir(repoRoot));
+      }
+    } catch {
+      // buckyball is optional; a missing configuration must not break skill discovery.
+    }
+
+    const knownProjectSkillNames = new Set([
+      ...projectSkills.map((skill) => skill.name.toLowerCase()),
+      ...dedupedProjectSkills.map((skill) => skill.name.toLowerCase()),
+    ]);
+    configuredBuckyballSkills = configuredBuckyballSkills.filter(
+      (skill) => !knownProjectSkillNames.has(skill.name.toLowerCase()),
+    );
+
     const agentsSkillsDir = getInstalledSkillsDir();
     const claudeSkillsDir = getClaudeSkillsDir();
     console.log(`[skills] Scanning installed: ${agentsSkillsDir} (exists: ${fs.existsSync(agentsSkillsDir)})`);
@@ -407,7 +433,7 @@ export async function GET(request: NextRequest) {
     }));
 
     const all: Array<SkillFile & { loaded?: boolean }> = [
-      ...globalSkills, ...projectSkills, ...dedupedProjectSkills, ...installedSkills, ...annotatedPluginSkills,
+      ...globalSkills, ...projectSkills, ...dedupedProjectSkills, ...configuredBuckyballSkills, ...installedSkills, ...annotatedPluginSkills,
     ];
     console.log(`[skills] Found: global=${globalSkills.length}, project=${projectSkills.length}, projectSkills=${dedupedProjectSkills.length}, installed=${installedSkills.length}, plugin=${pluginSkills.length}`);
 
