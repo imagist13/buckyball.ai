@@ -22,7 +22,7 @@
  *      Adding a new capability is a two-file change.
  *
  *   3. **Reasons describe outcomes, not architecture.** "当前引擎不
- *      能直接调用 CodePilot 的看板工具，请切到 CodePilot 使用"
+ *      能直接调用 Buckyball.ai 的看板工具，请切到 Buckyball.ai 使用"
  *      — that's the shape. NOT "Codex bridge not yet implemented",
  *      NOT "permission contract pending". The user doesn't care
  *      about our wire layering; they care whether the button works.
@@ -130,7 +130,7 @@ export function knownCapabilityIds(): readonly string[] {
  * language — no MCP / bridge / phase references.
  *
  * Examples (zh):
- *   "当前引擎 (Codex) 暂不支持「看板操作」。如需使用，请切到 CodePilot 或 Claude Code。"
+ *   "当前引擎 (Codex) 暂不支持「看板操作」。如需使用，请切到 Buckyball.ai 或 Claude Code。"
  *   "当前引擎不支持「助理伙伴」。如需使用，请切到 Claude Code。"
  *   "当前引擎暂不支持「CLI 工具管理」。"
  */

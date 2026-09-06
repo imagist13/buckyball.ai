@@ -1033,8 +1033,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
           ? "未检测到 Claude Code CLI（或 OAuth 登录已过期）"
           : "Claude Code CLI not detected (or OAuth login has expired)",
         impact: isZh
-          ? "无法用 Claude Code 内核跑会话；选用后会自动回退到 CodePilot"
-          : "Sessions cannot run on Claude Code; selecting it falls back to CodePilot",
+          ? "无法用 Claude Code 内核跑会话；选用后会自动回退到 Buckyball.ai"
+          : "Sessions cannot run on Claude Code; selecting it falls back to Buckyball.ai",
         recovery: isZh
           ? "下方点「安装」启动一键安装向导，或先在系统终端 `claude /login` 完成授权"
           : "Click Install below to launch the wizard, or run `claude /login` in a terminal",
@@ -1094,8 +1094,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
       return {
         state: "blocked",
         reason: isZh
-          ? "检测到 ChatGPT/Codex 桌面应用，但没有可供 CodePilot 启动的独立 Codex CLI"
-          : "The ChatGPT/Codex desktop app was found, but no standalone Codex CLI is executable by CodePilot",
+          ? "检测到 ChatGPT/Codex 桌面应用，但没有可供 Buckyball.ai 启动的独立 Codex CLI"
+          : "The ChatGPT/Codex desktop app was found, but no standalone Codex CLI is executable by Buckyball.ai",
         impact: isZh
           ? "桌面应用本身仍可使用；Codex Runtime 需要能启动 app-server 的 CLI，当前发送会失败"
           : "The desktop app remains usable, but Codex Runtime needs a CLI that can launch app-server and sends will currently fail",
@@ -1109,8 +1109,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
           ? "未检测到可用的 Codex CLI"
           : "No usable Codex CLI was detected",
         impact: isZh
-          ? "Codex Runtime 整体无法启用：Codex 账户模型（gpt-5.5 等）和 CodePilot 服务商经 proxy 接入两条路径都会发送失败"
-          : "Codex Runtime is fully blocked: both Codex Account models (gpt-5.5 etc.) and CodePilot providers via the proxy will fail at send time",
+          ? "Codex Runtime 整体无法启用：Codex 账户模型（gpt-5.5 等）和 Buckyball.ai 服务商经 proxy 接入两条路径都会发送失败"
+          : "Codex Runtime is fully blocked: both Codex Account models (gpt-5.5 etc.) and Buckyball.ai providers via the proxy will fail at send time",
         recovery: installRecovery,
       };
     }
@@ -1131,8 +1131,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
         state: "blocked",
         reason: isZh ? `Codex 应用服务启动失败：${codexAvailability.reason}` : `Codex app-server spawn failed: ${codexAvailability.reason}`,
         impact: isZh
-          ? "Codex Runtime 整体不可用（Codex 账户模型 + CodePilot 服务商经 proxy 接入都受影响）；查看终端日志获取详细错误"
-          : "Codex Runtime is fully unavailable (both Codex Account models and CodePilot providers via the proxy are blocked); check terminal logs for details",
+          ? "Codex Runtime 整体不可用（Codex 账户模型 + Buckyball.ai 服务商经 proxy 接入都受影响）；查看终端日志获取详细错误"
+          : "Codex Runtime is fully unavailable (both Codex Account models and Buckyball.ai providers via the proxy are blocked); check terminal logs for details",
         recovery: isZh ? "点右上角刷新，重新扫描已安装的 CLI" : "Click refresh to rescan installed CLIs",
       };
     }
@@ -1158,15 +1158,15 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
               ? "Codex 应用服务已就绪并被设为默认引擎"
               : "Codex app-server is ready and set as the default engine",
             impact: isZh
-              ? "新会话默认走 Codex：Codex 账户模型 + 已配置 CodePilot 服务商通过 provider proxy 接入（Claude Code 默认/env 模式除外）"
-              : "New chats run on Codex: Codex Account models AND configured CodePilot providers via the provider proxy (env Claude Code default is excluded)",
+              ? "新会话默认走 Codex：Codex 账户模型 + 已配置 Buckyball.ai 服务商通过 provider proxy 接入（Claude Code 默认/env 模式除外）"
+              : "New chats run on Codex: Codex Account models AND configured Buckyball.ai providers via the provider proxy (env Claude Code default is excluded)",
           }
         : {
             state: "available",
             reason: isZh ? "Codex 应用服务已就绪但未被设为默认" : "Codex app-server is ready but not the default engine",
             impact: isZh
-              ? "想把 Codex 设为默认（同时启用 Codex 账户 + CodePilot 服务商 via proxy），把上方「默认引擎」切到 Codex"
-              : 'Switch the "Default engine" selector above to make Codex the default for both Codex Account models and CodePilot providers via the proxy',
+              ? "想把 Codex 设为默认（同时启用 Codex 账户 + Buckyball.ai 服务商 via proxy），把上方「默认引擎」切到 Codex"
+              : 'Switch the "Default engine" selector above to make Codex the default for both Codex Account models and Buckyball.ai providers via the proxy',
           };
     }
     // unknown — initial fetch still pending
@@ -1186,21 +1186,21 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
       return {
         state: "selected",
         reason: isZh
-          ? "CodePilot 是默认内核（无需 CLI，直连 provider API）"
-          : "CodePilot is the default engine (no CLI required, direct provider API)",
+          ? "Buckyball.ai 是默认内核（无需 CLI，直连 provider API）"
+          : "Buckyball.ai is the default engine (no CLI required, direct provider API)",
         impact: isZh
-          ? "新会话默认用 CodePilot；工具、权限和上下文由 CodePilot 自己管理"
-          : "New chats run on CodePilot; tools, permissions, and context managed by CodePilot itself",
+          ? "新会话默认用 Buckyball.ai；工具、权限和上下文由 Buckyball.ai 自己管理"
+          : "New chats run on Buckyball.ai; tools, permissions, and context managed by Buckyball.ai itself",
       };
     }
     return {
       state: "available",
       reason: isZh
-        ? "CodePilot 内核随应用自带，始终可用"
-        : "CodePilot ships with the app and is always available",
+        ? "Buckyball.ai 内核随应用自带，始终可用"
+        : "Buckyball.ai ships with the app and is always available",
       impact: isZh
-        ? "想切到 CodePilot 内核，把上方「默认引擎」切到 CodePilot 即可"
-        : 'Switch the "Default engine" selector above to use CodePilot',
+        ? "想切到 Buckyball.ai 内核，把上方「默认引擎」切到 Buckyball.ai 即可"
+        : 'Switch the "Default engine" selector above to use Buckyball.ai',
     };
   }, [effectiveRuntime, isZh]);
 
@@ -1300,11 +1300,11 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
             <span>
               {!cliEnabled
                 ? (isZh
-                    ? "保存的偏好是 Claude Code，但 CLI 在「设置」里被显式关闭过，运行时实际走 CodePilot。点上面任一卡片可一次写齐两边设置。"
-                    : "Stored preference is Claude Code but CLI was explicitly disabled in a previous setting, so runtime actually routes to CodePilot. Click either card above to rewrite both fields together.")
+                    ? "保存的偏好是 Claude Code，但 CLI 在「设置」里被显式关闭过，运行时实际走 Buckyball.ai。点上面任一卡片可一次写齐两边设置。"
+                    : "Stored preference is Claude Code but CLI was explicitly disabled in a previous setting, so runtime actually routes to Buckyball.ai. Click either card above to rewrite both fields together.")
                 : (isZh
-                    ? "保存的偏好是 Claude Code，但当前没有检测到 Claude Code CLI（可能未安装或登录失效），运行时实际走 CodePilot。下方 Claude Code 卡片提供安装入口；或者改选 CodePilot 作为默认。"
-                    : "Stored preference is Claude Code but the CLI isn't currently detected (not installed or OAuth expired), so runtime actually routes to CodePilot. Use the Install button on the Claude Code card below — or pick CodePilot as your default instead.")}
+                    ? "保存的偏好是 Claude Code，但当前没有检测到 Claude Code CLI（可能未安装或登录失效），运行时实际走 Buckyball.ai。下方 Claude Code 卡片提供安装入口；或者改选 Buckyball.ai 作为默认。"
+                    : "Stored preference is Claude Code but the CLI isn't currently detected (not installed or OAuth expired), so runtime actually routes to Buckyball.ai. Use the Install button on the Claude Code card below — or pick Buckyball.ai as your default instead.")}
             </span>
           </div>
         )}
@@ -1330,7 +1330,7 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
             // install method isn't actionable for the user.
             statusText={connected
               ? `${isZh ? "已安装" : "Installed"} v${claudeStatus?.version ?? ""}`
-              : (isZh ? "未安装 — 选用后会自动降级到 CodePilot" : "Not installed — selecting it falls back to CodePilot")}
+              : (isZh ? "未安装 — 选用后会自动降级到 Buckyball.ai" : "Not installed — selecting it falls back to Buckyball.ai")}
             isZh={isZh}
             trigger={capabilityCells && (
               <RuntimeCapabilityList
@@ -1345,12 +1345,12 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
             engine="native"
             selected={effectiveRuntime === "native"}
             onSelect={() => handleRuntimeChange("native")}
-            title="CodePilot"
+            title="Buckyball.ai"
             icon={<MonolithIcon size={20} />}
-            tagline={isZh ? "CodePilot 自带内核" : "CodePilot built-in"}
+            tagline={isZh ? "Buckyball.ai 自带内核" : "Buckyball.ai built-in"}
             pitch={isZh
-              ? "CodePilot 直连 provider API 跑 Agent。适合多 provider、可观察、可恢复，由 CodePilot 自管上下文和权限，不依赖外部 CLI。"
-              : "CodePilot calls provider APIs directly. Built for multi-provider, observable, recoverable runs — context and permissions stay inside CodePilot, no external CLI required."}
+              ? "Buckyball.ai 直连 provider API 跑 Agent。适合多 provider、可观察、可恢复，由 Buckyball.ai 自管上下文和权限，不依赖外部 CLI。"
+              : "Buckyball.ai calls provider APIs directly. Built for multi-provider, observable, recoverable runs — context and permissions stay inside Buckyball.ai, no external CLI required."}
             statusKind="ok"
             statusText={isZh ? "随应用自带，始终可用" : "Bundled with the app, always available"}
             isZh={isZh}
@@ -1371,8 +1371,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
             icon={<OpenAI size={20} />}
             tagline={isZh ? "OpenAI Codex 应用服务" : "OpenAI Codex app-server"}
             pitch={isZh
-              ? "通过 Codex 应用服务调用 ChatGPT 账户内置模型（gpt-5.5 等，额度走 ChatGPT 套餐），同时已配置的 CodePilot 服务商也能经 provider proxy 在 Codex 下使用（Claude Code 默认 / env 模式除外）。"
-              : "Routes through the Codex app-server for Codex Account models (gpt-5.5 etc., quota covered by your ChatGPT plan), and also serves configured CodePilot providers via the provider proxy (env Claude Code default is excluded)."}
+              ? "通过 Codex 应用服务调用 ChatGPT 账户内置模型（gpt-5.5 等，额度走 ChatGPT 套餐），同时已配置的 Buckyball.ai 服务商也能经 provider proxy 在 Codex 下使用（Claude Code 默认 / env 模式除外）。"
+              : "Routes through the Codex app-server for Codex Account models (gpt-5.5 etc., quota covered by your ChatGPT plan), and also serves configured Buckyball.ai providers via the provider proxy (env Claude Code default is excluded)."}
             statusKind={codexConnected ? "ok" : "warning"}
             statusText={
               codexConnected
@@ -1539,11 +1539,11 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
                 <span className="text-xs text-status-warning-foreground text-right">
                   {!cliEnabled
                     ? (isZh
-                        ? "CLI 已禁用 → 走 CodePilot"
-                        : "CLI disabled → routes to CodePilot")
+                        ? "CLI 已禁用 → 走 Buckyball.ai"
+                        : "CLI disabled → routes to Buckyball.ai")
                     : (isZh
-                        ? "Claude Code 不可用 → 自动用 CodePilot"
-                        : "Claude Code unavailable → falls back to CodePilot")}
+                        ? "Claude Code 不可用 → 自动用 Buckyball.ai"
+                        : "Claude Code unavailable → falls back to Buckyball.ai")}
                 </span>
               </div>
             )}
@@ -1987,8 +1987,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
         </div>
       </RuntimeCard>
 
-      {/* ── CodePilot detail card ────────────────────────────────────── */}
-      <RuntimeCard name="CodePilot" state={codepilotStatus.state} isZh={isZh}>
+      {/* ── Buckyball.ai detail card ────────────────────────────────────── */}
+      <RuntimeCard name="Buckyball.ai" state={codepilotStatus.state} isZh={isZh}>
         <RuntimeStatusExplanation info={codepilotStatus} isZh={isZh} />
 
         {/* Capabilities / Permissions / Context — three medium-granularity blocks */}
@@ -2024,8 +2024,8 @@ export function RuntimePanel(props: RuntimePanelProps = {}) {
               <span className="text-xs font-medium">{isZh ? "上下文" : "Context"}</span>
               <span className="text-[11px] text-muted-foreground leading-snug">
                 {isZh
-                  ? "CodePilot 管理项目工作区、会话历史、模型选择和本地状态；自动按 token 预算修剪 / 压缩"
-                  : "CodePilot owns project workspace, session history, model choice, and local state; automatic token-budget prune + compress."}
+                  ? "Buckyball.ai 管理项目工作区、会话历史、模型选择和本地状态；自动按 token 预算修剪 / 压缩"
+                  : "Buckyball.ai owns project workspace, session history, model choice, and local state; automatic token-budget prune + compress."}
               </span>
             </div>
             <span className="text-[10px] text-muted-foreground/70">

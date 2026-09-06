@@ -418,7 +418,7 @@ export function capabilityMatrixForRuntimeProvider(
       ...cell,
       status: 'perception_only' as const,
       statusLine:
-        'Codex Account 协议不开放第三方工具挂载，CodePilot 桥不可用。如需 CodePilot 内置能力，请切到 CodePilot Native 或 ClaudeCode SDK Runtime。',
+        'Buckyball.ai Account 协议不开放第三方工具挂载，Buckyball.ai 桥不可用。如需 Buckyball.ai 内置能力，请切到 Buckyball.ai Native 或 ClaudeCode SDK Runtime。',
       toolNames: [] as readonly string[],
       suggestedRuntime: 'codepilot_runtime' as const,
     };
