@@ -97,9 +97,7 @@
 
 ## 索引
 
-### Active — 当前推进
-
-| 文件 | 主题 | 状态 |
+| [active/prompt-optimization-2026-09.md](active/prompt-optimization-2026-09.md) | **跨 Runtime 提示词优化**：统一 Buckyball.ai Agent 基线、减少首轮上下文重复、补齐 BB 片段到 Claude Code/Codex | 🚧 Phase 1 进行中 || 文件 | 主题 | 状态 |
 |------|------|------|
 | [active/cli-maintenance-and-release-notes-rendering-2026-08-28.md](active/cli-maintenance-and-release-notes-rendering-2026-08-28.md) | **CLI 更新提醒、一键升级与 Release Notes 安全渲染**：按 selected binary/package-root 证明 Claude/Codex 安装渠道，same-channel latest、Windows shim/WinGet/standalone 更新、provider maintenance lease、app-update/quit lifecycle latch 与 post-version 验证；GitHub Atom HTML 经 strict sanitize 渲染 | 🟡 Review accepted，已随 `v0.67.11` Shipped；正式 package/资产门禁通过，真实 UpdateDialog、CLI before→after 与 Windows clean VM smoke 待执行 |
 | [active/post-sentry-scan-remediation-2026-08-27.md](active/post-sentry-scan-remediation-2026-08-27.md) | **2026-08-27 Sentry 生产问题修复闭环**：修复 updater auto-download Promise、utility 生命周期误分类、token usage 非法结构、assistant 消息原子持久化、media expected-error 误报与本地路径后缀泄漏 | 🟡 已随 `v0.67.11` Shipped；Code/Tests/Build/Review/package 门禁通过，official stable Sentry cohort 停增待观察 |

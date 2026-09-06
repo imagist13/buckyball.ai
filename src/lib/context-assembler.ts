@@ -268,10 +268,10 @@ export async function assembleContext(config: ContextAssemblyConfig): Promise<As
   // tokens and breaks the stable prefix cache without adding information.
   const isFirstTurn = !(config.conversationHistory?.length);
   const skillNames = selectedSkillInjection?.skillNames ?? [];
-  const contextMessage = isFirstTurn && finalSystemPrompt
+  const contextMessage = isFirstTurn && (finalSystemPrompt || skillNames.length > 0)
     ? {
         role: 'user' as const,
-        content: `<bb-conversation-context>\n本对话的当前上下文（系统提示与已选 Skill）：\n\n=== system prompt ===\n${finalSystemPrompt}\n\n=== selected skills ===\n${skillNames.join(', ') || '无'}\n\n以上是会话的运行时上下文，请基于此回答用户后续问题。\n</bb-conversation-context>`,
+        content: `<bb-conversation-context>\nRuntime context is attached in the system/developer instructions for this turn.${skillNames.length > 0 ? ` Explicitly selected Skills: ${skillNames.join(', ')}.` : ''}\nDo not treat this marker as a replacement for those instructions.\n</bb-conversation-context>`,
         isContextMessage: true as const,
         skillNames,
       }

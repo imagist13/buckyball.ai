@@ -20,6 +20,8 @@ describe('Codex developer instructions', () => {
       source,
       /composeCodexDeveloperInstructions\(\s*options\.systemPrompt,\s*accountDelegationInstructions/,
     );
+    const claudeSource = fs.readFileSync(path.resolve(__dirname, '../../lib/claude-client.ts'), 'utf8');
+    assert.match(claudeSource, /getBbPromptFragmentForAgentLoop/);
     assert.match(source, /developerInstructions\s*\?\s*\{ developerInstructions \}/);
   });
 });

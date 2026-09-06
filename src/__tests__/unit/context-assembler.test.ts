@@ -93,6 +93,19 @@ describe('assembleContext', () => {
   // Widget MCP keyword detection is now handled solely in claude-client.ts.
   // context-assembler no longer computes needsWidgetMcp.
 
+  it('first-turn context marker does not duplicate the complete system prompt', async () => {
+    const { assembleContext } = await import('../../lib/context-assembler');
+    const result = await assembleContext({
+      session: makeSession({ system_prompt: 'UNIQUE_SYSTEM_PROMPT' }),
+      entryPoint: 'bridge',
+      userPrompt: 'hello',
+    });
+
+    assert.ok(result.contextMessage);
+    assert.match(result.contextMessage!.content, /Runtime context is attached/);
+    assert.doesNotMatch(result.contextMessage!.content, /UNIQUE_SYSTEM_PROMPT/);
+  });
+
   it('session with empty system_prompt: does not throw', async () => {
     const { assembleContext } = await import('../../lib/context-assembler');
     const result = await assembleContext({

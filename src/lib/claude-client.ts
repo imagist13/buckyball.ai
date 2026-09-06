@@ -88,6 +88,7 @@ import { encodeSubagentStatusResult, type SubagentExecutionStatus } from './suba
 // the barrel themselves, so the registry is already populated by the time
 // resolveRuntime() fires here.
 import { resolveRuntime, getRuntime } from './runtime/registry';
+import { getBbPromptFragmentForAgentLoop } from './bbagent/prompt-injector';
 import {
   buildClaudePermissionQueryOptions,
   decideHostToolPermission,
@@ -903,9 +904,13 @@ export function streamClaude(options: ClaudeStreamOptions): ReadableStream<strin
         options.selectedSkills,
         options.workingDirectory || process.cwd(),
       );
+  const runtimePromptFragment = runtime.id === 'native'
+    ? undefined
+    : getBbPromptFragmentForAgentLoop();
   const effectiveSystemPrompt = [
     options.systemPrompt,
     selectedSkillInjection?.systemPromptAppend,
+    runtimePromptFragment,
   ].filter(Boolean).join('\n\n') || undefined;
 
   return runtime.stream({
