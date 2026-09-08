@@ -45,12 +45,10 @@ const previewAssistantOnboarding =
 
 interface ChatListPanelProps {
   open: boolean;
-  hasUpdate?: boolean;
-  readyToInstall?: boolean;
 }
 
 
-export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanelProps) {
+export function ChatListPanel({ open }: ChatListPanelProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { streamingSessionId, pendingApprovalSessionId, activeStreamingSessions, pendingApprovalSessionIds, workingDirectory, setChatListOpen } = usePanel();
@@ -810,9 +808,6 @@ export function ChatListPanel({ open, hasUpdate, readyToInstall }: ChatListPanel
           >
             <CodePilotIcon name="settings" size="md" strokeWidth={pathname.startsWith("/settings") ? 2 : undefined} className="text-inherit" aria-hidden />
             {t('nav.settings' as TranslationKey)}
-            {(hasUpdate || readyToInstall) && (
-              <span className={`ml-auto h-2 w-2 rounded-full ${readyToInstall ? "bg-primary" : "bg-primary animate-pulse"}`} />
-            )}
           </Button>
         </Link>
       </div>

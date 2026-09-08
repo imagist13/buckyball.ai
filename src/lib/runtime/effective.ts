@@ -42,13 +42,13 @@ export type AgentRuntime = "claude-code-sdk" | "native" | "codex_runtime";
  *
  *  Phase 6 UI收口 P1 fix-up (2026-05-14) — short names. "AI SDK" is an
  *  internal implementation detail (users don't pick "an SDK"); the
- *  product label is "CodePilot". Similarly "Codex Runtime" drops the
+ *  product label is "Buckyball.ai". Similarly "Codex Runtime" drops the
  *  redundant suffix to match the engine picker / composer / detail
  *  card heading. Three engines, three short names. */
-export function runtimeDisplayLabel(runtime: AgentRuntime): "Claude Code" | "CodePilot" | "Codex" {
+export function runtimeDisplayLabel(runtime: AgentRuntime): "Claude Code" | "Buckyball.ai" | "Codex" {
   if (runtime === "claude-code-sdk") return "Claude Code";
   if (runtime === "codex_runtime") return "Codex";
-  return "CodePilot";
+  return "Buckyball.ai";
 }
 
 /**

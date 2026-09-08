@@ -8,13 +8,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ChatListPanel } from "./ChatListPanel";
 import { SettingsSidebar } from "./SettingsSidebar";
 import { CardFrame, CardSurface, ResizeGutter } from "./card-primitives";
-import { UpdateBanner } from "./UpdateBanner";
 import { UnifiedTopBar } from "./UnifiedTopBar";
 import { WorkspaceSidebarProvider, useWorkspaceSidebar } from "@/hooks/useWorkspaceSidebar";
 import { FileMutationProvider, useFileMutation } from "@/hooks/useFileMutation";
 import { PanelContext, type PreviewViewMode, type PreviewSource } from "@/hooks/usePanel";
-import { UpdateContext } from "@/hooks/useUpdate";
-import { useUpdateChecker } from "@/hooks/useUpdateChecker";
 import { CliMaintenanceContext, useCliMaintenanceChecker } from '@/hooks/useCliMaintenance';
 import { BatchImageGenContext, useBatchImageGenState } from "@/hooks/useBatchImageGen";
 import { SplitContext, type SplitSession } from "@/hooks/useSplit";
@@ -56,10 +53,6 @@ const WorkspaceSidebar = dynamic(
 );
 const PanelZone = dynamic(
   () => import('./PanelZone').then((m) => ({ default: m.PanelZone })),
-  { ssr: false },
-);
-const UpdateDialog = dynamic(
-  () => import('./UpdateDialog').then((m) => ({ default: m.UpdateDialog })),
   { ssr: false },
 );
 const FeatureAnnouncementDialog = dynamic(
@@ -672,7 +665,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   // --- Update checker (native Electron + browser fallback) ---
-  const updateContextValue = useUpdateChecker();
   const cliMaintenanceContextValue = useCliMaintenanceChecker();
 
   const panelContextValue = useMemo(
@@ -715,8 +707,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const batchImageGenValue = useBatchImageGenState();
 
   return (
-    <UpdateContext.Provider value={updateContextValue}>
-      <CliMaintenanceContext.Provider value={cliMaintenanceContextValue}>
+    <CliMaintenanceContext.Provider value={cliMaintenanceContextValue}>
       <SentryInit />
       <PanelContext.Provider value={panelContextValue}>
         <FileMutationProvider>
@@ -741,7 +732,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               globals.css can inset the whole window the same way. */}
           <div className="flex flex-col h-screen overflow-hidden" data-app-shell>
             <UnifiedTopBar />
-            <UpdateBanner />
             <div className="relative flex flex-1 min-h-0 overflow-hidden" data-app-content-row>
               {/* Phase 7c closeout — the left sidebar is now a
                   row-level card, exactly like main / workspace: its
@@ -772,11 +762,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       {pathname.startsWith('/settings') ? (
                         <SettingsSidebar open={chatListOpen} />
                       ) : (
-                        <ChatListPanel
-                          open={chatListOpen}
-                          hasUpdate={updateContextValue.updateInfo?.updateAvailable ?? false}
-                          readyToInstall={updateContextValue.updateInfo?.readyToInstall ?? false}
-                        />
+                        <ChatListPanel open={chatListOpen} />
                       )}
                     </ErrorBoundary>
                   </CardSurface>
@@ -798,20 +784,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           {/* Phase A state gates: only mount when actually needed.
-              UpdateDialog gate (P3 review fix): require BOTH
-              `showDialog` AND an available update. Earlier the gate was
-              just `updateAvailable`, which meant clicking "Later" only
-              flipped `showDialog` to false — the dialog stayed mounted
-              and the lazy chunk stuck around for the rest of the
-              session. UpdateBanner is the always-on lightweight
-              indicator; the dialog chunk should only be live when the
-              modal is actually open.
               FeatureAnnouncementDialog gates on a localStorage dismiss
               flag (see `announcementMaybeVisible`); the dialog itself
               still owns the post-mount fetch + show-timing logic. */}
-          {updateContextValue.showDialog
-            && (updateContextValue.updateInfo?.updateAvailable ?? false)
-            && <UpdateDialog />}
           {announcementMaybeVisible && <FeatureAnnouncementDialog />}
           <Toaster />
           <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
@@ -828,6 +803,5 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </FileMutationProvider>
       </PanelContext.Provider>
       </CliMaintenanceContext.Provider>
-    </UpdateContext.Provider>
   );
 }

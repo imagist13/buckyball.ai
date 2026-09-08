@@ -26,16 +26,13 @@ import { useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAccountInfo } from "@/hooks/useAccountInfo";
-import { useUpdate } from "@/hooks/useUpdate";
 import { useClaudeStatus } from "@/hooks/useClaudeStatus";
-import { Button } from "@/components/ui/button";
 import { CodePilotIcon } from "@/components/ui/semantic-icon";
 import {
   Plug,
   UserCircle,
   CheckCircle,
   Warning,
-  ArrowsClockwise,
   Info,
 } from "@/components/ui/icon";
 import {
@@ -44,7 +41,6 @@ import {
   type AgentRuntime,
 } from "@/lib/runtime/effective";
 import type { TranslationKey } from "@/i18n";
-import { releasePlatformLabel } from "@/lib/update-release";
 import { OverviewHeatmap } from "./OverviewHeatmap";
 import { OverviewCard } from "./OverviewCard";
 import {
@@ -62,11 +58,7 @@ export function OverviewSection() {
   const isZh = t("nav.chats") === "对话";
   const state = useOverviewData();
   const { accountInfo } = useAccountInfo();
-  const { updateInfo, checking, checkForUpdates } = useUpdate();
   const { status: claudeStatus } = useClaudeStatus();
-  const nativeUpdateBusy = updateInfo?.nativePhase === "downloading"
-    || updateInfo?.nativePhase === "downloaded"
-    || updateInfo?.nativePhase === "installing";
 
   // Settings is a route-level split now (one page per /settings/<section>),
   // so cross-section jumps must go through the router or they only mutate
@@ -305,51 +297,14 @@ export function OverviewSection() {
           )}
         </OverviewCard>
 
-        {/* Card 5 — Update / About */}
+        {/* Card 5 — About (version + account) */}
         <OverviewCard
           icon={<Info size={16} />}
-          title={isZh ? "版本与账户" : "Update & About"}
-          tone={updateInfo?.updateAvailable ? "warning" : "success"}
+          title={isZh ? "关于" : "About"}
+          tone="muted"
           primaryActionLabel={isZh ? "查看关于" : "View About"}
           onPrimaryAction={() => navToSection("about")}
-          footer={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="-ml-2 gap-1 text-xs text-muted-foreground hover:text-foreground"
-              onClick={checkForUpdates}
-              disabled={checking || nativeUpdateBusy}
-            >
-              <ArrowsClockwise size={12} className={checking ? "animate-spin" : undefined} />
-              {checking
-                ? t("settings.checking")
-                : nativeUpdateBusy
-                  ? t("update.checkUnavailableDuringUpdate")
-                  : t("settings.checkForUpdates")}
-            </Button>
-          }
         >
-          {updateInfo?.updateAvailable ? (
-            <p className="text-status-warning-foreground flex items-start gap-1">
-              <Warning size={12} weight="fill" className="mt-0.5 shrink-0" />
-              <span>
-                {updateInfo.platformAssetMissing
-                  ? t("update.platformAssetMissing", {
-                      version: updateInfo.latestVersion,
-                      platform: releasePlatformLabel(updateInfo.detectedPlatform),
-                    })
-                  : isZh
-                    ? `有新版本 v${updateInfo.latestVersion} 可用`
-                    : `Update available: v${updateInfo.latestVersion}`}
-              </span>
-            </p>
-          ) : (
-            <p className="text-muted-foreground">
-              {checking
-                ? (isZh ? "正在检查更新…" : "Checking for updates…")
-                : (isZh ? "已是最新版本" : "Up to date")}
-            </p>
-          )}
           {accountInfo?.email && (
             <p className="text-muted-foreground">
               {isZh ? "账户：" : "Account: "}

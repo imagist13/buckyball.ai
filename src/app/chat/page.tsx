@@ -11,11 +11,9 @@ import { effectiveChatRuntime } from '@/lib/chat-runtime-shared';
 import { toWireEffort, resolveModelSwitchEffortEffect } from '@/lib/effort-levels';
 import { refreshSessionTitle } from '@/lib/session-title-events';
 import { PermissionPrompt } from '@/components/chat/PermissionPrompt';
-import { ChatEmptyState } from '@/components/chat/ChatEmptyState';
 import { NewChatWelcome } from '@/components/chat/NewChatWelcome';
 import { RunCockpit } from '@/components/chat/RunCockpit';
 import { RunCheckpoint } from '@/components/chat/RunCheckpoint';
-import { OnboardingWizard } from '@/components/assistant/OnboardingWizard';
 import { ErrorBanner } from '@/components/ui/error-banner';
 import { buildCheckpoints } from '@/lib/run-checkpoint';
 // Chat first-paint memory contract (2026-05-09): NewChatPage must NOT
@@ -47,9 +45,6 @@ import { createFirstTurnNavGuard, type FirstTurnNavGuard } from '@/lib/first-tur
 // That's the only contributor to RunCheckpoint's pinned-invalid
 // reason on the new-chat page.
 import { resolveNewChatDefault } from '@/lib/runtime/effective';
-
-const previewAssistantOnboarding =
-  process.env.NEXT_PUBLIC_CODEPILOT_UI_PREVIEW === 'assistant-onboarding';
 
 interface ToolUseInfo {
   id: string;
@@ -148,9 +143,6 @@ function NewChatPageInner() {
       }
     | null
   >(null);
-  const [showWizard, setShowWizard] = useState(false);
-  const [assistantConfigured, setAssistantConfigured] = useState(false);
-  const [assistantWorkspacePath, setAssistantWorkspacePath] = useState('');
   const [mode, setMode] = useState('code');
   // Model/provider start empty — populated by the async global-default fetch.
   // This prevents the race where a user sends before the fetch completes and
@@ -185,65 +177,19 @@ function NewChatPageInner() {
     import('@/lib/message-input-logic').PendingContextSubTotals | undefined
   >(undefined);
 
-  // Phase 6 P0 follow-up round 2 (2026-05-15) — split the legacy
-  // `hasProvider` gate into two derived states so virtual providers
-  // (Codex Account / OpenAI OAuth) don't get falsely blocked by the
-  // /api/setup gate that doesn't know about them:
-  //
-  //   - `canSendWithCurrentProvider`: is the current (provider,
-  //     model) tuple actually sendable right now? Used by the send
-  //     button + sendFirstMessage gate.
-  //   - `hasSendableProviderForCurrentRuntime`: is there ANY way to
-  //     send under the active runtime? Used by the empty-state
-  //     overlay so a Codex-Account-only user (no traditional
-  //     provider per /api/setup) doesn't see the legacy "configure
-  //     a provider" onboarding card when Codex is fully signed in
-  //     and the resolver has landed on (codex_account, gpt-5.5).
-  //
-  // Both bypasses are the same shape — virtual providers
-  // (`codex_account` / `openai-oauth`) are sendable regardless of
-  // /api/setup state because they're authenticated through their
-  // own routes. Legacy DB providers still require `hasProvider`.
-  // `hasProvider` itself is preserved verbatim for the onboarding
-  // empty-state branch inside ChatEmptyState — that surface is
-  // about "have you ever set up a traditional provider", which is
-  // still a meaningful question even when codex is available.
+  // Phase 6 P0 follow-up (2026-05-15) — virtual providers
+  // (Codex Account / OpenAI OAuth / xAI OAuth) bypass the /api/setup
+  // gate because they authenticate through their own routes.
+  // Legacy DB providers still require `hasProvider` so we don't
+  // accidentally route to an env-fallback provider the resolver
+  // synthesised but the user never configured.
   const canSendWithCurrentProvider = useMemo(() => {
     if (!currentModel || !currentProviderId) return false;
-    // Codex Account bypasses the /api/setup gate — the resolver
-    // already proved this pair is reachable under the active runtime
-    // (it wouldn't have landed in `currentProviderId` otherwise).
     if (currentProviderId === 'codex_account') return true;
-    // Same goes for OpenAI OAuth, which is also a virtual provider
-    // (`/api/openai-oauth/status`-managed).
     if (currentProviderId === 'openai-oauth') return true;
     if (currentProviderId === 'xai-oauth') return true;
-    // Everything else still requires the legacy "provider set up"
-    // signal so we don't accidentally route to an env-fallback
-    // provider that the resolver synthesised but the user never
-    // configured.
     return hasProvider;
   }, [hasProvider, currentProviderId, currentModel]);
-
-  // Empty-state overlay gate. Differs from `canSendWithCurrentProvider`
-  // ONLY around `modelReady`: during the initial resolver window
-  // currentProviderId/Model are empty so `canSendWithCurrentProvider`
-  // is false, but that's "still loading" not "no provider exists".
-  // Without the modelReady gate we'd flash the no-provider empty state
-  // on every mount.
-  //
-  // Once `modelReady === true`, the resolver has done its job:
-  //   - currentProviderId === 'codex_account' → Codex is available,
-  //     no empty state.
-  //   - currentProviderId is a DB provider → hasProvider true (we
-  //     wouldn't have a usable DB provider id otherwise), no empty
-  //     state.
-  //   - currentProviderId === '' → genuinely no provider reachable
-  //     under the active runtime → empty state shows.
-  const hasSendableProviderForCurrentRuntime = useMemo(() => {
-    if (!modelReady) return true; // still loading; don't flash the empty state
-    return canSendWithCurrentProvider;
-  }, [modelReady, canSendWithCurrentProvider]);
 
   // Phase 2 Step 4c — runtime pin for the not-yet-created session.
   // The unified Runtime/model picker writes here; on first send we PATCH the new
@@ -590,19 +536,6 @@ function NewChatPageInner() {
       cancelled = true;
       window.removeEventListener('project-directory-changed', handler);
     };
-  }, []);
-
-  // Detect assistant workspace status
-  useEffect(() => {
-    fetch('/api/settings/workspace')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.path && data?.valid !== false) {
-          setAssistantWorkspacePath(data.path);
-          setAssistantConfigured(!!data.state?.onboardingComplete);
-        }
-      })
-      .catch(() => {});
   }, []);
 
   // Check provider availability — only 'completed' counts, 'skipped' means user deferred but has no real credentials
@@ -1397,36 +1330,6 @@ function NewChatPageInner() {
   // sends the first message (messages.length > 0 OR isStreaming),
   // we fall back to the traditional list-above + composer-below layout.
   const isNewChat = messages.length === 0 && !isStreaming;
-  const needsOnboardingCards = previewAssistantOnboarding
-    || !workingDir.trim()
-    || !hasSendableProviderForCurrentRuntime;
-
-  const chatEmptyStateNode = (
-    <ChatEmptyState
-      hasDirectory={!!workingDir.trim()}
-      hasProvider={hasSendableProviderForCurrentRuntime}
-      onSelectFolder={handleSelectFolder}
-      assistantConfigured={assistantConfigured}
-      preview={previewAssistantOnboarding}
-      onOpenAssistant={() => {
-        if (assistantConfigured) {
-          // Navigate to the latest assistant session
-          fetch(`/api/workspace/session`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode: 'checkin' }),
-          })
-            .then(r => r.json())
-            .then(data => router.push(`/chat/${data.session.id}`))
-            .catch(() => {});
-        } else if (assistantWorkspacePath) {
-          setShowWizard(true);
-        } else {
-          router.push('/settings/assistant');
-        }
-      }}
-    />
-  );
 
   // Single composer stack — reused in both the new-chat hero (centered)
   // and the active-chat layout (bottom-pinned). Avoids duplicating
@@ -1558,7 +1461,6 @@ function NewChatPageInner() {
           <div className="w-full max-w-3xl">
             <NewChatWelcome workingDir={workingDir} />
             {composerStack}
-            {needsOnboardingCards && <div className="mt-4">{chatEmptyStateNode}</div>}
           </div>
         </div>
       ) : (
@@ -1582,16 +1484,6 @@ function NewChatPageInner() {
         onOpenChange={setFolderPickerOpen}
         onSelect={handleFolderPickerSelect}
       />
-      {showWizard && assistantWorkspacePath && (
-        <OnboardingWizard
-          workspacePath={assistantWorkspacePath}
-          onComplete={(session) => {
-            setShowWizard(false);
-            setAssistantConfigured(true);
-            router.push(`/chat/${session.id}`);
-          }}
-        />
-      )}
     </div>
   );
 }
