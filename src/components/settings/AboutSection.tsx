@@ -4,7 +4,7 @@
  * Settings → About — application metadata + utility entries.
  *
  * Pulls together pieces that used to be scattered through General:
- *   - Version + check-for-updates  (was UpdateCard at top of General)
+ *   - App brand + version display
  *   - Account info                  (was Account card at bottom of General)
  *   - Chat history import           (recently moved to General; lands here)
  *   - Platform info                 (new — install channel + OS)
@@ -18,7 +18,6 @@
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
-import { useUpdate } from "@/hooks/useUpdate";
 import { useAccountInfo } from "@/hooks/useAccountInfo";
 import { Button } from "@/components/ui/button";
 import { ArrowSquareOut, SpinnerGap } from "@/components/ui/icon";
@@ -28,7 +27,6 @@ import { SettingsCard } from "@/components/patterns/SettingsCard";
 import { ImportSessionDialog } from "@/components/layout/ImportSessionDialog";
 import { showToast } from "@/hooks/useToast";
 import type { TranslationKey } from "@/i18n";
-import { releasePlatformLabel } from "@/lib/update-release";
 
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || "0.0.0";
 
@@ -52,14 +50,6 @@ function detectPlatform(): { os: string; channel: string } {
 
 export function AboutSection() {
   const { t } = useTranslation();
-  const {
-    updateInfo,
-    checking,
-    checkForUpdates,
-    downloadUpdate,
-    quitAndInstall,
-    setShowDialog,
-  } = useUpdate();
   const { accountInfo } = useAccountInfo();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [platform, setPlatform] = useState<{ os: string; channel: string }>({
@@ -119,18 +109,6 @@ export function AboutSection() {
     }
   };
 
-  const isDownloading =
-    updateInfo?.isNativeUpdate &&
-    !updateInfo.readyToInstall &&
-    updateInfo.downloadProgress != null;
-  const nativeUpdateBusy = updateInfo?.nativePhase === "downloading"
-    || updateInfo?.nativePhase === "downloaded"
-    || updateInfo?.nativePhase === "installing";
-  const updateCheckDisabled = checking || nativeUpdateBusy;
-  const updateErrorMessage = updateInfo?.lastErrorCode
-    ? t(`update.error.${updateInfo.lastErrorCode}` as TranslationKey)
-    : updateInfo?.lastError;
-
   /**
    * Phase 2C.6: download a sanitized diagnostic bundle. The /api/doctor/export
    * endpoint already exists and includes the cached diagnosis + recent runtime
@@ -184,9 +162,7 @@ export function AboutSection() {
         </p>
       </div>
 
-      {/* Version + update check. Same logic as the legacy UpdateCard
-          but rendered as a single inline row so it matches the rest
-          of About visually. App icon (Monolith) sits left of the name +
+      {/* Version display. App icon (Monolith) sits left of the name +
           version pair — replaces the previous separate "brand hero"
           card so About lands as a single coherent row. */}
       <SettingsCard>
@@ -200,106 +176,7 @@ export function AboutSection() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {updateInfo?.updateAvailable && !checking && (
-              updateInfo.readyToInstall ? (
-                <Button size="sm" onClick={quitAndInstall}>
-                  <CodePilotIcon name="refresh" size="sm" aria-hidden />
-                  {t("update.restartToUpdate")}
-                </Button>
-              ) : updateInfo.isNativeUpdate && !isDownloading ? (
-                <Button size="sm" onClick={downloadUpdate}>
-                  <CodePilotIcon name="download" size="sm" aria-hidden />
-                  {t("update.installUpdate")}
-                </Button>
-              ) : !updateInfo.isNativeUpdate ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => window.open(updateInfo.downloadUrl || updateInfo.releaseUrl, "_blank")}
-                >
-                  {updateInfo.platformAssetMissing
-                    ? t("update.viewReleaseDetails")
-                    : updateInfo.downloadAssetName
-                      ? t("update.getRecommendedBuild")
-                      : t("settings.viewRelease")}
-                </Button>
-              ) : null
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={checkForUpdates}
-              disabled={updateCheckDisabled}
-              className="gap-2"
-            >
-              {checking ? (
-                <SpinnerGap size={14} className="animate-spin" />
-              ) : (
-                <CodePilotIcon name="refresh" size="sm" aria-hidden />
-              )}
-              {checking
-                ? t("settings.checking")
-                : nativeUpdateBusy
-                  ? t("update.checkUnavailableDuringUpdate")
-                  : t("settings.checkForUpdates")}
-            </Button>
-          </div>
         </div>
-
-        {updateInfo && !checking && (
-          <div className="mt-3">
-            {updateInfo.updateAvailable ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-2 w-2 rounded-full ${updateInfo.readyToInstall ? "bg-status-success" : isDownloading ? "bg-status-warning animate-pulse" : "bg-primary"}`}
-                  />
-                  <span className="text-sm">
-                    {updateInfo.readyToInstall
-                      ? t("update.readyToInstall", { version: updateInfo.latestVersion })
-                      : isDownloading
-                        ? `${t("update.downloading")} ${Math.round(updateInfo.downloadProgress!)}%`
-                        : t("settings.updateAvailable", { version: updateInfo.latestVersion })}
-                  </span>
-                  {updateInfo.releaseNotes && (
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-auto p-0 text-xs text-muted-foreground"
-                      onClick={() => setShowDialog(true)}
-                    >
-                      {t("gallery.viewDetails")}
-                    </Button>
-                  )}
-                </div>
-                {isDownloading && (
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${Math.min(updateInfo.downloadProgress!, 100)}%` }}
-                    />
-                  </div>
-                )}
-                {updateInfo.platformAssetMissing && (
-                  <p className="text-xs text-status-warning-foreground">
-                    {t("update.platformAssetMissing", {
-                      version: updateInfo.latestVersion,
-                      platform: releasePlatformLabel(updateInfo.detectedPlatform),
-                    })}
-                  </p>
-                )}
-                {updateErrorMessage && (
-                  <p className="text-xs text-status-error-foreground">{updateErrorMessage}</p>
-                )}
-              </div>
-            ) : updateErrorMessage ? (
-              <p className="text-xs text-status-error-foreground">{updateErrorMessage}</p>
-            ) : (
-              <p className="text-sm text-muted-foreground">{t("settings.latestVersion")}</p>
-            )}
-          </div>
-        )}
       </SettingsCard>
 
       {/* Platform info — "what build am I running" surfaces here so a
